@@ -619,5 +619,6 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   const _guard_iModal = document.getElementById('iModal'); if (_guard_iModal) _guard_iModal.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
   (function(){var p=new URLSearchParams(window.location.search).get('theme'),s=localStorage.getItem('ac-theme'),t=p||s||'light';if(p)localStorage.setItem('ac-theme',p);setTheme(t);})();
 </script>
+<?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>
 </html>

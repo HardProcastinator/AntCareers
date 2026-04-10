@@ -394,7 +394,12 @@ function _navHref(string $file): string {
   document.getElementById('notifClose').addEventListener('click', closeNotif);
   document.getElementById('notifToggle').addEventListener('click', function (e) {
     e.stopPropagation();
-    notifPanel.classList.contains('open') ? closeNotif() : openNotif();
+    // Use real sidebar if chat system is loaded, else fallback to demo panel
+    if (typeof openNotifSidebar === 'function') {
+      openNotifSidebar();
+    } else {
+      notifPanel.classList.contains('open') ? closeNotif() : openNotif();
+    }
   });
 
   // ── MESSAGES PANEL ─────────────────────────────────────────────────────────
@@ -406,7 +411,12 @@ function _navHref(string $file): string {
   document.getElementById('msgClose').addEventListener('click', closeMsgPanel);
   document.getElementById('msgToggle').addEventListener('click', function (e) {
     e.stopPropagation();
-    msgPanel.classList.contains('open') ? closeMsgPanel() : openMsgPanel();
+    // Use real sidebar if chat system is loaded, else fallback to demo panel
+    if (typeof openMsgSidebar === 'function') {
+      openMsgSidebar();
+    } else {
+      msgPanel.classList.contains('open') ? closeMsgPanel() : openMsgPanel();
+    }
   });
 
   // ── CLICK-OUTSIDE: close dropdowns / menus / panels ───────────────────────

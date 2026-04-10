@@ -939,5 +939,6 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
   renderCompanies();
   renderAllJobs();
 </script>
+<?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>
 </html>

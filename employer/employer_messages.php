@@ -573,13 +573,17 @@ function showToast(msg, icon) {
 }
 
 // ── NAVBAR: Sidebar triggers ──────────────────────────────────────────
-document.getElementById('msgToggleNav').addEventListener('click', function(e) {
+var _navMsgBtn = document.getElementById('navMsgBtn');
+if (_navMsgBtn) _navMsgBtn.addEventListener('click', function(e) {
     e.preventDefault();
-    window.location.href = '../messages.php?theme=' + (document.body.classList.contains('light') ? 'light' : 'dark');
+    e.stopPropagation();
+    // Already on messages page — no action needed, or reload
 });
 
-document.getElementById('notifToggleNav').addEventListener('click', function(e) {
+var _navNotifBtn = document.getElementById('navNotifBtn');
+if (_navNotifBtn) _navNotifBtn.addEventListener('click', function(e) {
     e.preventDefault();
+    e.stopPropagation();
     if (typeof openNotifSidebar === 'function') openNotifSidebar();
 });
 

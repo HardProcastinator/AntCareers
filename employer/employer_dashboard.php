@@ -1,7 +1,3 @@
-          <div class="pd-item" onclick="if(typeof openFullscreenChat==='function'){openFullscreenChat();}else{window.location.href='../messages.php';}"><i class="fas fa-comments"></i> Messages</div>
-  <button class="notif-btn-nav" id="dashMsgBtn" onclick="window.location.href='../messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')">
-  <a class="mobile-link" href="../messages.php"><i class="fas fa-envelope"></i> Messages</a>
-  <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-envelope"></i></div><div class="sc-num"><?php echo $messageCount;?></div></div><div class="sc-label">Messages</div><button class="sc-btn" onclick="window.location.href='../messages.php'">Open Messages</button></div>
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
@@ -588,7 +584,7 @@ try {
     <div class="nav-right">
       <button class="theme-btn" id="themeToggle"><i class="fas fa-sun"></i></button>
 
-      <button class="notif-btn-nav" id="dashMsgBtn" onclick="window.location.href='../messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')">
+      <button class="notif-btn-nav" id="dashMsgBtn" onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();}">
         <i class="fas fa-envelope"></i>
         <span class="badge msg-badge-count">0</span>
       </button>
@@ -617,7 +613,7 @@ try {
           <div class="pd-item" onclick="window.location.href='employer_companyProfile.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-building"></i> Company Profile</div>
           <div class="pd-item" onclick="window.location.href='employer_manageRecruiters.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-user-tie"></i> Manage Recruiters</div>
           <div class="pd-item" onclick="window.location.href='employer_settings.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-cog"></i> Settings</div>
-          <div class="pd-item" onclick="if(typeof openFullscreenChat==='function'){openFullscreenChat();}else{window.location.href='../messages.php';}"><i class="fas fa-comments"></i> Messages</div>
+          <div class="pd-item" onclick="window.location.href='../messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-comments"></i> Messages</div>
           <div class="pd-divider"></div>
           <div class="pd-item danger" onclick="window.location.href='../auth/logout.php'"><i class="fas fa-sign-out-alt"></i> Sign out</div>
         </div>
@@ -670,7 +666,7 @@ try {
         <div class="sum-card"><div class="sc-top"><div class="sc-icon a"><i class="fas fa-users"></i></div><div class="sc-num"><?php echo $totalApplicants;?></div></div><div class="sc-label">Total Applicants</div><button class="sc-btn" onclick="window.location.href='employer_applicants.php'">View Applicants</button></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon g"><i class="fas fa-user-check"></i></div><div class="sc-num"><?php echo $shortlistedCount;?></div></div><div class="sc-label">Shortlisted</div><button class="sc-btn" onclick="window.location.href='employer_applicants.php?status=Shortlisted'">View Shortlisted</button></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-calendar-check"></i></div><div class="sc-num"><?php echo $interviewCount;?></div></div><div class="sc-label">Interviews</div><button class="sc-btn" onclick="window.location.href='employer_applicants.php'">View Interviews</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-envelope"></i></div><div class="sc-num"><?php echo $messageCount;?></div></div><div class="sc-label">Messages</div><button class="sc-btn" onclick="window.location.href='../messages.php'">Open Messages</button></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-envelope"></i></div><div class="sc-num"><?php echo $messageCount;?></div></div><div class="sc-label">Messages</div><button class="sc-btn" onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();}">Open Messages</button></div>
       </div>
 
       <!-- RECENT JOB POSTS -->

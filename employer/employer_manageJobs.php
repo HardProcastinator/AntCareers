@@ -436,5 +436,6 @@ try {
   (function(){var p=new URLSearchParams(window.location.search).get('theme'),s=localStorage.getItem('ac-theme'),t=p||s||'light';if(p)localStorage.setItem('ac-theme',p);setTheme(t);})();
   if(new URLSearchParams(window.location.search).get('postjob')==='1')openPost();
 </script>
+<?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>
 </html>
