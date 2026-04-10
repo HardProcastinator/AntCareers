@@ -15,8 +15,9 @@ declare(strict_types=1);
 /**
  * Require the user to be logged in with a specific role.
  * Redirects to login if not authenticated, or to index if wrong role.
+ * Recruiters are allowed on employer pages (pass 'employer' or 'recruiter').
  *
- * @param string $role  'seeker' | 'employer' | 'admin'
+ * @param string $role  'seeker' | 'employer' | 'recruiter' | 'admin'
  */
 function requireLogin(string $role = 'seeker'): void
 {
@@ -24,8 +25,25 @@ function requireLogin(string $role = 'seeker'): void
         header('Location: ' . url('auth/antcareers_login.php'));
         exit;
     }
+
+    // Force password change redirect (for hired recruiters on first login)
+    if (!empty($_SESSION['must_change_password'])) {
+        $currentScript = basename($_SERVER['SCRIPT_FILENAME'] ?? '');
+        if ($currentScript !== 'force_change_password.php') {
+            header('Location: ' . url('auth/force_change_password.php'));
+            exit;
+        }
+    }
+
     $sessionRole = strtolower((string)($_SESSION['account_type'] ?? ''));
-    if ($sessionRole !== strtolower($role)) {
+    $requiredRole = strtolower($role);
+
+    // Recruiters can access employer pages
+    if ($requiredRole === 'employer' && $sessionRole === 'recruiter') {
+        return;
+    }
+
+    if ($sessionRole !== $requiredRole) {
         header('Location: ' . url('index.php'));
         exit;
     }
@@ -55,11 +73,12 @@ function getUser(): array
         : strtoupper(substr($firstName, 0, 2));
 
     return [
-        'id'        => (int)($_SESSION['user_id']    ?? 0),
-        'fullName'  => $fullName,
-        'firstName' => $firstName,
-        'initials'  => $initials,
-        'email'     => (string)($_SESSION['user_email']   ?? ''),
-        'role'      => (string)($_SESSION['account_type'] ?? ''),
+        'id'          => (int)($_SESSION['user_id']    ?? 0),
+        'fullName'    => $fullName,
+        'firstName'   => $firstName,
+        'initials'    => $initials,
+        'email'       => (string)($_SESSION['user_email']   ?? ''),
+        'role'        => (string)($_SESSION['account_type'] ?? ''),
+        'companyName' => (string)($_SESSION['company_name'] ?? ''),
     ];
 }

@@ -1,22 +1,13 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
-
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../auth/antcareers_login.php');
-    exit;
-}
-if (strtolower((string)($_SESSION['account_type'] ?? '')) !== 'employer') {
-    header('Location: ../index.php');
-    exit;
-}
-$fullName    = trim((string)($_SESSION['user_name'] ?? 'Employer'));
-$nameParts   = preg_split('/\s+/', $fullName) ?: [];
-$firstName   = $nameParts[0] ?? 'Employer';
-$initials    = count($nameParts) >= 2
-    ? strtoupper(substr($nameParts[0],0,1).substr($nameParts[1],0,1))
-    : strtoupper(substr($firstName,0,2));
-$companyName = trim((string)($_SESSION['company_name'] ?? 'Your Company'));
+require_once dirname(__DIR__) . '/includes/auth.php';
+requireLogin('employer');
+$user        = getUser();
+$fullName    = $user['fullName'];
+$firstName   = $user['firstName'];
+$initials    = $user['initials'];
+$companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'applicants';
 
 /* ── AJAX ── */
@@ -619,5 +610,6 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   const _guard_iModal = document.getElementById('iModal'); if (_guard_iModal) _guard_iModal.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
   (function(){var p=new URLSearchParams(window.location.search).get('theme'),s=localStorage.getItem('ac-theme'),t=p||s||'light';if(p)localStorage.setItem('ac-theme',p);setTheme(t);})();
 </script>
+<?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>
 </html>

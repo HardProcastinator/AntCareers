@@ -1,24 +1,23 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
+require_once dirname(__DIR__) . '/includes/auth.php';
 
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../auth/antcareers_login.php');
+if (empty($_SESSION['user_id'])) {
+    header('Location: ' . url('auth/antcareers_login.php'));
     exit;
 }
-if (!in_array(strtolower((string)($_SESSION['account_type'] ?? '')), ['employer', 'seeker'], true)) {
-    header('Location: ../index.php');
+$accountType = strtolower((string)($_SESSION['account_type'] ?? ''));
+if (!in_array($accountType, ['employer', 'seeker', 'recruiter'], true)) {
+    header('Location: ' . url('index.php'));
     exit;
 }
-$fullName    = trim((string)($_SESSION['user_name'] ?? 'Employer'));
-$nameParts   = preg_split('/\s+/', $fullName) ?: [];
-$firstName   = $nameParts[0] ?? 'Employer';
-$initials    = count($nameParts) >= 2
-    ? strtoupper(substr($nameParts[0],0,1).substr($nameParts[1],0,1))
-    : strtoupper(substr($firstName,0,2));
-$companyName = trim((string)($_SESSION['company_name'] ?? 'Your Company'));
+$user        = getUser();
+$fullName    = $user['fullName'];
+$firstName   = $user['firstName'];
+$initials    = $user['initials'];
+$companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'messages';
-$accountType = strtolower((string)($_SESSION['account_type'] ?? 'employer'));
 $pageSub     = $accountType === 'seeker'
     ? 'Message employers, follow up on applications, and keep conversations organized.'
     : 'Communicate with applicants and keep interview conversations in one place.';
@@ -573,13 +572,17 @@ function showToast(msg, icon) {
 }
 
 // ── NAVBAR: Sidebar triggers ──────────────────────────────────────────
-document.getElementById('msgToggleNav').addEventListener('click', function(e) {
+var _navMsgBtn = document.getElementById('navMsgBtn');
+if (_navMsgBtn) _navMsgBtn.addEventListener('click', function(e) {
     e.preventDefault();
-    window.location.href = '../messages.php?theme=' + (document.body.classList.contains('light') ? 'light' : 'dark');
+    e.stopPropagation();
+    // Already on messages page — no-op
 });
 
-document.getElementById('notifToggleNav').addEventListener('click', function(e) {
+var _navNotifBtn = document.getElementById('navNotifBtn');
+if (_navNotifBtn) _navNotifBtn.addEventListener('click', function(e) {
     e.preventDefault();
+    e.stopPropagation();
     if (typeof openNotifSidebar === 'function') openNotifSidebar();
 });
 

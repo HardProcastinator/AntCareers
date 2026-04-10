@@ -1,22 +1,13 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
-
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../auth/antcareers_login.php');
-    exit;
-}
-if (strtolower((string)($_SESSION['account_type'] ?? '')) !== 'employer') {
-    header('Location: ../index.php');
-    exit;
-}
-$fullName    = trim((string)($_SESSION['user_name'] ?? 'Employer'));
-$nameParts   = preg_split('/\s+/', $fullName) ?: [];
-$firstName   = $nameParts[0] ?? 'Employer';
-$initials    = count($nameParts) >= 2
-    ? strtoupper(substr($nameParts[0],0,1).substr($nameParts[1],0,1))
-    : strtoupper(substr($firstName,0,2));
-$companyName = trim((string)($_SESSION['company_name'] ?? 'Your Company'));
+require_once dirname(__DIR__) . '/includes/auth.php';
+requireLogin('employer');
+$user        = getUser();
+$fullName    = $user['fullName'];
+$firstName   = $user['firstName'];
+$initials    = $user['initials'];
+$companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'manage-jobs';
 ?>
 <!DOCTYPE html>
@@ -307,10 +298,10 @@ $navActive   = 'manage-jobs';
 
   <!-- Stats -->
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-num">1</div><div class="stat-label">Company Admin</div></div>
-    <div class="stat-card"><div class="stat-num amber">3</div><div class="stat-label">Recruiters</div></div>
-    <div class="stat-card"><div class="stat-num green">3</div><div class="stat-label">Currently Active</div></div>
-    <div class="stat-card"><div class="stat-num red">2</div><div class="stat-label">Pending Invites</div></div>
+    <div class="stat-card"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total Recruiters</div></div>
+    <div class="stat-card"><div class="stat-num amber" id="statActive">—</div><div class="stat-label">Currently Active</div></div>
+    <div class="stat-card"><div class="stat-num green" id="statHired">—</div><div class="stat-label">Total Hired</div></div>
+    <div class="stat-card"><div class="stat-num red" id="statJobs">—</div><div class="stat-label">Jobs Posted</div></div>
   </div>
 
   <!-- Toolbar -->
@@ -319,20 +310,19 @@ $navActive   = 'manage-jobs';
       <i class="fas fa-search"></i>
       <input type="text" placeholder="Search recruiters..." oninput="filterRecruiters(this.value)" id="searchInput">
     </div>
-    <select class="filter-select" onchange="filterByRole(this.value)">
-      <option value="">All Roles</option>
-      <option value="Admin">Company Admin</option>
-      <option value="Recruiter">Recruiter</option>
-      <option value="Viewer">Viewer</option>
+    <select class="filter-select" onchange="filterByStatus(this.value)">
+      <option value="">All Status</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
     </select>
   </div>
 
   <!-- Recruiter list -->
   <div class="recruiter-list" id="recruiterList"></div>
 
-  <!-- Pending Invites -->
-  <div class="section-title"><i class="fas fa-envelope-open-text"></i> Pending Invites <span style="background:rgba(212,148,58,0.15);color:var(--amber);border:1px solid rgba(212,148,58,0.2);font-size:11px;padding:2px 8px;border-radius:8px;font-weight:600;">2</span></div>
-  <div style="display:flex;flex-direction:column;gap:8px;" id="inviteList"></div>
+  <!-- Inactive Recruiters -->
+  <div class="section-title" id="inactiveSection" style="display:none;"><i class="fas fa-user-slash"></i> Inactive Recruiters</div>
+  <div style="display:flex;flex-direction:column;gap:8px;" id="inactiveList"></div>
 </div>
 
 <footer class="footer">
@@ -345,132 +335,258 @@ $navActive   = 'manage-jobs';
   </div>
 </footer>
 
-<!-- Invite Modal -->
+<!-- Add Recruiter Modal -->
 <div class="modal-overlay" id="inviteModal">
   <div class="modal-box">
     <button class="modal-close" onclick="closeInviteModal()"><i class="fas fa-times"></i></button>
-    <div class="modal-title">Invite a Recruiter</div>
-    <div class="modal-sub">They'll receive an email to join <?php echo htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8'); ?> on AntCareers.</div>
+    <div class="modal-title">Add a Recruiter</div>
+    <div class="modal-sub">Create a recruiter account for <?php echo htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8'); ?>. They'll receive login credentials.</div>
+    <div class="modal-label">First Name</div>
+    <input class="modal-input" type="text" placeholder="First name" id="inviteFirstName">
+    <div class="modal-label">Last Name</div>
+    <input class="modal-input" type="text" placeholder="Last name" id="inviteLastName">
     <div class="modal-label">Email Address</div>
     <input class="modal-input" type="email" placeholder="recruiter@example.com" id="inviteEmail">
-    <div class="modal-label">Assign Role</div>
-    <div class="role-options">
-      <div class="role-opt" onclick="selectRole(this,'Recruiter')">
-        <div class="role-opt-icon">👔</div>
-        <div class="role-opt-name">Recruiter</div>
-        <div class="role-opt-desc">Post jobs &amp; review applicants</div>
-      </div>
-      <div class="role-opt selected" onclick="selectRole(this,'Admin')">
-        <div class="role-opt-icon">🛡️</div>
-        <div class="role-opt-name">Co-Admin</div>
-        <div class="role-opt-desc">Full company access</div>
-      </div>
-      <div class="role-opt" onclick="selectRole(this,'Viewer')">
-        <div class="role-opt-icon">👁️</div>
-        <div class="role-opt-name">Viewer</div>
-        <div class="role-opt-desc">View-only access</div>
-      </div>
-    </div>
+    <div id="modalError" style="display:none;font-size:12px;color:var(--red-bright);margin-bottom:12px;"></div>
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="closeInviteModal()">Cancel</button>
-      <button class="btn-send" onclick="sendInvite()"><i class="fas fa-paper-plane"></i> Send Invite</button>
+      <button class="btn-send" id="addRecruiterBtn" onclick="addRecruiter()"><i class="fas fa-user-plus"></i> Add Recruiter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Credentials Modal -->
+<div class="modal-overlay" id="credentialsModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeCredentialsModal()"><i class="fas fa-times"></i></button>
+    <div class="modal-title">Recruiter Account Created</div>
+    <div class="modal-sub">Share these credentials securely. The recruiter will be asked to change their password on first login.</div>
+    <div class="modal-label">Email</div>
+    <div class="modal-input" id="credEmail" style="background:var(--soil-hover);user-select:all;cursor:text;"></div>
+    <div class="modal-label">Temporary Password</div>
+    <div class="modal-input" id="credPassword" style="background:var(--soil-hover);user-select:all;cursor:text;font-family:monospace;"></div>
+    <div class="modal-footer">
+      <button class="btn-send" onclick="closeCredentialsModal()"><i class="fas fa-check"></i> Done</button>
     </div>
   </div>
 </div>
 
 <script>
-  const recruitersData = [
-    { id:1, name:'Maria Admin', initials:'MA', color:'linear-gradient(135deg,#D13D2C,#7A1515)', role:'Admin', email:'maria@techph.com', status:'online', jobs:3, reviews:27, joined:'Feb 10, 2026' },
-    { id:2, name:'Jose Maniego', initials:'JM', color:'linear-gradient(135deg,#4A90D9,#2A6090)', role:'Recruiter', email:'jose@techph.com', status:'online', jobs:2, reviews:14, joined:'Mar 1, 2026' },
-    { id:3, name:'Ana Lim', initials:'AL', color:'linear-gradient(135deg,#9C27B0,#5A1070)', role:'Recruiter', email:'ana@techph.com', status:'offline', jobs:1, reviews:8, joined:'Mar 5, 2026' },
-    { id:4, name:'Rico Santos', initials:'RS', color:'linear-gradient(135deg,#4CAF70,#2A7040)', role:'Recruiter', email:'rico@techph.com', status:'online', jobs:0, reviews:0, joined:'Mar 20, 2026' },
+  const API = '../api/recruiters.php';
+  let allRecruiters = [];
+  let currentFilter = '';
+  let currentSearch = '';
+
+  // -------- Load data --------
+  async function loadRecruiters() {
+    try {
+      const res = await fetch(API + '?action=list_recruiters');
+      const data = await res.json();
+      if (!data.success) { showToast(data.message || 'Failed to load', 'fa-exclamation-triangle'); return; }
+      allRecruiters = data.recruiters || [];
+      applyFilters();
+      updateStats();
+    } catch(e) {
+      showToast('Network error loading recruiters', 'fa-exclamation-triangle');
+    }
+  }
+
+  function updateStats() {
+    const active = allRecruiters.filter(r => r.status === 'active');
+    const totalJobs = allRecruiters.reduce((s,r) => s + (parseInt(r.jobs_posted)||0), 0);
+    const totalHired = allRecruiters.reduce((s,r) => s + (parseInt(r.hired_count)||0), 0);
+    document.getElementById('statTotal').textContent = allRecruiters.length;
+    document.getElementById('statActive').textContent = active.length;
+    document.getElementById('statHired').textContent = totalHired;
+    document.getElementById('statJobs').textContent = totalJobs;
+  }
+
+  function applyFilters() {
+    let list = allRecruiters;
+    if (currentFilter) list = list.filter(r => r.status === currentFilter);
+    if (currentSearch) {
+      const q = currentSearch.toLowerCase();
+      list = list.filter(r => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q));
+    }
+
+    const activeList = list.filter(r => r.status === 'active');
+    const inactiveList = list.filter(r => r.status !== 'active');
+
+    renderRecruiters(activeList);
+    renderInactive(inactiveList);
+  }
+
+  function filterRecruiters(q) { currentSearch = q; applyFilters(); }
+  function filterByStatus(s) { currentFilter = s; applyFilters(); }
+
+  // -------- Render --------
+  const avatarColors = [
+    'linear-gradient(135deg,#D13D2C,#7A1515)',
+    'linear-gradient(135deg,#4A90D9,#2A6090)',
+    'linear-gradient(135deg,#9C27B0,#5A1070)',
+    'linear-gradient(135deg,#4CAF70,#2A7040)',
+    'linear-gradient(135deg,#D4943A,#8A5010)',
+    'linear-gradient(135deg,#E91E63,#880E4F)',
   ];
 
-  const pendingInvites = [
-    { email:'ben.cruz@gmail.com', role:'Recruiter', sent:'Mar 25, 2026' },
-    { email:'grace.tan@outlook.com', role:'Viewer', sent:'Mar 27, 2026' },
-  ];
-
-  let selectedRoleInvite = 'Admin';
+  function getInitials(name) {
+    const parts = name.trim().split(/\s+/);
+    return parts.length >= 2
+      ? (parts[0][0] + parts[1][0]).toUpperCase()
+      : name.substring(0,2).toUpperCase();
+  }
 
   function renderRecruiters(data) {
     const c = document.getElementById('recruiterList');
-    if (!data.length) { c.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);">No recruiters found.</div>'; return; }
-    c.innerHTML = data.map(r => `
-      <div class="recruiter-row">
-        <div class="rec-avatar" style="background:${r.color}">${r.initials}</div>
+    if (!data.length) { c.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);">No active recruiters found.</div>'; return; }
+    c.innerHTML = data.map((r, i) => `
+      <div class="recruiter-row" data-id="${r.id}">
+        <div class="rec-avatar" style="background:${avatarColors[i % avatarColors.length]}">${getInitials(r.name)}</div>
         <div class="rec-info">
-          <div class="rec-name">${r.name} ${r.id===1?'<span style="font-size:10px;background:rgba(209,61,44,0.1);color:var(--red-pale);border:1px solid rgba(209,61,44,0.2);padding:2px 7px;border-radius:8px;margin-left:4px;">You</span>':''}</div>
-          <div class="rec-email">${r.email}</div>
+          <div class="rec-name">${esc(r.name)} <span class="rec-badge rb-recruiter">${esc(r.role_label || 'Recruiter')}</span></div>
+          <div class="rec-email">${esc(r.email)}</div>
           <div class="rec-meta">
-            <span class="rec-badge ${r.role==='Admin'?'rb-admin':r.role==='Recruiter'?'rb-recruiter':'rb-viewer'}">${r.role==='Admin'?'Company Admin':r.role}</span>
-            <span class="rec-stat"><i class="fas fa-briefcase"></i> ${r.jobs} jobs posted</span>
-            <span class="rec-stat"><i class="fas fa-users"></i> ${r.reviews} applicants reviewed</span>
-            <span class="rec-stat"><i class="fas fa-calendar"></i> Joined ${r.joined}</span>
+            <span class="rec-stat"><i class="fas fa-briefcase"></i> ${r.jobs_posted || 0} jobs posted</span>
+            <span class="rec-stat"><i class="fas fa-users"></i> ${r.applicants_reviewed || 0} reviewed</span>
+            <span class="rec-stat"><i class="fas fa-user-check"></i> ${r.hired_count || 0} hired</span>
+            <span class="rec-stat"><i class="fas fa-calendar"></i> Joined ${formatDate(r.joined_at)}</span>
           </div>
         </div>
         <div class="rec-actions">
-          <div class="rec-status ${r.status==='online'?'rs-online':'rs-offline'}" title="${r.status==='online'?'Active now':'Offline'}"></div>
-          ${r.id!==1?`
-            <button class="rec-action-btn" onclick="showToast('Edit role for ${r.name}','fa-pen')"><i class="fas fa-pen"></i> Edit</button>
-            <button class="rec-action-btn danger" onclick="removeRecruiter(${r.id},'${r.name}')"><i class="fas fa-user-minus"></i> Remove</button>
-          `:''} 
+          <div class="rec-status rs-online" title="Active"></div>
+          <button class="rec-action-btn" onclick="resetPassword(${r.id},'${esc(r.name)}')"><i class="fas fa-key"></i> Reset PW</button>
+          <button class="rec-action-btn danger" onclick="deactivateRecruiter(${r.id},'${esc(r.name)}')"><i class="fas fa-user-minus"></i> Deactivate</button>
         </div>
       </div>
     `).join('');
   }
 
-  function renderInvites() {
-    const c = document.getElementById('inviteList');
-    c.innerHTML = pendingInvites.map((inv,i) => `
-      <div class="invite-row">
-        <div>
-          <div class="invite-email"><i class="fas fa-envelope"></i> ${inv.email} <span class="rec-badge rb-${inv.role==='Recruiter'?'recruiter':'viewer'}">${inv.role}</span></div>
-          <div class="invite-meta">Sent ${inv.sent} · Awaiting acceptance</div>
+  function renderInactive(data) {
+    const section = document.getElementById('inactiveSection');
+    const c = document.getElementById('inactiveList');
+    if (!data.length) { section.style.display = 'none'; c.innerHTML = ''; return; }
+    section.style.display = '';
+    c.innerHTML = data.map((r, i) => `
+      <div class="recruiter-row" style="opacity:0.65;" data-id="${r.id}">
+        <div class="rec-avatar" style="background:${avatarColors[(i+3) % avatarColors.length]}">${getInitials(r.name)}</div>
+        <div class="rec-info">
+          <div class="rec-name">${esc(r.name)} <span class="rec-badge" style="background:rgba(85,85,85,0.2);color:#888;border:1px solid rgba(85,85,85,0.3);">Inactive</span></div>
+          <div class="rec-email">${esc(r.email)}</div>
         </div>
-        <div class="invite-actions">
-          <button class="btn-resend" onclick="showToast('Invite resent to ${inv.email}','fa-paper-plane')">Resend</button>
-          <button class="btn-revoke" onclick="this.closest('.invite-row').style.opacity='0.3';showToast('Invite revoked','fa-times')">Revoke</button>
+        <div class="rec-actions">
+          <div class="rec-status rs-offline" title="Inactive"></div>
+          <button class="rec-action-btn" style="color:var(--green);" onclick="reactivateRecruiter(${r.id},'${esc(r.name)}')"><i class="fas fa-user-check"></i> Reactivate</button>
         </div>
       </div>
     `).join('');
   }
 
-  function filterRecruiters(q) {
-    const f = recruitersData.filter(r => r.name.toLowerCase().includes(q.toLowerCase()) || r.email.toLowerCase().includes(q.toLowerCase()));
-    renderRecruiters(f);
-  }
-
-  function filterByRole(role) {
-    const f = role ? recruitersData.filter(r => r.role===role) : recruitersData;
-    renderRecruiters(f);
-  }
-
-  function removeRecruiter(id, name) {
-    showToast(`${name} has been removed from <?php echo htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8'); ?>`, 'fa-user-minus');
-    const updated = recruitersData.filter(r => r.id !== id);
-    renderRecruiters(updated);
-  }
-
-  function openInviteModal() { document.getElementById('inviteModal').classList.add('open'); }
-  function closeInviteModal() { document.getElementById('inviteModal').classList.remove('open'); }
-
-  function selectRole(el, role) {
-    document.querySelectorAll('.role-opt').forEach(o => o.classList.remove('selected'));
-    el.classList.add('selected');
-    selectedRoleInvite = role;
-  }
-
-  function sendInvite() {
+  // -------- Actions --------
+  async function addRecruiter() {
+    const first = document.getElementById('inviteFirstName').value.trim();
+    const last  = document.getElementById('inviteLastName').value.trim();
     const email = document.getElementById('inviteEmail').value.trim();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      document.getElementById('inviteEmail').style.borderColor = 'var(--red-bright)';
-      setTimeout(() => document.getElementById('inviteEmail').style.borderColor = '', 1000);
-      return;
+    const errEl = document.getElementById('modalError');
+    errEl.style.display = 'none';
+
+    if (!first || !last || !email) {
+      errEl.textContent = 'All fields are required.'; errEl.style.display = 'block'; return;
     }
-    closeInviteModal();
-    showToast(`Invite sent to ${email}`, 'fa-paper-plane');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return;
+    }
+
+    const btn = document.getElementById('addRecruiterBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+
+    try {
+      const fd = new FormData();
+      fd.append('action', 'add_recruiter');
+      fd.append('first_name', first);
+      fd.append('last_name', last);
+      fd.append('email', email);
+      fd.append('role_label', 'Recruiter');
+
+      const res = await fetch(API, { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (data.success) {
+        closeInviteModal();
+        // Show credentials modal
+        document.getElementById('credEmail').textContent = data.recruiter.email;
+        document.getElementById('credPassword').textContent = data.recruiter.temp_password;
+        document.getElementById('credentialsModal').classList.add('open');
+        showToast('Recruiter account created', 'fa-user-plus');
+        loadRecruiters();
+      } else {
+        errEl.textContent = data.message || 'Failed to add recruiter.'; errEl.style.display = 'block';
+      }
+    } catch(e) {
+      errEl.textContent = 'Network error.'; errEl.style.display = 'block';
+    }
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus"></i> Add Recruiter';
+  }
+
+  async function deactivateRecruiter(id, name) {
+    if (!confirm(`Deactivate ${name}? They will lose access to company pages.`)) return;
+    const fd = new FormData();
+    fd.append('action', 'deactivate_recruiter');
+    fd.append('recruiter_id', id);
+    try {
+      const res = await fetch(API, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) { showToast(`${name} deactivated`, 'fa-user-minus'); loadRecruiters(); }
+      else showToast(data.message || 'Failed', 'fa-exclamation-triangle');
+    } catch(e) { showToast('Network error', 'fa-exclamation-triangle'); }
+  }
+
+  async function reactivateRecruiter(id, name) {
+    const fd = new FormData();
+    fd.append('action', 'reactivate_recruiter');
+    fd.append('recruiter_id', id);
+    try {
+      const res = await fetch(API, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) { showToast(`${name} reactivated`, 'fa-user-check'); loadRecruiters(); }
+      else showToast(data.message || 'Failed', 'fa-exclamation-triangle');
+    } catch(e) { showToast('Network error', 'fa-exclamation-triangle'); }
+  }
+
+  async function resetPassword(id, name) {
+    if (!confirm(`Reset password for ${name}? A new temporary password will be generated.`)) return;
+    const fd = new FormData();
+    fd.append('action', 'reset_password');
+    fd.append('recruiter_id', id);
+    try {
+      const res = await fetch(API, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('credEmail').textContent = name;
+        document.getElementById('credPassword').textContent = data.temp_password;
+        document.getElementById('credentialsModal').classList.add('open');
+        showToast('Password reset', 'fa-key');
+      } else showToast(data.message || 'Failed', 'fa-exclamation-triangle');
+    } catch(e) { showToast('Network error', 'fa-exclamation-triangle'); }
+  }
+
+  // -------- Modals --------
+  function openInviteModal() {
+    document.getElementById('inviteFirstName').value = '';
+    document.getElementById('inviteLastName').value = '';
     document.getElementById('inviteEmail').value = '';
+    document.getElementById('modalError').style.display = 'none';
+    document.getElementById('inviteModal').classList.add('open');
+  }
+  function closeInviteModal() { document.getElementById('inviteModal').classList.remove('open'); }
+  function closeCredentialsModal() { document.getElementById('credentialsModal').classList.remove('open'); }
+
+  // -------- Helpers --------
+  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    const dt = new Date(d);
+    return dt.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
   }
 
   function showToast(msg, icon) {
@@ -480,35 +596,41 @@ $navActive   = 'manage-jobs';
     setTimeout(() => t.remove(), 2400);
   }
 
-  // Theme
+  // -------- Theme --------
   function setTheme(t) {
     document.body.classList.toggle('light', t==='light'); document.body.classList.toggle('dark', t!=='light');
     localStorage.setItem('ac-theme', t);
-    document.getElementById('themeToggle').querySelector('i').className = t==='light' ? 'fas fa-sun' : 'fas fa-moon';
+    const el = document.getElementById('themeToggle');
+    if (el) el.querySelector('i').className = t==='light' ? 'fas fa-sun' : 'fas fa-moon';
   }
-  const _guard_themeToggle = document.getElementById('themeToggle'); if (_guard_themeToggle) _guard_themeToggle.addEventListener('click', () =>
+  const _guard_themeToggle = document.getElementById('themeToggle');
+  if (_guard_themeToggle) _guard_themeToggle.addEventListener('click', () =>
     setTheme(document.body.classList.contains('light') ? 'dark' : 'light'));
 
   const hamburger = document.getElementById('hamburger');
   const mobileMenu = document.getElementById('mobileMenu');
-  hamburger.addEventListener('click', e => {
-    e.stopPropagation();
-    const open = mobileMenu.classList.toggle('open');
-    hamburger.querySelector('i').className = open ? 'fas fa-times' : 'fas fa-bars';
-  });
+  if (hamburger && mobileMenu) {
+    hamburger.addEventListener('click', e => {
+      e.stopPropagation();
+      const open = mobileMenu.classList.toggle('open');
+      hamburger.querySelector('i').className = open ? 'fas fa-times' : 'fas fa-bars';
+    });
+  }
 
-  const _guard_profileToggle = document.getElementById('profileToggle'); if (_guard_profileToggle) _guard_profileToggle.addEventListener('click', e => {
+  const _guard_profileToggle = document.getElementById('profileToggle');
+  if (_guard_profileToggle) _guard_profileToggle.addEventListener('click', e => {
     e.stopPropagation();
     document.getElementById('profileDropdown').classList.toggle('open');
   });
   document.addEventListener('click', e => {
-    if (!document.getElementById('profileWrap').contains(e.target))
-      document.getElementById('profileDropdown').classList.remove('open');
-    if (!mobileMenu.contains(e.target) && e.target !== hamburger) {
+    const pw = document.getElementById('profileWrap');
+    if (pw && !pw.contains(e.target)) document.getElementById('profileDropdown').classList.remove('open');
+    if (mobileMenu && hamburger && !mobileMenu.contains(e.target) && e.target !== hamburger) {
       mobileMenu.classList.remove('open');
       hamburger.querySelector('i').className = 'fas fa-bars';
     }
     if (e.target === document.getElementById('inviteModal')) closeInviteModal();
+    if (e.target === document.getElementById('credentialsModal')) closeCredentialsModal();
   });
 
   (function() {
@@ -519,8 +641,9 @@ $navActive   = 'manage-jobs';
     setTheme(t);
   })();
 
-  renderRecruiters(recruitersData);
-  renderInvites();
+  // Load on page ready
+  loadRecruiters();
 </script>
+<?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>
 </html>

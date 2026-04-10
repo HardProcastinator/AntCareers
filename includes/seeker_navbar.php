@@ -181,6 +181,16 @@ function _navHref(string $file): string {
   body.light .notif-close { background:#F0E4E2; border-color:#E0CECA; color:#7A5555; }
   body.light .n-dot.read { background:#E0CECA; }
 
+  /* In-panel conversation bubbles */
+  .sp-msg-bubble { max-width:82%; padding:8px 12px; border-radius:12px; font-size:13px; line-height:1.5; word-break:break-word; }
+  .sp-msg-bubble.me { align-self:flex-end; background:var(--red-vivid); color:#fff; border-bottom-right-radius:4px; }
+  .sp-msg-bubble.them { align-self:flex-start; background:var(--soil-hover); color:var(--text-mid); border-bottom-left-radius:4px; }
+  .sp-msg-time-label { font-size:10px; color:var(--text-muted); text-align:center; padding:6px 0; }
+  body.light .sp-msg-bubble.them { background:#F0E4E2; color:#3A2020; }
+
+  /* Unread dot on thread item */
+  .msg-item .msg-unread-dot { width:8px; height:8px; border-radius:50%; background:var(--red-vivid); flex-shrink:0; margin-top:4px; }
+
   @media(max-width:760px) {
     .nav-links { display:none; }
     .hamburger { display:flex; }
@@ -226,12 +236,12 @@ function _navHref(string $file): string {
 
       <button class="msg-btn-nav" id="msgToggle" data-msg-trigger title="Messages">
         <i class="fas fa-envelope"></i>
-        <span class="badge">3</span>
+        <span class="badge" id="seekerMsgBadge" style="display:none">0</span>
       </button>
 
       <button class="notif-btn-nav" id="notifToggle" data-notif-trigger title="Notifications">
         <i class="fas fa-bell"></i>
-        <span class="badge">5</span>
+        <span class="badge" id="seekerNotifBadge" style="display:none">0</span>
       </button>
 
       <!-- Profile dropdown: account actions only -->
@@ -296,25 +306,34 @@ function _navHref(string $file): string {
 
 <!-- Messages slide-in panel -->
 <div class="msg-panel" id="msgPanel" aria-hidden="true">
-  <div class="msg-panel-head">
-    <div class="msg-panel-title"><i class="fas fa-envelope"></i> Messages</div>
-    <button class="notif-close" id="msgClose" aria-label="Close messages"><i class="fas fa-times"></i></button>
+  <!-- Thread list view (default) -->
+  <div id="msgThreadView">
+    <div class="msg-panel-head">
+      <div class="msg-panel-title"><i class="fas fa-envelope"></i> Messages</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <a class="notif-close" href="<?= _navHref($navRoutes['messages']) ?>" title="Open full page" style="text-decoration:none"><i class="fas fa-expand"></i></a>
+        <button class="notif-close" id="msgClose" aria-label="Close messages"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+    <div class="msg-panel-body" id="msgThreadList">
+      <div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;" id="msgThreadLoading">
+        <i class="fas fa-spinner fa-spin"></i> Loading messages…
+      </div>
+    </div>
   </div>
-  <div class="msg-panel-body">
-    <div class="msg-item" onclick="window.location.href='../messages.php'">
-      <div class="msg-avatar" style="background:linear-gradient(135deg,#4A90D9,#2A6090)">TP</div>
-      <div style="flex:1;min-width:0;"><div class="msg-name">TechPH Inc.</div><div class="msg-preview">Hi! We reviewed your application and would like to schedule an interview...</div></div>
-      <div class="msg-time">2h ago</div>
+  <!-- Conversation view (shown when a thread is clicked) -->
+  <div id="msgConvoView" style="display:none;flex-direction:column;height:100%;">
+    <div class="msg-panel-head">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="notif-close" id="msgConvoBack" aria-label="Back to threads"><i class="fas fa-arrow-left"></i></button>
+        <div class="msg-panel-title" id="msgConvoTitle">Conversation</div>
+      </div>
+      <button class="notif-close" onclick="closeMsgPanel()" aria-label="Close"><i class="fas fa-times"></i></button>
     </div>
-    <div class="msg-item" onclick="window.location.href='../messages.php'">
-      <div class="msg-avatar" style="background:linear-gradient(135deg,#4CAF70,#2A7040)">GS</div>
-      <div style="flex:1;min-width:0;"><div class="msg-name">Goldman Sachs HR</div><div class="msg-preview">Your interview is confirmed for Apr 2 at 10:00 AM. Please prepare...</div></div>
-      <div class="msg-time">5h ago</div>
-    </div>
-    <div class="msg-item" onclick="window.location.href='../messages.php'">
-      <div class="msg-avatar" style="background:linear-gradient(135deg,#D13D2C,#7A1515)">VR</div>
-      <div style="flex:1;min-width:0;"><div class="msg-name">Vercel Recruiting</div><div class="msg-preview">Thank you for applying. A team member will be in touch soon.</div></div>
-      <div class="msg-time">Yesterday</div>
+    <div class="msg-panel-body" id="msgConvoBody" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:6px;"></div>
+    <div style="padding:10px 12px;border-top:1px solid var(--soil-line);display:flex;gap:8px;flex-shrink:0;">
+      <input type="text" id="msgConvoInput" placeholder="Type a message…" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--soil-line);background:var(--soil-hover);color:var(--text-mid);font-size:13px;outline:none;">
+      <button id="msgConvoSend" style="padding:8px 14px;border-radius:6px;background:var(--red-vivid);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600;"><i class="fas fa-paper-plane"></i></button>
     </div>
   </div>
 </div>
@@ -323,14 +342,15 @@ function _navHref(string $file): string {
 <div class="notif-panel" id="notifPanel" aria-hidden="true">
   <div class="notif-panel-head">
     <div class="notif-panel-title"><i class="fas fa-bell"></i> Notifications</div>
-    <button class="notif-close" id="notifClose" aria-label="Close notifications"><i class="fas fa-times"></i></button>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button class="notif-close" id="notifMarkAll" title="Mark all read"><i class="fas fa-check-double"></i></button>
+      <button class="notif-close" id="notifClose" aria-label="Close notifications"><i class="fas fa-times"></i></button>
+    </div>
   </div>
-  <div class="notif-panel-body">
-    <div class="notif-item"><div class="n-dot green"></div><div><div class="n-text">Your application for <strong>Senior Frontend Engineer</strong> at Vercel was submitted.</div><div class="n-time">1 hour ago</div></div></div>
-    <div class="notif-item"><div class="n-dot amber"></div><div><div class="n-text">Your status for <strong>Product Designer</strong> at Linear updated to <em>Shortlisted</em>.</div><div class="n-time">3 hours ago</div></div></div>
-    <div class="notif-item"><div class="n-dot red"></div><div><div class="n-text">New message from <strong>TechPH Inc.</strong></div><div class="n-time">Yesterday</div></div></div>
-    <div class="notif-item"><div class="n-dot amber"></div><div><div class="n-text">Interview scheduled — <strong>Apr 2, 10:00 AM</strong> — Goldman Sachs.</div><div class="n-time">Mar 28</div></div></div>
-    <div class="notif-item"><div class="n-dot read"></div><div><div class="n-text">3 new jobs matching your profile in Manila.</div><div class="n-time">Mar 27</div></div></div>
+  <div class="notif-panel-body" id="notifList">
+    <div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;" id="notifLoading">
+      <i class="fas fa-spinner fa-spin"></i> Loading notifications…
+    </div>
   </div>
 </div>
 
@@ -388,25 +408,209 @@ function _navHref(string $file): string {
   // ── NOTIFICATIONS PANEL ────────────────────────────────────────────────────
   const notifPanel = document.getElementById('notifPanel');
 
-  window.openNotif  = function () { closeMsgPanel(); notifPanel.classList.add('open');    notifPanel.setAttribute('aria-hidden', 'false'); };
-  window.closeNotif = function () { notifPanel.classList.remove('open'); notifPanel.setAttribute('aria-hidden', 'true');  };
+  window.openNotif  = function () { closeMsgPanel(); notifPanel.classList.add('open'); notifPanel.setAttribute('aria-hidden', 'false'); loadNotifications(); };
+  window.closeNotif = function () { notifPanel.classList.remove('open'); notifPanel.setAttribute('aria-hidden', 'true'); };
 
   document.getElementById('notifClose').addEventListener('click', closeNotif);
   document.getElementById('notifToggle').addEventListener('click', function (e) {
     e.stopPropagation();
-    notifPanel.classList.contains('open') ? closeNotif() : openNotif();
+    // Use real sidebar if chat system is loaded, else fallback to demo panel
+    if (typeof openNotifSidebar === 'function') {
+      openNotifSidebar();
+    } else {
+      notifPanel.classList.contains('open') ? closeNotif() : openNotif();
+    }
+  });
+
+  // Mark all notifications read
+  document.getElementById('notifMarkAll').addEventListener('click', function () {
+    fetch('../api/messages.php?action=mark_notif_read', { method: 'POST' })
+      .then(function () { loadNotifications(); updateSeekerBadges(); });
   });
 
   // ── MESSAGES PANEL ─────────────────────────────────────────────────────────
   const msgPanel = document.getElementById('msgPanel');
+  const msgThreadView = document.getElementById('msgThreadView');
+  const msgConvoView  = document.getElementById('msgConvoView');
+  var _seekerCurrentPartner = null;
 
-  window.openMsgPanel  = function () { closeNotif(); msgPanel.classList.add('open');    msgPanel.setAttribute('aria-hidden', 'false'); };
-  window.closeMsgPanel = function () { msgPanel.classList.remove('open'); msgPanel.setAttribute('aria-hidden', 'true');  };
+  window.openMsgPanel  = function () {
+    closeNotif();
+    msgPanel.classList.add('open');
+    msgPanel.setAttribute('aria-hidden', 'false');
+    showThreadView();
+    loadSeekerThreads();
+  };
+  window.closeMsgPanel = function () {
+    msgPanel.classList.remove('open');
+    msgPanel.setAttribute('aria-hidden', 'true');
+  };
+
+  function showThreadView() {
+    msgThreadView.style.display = '';
+    msgConvoView.style.display = 'none';
+    _seekerCurrentPartner = null;
+  }
+  function showConvoView() {
+    msgThreadView.style.display = 'none';
+    msgConvoView.style.display = 'flex';
+  }
+
+  function _esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+  // ── Load threads from API ──
+  function loadSeekerThreads() {
+    var container = document.getElementById('msgThreadList');
+    fetch('../api/messages.php?action=threads')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success || !data.threads || data.threads.length === 0) {
+          container.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;"><i class="fas fa-inbox"></i><div style="margin-top:8px;">No messages yet</div></div>';
+          return;
+        }
+        var html = '';
+        var colors = ['#4A90D9','#9B59B6','#27AE60','#E74C3C','#D4943A','#3498DB','#E67E22','#1ABC9C'];
+        data.threads.forEach(function (t, i) {
+          var color = t.color || colors[i % colors.length];
+          var unread = t.unread_count > 0 ? '<div class="msg-unread-dot"></div>' : '';
+          html += '<div class="msg-item" data-partner-id="' + t.partner_id + '" data-partner-name="' + _esc(t.name) + '">'
+            + '<div class="msg-avatar" style="background:linear-gradient(135deg,' + color + ',' + color + '88)">' + _esc(t.initials) + '</div>'
+            + '<div style="flex:1;min-width:0;"><div class="msg-name">' + _esc(t.name) + '</div><div class="msg-preview">' + _esc(t.preview) + '</div></div>'
+            + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><div class="msg-time">' + _esc(t.time) + '</div>' + unread + '</div>'
+            + '</div>';
+        });
+        container.innerHTML = html;
+        container.querySelectorAll('.msg-item').forEach(function (el) {
+          el.addEventListener('click', function () {
+            openSeekerConvo(parseInt(el.getAttribute('data-partner-id')), el.getAttribute('data-partner-name'));
+          });
+        });
+      })
+      .catch(function () {
+        container.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">Failed to load messages</div>';
+      });
+  }
+
+  // ── Open conversation inside panel ──
+  function openSeekerConvo(partnerId, partnerName) {
+    _seekerCurrentPartner = partnerId;
+    document.getElementById('msgConvoTitle').textContent = partnerName || 'Conversation';
+    showConvoView();
+    var body = document.getElementById('msgConvoBody');
+    body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;"><i class="fas fa-spinner fa-spin"></i></div>';
+    fetch('../api/messages.php?action=messages&user_id=' + partnerId)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success || !data.messages || data.messages.length === 0) {
+          body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">No messages yet. Say hello!</div>';
+          return;
+        }
+        var html = '';
+        data.messages.forEach(function (m) {
+          if (m.show_date) html += '<div class="sp-msg-time-label">' + _esc(m.date) + '</div>';
+          html += '<div class="sp-msg-bubble ' + (m.from === 'me' ? 'me' : 'them') + '">' + _esc(m.body) + '<div style="font-size:10px;opacity:0.7;margin-top:2px;">' + _esc(m.time) + '</div></div>';
+        });
+        body.innerHTML = html;
+        body.scrollTop = body.scrollHeight;
+        updateSeekerBadges();
+      })
+      .catch(function () {
+        body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">Failed to load conversation</div>';
+      });
+  }
+
+  // ── Send message from panel ──
+  document.getElementById('msgConvoSend').addEventListener('click', seekerSendMsg);
+  document.getElementById('msgConvoInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); seekerSendMsg(); }
+  });
+  function seekerSendMsg() {
+    var input = document.getElementById('msgConvoInput');
+    var text = input.value.trim();
+    if (!text || !_seekerCurrentPartner) return;
+    input.value = '';
+    var body = document.getElementById('msgConvoBody');
+    var bubble = document.createElement('div');
+    bubble.className = 'sp-msg-bubble me';
+    bubble.innerHTML = _esc(text) + '<div style="font-size:10px;opacity:0.7;margin-top:2px;">Sending\u2026</div>';
+    body.appendChild(bubble);
+    body.scrollTop = body.scrollHeight;
+    fetch('../api/messages.php?action=send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ receiver_id: _seekerCurrentPartner, message: text })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data.success) { bubble.querySelector('div').textContent = data.time || 'Now'; }
+      else { bubble.style.opacity = '0.5'; bubble.querySelector('div').textContent = 'Failed'; }
+    })
+    .catch(function () { bubble.style.opacity = '0.5'; bubble.querySelector('div').textContent = 'Failed'; });
+  }
+
+  // ── Back button ──
+  document.getElementById('msgConvoBack').addEventListener('click', function () {
+    showThreadView();
+    loadSeekerThreads();
+  });
+
+  // ── Load notifications from API ──
+  function loadNotifications() {
+    var container = document.getElementById('notifList');
+    fetch('../api/messages.php?action=notifications')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success || !data.notifications || data.notifications.length === 0) {
+          container.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;"><i class="fas fa-bell-slash"></i><div style="margin-top:8px;">No notifications</div></div>';
+          return;
+        }
+        var html = '';
+        data.notifications.forEach(function (n) {
+          var dotClass = n.is_read ? 'read' : (n.type === 'message' ? 'red' : (n.type === 'application' ? 'green' : 'amber'));
+          html += '<div class="notif-item" data-notif-id="' + n.id + '" style="cursor:pointer;">'
+            + '<div class="n-dot ' + dotClass + '"></div>'
+            + '<div><div class="n-text">' + n.content + '</div><div class="n-time">' + _esc(n.time) + '</div></div>'
+            + '</div>';
+        });
+        container.innerHTML = html;
+        container.querySelectorAll('.notif-item').forEach(function (el) {
+          el.addEventListener('click', function () {
+            var nid = el.getAttribute('data-notif-id');
+            fetch('../api/messages.php?action=mark_notif_read&id=' + nid, { method: 'POST' })
+              .then(function () { el.querySelector('.n-dot').className = 'n-dot read'; updateSeekerBadges(); });
+          });
+        });
+      })
+      .catch(function () {
+        container.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">Failed to load notifications</div>';
+      });
+  }
+
+  // ── Badge updates ──
+  function updateSeekerBadges() {
+    fetch('../api/messages.php?action=unread_count')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success) return;
+        var mb = document.getElementById('seekerMsgBadge');
+        var nb = document.getElementById('seekerNotifBadge');
+        if (mb) { mb.textContent = data.messages || 0; mb.style.display = data.messages > 0 ? '' : 'none'; }
+        if (nb) { nb.textContent = data.notifications || 0; nb.style.display = data.notifications > 0 ? '' : 'none'; }
+      })
+      .catch(function () {});
+  }
+  updateSeekerBadges();
+  setInterval(updateSeekerBadges, 30000);
 
   document.getElementById('msgClose').addEventListener('click', closeMsgPanel);
   document.getElementById('msgToggle').addEventListener('click', function (e) {
     e.stopPropagation();
-    msgPanel.classList.contains('open') ? closeMsgPanel() : openMsgPanel();
+    // Use real sidebar if chat system is loaded, else fallback to demo panel
+    if (typeof openMsgSidebar === 'function') {
+      openMsgSidebar();
+    } else {
+      msgPanel.classList.contains('open') ? closeMsgPanel() : openMsgPanel();
+    }
   });
 
   // ── CLICK-OUTSIDE: close dropdowns / menus / panels ───────────────────────
