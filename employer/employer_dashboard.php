@@ -621,7 +621,7 @@ try {
   <a class="mobile-link" onclick="window.location.href='employer_manageJobs.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-briefcase"></i> Manage Jobs</a>
   <a class="mobile-link" onclick="window.location.href='employer_applicants.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-users"></i> Applicants</a>
   <a class="mobile-link" href="employer_analytics.php"><i class="fas fa-chart-bar"></i> Analytics</a>
-  <a class="mobile-link" onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();}"><i class="fas fa-envelope"></i> Messages</a>
+  <a class="mobile-link" onclick="window.location.href='employer_messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-envelope"></i> Messages</a>
   <div class="mobile-divider"></div>
   <a class="mobile-link" href="employer_companyProfile.php"><i class="fas fa-building"></i> Company Profile</a>
   <a class="mobile-link" href="employer_manageRecruiters.php"><i class="fas fa-user-tie"></i> Manage Recruiters</a>
