@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * AntCareers — Employer Chat & Notification System (Sidebar + Fullscreen)
  * includes/employer_chat_system.php
@@ -376,7 +377,7 @@ body.light .chat-toast { background:#FFFFFF; border-color:#E0CECA; }
 /* ═══════════════════════════════════════════════════════════════════════
    CHAT SYSTEM — JavaScript
    ═══════════════════════════════════════════════════════════════════════ */
-const API_URL = 'api_messages.php';
+const API_URL = '../api/messages.php';
 const MY_INITIALS = <?= json_encode($_chatInitials) ?>;
 let _threads = [];
 let _sbActivePartner = null;

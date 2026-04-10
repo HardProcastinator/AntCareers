@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__) . '/includes/auth_helpers.php';
 $_csrfToken = csrfToken(); // generate + store in session once, server-side
+$serverError = trim((string)($_GET['error'] ?? ''));
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -292,37 +293,41 @@ $_csrfToken = csrfToken(); // generate + store in session once, server-side
 
         <div class="divider">or sign in with email</div>
 
-        <!-- Error banner -->
-        <div class="err-banner" id="errBanner">
-          <i class="fas fa-exclamation-circle"></i>
-          <span id="errMsg">Incorrect email or password. Please try again.</span>
-        </div>
+        <form id="loginForm" method="post" action="login.php" novalidate>
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
-        <div class="field">
-          <label>Email address</label>
-          <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email">
-        </div>
-
-        <div class="field">
-          <div class="field-header">
-            <label>Password</label>
-            <a href="#" class="forgot-link" onclick="showForgot(event)">Forgot password?</a>
+          <!-- Error banner -->
+          <div class="err-banner<?php echo $serverError !== '' ? ' show' : ''; ?>" id="errBanner">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="errMsg"><?php echo $serverError !== '' ? htmlspecialchars($serverError, ENT_QUOTES, 'UTF-8') : 'Incorrect email or password. Please try again.'; ?></span>
           </div>
-          <div class="field-pw">
-            <input type="password" id="loginPw" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
-            <span class="pw-eye" onclick="togglePw('loginPw',this)"><i class="fas fa-eye-slash"></i></span>
+
+          <div class="field">
+            <label>Email address</label>
+            <input type="email" id="loginEmail" name="email" placeholder="you@example.com" autocomplete="email">
           </div>
-        </div>
 
-        <div class="remember-row">
-          <input type="checkbox" id="remember" checked>
-          <label for="remember">Remember me for 30 days</label>
-        </div>
+          <div class="field">
+            <div class="field-header">
+              <label>Password</label>
+              <a href="#" class="forgot-link" onclick="showForgot(event)">Forgot password?</a>
+            </div>
+            <div class="field-pw">
+              <input type="password" id="loginPw" name="password" placeholder="Your password" autocomplete="current-password">
+              <span class="pw-eye" onclick="togglePw('loginPw',this)"><i class="fas fa-eye-slash"></i></span>
+            </div>
+          </div>
 
-        <button class="btn-submit" id="loginBtn" onclick="doLogin()">
-          <div class="spinner" id="spinner"></div>
-          <span id="loginBtnText">Sign in <i class="fas fa-arrow-right"></i></span>
-        </button>
+          <div class="remember-row">
+            <input type="checkbox" id="remember" name="remember" checked>
+            <label for="remember">Remember me for 30 days</label>
+          </div>
+
+          <button class="btn-submit" id="loginBtn" type="submit">
+            <div class="spinner" id="spinner"></div>
+            <span id="loginBtnText">Sign in <i class="fas fa-arrow-right"></i></span>
+          </button>
+        </form>
 
         <div class="signup-link">Don't have an account? <a href="javascript:void(0)" onclick="window.location.href='antcareers_signup.php?theme='+(document.body.classList.contains('light')?'light':'dark')">Create one free</a></div>
         <div class="terms-notice">Protected by AntCareers. <a href="#">Privacy Policy</a> · <a href="#">Terms</a></div>
@@ -400,6 +405,11 @@ $_csrfToken = csrfToken(); // generate + store in session once, server-side
         banner.classList.add('show');
       });
   }
+
+  document.getElementById('loginForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    doLogin();
+  });
 
   // ── SYNC body.dark from html.dark-init set in <head> ──
   (function() {

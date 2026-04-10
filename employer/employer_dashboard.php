@@ -1,3 +1,7 @@
+          <div class="pd-item" onclick="if(typeof openFullscreenChat==='function'){openFullscreenChat();}else{window.location.href='../messages.php';}"><i class="fas fa-comments"></i> Messages</div>
+  <button class="notif-btn-nav" id="dashMsgBtn" onclick="window.location.href='../messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')">
+  <a class="mobile-link" href="../messages.php"><i class="fas fa-envelope"></i> Messages</a>
+  <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-envelope"></i></div><div class="sc-num"><?php echo $messageCount;?></div></div><div class="sc-label">Messages</div><button class="sc-btn" onclick="window.location.href='../messages.php'">Open Messages</button></div>
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
@@ -144,7 +148,80 @@ try {
         if ($type === 'On-site') {
             $linkText = $r['venue_name'] ?: ($r['location'] ?? 'On-site');
             $icon = 'fa-map-marker-alt';
-            <?php require_once dirname(__DIR__) . '/includes/navbar_employer.php'; ?>
+            $link = '#';
+        } elseif ($type === 'Phone') {
+            $linkText = $r['phone_number'] ?: 'Call';
+            $icon = 'fa-phone';
+            $link = 'tel:' . ($r['phone_number'] ?? '');
+        } else {
+            $linkText = 'Join Meeting';
+            $icon = 'fa-video';
+            $link = $r['meeting_link'] ?? '#';
+        }
+        
+        // Get date/time info
+        $dt = $dt ? (int)$dt : 0;
+        $mon = $dt ? date('M', $dt) : '?';
+        $day = $dt ? date('d', $dt) : '?';
+        $time = $dt ? date('g:i A', $dt) : '?';
+        
+        $color = $colors[count($dashInterviews) % count($colors)] ?? 'linear-gradient(135deg,#4A90D9,#2A6090)';
+        $dashInterviews[] = [
+            'id' => $r['id'],
+            'name' => $r['full_name'],
+            'job' => $r['job'],
+            'initials' => $ini,
+            'color' => $color,
+            'type' => $type,
+            'venueName' => $r['venue_name'] ?? null,
+            'fullAddress' => $r['full_address'] ?? null,
+            'mapLink' => $r['map_link'] ?? null,
+            'phoneNumber' => $r['phone_number'] ?? null,
+            'contactPerson' => $r['contact_person'] ?? null,
+            'meetingLink' => $r['meeting_link'] ?? null,
+            'link' => $link,
+            'mon' => $mon,
+            'day' => $day,
+            'time' => $time,
+        ];
+    }
+    
+    $dashInterviewsJson = json_encode($dashInterviews ?: []);
+    $dashJobsJson = json_encode($dashJobs ?: []);
+    $dashApplicantsJson = json_encode($dashApplicants ?: []);
+  } catch (PDOException $e) { error_log('[AntCareers] dashboard interviews: '.$e->getMessage()); }
+  ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Employer Dashboard - AntCareers</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --soil-dark:#0A0909; --soil-card:#1A1615; --soil-hover:#2A1E1A; --soil-line:#3A2E2A;
+      --red-vivid:#D13D2C; --red-bright:#E85D4C; --red-pale:#D4907E; --red-mid:#C85F4C;
+      --amber:#D49458; --amber-dim:#3A2E1A;
+      --text-light:#F5F0EE; --text-mid:#E0CECA; --text-muted:#A09090;
+      --font-display:'Poppins',sans-serif; --font-body:'Inter',sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; overflow-x:hidden; }
+    body { font-family:var(--font-body); background:var(--soil-dark); color:var(--text-light); line-height:1.6; min-height:100vh; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+    body.dark { --soil-dark:#0A0909; --soil-card:#1A1615; --soil-hover:#2A1E1A; --soil-line:#3A2E2A; }
+
+    /* ── BACKGROUND LAYERS ── */
+    .tunnel-bg { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+    .tunnel-bg svg { width:100%; height:100%; opacity:0.05; }
+    .glow-orb { position:fixed; border-radius:50%; filter:blur(90px); pointer-events:none; z-index:0; }
+    .glow-1 { width:600px; height:600px; background:radial-gradient(circle,rgba(209,61,44,0.13) 0%,transparent 70%); top:-100px; left:-150px; animation:orb1 18s ease-in-out infinite alternate; }
+    .glow-2 { width:400px; height:400px; background:radial-gradient(circle,rgba(209,61,44,0.06) 0%,transparent 70%); bottom:0; right:-80px; animation:orb2 24s ease-in-out infinite alternate; }
+    @keyframes orb1 { to { transform:translate(60px,80px) scale(1.1); } }
+    @keyframes orb2 { to { transform:translate(-40px,-50px) scale(1.1); } }
+
+    /* ── NAVBAR ── */
+    .navbar { position:sticky; top:0; z-index:400; background:var(--soil-card); border-bottom:1px solid var(--soil-line); box-shadow:0 2px 8px rgba(0,0,0,0.4); }
     .nav-inner {
       max-width:1380px; margin:0 auto; padding:0 24px;
       display:flex; align-items:center; height:64px; gap:0; min-width:0;
@@ -202,7 +279,7 @@ try {
     .mobile-divider { height:1px; background:var(--soil-line); margin:6px 0; }
 
     /* ── PAGE SHELL ── */
-    .page-shell { max-width:1380px; margin:0 auto; padding:0 24px 24px; }
+    .page-shell { position:relative; z-index:1; max-width:1380px; margin:0 auto; padding:0 24px 24px; }
 
     /* ── SEARCH HEADER ── */
     .search-header { padding:16px 0 12px; }
@@ -377,7 +454,7 @@ try {
     .toast i { color:var(--red-pale); }
 
     /* Footer */
-    .footer { border-top:1px solid var(--soil-line); padding:28px 24px; max-width:1380px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; color:var(--text-muted); font-size:12px; position:relative; z-index:2; flex-wrap:wrap; gap:12px; }
+    .footer { border-top:1px solid var(--soil-line); padding:28px 24px; max-width:1380px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; color:var(--text-muted); font-size:12px; position:relative; z-index:1; flex-wrap:wrap; gap:12px; }
     .footer-logo { font-family:var(--font-display); font-weight:700; color:var(--red-pale); font-size:16px; }
 
     /* Empty state */
@@ -468,7 +545,8 @@ try {
       var s = localStorage.getItem('ac-theme');
       var t = p || s || 'dark';
       if (p) localStorage.setItem('ac-theme', t);
-      if (t === 'light') document.documentElement.classList.add('light-init');
+      document.body.classList.toggle('light', t === 'light');
+      document.body.classList.toggle('dark', t !== 'light');
     })();
   </script>
 </head>
@@ -510,7 +588,7 @@ try {
     <div class="nav-right">
       <button class="theme-btn" id="themeToggle"><i class="fas fa-sun"></i></button>
 
-      <button class="notif-btn-nav" id="dashMsgBtn" onclick="window.location.href='employer_messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')">
+      <button class="notif-btn-nav" id="dashMsgBtn" onclick="window.location.href='../messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')">
         <i class="fas fa-envelope"></i>
         <span class="badge msg-badge-count">0</span>
       </button>
@@ -539,7 +617,7 @@ try {
           <div class="pd-item" onclick="window.location.href='employer_companyProfile.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-building"></i> Company Profile</div>
           <div class="pd-item" onclick="window.location.href='employer_manageRecruiters.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-user-tie"></i> Manage Recruiters</div>
           <div class="pd-item" onclick="window.location.href='employer_settings.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-cog"></i> Settings</div>
-          <div class="pd-item" onclick="if(typeof openFullscreenChat==='function'){openFullscreenChat();}else{window.location.href='employer_messages.php';}"><i class="fas fa-comments"></i> Messages</div>
+          <div class="pd-item" onclick="if(typeof openFullscreenChat==='function'){openFullscreenChat();}else{window.location.href='../messages.php';}"><i class="fas fa-comments"></i> Messages</div>
           <div class="pd-divider"></div>
           <div class="pd-item danger" onclick="window.location.href='../auth/logout.php'"><i class="fas fa-sign-out-alt"></i> Sign out</div>
         </div>
@@ -556,7 +634,7 @@ try {
   <a class="mobile-link" onclick="window.location.href='employer_manageJobs.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-briefcase"></i> Manage Jobs</a>
   <a class="mobile-link" onclick="window.location.href='employer_applicants.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-users"></i> Applicants</a>
   <a class="mobile-link" href="employer_analytics.php"><i class="fas fa-chart-bar"></i> Analytics</a>
-  <a class="mobile-link" href="employer_messages.php"><i class="fas fa-envelope"></i> Messages</a>
+  <a class="mobile-link" href="../messages.php"><i class="fas fa-envelope"></i> Messages</a>
   <div class="mobile-divider"></div>
   <a class="mobile-link" href="employer_companyProfile.php"><i class="fas fa-building"></i> Company Profile</a>
   <a class="mobile-link" href="employer_manageRecruiters.php"><i class="fas fa-user-tie"></i> Manage Recruiters</a>
@@ -592,7 +670,7 @@ try {
         <div class="sum-card"><div class="sc-top"><div class="sc-icon a"><i class="fas fa-users"></i></div><div class="sc-num"><?php echo $totalApplicants;?></div></div><div class="sc-label">Total Applicants</div><button class="sc-btn" onclick="window.location.href='employer_applicants.php'">View Applicants</button></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon g"><i class="fas fa-user-check"></i></div><div class="sc-num"><?php echo $shortlistedCount;?></div></div><div class="sc-label">Shortlisted</div><button class="sc-btn" onclick="window.location.href='employer_applicants.php?status=Shortlisted'">View Shortlisted</button></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-calendar-check"></i></div><div class="sc-num"><?php echo $interviewCount;?></div></div><div class="sc-label">Interviews</div><button class="sc-btn" onclick="window.location.href='employer_applicants.php'">View Interviews</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-envelope"></i></div><div class="sc-num"><?php echo $messageCount;?></div></div><div class="sc-label">Messages</div><button class="sc-btn" onclick="window.location.href='employer_messages.php'">Open Messages</button></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-envelope"></i></div><div class="sc-num"><?php echo $messageCount;?></div></div><div class="sc-label">Messages</div><button class="sc-btn" onclick="window.location.href='../messages.php'">Open Messages</button></div>
       </div>
 
       <!-- RECENT JOB POSTS -->

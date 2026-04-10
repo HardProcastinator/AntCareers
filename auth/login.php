@@ -23,37 +23,65 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/includes/auth_helpers.php';
 
 requirePost();
-header('Content-Type: application/json; charset=utf-8');
+$contentType   = (string)($_SERVER['CONTENT_TYPE'] ?? '');
+$isJsonRequest = stripos($contentType, 'application/json') !== false;
 
-// Parse JSON body
-$raw  = json_decode(file_get_contents('php://input'), true);
-$body = is_array($raw) ? $raw : [];
+if ($isJsonRequest) {
+    header('Content-Type: application/json; charset=utf-8');
+}
+
+// Parse request body (JSON for fetch, form-data for no-JS fallback)
+if ($isJsonRequest) {
+    $raw  = json_decode(file_get_contents('php://input'), true);
+    $body = is_array($raw) ? $raw : [];
+} else {
+    $body = $_POST;
+}
 
 $email    = trim((string)($body['email'] ?? ''));
 $password = (string)($body['password'] ?? '');
 $remember = (bool)($body['remember'] ?? false);
 $csrf     = (string)($body['csrf_token'] ?? '');
 
+$respondError = static function (string $message, int $status = 200) use ($isJsonRequest): void {
+    if ($isJsonRequest) {
+        jsonResponse(['success' => false, 'message' => $message], $status);
+    }
+
+    header('Location: antcareers_login.php?error=' . rawurlencode($message));
+    exit;
+};
+
+$respondSuccess = static function (string $redirect) use ($isJsonRequest): void {
+    if ($isJsonRequest) {
+        jsonResponse(['success' => true, 'redirect' => $redirect]);
+    }
+
+    header('Location: ' . $redirect);
+    exit;
+};
+
 // CSRF
-verifyCsrf($csrf);
+if ($isJsonRequest) {
+    verifyCsrf($csrf);
+} elseif (!hash_equals($_SESSION['csrf_token'] ?? '', $csrf)) {
+    $respondError('Invalid request. Please refresh the page and try again.', 403);
+}
 
 // Input validation
 if ($email === '' || $password === '') {
-    jsonResponse(['success' => false, 'message' => 'Please fill in all fields.']);
+    $respondError('Please fill in all fields.');
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    jsonResponse(['success' => false, 'message' => 'Please enter a valid email address.']);
+    $respondError('Please enter a valid email address.');
 }
 
 $ip = getClientIp();
 
 // Rate limiting
 if (isRateLimited($email, $ip)) {
-    jsonResponse([
-        'success' => false,
-        'message' => 'Too many failed attempts. Please wait ' . LOCKOUT_MINUTES . ' minutes and try again.',
-    ], 429);
+    $respondError('Too many failed attempts. Please wait ' . LOCKOUT_MINUTES . ' minutes and try again.', 429);
 }
 
 // Fetch user
@@ -75,10 +103,7 @@ $passwordOk = $user !== false
 recordLoginAttempt($email, $ip, $passwordOk);
 
 if (!$passwordOk) {
-    jsonResponse([
-        'success' => false,
-        'message' => 'Incorrect email or password. Please try again.',
-    ]);
+    $respondError('Incorrect email or password. Please try again.');
 }
 
 // Rehash if needed
@@ -119,4 +144,4 @@ $redirect = match ($accountType) {
     default    => url('index.php'),
 };
 
-jsonResponse(['success' => true, 'redirect' => $redirect]);
+$respondSuccess($redirect);

@@ -1,21 +1,14 @@
 <?php
-/**
- * AntCareers — Employer Messages API
- * employer/api_messages.php
- *
- * Actions: threads, messages, send, mark_read, unread_count
- */
 declare(strict_types=1);
-require_once dirname(__DIR__) . '/config.php';
 
-header('Content-Type: application/json; charset=utf-8');
+require_once dirname(__DIR__) . '/api/messages.php';
+__halt_compiler();
+<?php
+declare(strict_types=1);
 
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    exit(json_encode(['success' => false, 'message' => 'Unauthorized']));
-}
-
-$db  = getDB();
+require_once dirname(__DIR__) . '/api/messages.php';<?php
+declare(strict_types=1);
+require_once dirname(__DIR__) . '/api/messages.php';
 $uid = (int)$_SESSION['user_id'];
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 

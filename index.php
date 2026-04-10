@@ -1059,8 +1059,8 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     <!-- Desktop right buttons -->
     <div class="nav-right">
       <button class="theme-btn" id="themeToggle"><i class="fas fa-moon"></i></button>
-      <button class="btn-ghost" id="loginBtn"><i class="fas fa-key"></i> Log in</button>
-      <button class="btn-red" id="signupBtn">Get started</button>
+      <button class="btn-ghost" id="loginBtn" type="button" onclick="window.location.href='auth/antcareers_login.php'"><i class="fas fa-key"></i> Log in</button>
+      <button class="btn-red" id="signupBtn" type="button" onclick="window.location.href='auth/antcareers_signup.php'">Get started</button>
     </div>
 
     <!-- Hamburger (mobile only) -->
@@ -1083,8 +1083,8 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   <a class="mobile-link" id="mob-design" data-close-mobile><i class="fas fa-palette"></i> Design</a>
   <div class="mobile-divider"></div>
   <div class="mobile-auth">
-    <button class="btn-ghost" id="loginBtnMob"><i class="fas fa-key"></i> Log in</button>
-    <button class="btn-red" id="signupBtnMob">Get started</button>
+    <button class="btn-ghost" id="loginBtnMob" type="button" onclick="window.location.href='auth/antcareers_login.php'"><i class="fas fa-key"></i> Log in</button>
+    <button class="btn-red" id="signupBtnMob" type="button" onclick="window.location.href='auth/antcareers_signup.php'">Get started</button>
   </div>
 </div>
 
