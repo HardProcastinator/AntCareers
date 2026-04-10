@@ -1,0 +1,4 @@
+# Block all direct HTTP access to SQL files.
+# These are local schema scripts only — must never be served over HTTP.
+Order Deny,Allow
+Deny from all
