@@ -790,5 +790,6 @@ $companyLocation = trim((string)($_SESSION['company_location'] ?? 'Philippines')
   renderFeaturedCompanies();
   renderJobs();
 </script>
+<?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>
 </html>

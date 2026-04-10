@@ -845,5 +845,6 @@ function showToast(msg, icon='fa-check') {
   toastTimer = setTimeout(() => t.remove(), 3000);
 }
 </script>
+<?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>
 </html>

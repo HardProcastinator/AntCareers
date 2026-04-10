@@ -67,7 +67,7 @@ function navHref(string $page): string {
 
       <?php if ($navbarShowMessage): ?>
       <button class="notif-btn-nav" id="navMsgBtn"
-              onclick="<?= navHref('../messages.php') ?>">
+              onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();}">
         <i class="fas fa-envelope"></i>
         <span class="badge msg-badge-count">0</span>
       </button>

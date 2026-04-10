@@ -413,7 +413,7 @@ $skillLevelColors = [
       <?php if($resume): ?>
       <a class="ph-btn primary" href="<?php echo e($resume['file_path']); ?>" target="_blank"><i class="fas fa-download"></i> Resume</a>
       <?php endif; ?>
-      <a class="ph-btn" href="../messages.php"><i class="fas fa-envelope"></i> Message</a>
+      <a class="ph-btn" href="javascript:void(0)" onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();setTimeout(function(){if(typeof sbOpenThread==='function')sbOpenThread(<?php echo (int)$seekerId; ?>);},400);}"><i class="fas fa-envelope"></i> Message</a>
     </div>
   </div>
 
@@ -591,5 +591,6 @@ $skillLevelColors = [
   document.addEventListener('click',function(e){if(!document.getElementById('profileWrap').contains(e.target))document.getElementById('profileDropdown').classList.remove('open');});
   (function(){var p=new URLSearchParams(window.location.search).get('theme'),s=localStorage.getItem('ac-theme'),t=p||s||'dark';if(p)localStorage.setItem('ac-theme',p);setTheme(t);})();
 </script>
+<?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>
 </html>

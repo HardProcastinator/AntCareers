@@ -522,5 +522,6 @@ $navActive   = 'manage-jobs';
   renderRecruiters(recruitersData);
   renderInvites();
 </script>
+<?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>
 </html>
