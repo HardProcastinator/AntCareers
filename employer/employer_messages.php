@@ -6,7 +6,7 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: ../auth/antcareers_login.php');
     exit;
 }
-if (strtolower((string)($_SESSION['account_type'] ?? '')) !== 'employer') {
+if (!in_array(strtolower((string)($_SESSION['account_type'] ?? '')), ['employer', 'seeker'], true)) {
     header('Location: ../index.php');
     exit;
 }
@@ -18,6 +18,10 @@ $initials    = count($nameParts) >= 2
     : strtoupper(substr($firstName,0,2));
 $companyName = trim((string)($_SESSION['company_name'] ?? 'Your Company'));
 $navActive   = 'messages';
+$accountType = strtolower((string)($_SESSION['account_type'] ?? 'employer'));
+$pageSub     = $accountType === 'seeker'
+    ? 'Message employers, follow up on applications, and keep conversations organized.'
+    : 'Communicate with applicants and keep interview conversations in one place.';
 
 // Get unread counts
 $db = getDB();
@@ -276,7 +280,7 @@ try {
   <div class="page-header">
     <div>
       <div class="page-title">Messages <span>&</span> Conversations</div>
-      <div class="page-sub">Communicate with your applicants and schedule interviews</div>
+            <div class="page-sub"><?php echo htmlspecialchars($pageSub, ENT_QUOTES, 'UTF-8'); ?></div>
     </div>
   </div>
 
@@ -351,7 +355,7 @@ try {
 <div class="toast" id="toast"><i class="fas fa-check"></i> <span id="toastMsg"></span></div>
 
 <script>
-const API = 'api_messages.php';
+const API = '../api/messages.php';
 const MY_INI = <?= json_encode($initials) ?>;
 let threads = [];
 let activeThread = null;
@@ -571,7 +575,7 @@ function showToast(msg, icon) {
 // ── NAVBAR: Sidebar triggers ──────────────────────────────────────────
 document.getElementById('msgToggleNav').addEventListener('click', function(e) {
     e.preventDefault();
-  window.location.href = 'employer_messages.php?theme=' + (document.body.classList.contains('light') ? 'light' : 'dark');
+    window.location.href = '../messages.php?theme=' + (document.body.classList.contains('light') ? 'light' : 'dark');
 });
 
 document.getElementById('notifToggleNav').addEventListener('click', function(e) {

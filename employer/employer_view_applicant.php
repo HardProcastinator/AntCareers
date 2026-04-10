@@ -413,7 +413,7 @@ $skillLevelColors = [
       <?php if($resume): ?>
       <a class="ph-btn primary" href="<?php echo e($resume['file_path']); ?>" target="_blank"><i class="fas fa-download"></i> Resume</a>
       <?php endif; ?>
-      <a class="ph-btn" href="employer_messages.php"><i class="fas fa-envelope"></i> Message</a>
+      <a class="ph-btn" href="../messages.php"><i class="fas fa-envelope"></i> Message</a>
     </div>
   </div>
 

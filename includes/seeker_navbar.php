@@ -32,7 +32,7 @@ $navRoutes = [
     'profile'      => 'antcareers_seekerProfile.php',
     'saved'        => 'antcareers_seekerSaved.php',
     'applications' => 'antcareers_seekerApplications.php',
-    'messages'     => 'antcareers_seekerMessages.php',
+    'messages'     => '../messages.php',
     'settings'     => 'antcareers_seekerSettings.php',
 ];
 
@@ -301,17 +301,17 @@ function _navHref(string $file): string {
     <button class="notif-close" id="msgClose" aria-label="Close messages"><i class="fas fa-times"></i></button>
   </div>
   <div class="msg-panel-body">
-    <div class="msg-item" onclick="window.location.href='antcareers_seekerMessages.php'">
+    <div class="msg-item" onclick="window.location.href='../messages.php'">
       <div class="msg-avatar" style="background:linear-gradient(135deg,#4A90D9,#2A6090)">TP</div>
       <div style="flex:1;min-width:0;"><div class="msg-name">TechPH Inc.</div><div class="msg-preview">Hi! We reviewed your application and would like to schedule an interview...</div></div>
       <div class="msg-time">2h ago</div>
     </div>
-    <div class="msg-item" onclick="window.location.href='antcareers_seekerMessages.php'">
+    <div class="msg-item" onclick="window.location.href='../messages.php'">
       <div class="msg-avatar" style="background:linear-gradient(135deg,#4CAF70,#2A7040)">GS</div>
       <div style="flex:1;min-width:0;"><div class="msg-name">Goldman Sachs HR</div><div class="msg-preview">Your interview is confirmed for Apr 2 at 10:00 AM. Please prepare...</div></div>
       <div class="msg-time">5h ago</div>
     </div>
-    <div class="msg-item" onclick="window.location.href='antcareers_seekerMessages.php'">
+    <div class="msg-item" onclick="window.location.href='../messages.php'">
       <div class="msg-avatar" style="background:linear-gradient(135deg,#D13D2C,#7A1515)">VR</div>
       <div style="flex:1;min-width:0;"><div class="msg-name">Vercel Recruiting</div><div class="msg-preview">Thank you for applying. A team member will be in touch soon.</div></div>
       <div class="msg-time">Yesterday</div>

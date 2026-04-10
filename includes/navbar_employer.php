@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * AntCareers — Reusable Employer Navbar
  * includes/navbar_employer.php
@@ -66,7 +67,7 @@ function navHref(string $page): string {
 
       <?php if ($navbarShowMessage): ?>
       <button class="notif-btn-nav" id="navMsgBtn"
-              onclick="<?= navHref('../employer/employer_messages.php') ?>">
+              onclick="<?= navHref('../messages.php') ?>">
         <i class="fas fa-envelope"></i>
         <span class="badge msg-badge-count">0</span>
       </button>
@@ -112,7 +113,7 @@ function navHref(string $page): string {
           <div class="pd-item" onclick="<?= navHref('../employer/employer_settings.php') ?>">
             <i class="fas fa-cog"></i> Settings
           </div>
-          <div class="pd-item" onclick="<?= navHref('../employer/employer_messages.php') ?>">
+          <div class="pd-item" onclick="<?= navHref('../messages.php') ?>">
             <i class="fas fa-comments"></i> Messages
           </div>
           <div class="pd-divider"></div>
@@ -149,7 +150,7 @@ function navHref(string $page): string {
   <a class="mobile-link" href="employer_analytics.php">
     <i class="fas fa-chart-bar"></i> Analytics
   </a>
-  <a class="mobile-link" href="employer_messages.php">
+  <a class="mobile-link" href="../messages.php">
     <i class="fas fa-envelope"></i> Messages
   </a>
   <div class="mobile-divider"></div>

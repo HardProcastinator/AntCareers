@@ -22,19 +22,20 @@
 declare(strict_types=1);
 
 // ── Database credentials ──────────────────────────────────────────────────────
-// VistaPanel values — copy these exactly from VistaPanel → MySQL Databases.
-// DB_HOST : shown in VistaPanel (e.g. sql200.epizy.com or sql300.epizy.com)
-// DB_NAME : always prefixed   (e.g. epiz_12345678_antcareers_db)
-// DB_USER : always prefixed   (e.g. epiz_12345678_dbuser)
-define('DB_HOST',    'sql101.byethost9.com');
-define('DB_NAME',    'b9_41443579_updatedfinalproj');
-define('DB_USER',    'b9_41443579');
-define('DB_PASS',    'bsit_2h_ardm');
+// XAMPP defaults — localhost with no password
+// DB_HOST : localhost (XAMPP default)
+// DB_NAME : antcareers (can be any name you created in phpMyAdmin)
+// DB_USER : root (XAMPP default user)
+// DB_PASS : '' (XAMPP default has no password)
+define('DB_HOST',    '127.0.0.1');
+define('DB_NAME',    'antcareers');
+define('DB_USER',    'root');
+define('DB_PASS',    '');
 
 define('DB_CHARSET', 'utf8mb4');
 
 // ── Application settings ──────────────────────────────────────────────────────
-define('APP_URL',    'https://antcareer.byethost9.com/BetaTest'); // ← replace with your actual domain/subdomain. No trailing slash.
+define('APP_URL',    'http://localhost/antcareers'); // ← local XAMPP development
 define('APP_NAME', 'AntCareers');
 
 // ── Auth / security constants ─────────────────────────────────────────────────
@@ -116,13 +117,18 @@ function url(string $path, bool $withTheme = false): string
     // Strip leading slash so we never double-slash
     $path = ltrim($path, '/');
 
-    // Auto-detect base path from the server — works regardless of what the
-    // root folder is named (BetaTest, Antcareers, myapp, etc.).
-    // config.php always lives at the project root, so __DIR__ == project root.
-    // Subtracting DOCUMENT_ROOT gives the subfolder path (e.g. /BetaTest).
-    $docRoot  = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
-    $basePath = rtrim(str_replace($docRoot, '', __DIR__), '/') . '/';
+    // Build a web base path from filesystem paths in a Windows-safe way.
+    $docRootFs    = str_replace('\\', '/', rtrim((string)($_SERVER['DOCUMENT_ROOT'] ?? ''), '/\\'));
+    $projectRootFs = str_replace('\\', '/', rtrim(__DIR__, '/\\'));
 
+    if ($docRootFs !== '' && stripos($projectRootFs, $docRootFs) === 0) {
+        $basePath = substr($projectRootFs, strlen($docRootFs));
+    } else {
+        // Fallback when DOCUMENT_ROOT is missing/mismatched
+        $basePath = '/' . basename($projectRootFs);
+    }
+
+    $basePath = '/' . trim($basePath, '/') . '/';
     $full = $basePath . $path;
 
     if ($withTheme) {
