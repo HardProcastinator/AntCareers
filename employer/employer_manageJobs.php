@@ -1,0 +1,440 @@
+<?php
+declare(strict_types=1);
+require_once dirname(__DIR__) . '/config.php';
+
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../auth/antcareers_login.php');
+    exit;
+}
+if (strtolower((string)($_SESSION['account_type'] ?? '')) !== 'employer') {
+    header('Location: ../index.php');
+    exit;
+}
+$fullName    = trim((string)($_SESSION['user_name'] ?? 'Employer'));
+$nameParts   = preg_split('/\s+/', $fullName) ?: [];
+$firstName   = $nameParts[0] ?? 'Employer';
+$initials    = count($nameParts) >= 2
+    ? strtoupper(substr($nameParts[0],0,1).substr($nameParts[1],0,1))
+    : strtoupper(substr($firstName,0,2));
+$companyName = trim((string)($_SESSION['company_name'] ?? 'Your Company'));
+$navActive   = 'manage-jobs';
+
+/* ── AJAX ── */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $action = (string)($_POST['action'] ?? '');
+    $uid    = (int)$_SESSION['user_id'];
+
+    if ($action === 'post_job') {
+        $title   = trim((string)($_POST['title'] ?? ''));
+        if (!$title) { echo json_encode(['ok'=>false,'msg'=>'Title required']); exit; }
+        $desc    = trim((string)($_POST['description'] ?? ''));
+        $req     = trim((string)($_POST['requirements'] ?? ''));
+        $loc     = trim((string)($_POST['location'] ?? ''));
+        $type    = (string)($_POST['job_type'] ?? 'Full-time');
+        $setup   = (string)($_POST['setup'] ?? 'On-site');
+        $sMin    = $_POST['salary_min'] !== '' ? (float)$_POST['salary_min'] : null;
+        $sMax    = $_POST['salary_max'] !== '' ? (float)$_POST['salary_max'] : null;
+        $ind     = trim((string)($_POST['industry'] ?? ''));
+        $exp     = (string)($_POST['experience_level'] ?? '') ?: null;
+        $skills  = trim((string)($_POST['skills'] ?? ''));
+        $dl      = (string)($_POST['deadline'] ?? '') ?: null;
+        try {
+            $db = getDB();
+            $db->prepare("INSERT INTO jobs (employer_id,title,description,requirements,location,job_type,setup,salary_min,salary_max,industry,experience_level,skills_required,status,deadline) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'Active',?)")
+               ->execute([$uid,$title,$desc,$req,$loc,$type,$setup,$sMin,$sMax,$ind,$exp,$skills,$dl]);
+            echo json_encode(['ok'=>true,'job_id'=>(int)$db->lastInsertId(),'title'=>$title]);
+        } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
+        exit;
+    }
+
+    if ($action === 'toggle_status') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        try {
+            $db  = getDB();
+            $row = $db->prepare("SELECT status FROM jobs WHERE id=? AND employer_id=?");
+            $row->execute([$jobId,$uid]);
+            $r   = $row->fetch(PDO::FETCH_ASSOC);
+            if (!$r) { echo json_encode(['ok'=>false,'msg'=>'Not found']); exit; }
+            $new = $r['status']==='Active'?'Closed':'Active';
+            $db->prepare("UPDATE jobs SET status=? WHERE id=?")->execute([$new,$jobId]);
+            echo json_encode(['ok'=>true,'status'=>$new]);
+        } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
+        exit;
+    }
+
+    if ($action === 'delete_job') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        try {
+            getDB()->prepare("DELETE FROM jobs WHERE id=? AND employer_id=?")->execute([$jobId,$uid]);
+            echo json_encode(['ok'=>true]);
+        } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
+        exit;
+    }
+
+    if ($action === 'get_job') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        try {
+            $st = getDB()->prepare("SELECT * FROM jobs WHERE id=? AND employer_id=?");
+            $st->execute([$jobId,$uid]);
+            $r  = $st->fetch(PDO::FETCH_ASSOC);
+            if (!$r) { echo json_encode(['ok'=>false,'msg'=>'Not found']); exit; }
+            echo json_encode(['ok'=>true,'job'=>$r]);
+        } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
+        exit;
+    }
+
+    if ($action === 'update_job') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        $title = trim((string)($_POST['title'] ?? ''));
+        if (!$title) { echo json_encode(['ok'=>false,'msg'=>'Title required']); exit; }
+        $desc  = trim((string)($_POST['description'] ?? ''));
+        $req   = trim((string)($_POST['requirements'] ?? ''));
+        $loc   = trim((string)($_POST['location'] ?? ''));
+        $type  = (string)($_POST['job_type'] ?? 'Full-time');
+        $setup = (string)($_POST['setup'] ?? 'On-site');
+        $sMin  = $_POST['salary_min'] !== '' ? (float)$_POST['salary_min'] : null;
+        $sMax  = $_POST['salary_max'] !== '' ? (float)$_POST['salary_max'] : null;
+        $ind   = trim((string)($_POST['industry'] ?? ''));
+        $exp   = (string)($_POST['experience_level'] ?? '') ?: null;
+        $skills= trim((string)($_POST['skills'] ?? ''));
+        $dl    = (string)($_POST['deadline'] ?? '') ?: null;
+        try {
+            getDB()->prepare("UPDATE jobs SET title=?,description=?,requirements=?,location=?,job_type=?,setup=?,salary_min=?,salary_max=?,industry=?,experience_level=?,skills_required=?,deadline=? WHERE id=? AND employer_id=?")
+                   ->execute([$title,$desc,$req,$loc,$type,$setup,$sMin,$sMax,$ind,$exp,$skills,$dl,$jobId,$uid]);
+            echo json_encode(['ok'=>true,'title'=>$title]);
+        } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
+        exit;
+    }
+
+    echo json_encode(['ok'=>false,'msg'=>'Unknown action']); exit;
+}
+
+/* ── FETCH JOBS ── */
+$filterStatus = trim((string)($_GET['status'] ?? ''));
+$uid  = (int)$_SESSION['user_id'];
+$jobs = []; $counts = ['Active'=>0,'Closed'=>0,'Draft'=>0,'total'=>0,'applicants'=>0];
+$dbErr = false;
+
+try {
+    $db = getDB();
+    $sc = $db->prepare("SELECT status,COUNT(*) AS c FROM jobs WHERE employer_id=? GROUP BY status");
+    $sc->execute([$uid]);
+    foreach($sc->fetchAll(PDO::FETCH_ASSOC) as $r){ $counts[$r['status']]=(int)$r['c']; $counts['total']+=(int)$r['c']; }
+    $ta = $db->prepare("SELECT COUNT(*) FROM applications a JOIN jobs j ON j.id=a.job_id WHERE j.employer_id=?");
+    $ta->execute([$uid]); $counts['applicants']=(int)$ta->fetchColumn();
+    $w='WHERE j.employer_id=?'; $p=[$uid];
+    if($filterStatus && in_array($filterStatus,['Active','Closed','Draft'],true)){ $w.=' AND j.status=?'; $p[]=$filterStatus; }
+    $st=$db->prepare("SELECT j.*,COUNT(a.id) AS app_count FROM jobs j LEFT JOIN applications a ON a.job_id=j.id {$w} GROUP BY j.id ORDER BY j.created_at DESC");
+    $st->execute($p); $jobs=$st->fetchAll(PDO::FETCH_ASSOC);
+} catch(Exception $e) {
+    $dbErr=true;
+    error_log('[AntCareers] manageJobs fetch error: '.$e->getMessage());
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>AntCareers — Manage Jobs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    :root{--red-deep:#7A1515;--red-mid:#B83525;--red-vivid:#D13D2C;--red-bright:#E85540;--red-pale:#F07060;--soil-dark:#0A0909;--soil-med:#131010;--soil-card:#1C1818;--soil-hover:#252020;--soil-line:#352E2E;--text-light:#F5F0EE;--text-mid:#D0BCBA;--text-muted:#927C7A;--amber:#D4943A;--green:#4CAF70;--font-display:'Playfair Display',Georgia,serif;--font-body:'Plus Jakarta Sans',system-ui,sans-serif;}
+    html{overflow-x:hidden;}
+    body{font-family:var(--font-body);background:var(--soil-dark);color:var(--text-light);overflow-x:hidden;min-height:100vh;-webkit-font-smoothing:antialiased;}
+    .glow-orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;}
+    .glow-1{width:600px;height:600px;background:radial-gradient(circle,rgba(209,61,44,0.13) 0%,transparent 70%);top:-100px;left:-150px;animation:orb1 18s ease-in-out infinite alternate;}
+    .glow-2{width:400px;height:400px;background:radial-gradient(circle,rgba(209,61,44,0.06) 0%,transparent 70%);bottom:0;right:-80px;animation:orb2 24s ease-in-out infinite alternate;}
+    @keyframes orb1{to{transform:translate(60px,80px) scale(1.1);}}
+    @keyframes orb2{to{transform:translate(-40px,-50px) scale(1.1);}}
+    .navbar{position:sticky;top:0;z-index:400;background:rgba(10,9,9,0.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(209,61,44,0.35);box-shadow:0 1px 0 rgba(209,61,44,0.06),0 4px 24px rgba(0,0,0,0.5);}
+    .nav-inner{max-width:1380px;margin:0 auto;padding:0 24px;display:flex;align-items:center;height:64px;gap:0;min-width:0;}
+    .logo{display:flex;align-items:center;gap:8px;text-decoration:none;margin-right:28px;flex-shrink:0;}
+    .logo-icon{width:34px;height:34px;background:var(--red-vivid);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 0 18px rgba(209,61,44,0.35);}
+    .logo-icon::before{content:'🐜';font-size:18px;filter:brightness(0) invert(1);}
+    .logo-text{font-family:var(--font-display);font-weight:700;font-size:19px;color:#F5F0EE;white-space:nowrap;}
+    .logo-text span{color:var(--red-bright);}
+    .nav-links{display:flex;align-items:center;gap:2px;flex:1;min-width:0;}
+    .nav-link{font-size:13px;font-weight:600;color:#A09090;text-decoration:none;padding:7px 11px;border-radius:6px;transition:all 0.2s;cursor:pointer;background:none;border:none;font-family:var(--font-body);display:flex;align-items:center;gap:5px;white-space:nowrap;letter-spacing:0.01em;}
+    .nav-link:hover,.nav-link.active{color:#F5F0EE;background:var(--soil-hover);}
+    .nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0;}
+    .theme-btn{width:34px;height:34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:13px;flex-shrink:0;}
+    .theme-btn:hover{color:var(--red-bright);border-color:var(--red-vivid);}
+    .notif-btn-nav{position:relative;width:34px;height:34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:13px;flex-shrink:0;}
+    .badge{position:absolute;top:-4px;right:-4px;background:var(--red-vivid);color:#fff;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+    .btn-nav-red{padding:7px 16px;border-radius:7px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;transition:0.2s;white-space:nowrap;text-decoration:none;display:flex;align-items:center;gap:7px;}
+    .btn-nav-red:hover{background:var(--red-bright);}
+    .profile-wrap{position:relative;}
+    .profile-btn{display:flex;align-items:center;gap:9px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:6px 12px 6px 8px;cursor:pointer;transition:0.2s;flex-shrink:0;}
+    .profile-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#8a5010);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+    .profile-name{font-size:13px;font-weight:600;color:#F5F0EE;}
+    .profile-role{font-size:10px;color:var(--amber);margin-top:1px;letter-spacing:0.02em;font-weight:600;}
+    .profile-chevron{font-size:9px;color:var(--text-muted);margin-left:2px;}
+    .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;padding:6px;min-width:200px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:all 0.18s ease;z-index:300;box-shadow:0 20px 40px rgba(0,0,0,0.5);}
+    .profile-dropdown.open{opacity:1;visibility:visible;transform:translateY(0);}
+    .profile-dropdown-head{padding:12px 14px 10px;border-bottom:1px solid var(--soil-line);margin-bottom:4px;}
+    .pdh-name{font-size:14px;font-weight:700;color:#F5F0EE;}
+    .pdh-sub{font-size:11px;color:var(--amber);margin-top:2px;font-weight:600;}
+    .pd-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;font-size:13px;font-weight:500;color:var(--text-mid);cursor:pointer;transition:0.15s;font-family:var(--font-body);text-decoration:none;}
+    .pd-item i{color:var(--text-muted);width:16px;text-align:center;font-size:12px;}
+    .pd-item:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .pd-item:hover i{color:var(--red-bright);}
+    .pd-divider{height:1px;background:var(--soil-line);margin:4px 6px;}
+    .pd-item.danger{color:#E05555;}
+    .pd-item.danger i{color:#E05555;}
+    .pd-item.danger:hover{background:rgba(224,85,85,0.1);color:#FF7070;}
+    .hamburger{display:none;width:34px;height:34px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-mid);align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;margin-left:8px;}
+    .mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:rgba(10,9,9,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--soil-line);padding:12px 20px 16px;z-index:190;flex-direction:column;gap:2px;}
+    .mobile-menu.open{display:flex;}
+    .mobile-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:7px;font-size:14px;font-weight:500;color:var(--text-mid);cursor:pointer;transition:0.15s;font-family:var(--font-body);text-decoration:none;}
+    .mobile-link i{color:var(--red-mid);width:16px;text-align:center;}
+    .mobile-link:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .mobile-divider{height:1px;background:var(--soil-line);margin:6px 0;}
+    @media(max-width:880px){.nav-links{display:none;}.hamburger{display:flex;}}
+    body.light{background:#FAF7F5;color:#1A0A09;}
+    body.light .navbar{background:rgba(255,253,252,0.98);border-bottom-color:#D4B0AB;}
+    body.light .nav-link{color:#5A4040;}
+    body.light .nav-link:hover,body.light .nav-link.active{color:#1A0A09;background:#FEF0EE;}
+    body.light .theme-btn,body.light .notif-btn-nav,body.light .profile-btn{background:#F5EDEB;border-color:#D4B0AB;}
+    body.light .profile-name{color:#1A0A09;}
+    body.light .profile-dropdown,body.light .mobile-menu{background:#FFF8F7;border-color:#D4B0AB;}
+    body.light .pd-item{color:#4A3030;}
+    body.light .pd-item:hover{background:#FEF0EE;}
+    .page-shell{max-width:1380px;margin:0 auto;padding:28px 24px 60px;position:relative;z-index:1;}
+    .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+    .page-title{font-family:var(--font-display);font-size:28px;font-weight:700;color:#F5F0EE;margin-bottom:4px;}
+    .page-title span{color:var(--red-bright);font-style:italic;}
+    .page-sub{font-size:14px;color:var(--text-muted);}
+    body.light .page-title{color:#1A0A09;}
+    .db-warn{background:rgba(212,148,58,.1);border:1px solid rgba(212,148,58,.3);border-radius:8px;padding:10px 16px;font-size:13px;color:var(--amber);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+    .stats-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+    .stat-pill{display:flex;align-items:center;gap:8px;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;padding:10px 15px;cursor:pointer;transition:all 0.18s;text-decoration:none;}
+    .stat-pill:hover,.stat-pill.active{border-color:rgba(209,61,44,.45);background:rgba(209,61,44,.07);}
+    .sp-icon{font-size:13px;width:17px;text-align:center;}
+    .sp-label{font-size:12px;font-weight:600;color:var(--text-muted);}
+    .sp-count{font-size:17px;font-weight:800;color:#F5F0EE;font-family:var(--font-display);}
+    body.light .stat-pill{background:#fff;border-color:#E0CECA;}
+    body.light .sp-count{color:#1A0A09;}
+    .job-list{display:flex;flex-direction:column;gap:10px;}
+    .job-card{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:18px 20px;display:flex;align-items:start;gap:14px;transition:all 0.2s;position:relative;}
+    .job-card:hover{border-color:rgba(209,61,44,.4);box-shadow:0 6px 24px rgba(0,0,0,.25);}
+    body.light .job-card{background:#fff;border-color:#E0CECA;}
+    .job-icon{width:42px;height:42px;border-radius:10px;background:rgba(209,61,44,.1);border:1px solid rgba(209,61,44,.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--red-bright);flex-shrink:0;}
+    .job-body{flex:1;min-width:0;}
+    .job-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:#F5F0EE;margin-bottom:4px;}
+    body.light .job-title{color:#1A0A09;}
+    .job-meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--text-muted);margin-bottom:9px;}
+    .job-meta i{font-size:10px;color:var(--red-bright);}
+    .chips{display:flex;gap:5px;flex-wrap:wrap;}
+    .chip{font-size:11px;font-weight:500;padding:3px 8px;border-radius:4px;background:var(--soil-hover);color:#A09090;border:1px solid var(--soil-line);}
+    body.light .chip{background:#F5EDEB;border-color:#D4B0AB;color:#6A4A4A;}
+    .sbadge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em;}
+    .sbadge.active{color:#6ccf8a;background:rgba(76,175,112,.1);border:1px solid rgba(76,175,112,.2);}
+    .sbadge.closed{color:#ff8080;background:rgba(220,53,69,.1);border:1px solid rgba(220,53,69,.2);}
+    .sbadge.draft{color:var(--text-muted);background:var(--soil-hover);border:1px solid var(--soil-line);}
+    .job-right{display:flex;flex-direction:column;align-items:flex-end;gap:9px;flex-shrink:0;}
+    .app-count{font-family:var(--font-display);font-size:22px;font-weight:700;color:#F5F0EE;text-align:right;}
+    .app-count-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
+    body.light .app-count{color:#1A0A09;}
+    .job-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+    .btn{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:.18s;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);white-space:nowrap;}
+    .btn:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .btn.primary{background:var(--red-vivid);border-color:var(--red-vivid);color:#fff;}
+    .btn.primary:hover{background:var(--red-bright);}
+    .btn.grn{border-color:rgba(76,175,112,.4);color:#6ccf8a;}
+    .btn.grn:hover{background:rgba(76,175,112,.1);}
+    .btn.red{border-color:rgba(220,53,69,.4);color:#ff8080;}
+    .btn.red:hover{background:rgba(220,53,69,.1);}
+    body.light .btn{border-color:#D4B0AB;color:#5A4040;}
+    @media(max-width:620px){.job-right{display:none;}}
+    .empty{text-align:center;padding:55px 20px;color:var(--text-muted);}
+    .empty i{font-size:42px;margin-bottom:12px;color:var(--soil-line);display:block;}
+    .modal-bd{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto;}
+    .modal-bd.open{display:flex;}
+    .modal-box{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:16px;padding:26px;width:100%;max-width:620px;position:relative;margin:auto;}
+    body.light .modal-box{background:#fff;border-color:#E0CECA;}
+    .modal-title{font-family:var(--font-display);font-size:21px;font-weight:700;color:#F5F0EE;margin-bottom:20px;display:flex;align-items:center;gap:9px;}
+    body.light .modal-title{color:#1A0A09;}
+    .modal-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:6px;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;}
+    .modal-close:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .fg{margin-bottom:13px;}
+    .fl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block;}
+    .fi{width:100%;padding:9px 13px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:#F5F0EE;font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
+    .fi:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
+    body.light .fi{background:#F5EDEB;border-color:#D4B0AB;color:#1A0A09;}
+    textarea.fi{resize:vertical;min-height:80px;}
+    .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    @media(max-width:480px){.frow{grid-template-columns:1fr;}}
+    .mfoot{display:flex;justify-content:flex-end;gap:9px;margin-top:20px;}
+    .confirm-box{background:var(--soil-card);border:1px solid rgba(220,53,69,.3);border-radius:14px;padding:28px;width:100%;max-width:380px;text-align:center;margin:auto;}
+    body.light .confirm-box{background:#fff;}
+    .confirm-icon{font-size:38px;color:#ff8080;margin-bottom:12px;}
+    .confirm-title{font-family:var(--font-display);font-size:18px;color:#F5F0EE;margin-bottom:7px;}
+    body.light .confirm-title{color:#1A0A09;}
+    .confirm-sub{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
+    .confirm-actions{display:flex;gap:10px;justify-content:center;}
+    .toast{position:fixed;bottom:22px;right:22px;background:var(--soil-card);border:1px solid var(--soil-line);border-left:4px solid var(--red-vivid);border-radius:8px;padding:11px 16px;font-size:13px;font-weight:600;color:#F5F0EE;z-index:900;transform:translateY(80px);opacity:0;transition:all .35s ease;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.4);pointer-events:none;}
+    .toast.show{transform:translateY(0);opacity:1;}
+    .toast.ok{border-left-color:#4CAF70;}
+    .toast.err{border-left-color:#E05555;}
+  </style>
+</head>
+<body>
+<div class="glow-orb glow-1"></div>
+<div class="glow-orb glow-2"></div>
+
+<?php require_once dirname(__DIR__) . '/includes/navbar_employer.php'; ?>
+
+<div class="page-shell">
+  <div class="ph">
+    <div><h1 class="page-title">Manage <span>Jobs</span></h1><p class="page-sub">Post, edit, open or close your job listings.</p></div>
+    <button class="btn-nav-red" style="display:inline-flex; padding:11px 24px; font-size:14px; border-radius:9px; cursor:pointer;" onclick="openPost()"><i class="fas fa-plus-circle"></i> Post New Job</button>
+  </div>
+
+  <?php if($dbErr):?>
+  <div class="db-warn"><i class="fas fa-exclamation-triangle"></i> Demo data shown — run <strong>sql/migration_employer.sql</strong> to connect live data.</div>
+  <?php endif;?>
+
+  <div class="stats-row">
+  <?php
+  $sd=[
+    ''=>['i'=>'fa-briefcase','l'=>'All Jobs','c'=>'var(--red-pale)','n'=>$counts['total']],
+    'Active'=>['i'=>'fa-check-circle','l'=>'Active','c'=>'#6ccf8a','n'=>$counts['Active']],
+    'Closed'=>['i'=>'fa-times-circle','l'=>'Closed','c'=>'#ff8080','n'=>$counts['Closed']],
+    'Draft'=>['i'=>'fa-pencil-alt','l'=>'Drafts','c'=>'var(--text-muted)','n'=>$counts['Draft']],
+  ];
+  foreach($sd as $k=>$d):
+    $act=($filterStatus===$k);
+    $hr=$k?"employer_manageJobs.php?status={$k}":'employer_manageJobs.php';
+  ?>
+  <a class="stat-pill <?=$act?'active':''?>" href="<?=htmlspecialchars($hr)?>">
+    <i class="fas <?=$d['i']?> sp-icon" style="color:<?=$d['c']?>"></i>
+    <span class="sp-label"><?=$d['l']?></span>
+    <span class="sp-count"><?=$d['n']?></span>
+  </a>
+  <?php endforeach;?>
+  <div class="stat-pill" style="cursor:default;">
+    <i class="fas fa-users sp-icon" style="color:var(--amber)"></i>
+    <span class="sp-label">Applicants</span>
+    <span class="sp-count"><?=$counts['applicants']?></span>
+  </div>
+  </div>
+
+  <div class="job-list" id="jobList">
+  <?php if(empty($jobs)):?>
+  <div class="empty"><i class="fas fa-briefcase"></i><p>No jobs found. <a href="#" onclick="openPost();return false;" style="color:var(--red-pale)">Post your first job →</a></p></div>
+  <?php else: foreach($jobs as $j):
+    $sc=strtolower($j['status']);
+    $sal='';
+    if($j['salary_min']||$j['salary_max']){$cur=$j['salary_currency']??'PHP';$mn=$j['salary_min']?number_format((float)$j['salary_min']):'';$mx=$j['salary_max']?number_format((float)$j['salary_max']):'';$sal=$mn&&$mx?"{$cur} {$mn}–{$mx}":($mn?"{$cur} {$mn}+":"{$cur} up to {$mx}");}
+    $pd=date('M j, Y',strtotime($j['created_at']));
+  ?>
+  <div class="job-card" id="jc-<?=$j['id']?>">
+    <div class="job-icon"><i class="fas fa-briefcase"></i></div>
+    <div class="job-body">
+      <div class="job-title"><?=htmlspecialchars($j['title'])?></div>
+      <div class="job-meta">
+        <?php if($j['location']):?><span><i class="fas fa-map-marker-alt"></i> <?=htmlspecialchars($j['location'])?></span><?php endif;?>
+        <span><i class="fas fa-tag"></i> <?=htmlspecialchars($j['job_type'])?></span>
+        <span><i class="fas fa-laptop-house"></i> <?=htmlspecialchars($j['setup'])?></span>
+        <?php if($sal):?><span><i class="fas fa-money-bill-wave"></i> <?=htmlspecialchars($sal)?></span><?php endif;?>
+        <span><i class="fas fa-calendar-alt"></i> Posted <?=$pd?></span>
+      </div>
+      <div class="chips">
+        <span class="sbadge <?=$sc?>"><?=$j['status']?></span>
+        <?php if($j['experience_level']):?><span class="chip"><?=htmlspecialchars($j['experience_level'])?></span><?php endif;?>
+        <?php foreach(array_slice(explode(',',$j['skills_required']??''),0,3) as $sk): if(trim($sk)):?><span class="chip"><?=htmlspecialchars(trim($sk))?></span><?php endif; endforeach;?>
+      </div>
+    </div>
+    <div class="job-right">
+      <div><div class="app-count"><?=(int)$j['app_count']?></div><div class="app-count-lbl">Applicants</div></div>
+      <div class="job-actions">
+        <a href="employer_applicants.php?job_id=<?=$j['id']?>" class="btn grn"><i class="fas fa-users"></i> View</a>
+        <button class="btn" onclick="editJob(<?=$j['id']?>)"><i class="fas fa-edit"></i> Edit</button>
+        <button class="btn <?=$j['status']==='Active'?'red':''?>" onclick="toggleStatus(<?=$j['id']?>,'<?=$j['status']?>')" id="tbtn-<?=$j['id']?>">
+          <?=$j['status']==='Active'?'<i class="fas fa-lock"></i> Close':'<i class="fas fa-lock-open"></i> Open'?>
+        </button>
+        <button class="btn red" onclick="confirmDel(<?=$j['id']?>,'<?=htmlspecialchars($j['title'],ENT_QUOTES)?>')"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  </div>
+  <?php endforeach; endif;?>
+  </div>
+</div>
+
+<!-- Post/Edit Modal -->
+<div class="modal-bd" id="jobModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeJobModal()"><i class="fas fa-times"></i></button>
+    <div class="modal-title" id="mTitle"><i class="fas fa-plus-circle" style="color:var(--red-bright)"></i> Post New Job</div>
+    <input type="hidden" id="eJobId">
+    <div class="frow"><div class="fg" style="grid-column:1/-1"><label class="fl">Job Title *</label><input type="text" class="fi" id="fTitle" placeholder="e.g. Senior Frontend Developer"></div></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Job Type</label><select class="fi" id="fType"><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Freelance</option><option>Internship</option></select></div>
+      <div class="fg"><label class="fl">Setup</label><select class="fi" id="fSetup"><option>On-site</option><option>Remote</option><option>Hybrid</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Location</label><input type="text" class="fi" id="fLoc" placeholder="City, Province, PH"></div>
+      <div class="fg"><label class="fl">Experience Level</label><select class="fi" id="fExp"><option value="">— Any —</option><option>Entry</option><option>Junior</option><option>Mid</option><option>Senior</option><option>Lead</option><option>Executive</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Min Salary (PHP)</label><input type="number" class="fi" id="fSMin" placeholder="e.g. 50000"></div>
+      <div class="fg"><label class="fl">Max Salary (PHP)</label><input type="number" class="fi" id="fSMax" placeholder="e.g. 90000"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Industry</label><input type="text" class="fi" id="fInd" placeholder="e.g. Technology"></div>
+      <div class="fg"><label class="fl">Application Deadline</label><input type="date" class="fi" id="fDl"></div>
+    </div>
+    <div class="fg"><label class="fl">Required Skills (comma-separated)</label><input type="text" class="fi" id="fSkills" placeholder="React, TypeScript, MySQL"></div>
+    <div class="fg"><label class="fl">Job Description</label><textarea class="fi" id="fDesc" rows="4" placeholder="What will this role involve?"></textarea></div>
+    <div class="fg"><label class="fl">Requirements</label><textarea class="fi" id="fReq" rows="3" placeholder="Qualifications, experience…"></textarea></div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeJobModal()">Cancel</button>
+      <button class="btn primary" id="submitBtn" onclick="submitJob()"><i class="fas fa-plus-circle"></i> Post Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete -->
+<div class="modal-bd" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
+    <div class="confirm-title">Delete this job?</div>
+    <div class="confirm-sub" id="confirmMsg">This cannot be undone.</div>
+    <input type="hidden" id="delJobId">
+    <div class="confirm-actions">
+      <button class="btn" onclick="document.getElementById('confirmModal').classList.remove('open')">Cancel</button>
+      <button class="btn red" onclick="doDelete()"><i class="fas fa-trash"></i> Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  var isEdit=false;
+  function openPost(){isEdit=false;document.getElementById('mTitle').innerHTML='<i class="fas fa-plus-circle" style="color:var(--red-bright)"></i> Post New Job';document.getElementById('submitBtn').innerHTML='<i class="fas fa-plus-circle"></i> Post Job';document.getElementById('eJobId').value='';clearForm();document.getElementById('jobModal').classList.add('open');}
+  function closeJobModal(){document.getElementById('jobModal').classList.remove('open');}
+  function clearForm(){['fTitle','fLoc','fSMin','fSMax','fInd','fSkills','fDesc','fReq','fDl'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('fType').value='Full-time';document.getElementById('fSetup').value='On-site';document.getElementById('fExp').value='';}
+  function editJob(id){doPost({action:'get_job',job_id:id},function(d){if(!d.ok){toast(d.msg||'Error','err');return;}var j=d.job;isEdit=true;document.getElementById('eJobId').value=j.id;document.getElementById('fTitle').value=j.title||'';document.getElementById('fDesc').value=j.description||'';document.getElementById('fReq').value=j.requirements||'';document.getElementById('fLoc').value=j.location||'';document.getElementById('fType').value=j.job_type||'Full-time';document.getElementById('fSetup').value=j.setup||'On-site';document.getElementById('fSMin').value=j.salary_min||'';document.getElementById('fSMax').value=j.salary_max||'';document.getElementById('fInd').value=j.industry||'';document.getElementById('fExp').value=j.experience_level||'';document.getElementById('fSkills').value=j.skills_required||'';document.getElementById('fDl').value=j.deadline||'';document.getElementById('mTitle').innerHTML='<i class="fas fa-edit" style="color:var(--red-bright)"></i> Edit Job';document.getElementById('submitBtn').innerHTML='<i class="fas fa-save"></i> Save Changes';document.getElementById('jobModal').classList.add('open');});}
+  function submitJob(){var t=document.getElementById('fTitle').value.trim();if(!t){toast('Job title required','err');return;}var id=document.getElementById('eJobId').value;var data={action:id?'update_job':'post_job',title:t,description:document.getElementById('fDesc').value,requirements:document.getElementById('fReq').value,location:document.getElementById('fLoc').value,job_type:document.getElementById('fType').value,setup:document.getElementById('fSetup').value,salary_min:document.getElementById('fSMin').value,salary_max:document.getElementById('fSMax').value,industry:document.getElementById('fInd').value,experience_level:document.getElementById('fExp').value,skills:document.getElementById('fSkills').value,deadline:document.getElementById('fDl').value};if(id)data.job_id=id;doPost(data,function(d){if(d.ok){closeJobModal();toast(id?'Job updated!':'Job "'+d.title+'" posted!','ok');setTimeout(function(){location.reload();},1200);}else{toast(d.msg||'Error','err');}});}
+  function toggleStatus(id,cur){doPost({action:'toggle_status',job_id:id},function(d){if(d.ok){var b=document.getElementById('tbtn-'+id);b.innerHTML=d.status==='Active'?'<i class="fas fa-lock"></i> Close':'<i class="fas fa-lock-open"></i> Open';if(d.status==='Active')b.classList.add('red');else b.classList.remove('red');var card=document.getElementById('jc-'+id);var badge=card.querySelector('.sbadge');if(badge){badge.className='sbadge '+d.status.toLowerCase();badge.textContent=d.status;}toast('Job '+d.status.toLowerCase()+'!','ok');}else{toast(d.msg||'Error','err');}});}
+  function confirmDel(id,title){document.getElementById('delJobId').value=id;document.getElementById('confirmMsg').textContent='Delete "'+title+'"? This cannot be undone.';document.getElementById('confirmModal').classList.add('open');}
+  function doDelete(){var id=document.getElementById('delJobId').value;doPost({action:'delete_job',job_id:id},function(d){document.getElementById('confirmModal').classList.remove('open');if(d.ok){var c=document.getElementById('jc-'+id);if(c){c.style.opacity='0';c.style.transform='translateX(20px)';c.style.transition='.35s';setTimeout(function(){c.remove();},350);}toast('Job deleted','ok');}else{toast(d.msg||'Error','err');}});}
+  function doPost(data,cb){var b=Object.keys(data).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(data[k]);}).join('&');fetch('employer_manageJobs.php',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b}).then(function(r){return r.json();}).then(cb).catch(function(){toast('Network error','err');});}
+  function toast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');clearTimeout(t._t);t._t=setTimeout(function(){t.className='toast';},3000);}
+  function setTheme(t){document.body.classList.toggle('light',t==='light');localStorage.setItem('ac-theme',t);document.getElementById('themeToggle').querySelector('i').className=t==='light'?'fas fa-sun':'fas fa-moon';}
+  const _guard_themeToggle = document.getElementById('themeToggle'); if (_guard_themeToggle) _guard_themeToggle.addEventListener('click',function(){setTheme(document.body.classList.contains('light')?'dark':'light');});
+  var hb=document.getElementById('hamburger'),mm=document.getElementById('mobileMenu');
+  hb.addEventListener('click',function(e){e.stopPropagation();var o=mm.classList.toggle('open');hb.querySelector('i').className=o?'fas fa-times':'fas fa-bars';});
+  const _guard_profileToggle = document.getElementById('profileToggle'); if (_guard_profileToggle) _guard_profileToggle.addEventListener('click',function(e){e.stopPropagation();document.getElementById('profileDropdown').classList.toggle('open');});
+  document.addEventListener('click',function(e){if(!document.getElementById('profileWrap').contains(e.target))document.getElementById('profileDropdown').classList.remove('open');if(!mm.contains(e.target)&&e.target!==hb){mm.classList.remove('open');hb.querySelector('i').className='fas fa-bars';}});
+  ['jobModal','confirmModal'].forEach(function(id){document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});});
+  (function(){var p=new URLSearchParams(window.location.search).get('theme'),s=localStorage.getItem('ac-theme'),t=p||s||'light';if(p)localStorage.setItem('ac-theme',p);setTheme(t);})();
+  if(new URLSearchParams(window.location.search).get('postjob')==='1')openPost();
+</script>
+</body>
+</html>

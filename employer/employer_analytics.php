@@ -1,0 +1,849 @@
+<?php
+declare(strict_types=1);
+require_once dirname(__DIR__) . '/config.php';
+
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../auth/antcareers_login.php');
+    exit;
+}
+if (strtolower((string)($_SESSION['account_type'] ?? '')) !== 'employer') {
+    header('Location: ../index.php');
+    exit;
+}
+$fullName    = trim((string)($_SESSION['user_name'] ?? 'Employer'));
+$nameParts   = preg_split('/\s+/', $fullName) ?: [];
+$firstName   = $nameParts[0] ?? 'Employer';
+$initials    = count($nameParts) >= 2
+    ? strtoupper(substr($nameParts[0],0,1).substr($nameParts[1],0,1))
+    : strtoupper(substr($firstName,0,2));
+$companyName = trim((string)($_SESSION['company_name'] ?? 'Your Company'));
+$navActive   = 'analytics';
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Analytics — AntCareers Employer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    /* ── DESIGN TOKENS — identical to all employer pages ── */
+    :root {
+      --red-deep:#7A1515; --red-mid:#B83525; --red-vivid:#D13D2C; --red-bright:#E85540; --red-pale:#F07060;
+      --soil-dark:#0A0909; --soil-med:#131010; --soil-card:#1C1818; --soil-hover:#252020; --soil-line:#352E2E;
+      --text-light:#F5F0EE; --text-mid:#D0BCBA; --text-muted:#927C7A;
+      --amber:#D4943A; --amber-dim:#251C0E;
+      --font-display:'Playfair Display',Georgia,serif;
+      --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+    }
+
+    html { overflow-x:hidden; }
+    body { font-family:var(--font-body); background:var(--soil-dark); color:var(--text-light); overflow-x:hidden; min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+    /* ── TUNNEL BG — same decorative SVG as other pages ── */
+    .tunnel-bg { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+    .tunnel-bg svg { width:100%; height:100%; opacity:0.05; }
+    .glow-orb { position:fixed; border-radius:50%; filter:blur(90px); pointer-events:none; z-index:0; }
+    .glow-1 { width:600px; height:600px; background:radial-gradient(circle,rgba(209,61,44,0.13) 0%,transparent 70%); top:-100px; left:-150px; animation:orb1 18s ease-in-out infinite alternate; }
+    .glow-2 { width:400px; height:400px; background:radial-gradient(circle,rgba(209,61,44,0.06) 0%,transparent 70%); bottom:0; right:-80px; animation:orb2 24s ease-in-out infinite alternate; }
+    @keyframes orb1 { to { transform:translate(60px,80px) scale(1.1); } }
+    @keyframes orb2 { to { transform:translate(-40px,-50px) scale(1.1); } }
+
+    /* ── NAVBAR ── */
+    .navbar { position:sticky; top:0; z-index:400; background:rgba(10,9,9,0.97); backdrop-filter:blur(20px); border-bottom:1px solid rgba(209,61,44,0.35); box-shadow:0 1px 0 rgba(209,61,44,0.06), 0 4px 24px rgba(0,0,0,0.5); }
+    .nav-inner { max-width:1380px; margin:0 auto; padding:0 24px; display:flex; align-items:center; height:64px; gap:0; min-width:0; }
+    .logo { display:flex; align-items:center; gap:8px; text-decoration:none; margin-right:28px; flex-shrink:0; }
+    .logo-icon { width:34px; height:34px; background:var(--red-vivid); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; box-shadow:0 0 18px rgba(209,61,44,0.35); }
+    .logo-icon::before { content:'🐜'; font-size:18px; filter:brightness(0) invert(1); }
+    .logo-text { font-family:var(--font-display); font-weight:700; font-size:19px; color:#F5F0EE; white-space:nowrap; }
+    .logo-text span { color:var(--red-bright); }
+    .nav-links { display:flex; align-items:center; gap:2px; flex:1; min-width:0; }
+    .nav-link { font-size:13px; font-weight:600; color:#A09090; text-decoration:none; padding:7px 11px; border-radius:6px; transition:all 0.2s; cursor:pointer; background:none; border:none; font-family:var(--font-body); display:flex; align-items:center; gap:5px; white-space:nowrap; letter-spacing:0.01em; }
+    .nav-link:hover { color:#F5F0EE; background:var(--soil-hover); }
+    .nav-link.active { color:#F5F0EE; background:var(--soil-hover); }
+    .nav-right { display:flex; align-items:center; gap:10px; margin-left:auto; flex-shrink:0; }
+    .theme-btn { width:34px; height:34px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:13px; flex-shrink:0; }
+    .theme-btn:hover { color:var(--red-bright); border-color:var(--red-vivid); }
+    .btn-nav-red { padding:7px 16px; border-radius:7px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.2s; white-space:nowrap; letter-spacing:0.02em; box-shadow:0 2px 8px rgba(209,61,44,0.3); text-decoration:none; display:flex; align-items:center; gap:7px; }
+    .btn-nav-red:hover { background:var(--red-bright); transform:translateY(-1px); box-shadow:0 4px 14px rgba(209,61,44,0.45); }
+    .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:15px; color:var(--text-muted); flex-shrink:0; }
+    .notif-btn-nav:hover { color:var(--red-pale); border-color:var(--red-vivid); }
+    .notif-btn-nav .badge { position:absolute; top:-5px; right:-5px; width:17px; height:17px; border-radius:50%; background:var(--red-vivid); color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid var(--soil-dark); }
+    .profile-wrap { position:relative; }
+    .profile-btn { display:flex; align-items:center; gap:9px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:6px 12px 6px 8px; cursor:pointer; transition:0.2s; flex-shrink:0; }
+    .profile-btn:hover { background:var(--soil-card); }
+    .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, var(--amber), #8a5010); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+    .profile-name { font-size:13px; font-weight:600; color:#F5F0EE; }
+    .profile-role { font-size:10px; color:var(--amber); margin-top:1px; letter-spacing:0.02em; font-weight:600; }
+    .profile-chevron { font-size:9px; color:var(--text-muted); margin-left:2px; }
+    .profile-dropdown { position:absolute; top:calc(100% + 8px); right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:6px; min-width:200px; opacity:0; visibility:hidden; transform:translateY(-6px); transition:all 0.18s ease; z-index:300; box-shadow:0 20px 40px rgba(0,0,0,0.5); }
+    .profile-dropdown.open { opacity:1; visibility:visible; transform:translateY(0); }
+    .profile-dropdown-head { padding:12px 14px 10px; border-bottom:1px solid var(--soil-line); margin-bottom:4px; }
+    .pdh-name { font-size:14px; font-weight:700; color:#F5F0EE; }
+    .pdh-sub { font-size:11px; color:var(--amber); margin-top:2px; font-weight:600; }
+    .pd-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:6px; font-size:13px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); text-decoration:none; }
+    .pd-item i { color:var(--text-muted); width:16px; text-align:center; font-size:12px; }
+    .pd-item:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .pd-item:hover i { color:var(--red-bright); }
+    .pd-divider { height:1px; background:var(--soil-line); margin:4px 6px; }
+    .pd-item.danger { color:#E05555; }
+    .pd-item.danger i { color:#E05555; }
+    .pd-item.danger:hover { background:rgba(224,85,85,0.1); color:#FF7070; }
+    .hamburger { display:none; width:34px; height:34px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); align-items:center; justify-content:center; cursor:pointer; font-size:14px; flex-shrink:0; margin-left:8px; }
+    .mobile-menu { display:none; position:fixed; top:64px; left:0; right:0; background:rgba(10,9,9,0.97); backdrop-filter:blur(20px); border-bottom:1px solid var(--soil-line); padding:12px 20px 16px; z-index:190; flex-direction:column; gap:2px; }
+    .mobile-menu.open { display:flex; }
+    .mobile-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:7px; font-size:14px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); text-decoration:none; }
+    .mobile-link i { color:var(--red-mid); width:16px; text-align:center; }
+    .mobile-link:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .mobile-divider { height:1px; background:var(--soil-line); margin:6px 0; }
+
+    /* ── PAGE SHELL ── */
+    .page-shell { max-width:1380px; margin:0 auto; padding:0 24px 80px; }
+
+    /* ── PAGE HEADER ── */
+    .page-header { padding:32px 0 28px; }
+    .page-title { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; margin-bottom:6px; }
+    .page-title span { color:var(--red-bright); font-style:italic; }
+    .page-sub { font-size:14px; color:var(--text-muted); }
+
+    /* Breadcrumb */
+    .breadcrumb { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); margin-bottom:10px; }
+    .breadcrumb a { color:var(--text-muted); text-decoration:none; transition:0.15s; }
+    .breadcrumb a:hover { color:var(--red-pale); }
+    .breadcrumb i { font-size:9px; }
+
+    /* Period selector pills */
+    .period-pills { display:flex; gap:6px; flex-wrap:wrap; margin-top:16px; }
+    .period-pill { padding:6px 14px; border-radius:100px; font-size:12px; font-weight:600; border:1px solid var(--soil-line); background:var(--soil-hover); color:var(--text-muted); cursor:pointer; transition:all 0.18s; }
+    .period-pill:hover { border-color:rgba(209,61,44,0.4); color:var(--red-pale); }
+    .period-pill.active { background:rgba(209,61,44,0.12); border-color:rgba(209,61,44,0.45); color:var(--red-pale); }
+
+    /* ── STAT CARDS ── */
+    .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:32px; }
+    .stat-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:14px; padding:22px 20px; transition:all 0.22s; position:relative; overflow:hidden; }
+    .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:14px 14px 0 0; }
+    .stat-card.red::before   { background:linear-gradient(90deg,var(--red-vivid),var(--red-bright)); }
+    .stat-card.amber::before { background:linear-gradient(90deg,#b8620a,var(--amber)); }
+    .stat-card.blue::before  { background:linear-gradient(90deg,#3a6ea8,#7ab8f0); }
+    .stat-card.green::before { background:linear-gradient(90deg,#2d8c52,#6ccf8a); }
+    .stat-card:hover { border-color:rgba(209,61,44,0.35); transform:translateY(-3px); box-shadow:0 12px 32px rgba(0,0,0,0.3); }
+    .sc-row { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
+    .sc-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+    .sc-icon.red   { background:rgba(209,61,44,.12);  color:var(--red-pale); }
+    .sc-icon.amber { background:rgba(212,148,58,.12); color:var(--amber); }
+    .sc-icon.blue  { background:rgba(74,144,217,.1);  color:#7ab8f0; }
+    .sc-icon.green { background:rgba(76,175,112,.1);  color:#6ccf8a; }
+    .sc-trend { display:flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; }
+    .sc-trend.up   { color:#6ccf8a; background:rgba(76,175,112,.1); }
+    .sc-trend.down { color:#E05555; background:rgba(224,85,85,.1); }
+    .sc-num { font-family:var(--font-display); font-size:34px; font-weight:700; color:#F5F0EE; line-height:1; margin-bottom:6px; }
+    .sc-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+    .sc-sub { font-size:12px; color:var(--text-muted); margin-top:8px; padding-top:12px; border-top:1px solid var(--soil-line); }
+    .sc-sub strong { color:var(--text-mid); }
+
+    /* ── CHARTS GRID ── */
+    .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px; }
+    .chart-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:14px; padding:24px; }
+    .chart-card.wide { grid-column:1 / -1; }
+    .chart-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; gap:12px; flex-wrap:wrap; }
+    .chart-title { font-family:var(--font-display); font-size:16px; font-weight:700; color:#F5F0EE; margin-bottom:3px; }
+    .chart-sub { font-size:12px; color:var(--text-muted); }
+    .chart-legend { display:flex; gap:14px; flex-wrap:wrap; }
+    .legend-item { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:var(--text-muted); }
+    .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .chart-canvas-wrap { position:relative; }
+
+    /* ── BOTTOM ROW: funnel + top jobs table ── */
+    .bottom-grid { display:grid; grid-template-columns:340px 1fr; gap:20px; margin-bottom:28px; }
+
+    /* Funnel card */
+    .funnel-step { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--soil-line); }
+    .funnel-step:last-child { border-bottom:none; }
+    .funnel-bar-wrap { flex:1; height:8px; background:var(--soil-hover); border-radius:4px; overflow:hidden; }
+    .funnel-bar { height:100%; border-radius:4px; transition:width 1s cubic-bezier(0.4,0,0.2,1); }
+    .funnel-label { font-size:12px; font-weight:600; color:var(--text-mid); width:100px; flex-shrink:0; }
+    .funnel-count { font-size:13px; font-weight:700; color:#F5F0EE; width:38px; text-align:right; flex-shrink:0; }
+    .funnel-pct { font-size:11px; color:var(--text-muted); width:36px; text-align:right; flex-shrink:0; }
+
+    /* Top jobs table */
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    thead tr { border-bottom:1px solid var(--soil-line); }
+    th { text-align:left; padding:10px 14px; font-size:10px; font-weight:700; color:var(--text-muted); letter-spacing:.07em; text-transform:uppercase; white-space:nowrap; }
+    td { padding:12px 14px; border-bottom:1px solid rgba(53,46,46,0.5); color:var(--text-mid); vertical-align:middle; }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover td { background:var(--soil-hover); }
+    .td-title { font-weight:700; color:#F5F0EE; font-size:13px; }
+    .td-badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; letter-spacing:0.04em; }
+    .td-badge.open   { background:rgba(76,175,112,.1);  color:#6ccf8a;  border:1px solid rgba(76,175,112,.2); }
+    .td-badge.closed { background:rgba(148,124,122,.1); color:var(--text-muted); border:1px solid var(--soil-line); }
+    .td-badge.paused { background:rgba(212,148,58,.1);  color:var(--amber); border:1px solid rgba(212,148,58,.2); }
+    .mini-bar-wrap { width:80px; height:6px; background:var(--soil-hover); border-radius:3px; overflow:hidden; display:inline-block; vertical-align:middle; margin-left:6px; }
+    .mini-bar { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--red-vivid),var(--red-bright)); }
+
+    /* ── TOAST ── */
+    .toast { position:fixed; bottom:24px; right:24px; z-index:999; background:var(--soil-card); border:1px solid var(--soil-line); border-left:2px solid var(--red-vivid); border-radius:8px; padding:11px 18px; font-size:13px; font-weight:500; color:#F5F0EE; box-shadow:0 10px 30px rgba(0,0,0,0.4); display:flex; align-items:center; gap:9px; animation:toastIn 0.25s ease; }
+    @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .toast i { color:var(--red-pale); }
+
+    /* ── FOOTER ── */
+    .footer { border-top:1px solid var(--soil-line); padding:28px 24px; max-width:1380px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; color:var(--text-muted); font-size:12px; position:relative; z-index:2; flex-wrap:wrap; gap:12px; }
+    .footer-logo { font-family:var(--font-display); font-weight:700; color:var(--red-pale); font-size:16px; }
+    .footnote { font-size:11px; color:var(--text-muted); font-style:italic; margin-top:4px; }
+
+    /* Animations */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .anim { animation:fadeUp 0.4s ease both; }
+    .anim-d1 { animation-delay:0.06s; }
+    .anim-d2 { animation-delay:0.12s; }
+    .anim-d3 { animation-delay:0.18s; }
+    .anim-d4 { animation-delay:0.24s; }
+    .anim-d5 { animation-delay:0.30s; }
+
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:var(--soil-dark); }
+    ::-webkit-scrollbar-thumb { background:var(--soil-line); border-radius:3px; }
+
+    /* ── LIGHT THEME — mirrors all other employer pages exactly ── */
+    body.light {
+      --soil-dark:#F9F5F4; --soil-card:#FFFFFF; --soil-hover:#FEF0EE; --soil-line:#E0CECA;
+      --text-light:#1A0A09; --text-mid:#4A2828; --text-muted:#7A5555;
+      --amber-dim:#FFF4E0; --amber:#B8620A;
+    }
+    body.light .navbar { background:rgba(255,253,252,0.98); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }
+    body.light .logo-text { color:#1A0A09; }
+    body.light .logo-text span { color:var(--red-vivid); }
+    body.light .nav-link { color:#5A4040; }
+    body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
+    body.light .theme-btn { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .profile-name { color:#1A0A09; }
+    body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .stat-card, body.light .chart-card { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .sc-num, body.light .page-title, body.light .chart-title { color:#1A0A09; }
+    body.light .profile-dropdown { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .pd-item { color:#4A2828; }
+    body.light .pd-item:hover { background:#FEF0EE; color:#1A0A09; }
+    body.light .pdh-name { color:#1A0A09; }
+    body.light .mobile-menu { background:rgba(255,253,252,0.97); border-color:#E0CECA; }
+    body.light .mobile-link { color:#4A2828; }
+    body.light .mobile-link:hover { background:#FEF0EE; color:#1A0A09; }
+    body.light .period-pill { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .period-pill.active { background:rgba(209,61,44,0.08); border-color:rgba(209,61,44,0.3); color:var(--red-mid); }
+    body.light td { color:#4A2828; }
+    body.light .td-title { color:#1A0A09; }
+    body.light tbody tr:hover td { background:#FEF0EE; }
+    body.light .funnel-bar-wrap { background:#F5EEEC; }
+    body.light .sc-sub { border-color:#E0CECA; }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:1060px) {
+      .stat-grid { grid-template-columns:repeat(2,1fr); }
+      .charts-grid { grid-template-columns:1fr; }
+      .charts-grid .chart-card.wide { grid-column:1; }
+      .bottom-grid { grid-template-columns:1fr; }
+    }
+    @media(max-width:760px) {
+      .nav-links { display:none; }
+      .hamburger { display:flex; }
+      .page-shell { padding:0 16px 60px; }
+      .nav-inner { padding:0 16px; }
+      .profile-name,.profile-role { display:none; }
+      .profile-btn { padding:6px 8px; }
+      .stat-grid { grid-template-columns:1fr 1fr; gap:10px; }
+      .sc-num { font-size:26px; }
+      .footer { flex-direction:column; text-align:center; padding:20px 16px; }
+    }
+    @media(max-width:480px) {
+      .stat-grid { grid-template-columns:1fr; }
+    }
+      .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; color:var(--text-muted); flex-shrink:0; }
+    .notif-btn-nav:hover { color:var(--red-pale); border-color:var(--red-vivid); }
+    .notif-btn-nav .badge { position:absolute; top:-5px; right:-5px; width:17px; height:17px; border-radius:50%; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid var(--soil-dark); background:var(--red-vivid); }
+    .notif-panel { position:fixed; top:64px; right:0; bottom:0; width:360px; background:var(--soil-card); border-left:1px solid var(--soil-line); z-index:150; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.4); }
+    .notif-panel.open { transform:translateX(0); }
+    .notif-panel-head { padding:20px 20px 16px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+    .notif-panel-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:8px; }
+    .notif-panel-title i { color:var(--red-bright); }
+    .notif-close { width:28px; height:28px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:0.15s; }
+    .notif-close:hover { color:#F5F0EE; }
+    .notif-panel-body { flex:1; overflow-y:auto; padding:12px 16px; }
+    .notif-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--soil-line); }
+    .notif-item:last-child { border-bottom:none; }
+    .n-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+    .n-dot.red { background:var(--red-vivid); } .n-dot.amber { background:var(--amber); } .n-dot.green { background:#4CAF70; } .n-dot.read { background:var(--soil-line); }
+    .n-text { font-size:13px; color:var(--text-mid); line-height:1.55; }
+    .n-time { font-size:11px; color:var(--text-muted); margin-top:3px; font-weight:600; }
+  </style>
+</head>
+<body>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-head">
+    <div class="notif-panel-title"><i class="fas fa-bell"></i> Notifications</div>
+    <button class="notif-close" onclick="closeNotif()"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="notif-panel-body">
+    <div class="notif-item"><div class="n-dot green"></div><div><div class="n-text">Your application for <strong>Senior Frontend Engineer</strong> at Vercel was submitted.</div><div class="n-time">1 hour ago</div></div></div>
+    <div class="notif-item"><div class="n-dot amber"></div><div><div class="n-text">Your status for <strong>Product Designer</strong> at Linear was updated to <em>Shortlisted</em>.</div><div class="n-time">3 hours ago</div></div></div>
+    <div class="notif-item"><div class="n-dot red"></div><div><div class="n-text">You received a new message from <strong>TechPH Inc.</strong></div><div class="n-time">Yesterday</div></div></div>
+    <div class="notif-item"><div class="n-dot read"></div><div><div class="n-text">3 new jobs matching your profile in Manila.</div><div class="n-time">Mar 27</div></div></div>
+  </div>
+</div>
+
+
+<!-- ── BACKGROUND DECORATION ── -->
+<div class="tunnel-bg">
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#C0392B" stroke-width="1.5" fill="none" opacity="0.6">
+      <path d="M0 200 Q200 180 350 240 Q500 300 600 260 Q750 210 900 280 Q1050 350 1200 300 Q1320 260 1440 280"/>
+      <path d="M0 450 Q150 430 300 490 Q500 560 650 510 Q800 460 950 530 Q1100 600 1300 550 Q1380 530 1440 540"/>
+      <path d="M350 0 Q340 100 360 200 Q380 300 350 400 Q320 500 340 600 Q360 700 350 900"/>
+      <path d="M720 0 Q710 150 730 300 Q750 450 720 600 Q690 750 710 900"/>
+    </g>
+    <g fill="#E54C3A" opacity="0.4">
+      <circle cx="350" cy="240" r="3.5"/><circle cx="600" cy="260" r="3"/>
+      <circle cx="900" cy="280" r="3.5"/><circle cx="300" cy="490" r="3"/>
+    </g>
+  </svg>
+</div>
+<div class="glow-orb glow-1"></div>
+<div class="glow-orb glow-2"></div>
+
+<!-- ── NAVBAR ── -->
+<?php require_once dirname(__DIR__) . '/includes/navbar_employer.php'; ?>
+
+<!-- ── PAGE CONTENT ── -->
+<div class="page-shell">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header anim">
+    <div class="breadcrumb">
+      <a href="employer_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
+      <i class="fas fa-chevron-right"></i>
+      <span>Analytics</span>
+    </div>
+    <div class="page-title">Analytics <span>Dashboard</span></div>
+    <div class="page-sub">Hiring performance overview for Your Company &nbsp;·&nbsp; All figures are mock data for demonstration.</div>
+    <!-- Period filter pills — purely visual, no backend needed -->
+    <div class="period-pills">
+      <span class="period-pill" onclick="setPeriod(this,'7d')">Last 7 days</span>
+      <span class="period-pill active" onclick="setPeriod(this,'30d')">Last 30 days</span>
+      <span class="period-pill" onclick="setPeriod(this,'90d')">Last 90 days</span>
+      <span class="period-pill" onclick="setPeriod(this,'1y')">This year</span>
+    </div>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="stat-grid">
+
+    <div class="stat-card red anim anim-d1">
+      <div class="sc-row">
+        <div class="sc-icon red"><i class="fas fa-briefcase"></i></div>
+        <div class="sc-trend up"><i class="fas fa-arrow-up"></i> +2</div>
+      </div>
+      <div class="sc-num" id="statActiveJobs">8</div>
+      <div class="sc-label">Active Jobs</div>
+      <div class="sc-sub">3 posted this month &nbsp;·&nbsp; <strong>2 closing soon</strong></div>
+    </div>
+
+    <div class="stat-card amber anim anim-d2">
+      <div class="sc-row">
+        <div class="sc-icon amber"><i class="fas fa-users"></i></div>
+        <div class="sc-trend up"><i class="fas fa-arrow-up"></i> +34</div>
+      </div>
+      <div class="sc-num" id="statApplicants">214</div>
+      <div class="sc-label">Total Applicants</div>
+      <div class="sc-sub"><strong>27</strong> new this week &nbsp;·&nbsp; 12 unreviewed</div>
+    </div>
+
+    <div class="stat-card blue anim anim-d3">
+      <div class="sc-row">
+        <div class="sc-icon blue"><i class="fas fa-user-check"></i></div>
+        <div class="sc-trend up"><i class="fas fa-arrow-up"></i> +8</div>
+      </div>
+      <div class="sc-num" id="statShortlisted">47</div>
+      <div class="sc-label">Shortlisted</div>
+      <div class="sc-sub">22% shortlist rate &nbsp;·&nbsp; <strong>5 interviews pending</strong></div>
+    </div>
+
+    <div class="stat-card green anim anim-d4">
+      <div class="sc-row">
+        <div class="sc-icon green"><i class="fas fa-handshake"></i></div>
+        <div class="sc-trend up"><i class="fas fa-arrow-up"></i> +3</div>
+      </div>
+      <div class="sc-num" id="statHired">12</div>
+      <div class="sc-label">Hired</div>
+      <div class="sc-sub">5.6% hire rate &nbsp;·&nbsp; avg. <strong>18 days</strong> to hire</div>
+    </div>
+
+  </div><!-- /stat-grid -->
+
+  <!-- CHARTS ROW -->
+  <div class="charts-grid anim anim-d5">
+
+    <!-- Bar Chart: Applicants per Job -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Applicants per Job Post</div>
+          <div class="chart-sub">Number of applicants received per active vacancy</div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red-vivid)"></div> Applicants</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div> Shortlisted</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="barChart" height="240"></canvas>
+      </div>
+    </div>
+
+    <!-- Line Chart: Applications Over Time -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Applications Over Time</div>
+          <div class="chart-sub">Daily application volume for the last 30 days</div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red-bright)"></div> Applications</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#7ab8f0"></div> Views</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="lineChart" height="240"></canvas>
+      </div>
+    </div>
+
+    <!-- Donut Chart: Application Status Breakdown — full width -->
+    <div class="chart-card wide">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Application Status Breakdown</div>
+          <div class="chart-sub">Distribution of all 214 applications across review stages</div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#7ab8f0"></div> New / Unreviewed</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div> Under Review</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red-bright)"></div> Shortlisted</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#6ccf8a"></div> Hired</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--soil-line)"></div> Rejected</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap" style="display:flex;justify-content:center;">
+        <canvas id="donutChart" height="180" style="max-width:360px;"></canvas>
+      </div>
+    </div>
+
+  </div><!-- /charts-grid -->
+
+  <!-- BOTTOM ROW: Funnel + Top Jobs Table -->
+  <div class="bottom-grid">
+
+    <!-- Recruitment funnel -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Recruitment Funnel</div>
+          <div class="chart-sub">Conversion at each hiring stage</div>
+        </div>
+      </div>
+      <div id="funnelWrap"></div>
+    </div>
+
+    <!-- Top performing jobs table -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Top Job Posts</div>
+          <div class="chart-sub">Sorted by total applicants received</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="jobTable">
+          <thead>
+            <tr>
+              <th>Job Title</th>
+              <th>Status</th>
+              <th>Applicants</th>
+              <th>Shortlisted</th>
+              <th>Hired</th>
+              <th>Posted</th>
+            </tr>
+          </thead>
+          <tbody id="jobTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /bottom-grid -->
+
+</div><!-- /page-shell -->
+
+<footer class="footer">
+  <div>
+    <div class="footer-logo">AntCareers</div>
+    <div class="footnote">* Data shown is for demonstration purposes only.</div>
+  </div>
+  <div style="display:flex;gap:14px;color:var(--text-muted);">
+    <span style="cursor:pointer;" onclick="window.location.href='employer_dashboard.php?theme='+(document.body.classList.contains('light')?'light':'dark')">← Dashboard</span>
+    <span style="cursor:pointer;">Privacy</span>
+    <span style="cursor:pointer;">Terms</span>
+  </div>
+</footer>
+
+<script>
+/* ─────────────────────────────────────────────
+   MOCK DATA
+   All figures below are fake sample data.
+   When a backend is ready, replace these arrays
+   with fetch() calls to your API endpoints.
+───────────────────────────────────────────── */
+const MOCK = {
+  // Bar chart — applicants & shortlisted per job
+  jobs: [
+    { title:'Frontend Developer',   applicants:52, shortlisted:14, hired:3, status:'open',   posted:'Mar 1'  },
+    { title:'UI/UX Designer',       applicants:38, shortlisted:9,  hired:2, status:'open',   posted:'Mar 5'  },
+    { title:'Backend Engineer',     applicants:31, shortlisted:7,  hired:2, status:'open',   posted:'Mar 8'  },
+    { title:'Project Manager',      applicants:27, shortlisted:5,  hired:2, status:'paused', posted:'Feb 20' },
+    { title:'QA Analyst',           applicants:24, shortlisted:6,  hired:1, status:'open',   posted:'Mar 12' },
+    { title:'DevOps Engineer',      applicants:18, shortlisted:4,  hired:1, status:'open',   posted:'Mar 15' },
+    { title:'Data Analyst',         applicants:15, shortlisted:2,  hired:1, status:'closed', posted:'Feb 10' },
+    { title:'Mobile Developer',     applicants:9,  shortlisted:0,  hired:0, status:'open',   posted:'Mar 22' },
+  ],
+
+  // Line chart — daily application volume over 30 days
+  // Applications (red line) and page views (blue line)
+  days: ['Mar 1','Mar 3','Mar 5','Mar 7','Mar 9','Mar 11','Mar 13','Mar 15',
+         'Mar 17','Mar 19','Mar 21','Mar 23','Mar 25','Mar 27','Mar 28'],
+  applications: [4,7,5,9,12,8,11,15,10,14,18,13,16,20,12],
+  views:        [22,30,18,35,44,28,40,55,38,50,62,47,55,70,44],
+
+  // Funnel stages
+  funnel: [
+    { label:'Job Views',     count:1840, color:'#7ab8f0' },
+    { label:'Applied',       count:214,  color:'var(--amber)' },
+    { label:'Reviewed',      count:102,  color:'var(--red-pale)' },
+    { label:'Shortlisted',   count:47,   color:'var(--red-vivid)' },
+    { label:'Interviewed',   count:21,   color:'#a855f7' },
+    { label:'Hired',         count:12,   color:'#6ccf8a' },
+  ],
+
+  // Donut chart — status breakdown
+  statusLabels: ['New / Unreviewed','Under Review','Shortlisted','Hired','Rejected'],
+  statusData:   [62, 40, 47, 12, 53],
+  statusColors: ['#7ab8f0','#D4943A','#E85540','#6ccf8a','#352E2E'],
+};
+
+/* ─────────────────────────────────────────────
+   CHART.JS GLOBAL DEFAULTS
+   These match the dark theme: no gridlines on
+   x-axis, subtle y-axis lines, custom font.
+───────────────────────────────────────────── */
+Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+Chart.defaults.color = '#927C7A';
+
+// Shared grid/tick style used across charts
+const gridStyle = {
+  color: 'rgba(53,46,46,0.6)',
+  drawBorder: false,
+};
+const tickStyle = { color:'#927C7A', font:{ size:11, weight:'600' } };
+
+/* ─────────────────────────────────────────────
+   BAR CHART — Applicants per Job
+   Two datasets: applicants (red) and shortlisted
+   (amber). Grouped bars side by side.
+───────────────────────────────────────────── */
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: MOCK.jobs.map(j => j.title.length > 16 ? j.title.slice(0,15)+'…' : j.title),
+    datasets: [
+      {
+        label: 'Applicants',
+        data: MOCK.jobs.map(j => j.applicants),
+        backgroundColor: 'rgba(209,61,44,0.75)',
+        hoverBackgroundColor: '#E85540',
+        borderRadius: 5,
+        borderSkipped: false,
+      },
+      {
+        label: 'Shortlisted',
+        data: MOCK.jobs.map(j => j.shortlisted),
+        backgroundColor: 'rgba(212,148,58,0.65)',
+        hoverBackgroundColor: '#D4943A',
+        borderRadius: 5,
+        borderSkipped: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: { display: false }, // We use our own HTML legend above
+      tooltip: {
+        backgroundColor: '#1C1818',
+        borderColor: '#352E2E',
+        borderWidth: 1,
+        titleColor: '#F5F0EE',
+        bodyColor: '#D0BCBA',
+        padding: 10,
+      }
+    },
+    scales: {
+      x: { grid: { display:false }, ticks: tickStyle },
+      y: { grid: gridStyle, ticks: { ...tickStyle, stepSize:10 }, beginAtZero:true }
+    }
+  }
+});
+
+/* ─────────────────────────────────────────────
+   LINE CHART — Applications Over Time
+   Two lines: applications (red) and views (blue).
+   Uses tension:0.4 for smooth curves. Area fill
+   under the applications line for visual weight.
+───────────────────────────────────────────── */
+new Chart(document.getElementById('lineChart'), {
+  type: 'line',
+  data: {
+    labels: MOCK.days,
+    datasets: [
+      {
+        label: 'Applications',
+        data: MOCK.applications,
+        borderColor: '#E85540',
+        backgroundColor: 'rgba(209,61,44,0.08)',
+        pointBackgroundColor: '#E85540',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        borderWidth: 2.5,
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: 'Views',
+        data: MOCK.views,
+        borderColor: '#7ab8f0',
+        backgroundColor: 'rgba(122,184,240,0.04)',
+        pointBackgroundColor: '#7ab8f0',
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        borderWidth: 2,
+        tension: 0.4,
+        fill: false,
+        borderDash: [4,3], // dashed so it doesn't compete with applications
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: { display:false },
+      tooltip: {
+        backgroundColor: '#1C1818',
+        borderColor: '#352E2E',
+        borderWidth: 1,
+        titleColor: '#F5F0EE',
+        bodyColor: '#D0BCBA',
+        padding: 10,
+        mode: 'index',    // show both values in one tooltip
+        intersect: false,
+      }
+    },
+    scales: {
+      x: { grid:{ display:false }, ticks: tickStyle },
+      y: { grid: gridStyle, ticks: tickStyle, beginAtZero:true }
+    }
+  }
+});
+
+/* ─────────────────────────────────────────────
+   DONUT CHART — Application Status Breakdown
+   A doughnut with a custom center label showing
+   the total, rendered using Chart.js plugins API.
+───────────────────────────────────────────── */
+// Custom plugin: draws text in the center of the donut
+const centerTextPlugin = {
+  id: 'centerText',
+  afterDraw(chart) {
+    if (chart.config.type !== 'doughnut') return;
+    const { ctx, chartArea: { left, top, right, bottom } } = chart;
+    const cx = (left + right) / 2;
+    const cy = (top + bottom) / 2;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = "700 28px 'Playfair Display', Georgia, serif";
+    ctx.fillStyle = '#F5F0EE';
+    ctx.fillText('214', cx, cy - 10);
+    ctx.font = "600 11px 'Plus Jakarta Sans', sans-serif";
+    ctx.fillStyle = '#927C7A';
+    ctx.fillText('TOTAL', cx, cy + 14);
+    ctx.restore();
+  }
+};
+Chart.register(centerTextPlugin);
+
+new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: MOCK.statusLabels,
+    datasets: [{
+      data: MOCK.statusData,
+      backgroundColor: MOCK.statusColors,
+      hoverBackgroundColor: MOCK.statusColors.map(c => c),
+      borderColor: '#0A0909',
+      borderWidth: 3,
+      hoverOffset: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    cutout: '68%', // thickness of the ring
+    plugins: {
+      legend: { display:false },
+      tooltip: {
+        backgroundColor: '#1C1818',
+        borderColor: '#352E2E',
+        borderWidth: 1,
+        titleColor: '#F5F0EE',
+        bodyColor: '#D0BCBA',
+        padding: 10,
+        callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed/214*100)}%)`
+        }
+      }
+    }
+  }
+});
+
+/* ─────────────────────────────────────────────
+   RECRUITMENT FUNNEL — rendered as HTML bars
+   (not a Chart.js chart — HTML gives more control
+   over the staggered animation effect)
+───────────────────────────────────────────── */
+const funnelWrap = document.getElementById('funnelWrap');
+const maxCount = MOCK.funnel[0].count;
+funnelWrap.innerHTML = MOCK.funnel.map(f => {
+  const pct = Math.round(f.count / maxCount * 100);
+  const convPct = f === MOCK.funnel[0] ? '100%' : Math.round(f.count / MOCK.funnel[0].count * 100) + '%';
+  return `
+    <div class="funnel-step">
+      <div class="funnel-label">${f.label}</div>
+      <div class="funnel-bar-wrap">
+        <div class="funnel-bar" data-w="${pct}" style="width:0%;background:${f.color}"></div>
+      </div>
+      <div class="funnel-count">${f.count.toLocaleString()}</div>
+      <div class="funnel-pct">${convPct}</div>
+    </div>`;
+}).join('');
+
+// Animate bars after paint
+requestAnimationFrame(() => {
+  setTimeout(() => {
+    document.querySelectorAll('.funnel-bar').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  }, 300);
+});
+
+/* ─────────────────────────────────────────────
+   TOP JOBS TABLE — rendered from mock data
+───────────────────────────────────────────── */
+const tbody = document.getElementById('jobTableBody');
+const sorted = [...MOCK.jobs].sort((a,b) => b.applicants - a.applicants);
+const maxApplicants = sorted[0].applicants;
+tbody.innerHTML = sorted.map(j => {
+  const barW = Math.round(j.applicants / maxApplicants * 100);
+  const statusMap = { open:'open', closed:'closed', paused:'paused' };
+  return `<tr>
+    <td class="td-title">${j.title}</td>
+    <td><span class="td-badge ${statusMap[j.status]}">${j.status.charAt(0).toUpperCase()+j.status.slice(1)}</span></td>
+    <td>
+      ${j.applicants}
+      <span class="mini-bar-wrap"><span class="mini-bar" style="width:${barW}%"></span></span>
+    </td>
+    <td>${j.shortlisted}</td>
+    <td>${j.hired}</td>
+    <td style="color:var(--text-muted);font-size:12px;">${j.posted}</td>
+  </tr>`;
+}).join('');
+
+/* ─────────────────────────────────────────────
+   PERIOD PILL SWITCHER
+   Purely visual — swaps the active pill and shows
+   a toast. Replace with an actual data reload
+   when a backend is available.
+───────────────────────────────────────────── */
+function setPeriod(el, period) {
+  document.querySelectorAll('.period-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  const labels = { '7d':'Last 7 days','30d':'Last 30 days','90d':'Last 90 days','1y':'This year' };
+  showToast(`Showing data for: ${labels[period]}`, 'fa-calendar');
+}
+
+/* ─────────────────────────────────────────────
+   THEME TOGGLE — same logic as all other pages
+───────────────────────────────────────────── */
+(function() {
+  const p = new URLSearchParams(window.location.search).get('theme');
+  const t = p || localStorage.getItem('ac-theme') || 'dark';
+  if (p) localStorage.setItem('ac-theme', t);
+  if (t === 'light') document.body.classList.add('light');
+  document.getElementById('themeToggle').innerHTML = t === 'light'
+    ? '<i class="fas fa-sun"></i>'
+    : '<i class="fas fa-moon"></i>';
+})();
+
+const _guard_themeToggle = document.getElementById('themeToggle'); if (_guard_themeToggle) _guard_themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('light');
+  const isLight = document.body.classList.contains('light');
+  localStorage.setItem('ac-theme', isLight ? 'light' : 'dark');
+  document.getElementById('themeToggle').innerHTML = isLight
+    ? '<i class="fas fa-sun"></i>'
+    : '<i class="fas fa-moon"></i>';
+});
+
+/* ─────────────────────────────────────────────
+   PROFILE DROPDOWN — same as other pages
+───────────────────────────────────────────── */
+const _guard_profileToggle = document.getElementById('profileToggle'); if (_guard_profileToggle) _guard_profileToggle.addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('profileDropdown').classList.toggle('open');
+});
+document.addEventListener('click', () => {
+  document.getElementById('profileDropdown').classList.remove('open');
+});
+
+/* ─────────────────────────────────────────────
+   HAMBURGER MOBILE MENU
+───────────────────────────────────────────── */
+const _guard_hamburger = document.getElementById('hamburger'); if (_guard_hamburger) _guard_hamburger.addEventListener('click', () => {
+  document.getElementById('mobileMenu').classList.toggle('open');
+});
+
+/* ─────────────────────────────────────────────
+   TOAST — same helper as all other pages
+───────────────────────────────────────────── */
+let toastTimer;
+function showToast(msg, icon='fa-check') {
+  clearTimeout(toastTimer);
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
+  document.body.appendChild(t);
+  toastTimer = setTimeout(() => t.remove(), 3000);
+}
+</script>
+</body>
+</html>
