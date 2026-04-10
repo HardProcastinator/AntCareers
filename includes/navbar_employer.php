@@ -92,14 +92,20 @@ function navHref(string $page): string {
           <div class="profile-avatar"><?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?></div>
           <div>
             <div class="profile-name"><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></div>
-            <div class="profile-role">Company Admin</div>
+<?php
+$_roleLabel = 'Company Admin';
+if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) === 'recruiter') {
+    $_roleLabel = 'Recruiter';
+}
+?>
+            <div class="profile-role"><?= htmlspecialchars($_roleLabel, ENT_QUOTES, 'UTF-8') ?></div>
           </div>
           <i class="fas fa-chevron-down profile-chevron"></i>
         </button>
         <div class="profile-dropdown" id="profileDropdown">
           <div class="profile-dropdown-head">
             <div class="pdh-name"><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></div>
-            <div class="pdh-sub">Company Admin · <?= htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="pdh-sub"><?= htmlspecialchars($_roleLabel, ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8') ?></div>
           </div>
           <div class="pd-item" onclick="<?= navHref('../employer/employer_companyProfile.php') ?>">
             <i class="fas fa-building"></i> Company Profile
@@ -113,7 +119,7 @@ function navHref(string $page): string {
           <div class="pd-item" onclick="<?= navHref('../employer/employer_settings.php') ?>">
             <i class="fas fa-cog"></i> Settings
           </div>
-          <div class="pd-item" onclick="<?= navHref('../messages.php') ?>">
+          <div class="pd-item" onclick="<?= navHref('../employer/employer_messages.php') ?>">
             <i class="fas fa-comments"></i> Messages
           </div>
           <div class="pd-divider"></div>
@@ -150,7 +156,7 @@ function navHref(string $page): string {
   <a class="mobile-link" href="employer_analytics.php">
     <i class="fas fa-chart-bar"></i> Analytics
   </a>
-  <a class="mobile-link" href="../messages.php">
+  <a class="mobile-link" onclick="<?= navHref('../employer/employer_messages.php') ?>">
     <i class="fas fa-envelope"></i> Messages
   </a>
   <div class="mobile-divider"></div>

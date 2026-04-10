@@ -1,15 +1,8 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
-
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../auth/antcareers_login.php');
-    exit;
-}
-if (strtolower((string)($_SESSION['account_type'] ?? '')) !== 'employer') {
-    header('Location: ../index.php');
-    exit;
-}
+require_once dirname(__DIR__) . '/includes/auth.php';
+requireLogin('employer');
 
 $seekerId = (int)($_GET['id'] ?? 0);
 if ($seekerId <= 0) {
@@ -17,15 +10,13 @@ if ($seekerId <= 0) {
     exit;
 }
 
-$fullName    = trim((string)($_SESSION['user_name'] ?? 'Employer'));
-$nameParts   = preg_split('/\s+/', $fullName) ?: [];
-$firstName   = $nameParts[0] ?? 'Employer';
-$initials    = count($nameParts) >= 2
-    ? strtoupper(substr($nameParts[0],0,1).substr($nameParts[1],0,1))
-    : strtoupper(substr($firstName,0,2));
-$companyName = trim((string)($_SESSION['company_name'] ?? 'Your Company'));
+$user        = getUser();
+$fullName    = $user['fullName'];
+$firstName   = $user['firstName'];
+$initials    = $user['initials'];
+$companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'applicants';
-$navbarShowMessage = false;
+$navbarShowMessage = true;
 $navbarShowNotif   = false;
 $navbarShowPostJob = false;
 $navbarShowHamburger = false;
@@ -413,7 +404,7 @@ $skillLevelColors = [
       <?php if($resume): ?>
       <a class="ph-btn primary" href="<?php echo e($resume['file_path']); ?>" target="_blank"><i class="fas fa-download"></i> Resume</a>
       <?php endif; ?>
-      <a class="ph-btn" href="javascript:void(0)" onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();setTimeout(function(){if(typeof sbOpenThread==='function')sbOpenThread(<?php echo (int)$seekerId; ?>);},400);}"><i class="fas fa-envelope"></i> Message</a>
+      <a class="ph-btn" href="javascript:void(0)" onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();setTimeout(function(){if(typeof sbOpenThread==='function')sbOpenThread(<?= (int)$seekerId ?>);},300);}"><i class="fas fa-envelope"></i> Message</a>
     </div>
   </div>
 
