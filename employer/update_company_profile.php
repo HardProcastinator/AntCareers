@@ -9,7 +9,8 @@ if (!isset($_SESSION['user_id'])) {
     echo json_encode(['ok' => false, 'error' => 'Not authenticated']);
     exit;
 }
-if (strtolower((string)($_SESSION['account_type'] ?? '')) !== 'employer') {
+$_role = strtolower((string)($_SESSION['account_type'] ?? ''));
+if (!in_array($_role, ['employer', 'recruiter'], true)) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'error' => 'Not employer']);
     exit;

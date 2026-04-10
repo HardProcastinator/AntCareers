@@ -87,7 +87,8 @@ if (isRateLimited($email, $ip)) {
 // Fetch user
 $db   = getDB();
 $stmt = $db->prepare(
-    'SELECT id, email, password_hash, full_name, account_type, is_verified, is_active
+    'SELECT id, email, password_hash, full_name, account_type, is_verified, is_active, company_name,
+            COALESCE(must_change_password, 0) AS must_change_password
      FROM users
      WHERE email = :email
      LIMIT 1'
@@ -126,6 +127,12 @@ $_SESSION['user_id']      = (int)$user['id'];
 $_SESSION['user_email']   = $user['email'];
 $_SESSION['user_name']    = $user['full_name'];
 $_SESSION['account_type'] = $accountType;
+$_SESSION['company_name'] = $user['company_name'] ?? '';
+
+// Check if must change password (recruiter first-login)
+if ((int)$user['must_change_password'] === 1) {
+    $_SESSION['must_change_password'] = true;
+}
 
 // Remember me
 if ($remember) {
@@ -137,11 +144,17 @@ $db->prepare('UPDATE users SET last_login_at = NOW() WHERE id = :id')
    ->execute([':id' => $user['id']]);
 
 // Determine redirect URL based on account type
-$redirect = match ($accountType) {
-    'seeker'   => url('seeker/antcareers_seekerDashboard.php'),
-    'employer' => url('employer/employer_dashboard.php'),
-    'admin'    => url('admin/admin_dashboard.php'),
-    default    => url('index.php'),
-};
+// If must_change_password is set, always redirect to force-change page
+if (!empty($_SESSION['must_change_password'])) {
+    $redirect = url('auth/force_change_password.php');
+} else {
+    $redirect = match ($accountType) {
+        'seeker'    => url('seeker/antcareers_seekerDashboard.php'),
+        'employer'  => url('employer/employer_dashboard.php'),
+        'recruiter' => url('employer/employer_dashboard.php'),
+        'admin'     => url('admin/admin_dashboard.php'),
+        default     => url('index.php'),
+    };
+}
 
 $respondSuccess($redirect);

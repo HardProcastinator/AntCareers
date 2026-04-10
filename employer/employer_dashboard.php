@@ -1,22 +1,13 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
-
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../auth/antcareers_login.php');
-    exit;
-}
-if (strtolower((string)($_SESSION['account_type'] ?? '')) !== 'employer') {
-    header('Location: ../index.php');
-    exit;
-}
-$fullName    = trim((string)($_SESSION['user_name'] ?? 'Employer'));
-$nameParts   = preg_split('/\s+/', $fullName) ?: [];
-$firstName   = $nameParts[0] ?? 'Employer';
-$initials    = count($nameParts) >= 2
-    ? strtoupper(substr($nameParts[0],0,1).substr($nameParts[1],0,1))
-    : strtoupper(substr($firstName,0,2));
-$companyName = trim((string)($_SESSION['company_name'] ?? 'Your Company'));
+require_once dirname(__DIR__) . '/includes/auth.php';
+requireLogin('employer');
+$user        = getUser();
+$fullName    = $user['fullName'];
+$firstName   = $user['firstName'];
+$initials    = $user['initials'];
+$companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'dashboard';
 
 $db = getDB();
@@ -613,7 +604,7 @@ try {
           <div class="pd-item" onclick="window.location.href='employer_companyProfile.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-building"></i> Company Profile</div>
           <div class="pd-item" onclick="window.location.href='employer_manageRecruiters.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-user-tie"></i> Manage Recruiters</div>
           <div class="pd-item" onclick="window.location.href='employer_settings.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-cog"></i> Settings</div>
-          <div class="pd-item" onclick="window.location.href='../messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-comments"></i> Messages</div>
+          <div class="pd-item" onclick="window.location.href='employer_messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-comments"></i> Messages</div>
           <div class="pd-divider"></div>
           <div class="pd-item danger" onclick="window.location.href='../auth/logout.php'"><i class="fas fa-sign-out-alt"></i> Sign out</div>
         </div>
@@ -630,7 +621,7 @@ try {
   <a class="mobile-link" onclick="window.location.href='employer_manageJobs.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-briefcase"></i> Manage Jobs</a>
   <a class="mobile-link" onclick="window.location.href='employer_applicants.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-users"></i> Applicants</a>
   <a class="mobile-link" href="employer_analytics.php"><i class="fas fa-chart-bar"></i> Analytics</a>
-  <a class="mobile-link" href="../messages.php"><i class="fas fa-envelope"></i> Messages</a>
+  <a class="mobile-link" onclick="window.location.href='employer_messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-envelope"></i> Messages</a>
   <div class="mobile-divider"></div>
   <a class="mobile-link" href="employer_companyProfile.php"><i class="fas fa-building"></i> Company Profile</a>
   <a class="mobile-link" href="employer_manageRecruiters.php"><i class="fas fa-user-tie"></i> Manage Recruiters</a>

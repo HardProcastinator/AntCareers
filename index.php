@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/job_titles.php';
 
 $db = getDB();
 $indexJobs = [];
@@ -1076,11 +1077,9 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   <a class="mobile-link" data-scroll="jobs" data-close-mobile><i class="fas fa-list"></i> All Jobs</a>
   <div class="mobile-divider"></div>
   <div class="mobile-cats-label">Browse by industry</div>
-  <a class="mobile-link" id="mob-tech" data-close-mobile><i class="fas fa-laptop-code"></i> Technology</a>
-  <a class="mobile-link" id="mob-fin" data-close-mobile><i class="fas fa-chart-line"></i> Finance & Banking</a>
-  <a class="mobile-link" id="mob-health" data-close-mobile><i class="fas fa-heartbeat"></i> Healthcare</a>
-  <a class="mobile-link" id="mob-mkt" data-close-mobile><i class="fas fa-bullhorn"></i> Marketing</a>
-  <a class="mobile-link" id="mob-design" data-close-mobile><i class="fas fa-palette"></i> Design</a>
+  <?php foreach (getIndustryFilterOptions() as $_idx => $_ind): ?>
+  <a class="mobile-link mobile-cat-link" data-industry="<?= htmlspecialchars($_ind['value'], ENT_QUOTES, 'UTF-8') ?>" data-close-mobile><i class="fas <?= htmlspecialchars($_ind['icon'], ENT_QUOTES, 'UTF-8') ?>"></i> <?= htmlspecialchars($_ind['label'], ENT_QUOTES, 'UTF-8') ?></a>
+  <?php endforeach; ?>
   <div class="mobile-divider"></div>
   <div class="mobile-auth">
     <button class="btn-ghost" id="loginBtnMob" type="button" onclick="window.location.href='auth/antcareers_login.php'"><i class="fas fa-key"></i> Log in</button>
@@ -1158,17 +1157,8 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
           <div class="filter-section-label">Position</div>
           <input type="text" id="positionFilter" list="positionOptions" class="filter-input" placeholder="e.g. Product Designer">
           <datalist id="positionOptions">
-            <option value="Senior Frontend Engineer">
-            <option value="Product Designer">
-            <option value="Financial Analyst">
-            <option value="Backend Developer (Go)">
-            <option value="Marketing Lead">
-            <option value="Healthcare Data Analyst">
-            <option value="Junior UI Developer">
-            <option value="DevOps Engineer">
-            <option value="Investment Associate">
-            <option value="Content Marketing Manager">
-            <option value="UX Researcher">
+            <?php foreach (getJobTitlesList() as $_jt): ?><option value="<?= htmlspecialchars($_jt, ENT_QUOTES, 'UTF-8') ?>">
+            <?php endforeach; ?>
           </datalist>
         </div>
         <div class="filter-section">
@@ -1192,11 +1182,9 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
           <div class="filter-section-label">Industry</div>
           <select id="industryFilter" class="filter-select">
             <option value="">All industries</option>
-            <option value="Tech">Tech / IT</option>
-            <option value="Finance">Finance</option>
-            <option value="Healthcare">Healthcare</option>
-            <option value="Marketing">Marketing / PR</option>
-            <option value="Design">Design / Creative</option>
+            <?php foreach (getIndustryFilterOptions() as $_ind): ?>
+            <option value="<?= htmlspecialchars($_ind['value'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($_ind['label'], ENT_QUOTES, 'UTF-8') ?></option>
+            <?php endforeach; ?>
           </select>
         </div>
         <div class="filter-section">
@@ -1282,13 +1270,9 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
   const companies = <?= $indexCompaniesJson ?>;
 
-  const categoryList = [
-    { name:"Technology", sub:"IT, Software, Data", icon:"fa-laptop-code", filterType:"industry", value:"Tech" },
-    { name:"Finance & Banking", sub:"Investing, Accounting", icon:"fa-chart-line", filterType:"industry", value:"Finance" },
-    { name:"Healthcare", sub:"Medical, Biotech", icon:"fa-heartbeat", filterType:"industry", value:"Healthcare" },
-    { name:"Marketing", sub:"Growth, Brand, PR", icon:"fa-bullhorn", filterType:"industry", value:"Marketing" },
-    { name:"Design", sub:"UI/UX, Creative", icon:"fa-palette", filterType:"industry", value:"Design" },
-  ];
+  const categoryList = <?= json_encode(array_map(function($i) {
+      return ['name' => $i['label'], 'sub' => '', 'icon' => $i['icon'], 'filterType' => 'industry', 'value' => $i['value']];
+  }, getIndustryFilterOptions()), JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 
   let savedJobs = new Set();
 
@@ -1352,17 +1336,11 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   window.addEventListener('resize', updateMobileThemeBtn);
   updateMobileThemeBtn();
 
-  // mobile category links
-  const mobileCatMap = {
-    'mob-tech': { type:'industry', val:'Tech' },
-    'mob-fin':  { type:'industry', val:'Finance' },
-    'mob-health':{ type:'industry', val:'Healthcare' },
-    'mob-mkt':  { type:'industry', val:'Marketing' },
-    'mob-design':{ type:'industry', val:'Design' },
-  };
-  Object.entries(mobileCatMap).forEach(([id,{type,val}]) => {
-    document.getElementById(id)?.addEventListener('click', () => {
-      if (type === 'industry') industryFilter.value = val;
+  // mobile category links (dynamic)
+  document.querySelectorAll('.mobile-cat-link').forEach(el => {
+    el.addEventListener('click', () => {
+      const val = el.dataset.industry;
+      if (val) industryFilter.value = val;
       renderAllJobs();
       closeMobileMenu();
       document.getElementById('jobs').scrollIntoView({ behavior:'smooth' });

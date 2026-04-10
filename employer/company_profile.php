@@ -1,16 +1,8 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
-
-if (!isset($_SESSION['user_id'])) {
-    header('Location: /antcareers/auth/antcareers_login.php');
-    exit;
-}
-
-if (strtolower((string)($_SESSION['account_type'] ?? '')) !== 'employer') {
-    header('Location: ../index.php');
-    exit;
-}
+require_once dirname(__DIR__) . '/includes/auth.php';
+requireLogin('employer');
 
 $db = getDB();
 $userId = (int)$_SESSION['user_id'];
