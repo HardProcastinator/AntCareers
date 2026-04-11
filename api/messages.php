@@ -24,31 +24,40 @@ function api_json(array $payload, int $status = 200): void
     exit;
 }
 
+function relative_time_from_seconds(int $seconds): string
+{
+    if ($seconds < 0) {
+        $seconds = 0;
+    }
+
+    if ($seconds < 45) {
+        return 'Just now';
+    }
+    if ($seconds < 3600) {
+        return floor($seconds / 60) . 'm ago';
+    }
+    if ($seconds < 86400) {
+        return floor($seconds / 3600) . 'h ago';
+    }
+    if ($seconds < 172800) {
+        return 'Yesterday';
+    }
+    if ($seconds < 604800) {
+        return floor($seconds / 86400) . 'd ago';
+    }
+
+    return '';
+}
+
 function time_ago(string $datetime): string
 {
     $timestamp = strtotime($datetime);
     if (!$timestamp) {
-        return 'Just now';
+        return '';
     }
 
     $diff = time() - $timestamp;
-    if ($diff < 60) {
-        return 'Just now';
-    }
-    if ($diff < 3600) {
-        return floor($diff / 60) . 'm ago';
-    }
-    if ($diff < 86400) {
-        return floor($diff / 3600) . 'h ago';
-    }
-    if ($diff < 172800) {
-        return 'Yesterday';
-    }
-    if ($diff < 604800) {
-        return floor($diff / 86400) . 'd ago';
-    }
-
-    return date('M j', $timestamp);
+    return relative_time_from_seconds((int) $diff);
 }
 
 function table_has_column(PDO $db, string $table, string $column): bool
@@ -278,6 +287,22 @@ function get_or_create_conversation(PDO $db, int $userA, int $userB): array
     return $conversation;
 }
 
+function mark_message_notifications_read(PDO $db, int $userId, int $conversationId): void
+{
+    try {
+        $stmt = $db->prepare("UPDATE notifications n
+            JOIN messages m ON m.id = n.reference_id
+            SET n.is_read = 1
+            WHERE n.user_id = ?
+              AND n.type = 'message'
+              AND n.is_read = 0
+              AND m.conversation_id = ?");
+        $stmt->execute([$userId, $conversationId]);
+    } catch (PDOException $e) {
+        error_log('[AntCareers] api_messages mark_message_notifications_read: ' . $e->getMessage());
+    }
+}
+
 function fetch_user(PDO $db, int $userId): ?array
 {
     $stmt = $db->prepare('SELECT id, full_name, company_name, avatar_url, account_type FROM users WHERE id = ? AND is_active = 1 LIMIT 1');
@@ -294,7 +319,8 @@ switch ($action) {
             $sql = "
                 SELECT c.id AS conversation_id, c.latest_message_at, c.latest_message_id,
                        p.id AS partner_id, p.full_name, p.company_name, p.avatar_url, p.account_type,
-                       m.body, m.created_at, m.sender_id,
+                                             m.body, m.created_at, m.sender_id,
+                                             TIMESTAMPDIFF(SECOND, m.created_at, NOW()) AS age_seconds,
                        (
                          SELECT COUNT(*)
                          FROM messages mm
@@ -329,7 +355,10 @@ switch ($action) {
                     'avatar_url'      => $row['avatar_url'] ?: null,
                     'color'           => color_for_id((int) $row['partner_id']),
                     'preview'         => mb_substr((string) $row['body'], 0, 80),
-                    'time'            => time_ago((string) $row['created_at']),
+                    'time'            => (($timeText = relative_time_from_seconds((int) ($row['age_seconds'] ?? 0))) !== '')
+                        ? $timeText
+                        : date('M j', strtotime((string) $row['created_at'])),
+                    'latest_message_at' => (string) $row['created_at'],
                     'unread_count'    => (int) $row['unread_count'],
                     'job_title'       => $jobTitle,
                     'app_status'      => $appStatus,
@@ -367,6 +396,8 @@ switch ($action) {
                     seen_at = COALESCE(seen_at, NOW())
                 WHERE conversation_id = ? AND receiver_id = ? AND is_read = 0");
             $markRead->execute([(int) $conversation['id'], $uid]);
+
+            mark_message_notifications_read($db, $uid, (int) $conversation['id']);
 
             $stmt = $db->prepare("SELECT id, sender_id, receiver_id, body, message_type, is_read, created_at
                 FROM messages
@@ -471,11 +502,20 @@ switch ($action) {
 
             $db->commit();
 
+            // Query back the actual created_at so the returned time is derived from the
+            // same DB value the messages endpoint uses — prevents clock/timezone mismatch.
+            $createdAtStmt = $db->prepare('SELECT created_at FROM messages WHERE id = ? LIMIT 1');
+            $createdAtStmt->execute([$messageId]);
+            $createdAt = (string) ($createdAtStmt->fetchColumn() ?: '');
+            $timeStr = $createdAt !== ''
+                ? date('g:i A', strtotime($createdAt))
+                : date('g:i A');
+
             api_json([
-                'success' => true,
-                'message_id' => $messageId,
+                'success'         => true,
+                'message_id'      => $messageId,
                 'conversation_id' => (int) $conversation['id'],
-                'time' => date('g:i A'),
+                'time'            => $timeStr,
             ]);
         } catch (Throwable $e) {
             if ($db->inTransaction()) {
@@ -493,7 +533,7 @@ switch ($action) {
         }
 
         $conversationId = (int) ($input['conversation_id'] ?? $_GET['conversation_id'] ?? $_POST['conversation_id'] ?? 0);
-        $partnerId = (int) ($input['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? 0);
+        $partnerId = (int) ($input['user_id'] ?? $input['partner_id'] ?? $_GET['user_id'] ?? $_GET['partner_id'] ?? $_POST['user_id'] ?? $_POST['partner_id'] ?? 0);
 
         try {
             if ($conversationId <= 0 && $partnerId > 0) {
@@ -508,6 +548,8 @@ switch ($action) {
                         seen_at = COALESCE(seen_at, NOW())
                     WHERE conversation_id = ? AND receiver_id = ? AND is_read = 0");
                 $stmt->execute([$conversationId, $uid]);
+
+                mark_message_notifications_read($db, $uid, $conversationId);
             }
 
             api_json(['success' => true]);
@@ -540,7 +582,8 @@ switch ($action) {
 
     case 'notifications':
         try {
-            $stmt = $db->prepare("SELECT id, type, content, reference_id, is_read, created_at
+            $stmt = $db->prepare("SELECT id, type, content, reference_id, is_read, created_at,
+                       TIMESTAMPDIFF(SECOND, created_at, NOW()) AS age_seconds
                 FROM notifications
                 WHERE user_id = ?
                 ORDER BY created_at DESC, id DESC
@@ -555,7 +598,9 @@ switch ($action) {
                     'content' => (string) $row['content'],
                     'reference_id' => $row['reference_id'] !== null ? (int) $row['reference_id'] : null,
                     'is_read' => (int) $row['is_read'],
-                    'time' => time_ago((string) $row['created_at']),
+                    'time' => (($notifTime = relative_time_from_seconds((int) ($row['age_seconds'] ?? 0))) !== '')
+                        ? $notifTime
+                        : date('M j', strtotime((string) $row['created_at'])),
                     'created_at' => (string) $row['created_at'],
                 ];
             }

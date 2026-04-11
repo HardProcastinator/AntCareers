@@ -1,0 +1,73 @@
+<?php
+declare(strict_types=1);
+require_once dirname(__DIR__) . '/config.php';
+require_once dirname(__DIR__) . '/includes/auth.php';
+
+header('Content-Type: application/json; charset=utf-8');
+
+if (!isset($_SESSION['user_id']) || strtolower((string)($_SESSION['account_type'] ?? '')) !== 'seeker') {
+    http_response_code(401);
+    exit(json_encode(['success' => false, 'message' => 'Unauthorized.']));
+}
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    exit(json_encode(['success' => false, 'message' => 'Method not allowed.']));
+}
+
+$seekerId    = (int)$_SESSION['user_id'];
+$jobId       = (int)($_POST['job_id'] ?? 0);
+$coverLetter = trim((string)($_POST['cover_letter'] ?? ''));
+
+if ($jobId <= 0) {
+    exit(json_encode(['success' => false, 'message' => 'Invalid job ID.']));
+}
+
+try {
+    $db = getDB();
+
+    // Verify job is active
+    $job = $db->prepare("SELECT id, status FROM jobs WHERE id = :id AND status = 'Active' LIMIT 1");
+    $job->execute([':id' => $jobId]);
+    if (!$job->fetch()) {
+        exit(json_encode(['success' => false, 'message' => 'This job is no longer available.']));
+    }
+
+    // Check not already applied
+    $check = $db->prepare("SELECT id FROM applications WHERE job_id = :jid AND seeker_id = :sid LIMIT 1");
+    $check->execute([':jid' => $jobId, ':sid' => $seekerId]);
+    if ($check->fetch()) {
+        exit(json_encode(['success' => false, 'message' => 'You have already applied for this job.']));
+    }
+
+    // Get active resume URL if any
+    $resumeUrl = null;
+    try {
+        $rStmt = $db->prepare("SELECT file_path FROM seeker_resumes WHERE user_id = :uid AND is_active = 1 ORDER BY uploaded_at DESC LIMIT 1");
+        $rStmt->execute([':uid' => $seekerId]);
+        $res = $rStmt->fetch();
+        if ($res) $resumeUrl = $res['file_path'];
+    } catch (PDOException $e) { /* resume table may not exist */ }
+
+    // Insert application
+    $ins = $db->prepare("
+        INSERT INTO applications (job_id, seeker_id, cover_letter, resume_url, status, applied_at)
+        VALUES (:jid, :sid, :cl, :ru, 'Pending', NOW())
+    ");
+    $ins->execute([
+        ':jid' => $jobId,
+        ':sid' => $seekerId,
+        ':cl'  => $coverLetter ?: null,
+        ':ru'  => $resumeUrl,
+    ]);
+
+    exit(json_encode(['success' => true]));
+
+} catch (PDOException $e) {
+    error_log('[AntCareers] apply_job error: ' . $e->getMessage());
+    // Check for duplicate key (race condition)
+    if (str_contains($e->getMessage(), 'Duplicate') || $e->getCode() == 23000) {
+        exit(json_encode(['success' => false, 'message' => 'You have already applied for this job.']));
+    }
+    http_response_code(500);
+    exit(json_encode(['success' => false, 'message' => 'Server error. Please try again.']));
+}
