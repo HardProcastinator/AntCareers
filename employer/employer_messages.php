@@ -367,11 +367,13 @@ function loadPageThreads() {
     fetch(API + '?action=threads')
         .then(r => r.json())
         .then(data => {
-            if (data.success) {
-                threads = data.threads;
-                filteredThreads = [...threads];
-                renderThreads(filteredThreads);
+            if (!data.success) {
+                document.getElementById('threadsList').innerHTML = '<div class="loading-spinner" style="color:var(--text-muted)"><i class="fas fa-exclamation-circle" style="font-size:20px;display:block;margin-bottom:8px;"></i>' + esc(data.message || 'Could not load conversations') + '</div>';
+                return;
             }
+            threads = data.threads;
+            filteredThreads = [...threads];
+            renderThreads(filteredThreads);
         })
         .catch(e => console.error('Thread load error:', e));
 }
@@ -418,7 +420,10 @@ function loadMessages(partnerId) {
     fetch(API + '?action=messages&user_id=' + partnerId)
         .then(r => r.json())
         .then(data => {
-            if (!data.success) return;
+            if (!data.success) {
+                document.getElementById('chatMessages').innerHTML = '<div class="empty-chat" style="height:100%"><div class="empty-icon"><i class="fas fa-exclamation-circle"></i></div><div style="font-size:14px;font-weight:600;color:var(--text-mid);">' + esc(data.message || 'Could not load messages') + '</div></div>';
+                return;
+            }
             const t = threads.find(x => x.partner_id === partnerId);
             const color = t ? t.color : '#4A90D9';
             const partner = data.partner || {name: 'User'};

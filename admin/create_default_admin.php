@@ -5,13 +5,27 @@ require_once dirname(__DIR__) . '/includes/auth_helpers.php';
 
 header('Content-Type: text/plain; charset=utf-8');
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    echo "Forbidden\n";
+    exit;
+}
+
 try {
     $db = getDB();
 
-    $adminEmail = 'admin@antcareers.com';
-    $adminPassword = 'Admin123!';
-    $adminFullName = 'AntCareers Admin';
+    $adminEmail = trim((string)(getenv('ANTCAREERS_ADMIN_EMAIL') ?: ''));
+    $adminPassword = (string)(getenv('ANTCAREERS_ADMIN_PASSWORD') ?: '');
+    $adminFullName = trim((string)(getenv('ANTCAREERS_ADMIN_NAME') ?: 'AntCareers Admin'));
     $accountType = 'admin';
+
+    if ($adminEmail === '') {
+        $adminEmail = 'admin@antcareers.local';
+    }
+    if ($adminPassword === '') {
+        $adminPassword = bin2hex(random_bytes(8)) . '!';
+        echo "Generated admin password (save this now): " . $adminPassword . "\n";
+    }
 
     // Check if admin already exists
     $check = $db->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');

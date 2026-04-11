@@ -14,6 +14,7 @@ if (!isset($_SESSION['user_id'])) {
 $db = getDB();
 $uid = (int) $_SESSION['user_id'];
 $role = strtolower((string)($_SESSION['account_type'] ?? ''));
+if ($role === 'recruiter') $role = 'employer';
 $action = (string)($_GET['action'] ?? $_POST['action'] ?? 'threads');
 
 function api_json(array $payload, int $status = 200): void
@@ -212,12 +213,14 @@ function color_for_id(int $id): string
     return $colors[$id % count($colors)];
 }
 
+function normalize_role(string $role): string
+{
+    return ($role === 'recruiter') ? 'employer' : $role;
+}
+
 function role_allows_direct_message(string $senderRole, string $receiverRole): bool
 {
-    $allowed = ['seeker', 'employer'];
-    return in_array($senderRole, $allowed, true)
-        && in_array($receiverRole, $allowed, true)
-        && $senderRole !== $receiverRole;
+    return true;
 }
 
 function fetch_partner_context(PDO $db, int $currentUserId, string $role, int $partnerId): array
@@ -594,23 +597,14 @@ switch ($action) {
             api_json(['success' => true, 'users' => []]);
         }
 
-        $targetRole = $role === 'employer' ? 'seeker' : ($role === 'seeker' ? 'employer' : null);
         try {
-            if ($targetRole === null) {
-                $stmt = $db->prepare("SELECT id, full_name, company_name, avatar_url, account_type
-                    FROM users
-                    WHERE id != ? AND is_active = 1 AND full_name LIKE ?
-                    ORDER BY full_name ASC
-                    LIMIT 15");
-                $stmt->execute([$uid, '%' . $query . '%']);
-            } else {
-                $stmt = $db->prepare("SELECT id, full_name, company_name, avatar_url, account_type
-                    FROM users
-                    WHERE id != ? AND is_active = 1 AND account_type = ? AND full_name LIKE ?
-                    ORDER BY full_name ASC
-                    LIMIT 15");
-                $stmt->execute([$uid, $targetRole, '%' . $query . '%']);
-            }
+            $like = '%' . $query . '%';
+            $stmt = $db->prepare("SELECT id, full_name, company_name, avatar_url, account_type
+                FROM users
+                WHERE id != ? AND is_active = 1 AND (full_name LIKE ? OR company_name LIKE ?)
+                ORDER BY full_name ASC
+                LIMIT 15");
+            $stmt->execute([$uid, $like, $like]);
 
             $users = [];
             foreach ($stmt->fetchAll() as $row) {

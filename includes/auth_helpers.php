@@ -90,6 +90,41 @@ function recordLoginAttempt(string $email, string $ip, bool $success): void
     ]);
 }
 
+/**
+ * Fetch lightweight public-facing platform stats for guest pages.
+ * Falls back to zeroes if the schema is not fully available yet.
+ *
+ * @return array{live_jobs:int, companies_hiring:int}
+ */
+function getPublicPlatformStats(): array
+{
+    $db = getDB();
+
+    try {
+        $liveJobsStmt = $db->query(
+            "SELECT COUNT(*)
+             FROM jobs
+             WHERE status = 'Active'
+               AND (deadline IS NULL OR deadline >= CURDATE())"
+        );
+
+        $companiesStmt = $db->query(
+            "SELECT COUNT(DISTINCT employer_id)
+             FROM jobs
+             WHERE status = 'Active'
+               AND (deadline IS NULL OR deadline >= CURDATE())"
+        );
+
+        return [
+            'live_jobs' => (int)$liveJobsStmt->fetchColumn(),
+            'companies_hiring' => (int)$companiesStmt->fetchColumn(),
+        ];
+    } catch (PDOException $e) {
+        error_log('[AntCareers] public stats: ' . $e->getMessage());
+        return ['live_jobs' => 0, 'companies_hiring' => 0];
+    }
+}
+
 
 // =============================================================================
 // Remember-me (split-token pattern)

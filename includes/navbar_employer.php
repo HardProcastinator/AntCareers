@@ -69,7 +69,7 @@ function navHref(string $page): string {
       <button class="notif-btn-nav" id="navMsgBtn"
               onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();}">
         <i class="fas fa-envelope"></i>
-        <span class="badge msg-badge-count">0</span>
+        <span class="badge msg-badge-count" style="display:none">0</span>
       </button>
       <?php endif; ?>
 
@@ -77,7 +77,7 @@ function navHref(string $page): string {
       <button class="notif-btn-nav" id="navNotifBtn"
               onclick="if(typeof openNotifSidebar==='function'){openNotifSidebar();}else{this.classList.toggle('active');}">
         <i class="fas fa-bell"></i>
-        <span class="badge notif-badge-count">0</span>
+        <span class="badge notif-badge-count" style="display:none">0</span>
       </button>
       <?php endif; ?>
 

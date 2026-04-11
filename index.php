@@ -960,38 +960,10 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       .search-bar { border-radius: 12px; }
       .featured-card { min-width: 230px; max-width: 230px; }
     }
-      .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; color:var(--text-muted); flex-shrink:0; }
-    .notif-btn-nav:hover { color:var(--red-pale); border-color:var(--red-vivid); }
-    .notif-btn-nav .badge { position:absolute; top:-5px; right:-5px; width:17px; height:17px; border-radius:50%; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid var(--soil-dark); background:var(--red-vivid); }
-    .notif-panel { position:fixed; top:64px; right:0; bottom:0; width:360px; background:var(--soil-card); border-left:1px solid var(--soil-line); z-index:150; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.4); }
-    .notif-panel.open { transform:translateX(0); }
-    .notif-panel-head { padding:20px 20px 16px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-    .notif-panel-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:8px; }
-    .notif-panel-title i { color:var(--red-bright); }
-    .notif-close { width:28px; height:28px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:0.15s; }
-    .notif-close:hover { color:#F5F0EE; }
-    .notif-panel-body { flex:1; overflow-y:auto; padding:12px 16px; }
-    .notif-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--soil-line); }
-    .notif-item:last-child { border-bottom:none; }
-    .n-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:5px; }
-    .n-dot.red { background:var(--red-vivid); } .n-dot.amber { background:var(--amber); } .n-dot.green { background:#4CAF70; } .n-dot.read { background:var(--soil-line); }
-    .n-text { font-size:13px; color:var(--text-mid); line-height:1.55; }
-    .n-time { font-size:11px; color:var(--text-muted); margin-top:3px; font-weight:600; }
   </style>
 </head>
 <body>
-<div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-head">
-    <div class="notif-panel-title"><i class="fas fa-bell"></i> Notifications</div>
-    <button class="notif-close" onclick="closeNotif()"><i class="fas fa-times"></i></button>
-  </div>
-  <div class="notif-panel-body">
-    <div class="notif-item"><div class="n-dot green"></div><div><div class="n-text">Your application for <strong>Senior Frontend Engineer</strong> at Vercel was submitted.</div><div class="n-time">1 hour ago</div></div></div>
-    <div class="notif-item"><div class="n-dot amber"></div><div><div class="n-text">Your status for <strong>Product Designer</strong> at Linear was updated to <em>Shortlisted</em>.</div><div class="n-time">3 hours ago</div></div></div>
-    <div class="notif-item"><div class="n-dot red"></div><div><div class="n-text">You received a new message from <strong>TechPH Inc.</strong></div><div class="n-time">Yesterday</div></div></div>
-    <div class="notif-item"><div class="n-dot read"></div><div><div class="n-text">3 new jobs matching your profile in Manila.</div><div class="n-time">Mar 27</div></div></div>
-  </div>
-</div>
+<!-- Notification panel removed: public landing page has no logged-in user -->
 
 
 <!-- Background -->
@@ -1094,7 +1066,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   <section class="hero anim">
     <div class="hero-left">
       <div class="hero-eyebrow">
-        <i class="fas fa-circle"></i> 2,400+ verified roles across the Philippines
+        <i class="fas fa-circle"></i> <?php echo count($indexJobs); ?>+ verified roles across the Philippines
       </div>
       <h1 class="hero-h1">
         <span class="dim">Your career,</span><br>
@@ -1497,7 +1469,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
             <button class="save-btn ${savedJobs.has(j.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${j.id},this)">
               <i class="fa${savedJobs.has(j.id)?'s':'r'} fa-heart"></i>
             </button>
-            <button class="jr-apply" onclick="event.stopPropagation();showToast('Apply flow coming soon!','fa-paper-plane')">Apply</button>
+            <button class="jr-apply" onclick="event.stopPropagation();startApplication(${j.id})">Apply</button>
           </div>
         </div>
       </div>`).join('');
@@ -1539,9 +1511,9 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       <p style="color:var(--text-mid);font-size:14px;line-height:1.75;margin-bottom:18px;">${j.description}</p>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:26px;">${j.tags.map(t=>`<span class="chip">${t}</span>`).join('')}</div>
       <div style="display:flex;gap:9px;">
-        <button onclick="showToast('Application flow — backend integration coming!','fa-paper-plane');document.getElementById('jobModal').classList.remove('open')"
+        <button onclick="startApplication(${j.id})"
           style="flex:1;padding:11px 16px;border-radius:6px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.02em;">
-          <i class="fas fa-paper-plane"></i> Apply now
+          <i class="fas fa-paper-plane"></i> Create account to apply
         </button>
         <button onclick="document.getElementById('jobModal').classList.remove('open')"
           style="padding:11px 16px;border-radius:6px;background:transparent;border:1px solid var(--soil-line);color:var(--text-muted);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;">
@@ -1570,12 +1542,22 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   });
 
   // Auth / misc
-  document.getElementById('seeMoreFeatured').addEventListener('click', () => showToast('View all featured — coming soon!','fa-star'));
-  document.getElementById('seeMoreCompanies').addEventListener('click', () => showToast('Explore all companies — coming soon!','fa-building'));
-  document.getElementById('seeMoreJobs').addEventListener('click', () => showToast('Browse full catalog — coming soon!','fa-list'));
+  document.getElementById('seeMoreFeatured').addEventListener('click', () => {
+    const strip = document.getElementById('featuredJobsContainer');
+    strip?.scrollBy({ left: Math.max(strip.clientWidth * 0.8, 320), behavior: 'smooth' });
+  });
+  document.getElementById('seeMoreCompanies').addEventListener('click', () => {
+    document.getElementById('companies')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  document.getElementById('seeMoreJobs').addEventListener('click', () => {
+    document.getElementById('jobs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 
   function getThemeParam() {
     return '?theme=' + (document.body.classList.contains('light') ? 'light' : 'dark');
+  }
+  function startApplication(jobId) {
+    window.location.href = 'auth/antcareers_signup.php' + getThemeParam() + '&job=' + encodeURIComponent(jobId);
   }
   document.getElementById('loginBtn').addEventListener('click', () => window.location.href = 'auth/antcareers_login.php' + getThemeParam());
   document.getElementById('signupBtn').addEventListener('click', () => window.location.href = 'auth/antcareers_signup.php' + getThemeParam());
@@ -1593,7 +1575,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     keywordInput.value = '';
     [jobTypeFilter,positionFilter,locationFilter,expFilter,industryFilter,salaryRangeFilter,workSetupFilter].forEach(el => el.value='');
     renderAllJobs();
-    document.querySelector('.search-section').scrollIntoView({ behavior:'smooth', block:'start' });
+    document.querySelector('.hero').scrollIntoView({ behavior:'smooth', block:'start' });
   });
 
   // ── HERO MINI JOBS ──

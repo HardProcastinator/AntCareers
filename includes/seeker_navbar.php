@@ -112,7 +112,7 @@ function _navHref(string $file): string {
   .msg-item:hover { opacity:0.85; }
   .msg-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; }
   .msg-name { font-size:13px; font-weight:700; color:#F5F0EE; margin-bottom:2px; }
-  .msg-preview { font-size:12px; color:var(--text-muted); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .msg-preview { font-size:12px; color:var(--text-muted); line-height:1.4; display:-webkit-box; line-clamp:2; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .msg-time { font-size:10px; color:var(--text-muted); font-weight:600; margin-left:auto; flex-shrink:0; white-space:nowrap; }
   body.light .msg-panel { background:#FFFFFF; border-color:#E0CECA; }
   body.light .msg-panel-title { color:#1A0A09; }

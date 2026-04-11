@@ -544,7 +544,18 @@ function loadConversation(partnerId, mode) {
     fetch(API_URL + '?action=messages&user_id=' + partnerId)
         .then(r => r.json())
         .then(data => {
-            if (!data.success) return;
+            if (!data.success) {
+                if (mode === 'sidebar') {
+                    document.getElementById('sbChatMessages').innerHTML = '<div class="sb-empty"><i class="fas fa-exclamation-circle"></i>' + (data.message || 'Could not load conversation') + '</div>';
+                    document.getElementById('sbChatName').textContent = 'Error';
+                    document.getElementById('sbChatMeta').textContent = '';
+                } else {
+                    document.getElementById('fsChatMessages').innerHTML = '<div class="sb-empty" style="height:100%;display:flex;flex-direction:column;justify-content:center;"><i class="fas fa-exclamation-circle"></i>' + (data.message || 'Could not load conversation') + '</div>';
+                    document.getElementById('fsChatName').textContent = 'Error';
+                    document.getElementById('fsChatMeta').textContent = '';
+                }
+                return;
+            }
             const t = _threads.find(x => x.partner_id === partnerId);
             const color = t ? t.color : '#4A90D9';
             const pName = (data.partner && data.partner.name) ? data.partner.name : 'User';
