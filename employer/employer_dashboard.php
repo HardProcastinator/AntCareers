@@ -406,23 +406,6 @@ try {
     .jr-apply { padding:7px 16px; border-radius:6px; background:var(--red-vivid); border:none; color:#fff; font-size:12px; font-weight:700; cursor:pointer; font-family:var(--font-body); transition:0.2s; letter-spacing:0.02em; }
     .jr-apply:hover { background:var(--red-bright); }
 
-    /* ── NOTIFICATIONS PANEL (slide-in like saved panel) ── */
-    .notif-panel { position:fixed; top:64px; right:0; bottom:0; width:360px; background:var(--soil-card); border-left:1px solid var(--soil-line); z-index:150; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.4); }
-    .notif-panel.open { transform:translateX(0); }
-    .notif-panel-head { padding:20px 20px 16px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-    .notif-panel-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:8px; }
-    .notif-panel-title i { color:var(--red-bright); }
-    .notif-close { width:28px; height:28px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:0.15s; }
-    .notif-close:hover { color:#F5F0EE; }
-    .notif-panel-body { flex:1; overflow-y:auto; padding:12px 16px; }
-    .notif-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--soil-line); }
-    .notif-item:last-child { border-bottom:none; }
-    .n-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:5px; }
-    .n-dot.red { background:var(--red-vivid); }
-    .n-dot.amber { background:var(--amber); }
-    .n-dot.read { background:var(--soil-line); }
-    .n-text { font-size:13px; color:var(--text-mid); line-height:1.55; }
-    .n-time { font-size:11px; color:var(--text-muted); margin-top:3px; font-weight:600; }
     .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:15px; color:var(--text-muted); flex-shrink:0; }
     .notif-btn-nav:hover { color:var(--red-pale); border-color:var(--red-vivid); }
     .notif-btn-nav .badge { position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; border-radius:50%; background:var(--red-vivid); color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid var(--soil-dark); overflow:hidden; padding:0 3px; }
@@ -501,10 +484,6 @@ try {
     body.light .jr-title { color:#1A0A09; }
     body.light .jr-salary { color:#1A0A09; }
     body.light .jr-meta { color:#7A5555; }
-    body.light .notif-panel { background:#FFFFFF; border-color:#E0CECA; }
-    body.light .notif-panel-title { color:#1A0A09; }
-    body.light .notif-item { border-color:#E0CECA; }
-    body.light .n-dot.read { background:#E0CECA; }
     body.light .modal-box { background:#FFFFFF; border-color:#E0CECA; }
     body.light .profile-dropdown { background:#FFFFFF; border-color:#E0CECA; }
     body.light .pd-item { color:#4A2828; }
@@ -521,7 +500,6 @@ try {
       .profile-name,.profile-role{display:none} .profile-btn{padding:6px 8px}
       .job-row{grid-template-columns:1fr;gap:10px}
       .job-row-right{flex-direction:row;align-items:center;justify-content:space-between}
-      .notif-panel{width:100%;max-width:100%}
       .footer{flex-direction:column;text-align:center;padding:20px 16px}
       .cards-row{grid-template-columns:repeat(2,1fr);}
     }
@@ -557,78 +535,7 @@ try {
 <div class="glow-orb glow-2"></div>
 
 <!-- NAVBAR -->
-<nav class="navbar">
-  <div class="nav-inner">
-    <a class="logo" href="employer_dashboard.php">
-      <div class="logo-icon"></div>
-      <span class="logo-text">Ant<span>Careers</span></span>
-    </a>
-
-    <div class="nav-links">
-      <a class="nav-link active"><i class="fas fa-th-large"></i> Dashboard</a>
-      <a class="nav-link" onclick="window.location.href='employer_browseJobs.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-search"></i> Browse Jobs</a>
-      <a class="nav-link" onclick="window.location.href='employer_manageJobs.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-briefcase"></i> Manage Jobs</a>
-      <a class="nav-link" onclick="window.location.href='employer_applicants.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-users"></i> Applicants</a>
-      <a class="nav-link" href="employer_analytics.php"><i class="fas fa-chart-bar"></i> Analytics</a>
-    </div>
-
-    <div class="nav-right">
-      <button class="theme-btn" id="themeToggle"><i class="fas fa-sun"></i></button>
-
-      <button class="notif-btn-nav" id="dashMsgBtn" onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();}">
-        <i class="fas fa-envelope"></i>
-        <span class="badge msg-badge-count">0</span>
-      </button>
-
-      <button class="notif-btn-nav" id="notifToggle" onclick="if(typeof openNotifSidebar==='function'){openNotifSidebar();}">
-        <i class="fas fa-bell"></i>
-        <span class="badge notif-badge-count">0</span>
-      </button>
-
-      <a class="btn-nav-red" style="cursor:pointer;" href="employer_manageJobs.php?postjob=1"><i class="fas fa-plus-circle"></i> Post Job</a>
-
-      <div class="profile-wrap" id="profileWrap">
-        <button class="profile-btn" id="profileToggle">
-          <div class="profile-avatar"><?php echo htmlspecialchars($initials, ENT_QUOTES, 'UTF-8'); ?></div>
-          <div>
-            <div class="profile-name"><?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></div>
-            <div class="profile-role">Company Admin</div>
-          </div>
-          <i class="fas fa-chevron-down profile-chevron"></i>
-        </button>
-        <div class="profile-dropdown" id="profileDropdown">
-          <div class="profile-dropdown-head">
-            <div class="pdh-name"><?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></div>
-            <div class="pdh-sub">Company Admin · <?php echo htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8'); ?></div>
-          </div>
-          <div class="pd-item" onclick="window.location.href='employer_companyProfile.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-building"></i> Company Profile</div>
-          <div class="pd-item" onclick="window.location.href='employer_manageRecruiters.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-user-tie"></i> Manage Recruiters</div>
-          <div class="pd-item" onclick="window.location.href='employer_settings.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-cog"></i> Settings</div>
-          <div class="pd-item" onclick="window.location.href='employer_messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-comments"></i> Messages</div>
-          <div class="pd-divider"></div>
-          <div class="pd-item danger" onclick="window.location.href='../auth/logout.php'"><i class="fas fa-sign-out-alt"></i> Sign out</div>
-        </div>
-      </div>
-      <button class="theme-btn hamburger" id="hamburger"><i class="fas fa-bars"></i></button>
-    </div><!-- /nav-right -->
-  </div><!-- /nav-inner -->
-</nav>
-
-<!-- Mobile menu -->
-<div class="mobile-menu" id="mobileMenu">
-  <a class="mobile-link"><i class="fas fa-th-large"></i> Dashboard</a>
-  <a class="mobile-link" onclick="window.location.href='employer_browseJobs.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-search"></i> Browse Jobs</a>
-  <a class="mobile-link" onclick="window.location.href='employer_manageJobs.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-briefcase"></i> Manage Jobs</a>
-  <a class="mobile-link" onclick="window.location.href='employer_applicants.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-users"></i> Applicants</a>
-  <a class="mobile-link" href="employer_analytics.php"><i class="fas fa-chart-bar"></i> Analytics</a>
-  <a class="mobile-link" onclick="window.location.href='employer_messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')"><i class="fas fa-envelope"></i> Messages</a>
-  <div class="mobile-divider"></div>
-  <a class="mobile-link" href="employer_companyProfile.php"><i class="fas fa-building"></i> Company Profile</a>
-  <a class="mobile-link" href="employer_manageRecruiters.php"><i class="fas fa-user-tie"></i> Manage Recruiters</a>
-  <a class="mobile-link" href="employer_settings.php"><i class="fas fa-cog"></i> Settings</a>
-  <div class="mobile-divider"></div>
-  <a class="mobile-link" onclick="window.location.href='../auth/logout.php'"><i class="fas fa-sign-out-alt"></i> Sign out</a>
-</div>
+<?php require_once dirname(__DIR__) . '/includes/navbar_employer.php'; ?>
 
 <!-- PAGE -->
 <div class="page-shell">
@@ -894,9 +801,6 @@ try {
     e.stopPropagation();
     document.getElementById('profileDropdown').classList.toggle('open');
   });
-
-  // ── NOTIF PANEL (handled by chat system sidebar) ──
-  function closeNotif() {}
 
   // ── CLICK OUTSIDE ──
   document.addEventListener('click', e => {

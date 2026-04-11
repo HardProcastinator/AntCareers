@@ -232,37 +232,9 @@ $navActive   = 'manage-jobs';
       .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; color:var(--text-muted); flex-shrink:0; }
     .notif-btn-nav:hover { color:var(--red-pale); border-color:var(--red-vivid); }
     .notif-btn-nav .badge { position:absolute; top:-5px; right:-5px; width:17px; height:17px; border-radius:50%; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid var(--soil-dark); background:var(--red-vivid); }
-    .notif-panel { position:fixed; top:64px; right:0; bottom:0; width:360px; background:var(--soil-card); border-left:1px solid var(--soil-line); z-index:150; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.4); }
-    .notif-panel.open { transform:translateX(0); }
-    .notif-panel-head { padding:20px 20px 16px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-    .notif-panel-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:8px; }
-    .notif-panel-title i { color:var(--red-bright); }
-    .notif-close { width:28px; height:28px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:0.15s; }
-    .notif-close:hover { color:#F5F0EE; }
-    .notif-panel-body { flex:1; overflow-y:auto; padding:12px 16px; }
-    .notif-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--soil-line); }
-    .notif-item:last-child { border-bottom:none; }
-    .n-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:5px; }
-    .n-dot.red { background:var(--red-vivid); } .n-dot.amber { background:var(--amber); } .n-dot.green { background:#4CAF70; } .n-dot.read { background:var(--soil-line); }
-    .n-text { font-size:13px; color:var(--text-mid); line-height:1.55; }
-    .n-time { font-size:11px; color:var(--text-muted); margin-top:3px; font-weight:600; }
   </style>
 </head>
 <body>
-<div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-head">
-    <div class="notif-panel-title"><i class="fas fa-bell"></i> Notifications</div>
-    <button class="notif-close" onclick="closeNotif()"><i class="fas fa-times"></i></button>
-  </div>
-  <div class="notif-panel-body">
-    <div class="notif-item"><div class="n-dot green"></div><div><div class="n-text">Your application for <strong>Senior Frontend Engineer</strong> at Vercel was submitted.</div><div class="n-time">1 hour ago</div></div></div>
-    <div class="notif-item"><div class="n-dot amber"></div><div><div class="n-text">Your status for <strong>Product Designer</strong> at Linear was updated to <em>Shortlisted</em>.</div><div class="n-time">3 hours ago</div></div></div>
-    <div class="notif-item"><div class="n-dot red"></div><div><div class="n-text">You received a new message from <strong>TechPH Inc.</strong></div><div class="n-time">Yesterday</div></div></div>
-    <div class="notif-item"><div class="n-dot read"></div><div><div class="n-text">3 new jobs matching your profile in Manila.</div><div class="n-time">Mar 27</div></div></div>
-  </div>
-</div>
-
-
 <div class="tunnel-bg">
   <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
     <g stroke="#C0392B" stroke-width="1.5" fill="none" opacity="0.6">

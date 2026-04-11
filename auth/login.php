@@ -48,7 +48,8 @@ $respondError = static function (string $message, int $status = 200) use ($isJso
         jsonResponse(['success' => false, 'message' => $message], $status);
     }
 
-    header('Location: antcareers_login.php?error=' . rawurlencode($message));
+    $_SESSION['login_error'] = $message;
+    header('Location: antcareers_login.php');
     exit;
 };
 

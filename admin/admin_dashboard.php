@@ -16,6 +16,25 @@ $firstName = $nameParts[0] ?? 'Admin';
 $initials  = count($nameParts) >= 2
     ? strtoupper(substr($nameParts[0],0,1).substr($nameParts[1],0,1))
     : strtoupper(substr($firstName,0,2));
+
+$db = getDB();
+$countValue = static function (string $sql) use ($db): int {
+  try {
+    return (int)$db->query($sql)->fetchColumn();
+  } catch (PDOException $e) {
+    error_log('[AntCareers] admin dashboard stats: ' . $e->getMessage());
+    return 0;
+  }
+};
+
+$adminStats = [
+  'users' => $countValue("SELECT COUNT(*) FROM users"),
+  'seekers' => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type) = 'seeker'"),
+  'employers' => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type) = 'employer'"),
+  'jobs' => $countValue("SELECT COUNT(*) FROM jobs"),
+  'active_jobs' => $countValue("SELECT COUNT(*) FROM jobs WHERE status = 'Active' AND (deadline IS NULL OR deadline >= CURDATE())"),
+  'applications' => $countValue("SELECT COUNT(*) FROM applications"),
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -370,38 +389,9 @@ $initials  = count($nameParts) >= 2
       .footer{flex-direction:column;text-align:center;padding:20px 16px}
       .cards-row{grid-template-columns:repeat(2,1fr);}
     }
-      .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; color:var(--text-muted); flex-shrink:0; }
-    .notif-btn-nav:hover { color:var(--red-pale); border-color:var(--red-vivid); }
-    .notif-btn-nav .badge { position:absolute; top:-5px; right:-5px; width:17px; height:17px; border-radius:50%; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid var(--soil-dark); background:var(--red-vivid); }
-    .notif-panel { position:fixed; top:64px; right:0; bottom:0; width:360px; background:var(--soil-card); border-left:1px solid var(--soil-line); z-index:150; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.4); }
-    .notif-panel.open { transform:translateX(0); }
-    .notif-panel-head { padding:20px 20px 16px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-    .notif-panel-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:8px; }
-    .notif-panel-title i { color:var(--red-bright); }
-    .notif-close { width:28px; height:28px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:0.15s; }
-    .notif-close:hover { color:#F5F0EE; }
-    .notif-panel-body { flex:1; overflow-y:auto; padding:12px 16px; }
-    .notif-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--soil-line); }
-    .notif-item:last-child { border-bottom:none; }
-    .n-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:5px; }
-    .n-dot.red { background:var(--red-vivid); } .n-dot.amber { background:var(--amber); } .n-dot.green { background:#4CAF70; } .n-dot.read { background:var(--soil-line); }
-    .n-text { font-size:13px; color:var(--text-mid); line-height:1.55; }
-    .n-time { font-size:11px; color:var(--text-muted); margin-top:3px; font-weight:600; }
   </style>
 </head>
 <body>
-<div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-head">
-    <div class="notif-panel-title"><i class="fas fa-bell"></i> Notifications</div>
-    <button class="notif-close" onclick="closeNotif()"><i class="fas fa-times"></i></button>
-  </div>
-  <div class="notif-panel-body">
-    <div class="notif-item"><div class="n-dot green"></div><div><div class="n-text">Your application for <strong>Senior Frontend Engineer</strong> at Vercel was submitted.</div><div class="n-time">1 hour ago</div></div></div>
-    <div class="notif-item"><div class="n-dot amber"></div><div><div class="n-text">Your status for <strong>Product Designer</strong> at Linear was updated to <em>Shortlisted</em>.</div><div class="n-time">3 hours ago</div></div></div>
-    <div class="notif-item"><div class="n-dot red"></div><div><div class="n-text">You received a new message from <strong>TechPH Inc.</strong></div><div class="n-time">Yesterday</div></div></div>
-    <div class="notif-item"><div class="n-dot read"></div><div><div class="n-text">3 new jobs matching your profile in Manila.</div><div class="n-time">Mar 27</div></div></div>
-  </div>
-</div>
 
 
 <div class="tunnel-bg">
@@ -536,18 +526,18 @@ $initials  = count($nameParts) >= 2
 
         <!-- Platform stats -->
         <div class="sidebar-stats">
-          <div class="sb-stat"><div class="sb-stat-num">1,482</div><div class="sb-stat-lbl">Total Users</div></div>
-          <div class="sb-stat"><div class="sb-stat-num">317</div><div class="sb-stat-lbl">Job Posts</div></div>
-          <div class="sb-stat"><div class="sb-stat-num">94</div><div class="sb-stat-lbl">Employers</div></div>
-          <div class="sb-stat"><div class="sb-stat-num">3,071</div><div class="sb-stat-lbl">Applications</div></div>
+          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($adminStats['users']); ?></div><div class="sb-stat-lbl">Total Users</div></div>
+          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($adminStats['jobs']); ?></div><div class="sb-stat-lbl">Job Posts</div></div>
+          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($adminStats['employers']); ?></div><div class="sb-stat-lbl">Employers</div></div>
+          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($adminStats['applications']); ?></div><div class="sb-stat-lbl">Applications</div></div>
         </div>
 
         <!-- Navigation -->
         <button class="sb-nav-item active"><i class="fas fa-th-large"></i> Dashboard</button>
-        <button class="sb-nav-item" onclick="showToast('Manage Users','fa-users')"><i class="fas fa-users"></i> Manage Users <span class="sb-badge blue">1,482</span></button>
-        <button class="sb-nav-item" onclick="showToast('View Job Seekers','fa-user-search')"><i class="fas fa-user-search"></i> Job Seekers <span class="sb-badge blue">1,388</span></button>
-        <button class="sb-nav-item" onclick="showToast('Manage Employers','fa-building')"><i class="fas fa-building"></i> Manage Employers <span class="sb-badge blue">94</span></button>
-        <button class="sb-nav-item" onclick="showToast('Manage Job Posts','fa-briefcase')"><i class="fas fa-briefcase"></i> Manage Job Posts <span class="sb-badge amber">4</span></button>
+        <button class="sb-nav-item" onclick="showToast('Manage Users','fa-users')"><i class="fas fa-users"></i> Manage Users <span class="sb-badge blue"><?php echo number_format($adminStats['users']); ?></span></button>
+        <button class="sb-nav-item" onclick="showToast('View Job Seekers','fa-user-search')"><i class="fas fa-user-search"></i> Job Seekers <span class="sb-badge blue"><?php echo number_format($adminStats['seekers']); ?></span></button>
+        <button class="sb-nav-item" onclick="showToast('Manage Employers','fa-building')"><i class="fas fa-building"></i> Manage Employers <span class="sb-badge blue"><?php echo number_format($adminStats['employers']); ?></span></button>
+        <button class="sb-nav-item" onclick="showToast('Manage Job Posts','fa-briefcase')"><i class="fas fa-briefcase"></i> Manage Job Posts <span class="sb-badge amber"><?php echo number_format($adminStats['active_jobs']); ?></span></button>
         <button class="sb-nav-item" onclick="showToast('Manage Categories','fa-tags')"><i class="fas fa-tags"></i> Manage Categories</button>
         <button class="sb-nav-item" onclick="showToast('Manage Industries','fa-industry')"><i class="fas fa-industry"></i> Manage Industries</button>
         <button class="sb-nav-item" onclick="showToast('Manage Locations','fa-map-marker-alt')"><i class="fas fa-map-marker-alt"></i> Manage Locations</button>
@@ -560,12 +550,12 @@ $initials  = count($nameParts) >= 2
 
       <!-- 6 SUMMARY CARDS -->
       <div class="cards-row anim">
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-users"></i></div><div class="sc-num">1,482</div></div><div class="sc-label">Total Users</div><button class="sc-btn" onclick="showToast('Manage Users','fa-users')">Manage Users</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-user-search"></i></div><div class="sc-num">1,388</div></div><div class="sc-label">Job Seekers</div><button class="sc-btn" onclick="showToast('View Job Seekers','fa-user-search')">View Job Seekers</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon a"><i class="fas fa-building"></i></div><div class="sc-num">94</div></div><div class="sc-label">Employers</div><button class="sc-btn" onclick="showToast('Manage Employers','fa-building')">Manage Employers</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon r"><i class="fas fa-briefcase"></i></div><div class="sc-num">317</div></div><div class="sc-label">Total Job Posts</div><button class="sc-btn" onclick="showToast('Manage Job Posts','fa-briefcase')">Manage Job Posts</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-paper-plane"></i></div><div class="sc-num">3,071</div></div><div class="sc-label">Applications</div><button class="sc-btn" onclick="showToast('View Reports','fa-chart-line')">View Reports</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon g"><i class="fas fa-check-circle"></i></div><div class="sc-num">213</div></div><div class="sc-label">Active Jobs</div><button class="sc-btn" onclick="showToast('View Active Jobs','fa-check-circle')">View Active Jobs</button></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-users"></i></div><div class="sc-num"><?php echo number_format($adminStats['users']); ?></div></div><div class="sc-label">Total Users</div><button class="sc-btn" onclick="showToast('Manage Users','fa-users')">Manage Users</button></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-user-search"></i></div><div class="sc-num"><?php echo number_format($adminStats['seekers']); ?></div></div><div class="sc-label">Job Seekers</div><button class="sc-btn" onclick="showToast('View Job Seekers','fa-user-search')">View Job Seekers</button></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon a"><i class="fas fa-building"></i></div><div class="sc-num"><?php echo number_format($adminStats['employers']); ?></div></div><div class="sc-label">Employers</div><button class="sc-btn" onclick="showToast('Manage Employers','fa-building')">Manage Employers</button></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon r"><i class="fas fa-briefcase"></i></div><div class="sc-num"><?php echo number_format($adminStats['jobs']); ?></div></div><div class="sc-label">Total Job Posts</div><button class="sc-btn" onclick="showToast('Manage Job Posts','fa-briefcase')">Manage Job Posts</button></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-paper-plane"></i></div><div class="sc-num"><?php echo number_format($adminStats['applications']); ?></div></div><div class="sc-label">Applications</div><button class="sc-btn" onclick="showToast('View Reports','fa-chart-line')">View Reports</button></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon g"><i class="fas fa-check-circle"></i></div><div class="sc-num"><?php echo number_format($adminStats['active_jobs']); ?></div></div><div class="sc-label">Active Jobs</div><button class="sc-btn" onclick="showToast('View Active Jobs','fa-check-circle')">View Active Jobs</button></div>
       </div>
 
       <!-- MASTER DATA (featured-card scroll) -->
