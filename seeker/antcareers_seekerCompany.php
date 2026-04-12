@@ -50,7 +50,7 @@ try {
             'desc'      => $r['about'] ?? '',
             'emoji'     => '🏢',
             'color'     => 'linear-gradient(135deg,var(--red-vivid),var(--red-deep))',
-            'logo'      => $r['logo_path'] ?? '',
+            'logo'      => ($r['logo_path'] ?? '') ? '../' . $r['logo_path'] : '',
             'jobs'      => (int)$r['open_roles'],
             'verified'  => (bool)$r['is_verified'],
             'following' => false,

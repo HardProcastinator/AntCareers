@@ -7,6 +7,7 @@ $user        = getUser();
 $fullName    = $user['fullName'];
 $firstName   = $user['firstName'];
 $initials    = $user['initials'];
+$avatarUrl   = $user['avatarUrl'];
 $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'profile';
 
@@ -24,6 +25,11 @@ try {
 // Helper to safely get profile field
 function pf(?array $p, string $key, string $default = ''): string {
     return htmlspecialchars((string)($p[$key] ?? $default), ENT_QUOTES, 'UTF-8');
+}
+function pfImg(?array $p, string $key): string {
+    $v = (string)($p[$key] ?? '');
+    if ($v && !str_starts_with($v, '../') && !str_starts_with($v, 'http')) $v = '../' . $v;
+    return htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 }
 ?>
 <!DOCTYPE html>
@@ -71,14 +77,16 @@ function pf(?array $p, string $key, string $default = ''): string {
     .nav-right { display:flex; align-items:center; gap:10px; margin-left:auto; flex-shrink:0; }
     .theme-btn { width:34px; height:34px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:13px; flex-shrink:0; }
     .theme-btn:hover { color:var(--red-bright); border-color:var(--red-vivid); }
-    .notif-btn-nav { position:relative; width:34px; height:34px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:13px; flex-shrink:0; }
-    .notif-btn-nav:hover { color:var(--red-bright); border-color:var(--red-vivid); }
+    .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; color:var(--text-muted); flex-shrink:0; }
+    .notif-btn-nav:hover { color:var(--red-pale); border-color:var(--red-vivid); }
+    .notif-btn-nav .badge { position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; border-radius:50%; background:var(--red-vivid); color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid var(--soil-dark); overflow:hidden; padding:0 3px; }
     .badge { position:absolute; top:-4px; right:-4px; background:var(--red-vivid); color:#fff; font-size:9px; font-weight:700; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
     .btn-nav-red { padding:7px 16px; border-radius:7px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.2s; white-space:nowrap; letter-spacing:0.02em; box-shadow:0 2px 8px rgba(209,61,44,0.3); text-decoration:none; display:flex; align-items:center; gap:7px; }
-    .btn-nav-red:hover { background:var(--red-bright); transform:translateY(-1px); }
+    .btn-nav-red:hover { background:var(--red-bright); transform:translateY(-1px); box-shadow:0 4px 14px rgba(209,61,44,0.45); }
     .profile-wrap { position:relative; }
     .profile-btn { display:flex; align-items:center; gap:9px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:6px 12px 6px 8px; cursor:pointer; transition:0.2s; flex-shrink:0; }
-    .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, var(--amber), #8a5010); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+    .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, var(--amber), #8a5010); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+    .profile-avatar img { width:100%; height:100%; object-fit:cover; }
     .profile-name { font-size:13px; font-weight:600; color:#F5F0EE; }
     .profile-role { font-size:10px; color:var(--amber); margin-top:1px; letter-spacing:0.02em; font-weight:600; }
     .profile-chevron { font-size:9px; color:var(--text-muted); margin-left:2px; }
@@ -195,8 +203,7 @@ function pf(?array $p, string $key, string $default = ''): string {
     body.light .logo-text span { color:var(--red-vivid); }
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
-    body.light .theme-btn, body.light .notif-btn-nav, body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; }
-    body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .theme-btn, body.light .notif-btn-nav, body.light .profile-btn, body.light .hamburger { background:#F5EDEB; border-color:#D4B0AB; }
     body.light .profile-name { color:#1A0A09; }
     body.light .profile-dropdown { background:#FFFFFF; border-color:#E0CECA; }
     body.light .pd-item { color:#4A2828; }
@@ -263,7 +270,7 @@ function pf(?array $p, string $key, string $default = ''): string {
 
   <!-- Cover + Logo -->
   <div class="cover-section">
-    <div class="cover-img" id="coverImg"<?php if ($profileData && !empty($profileData['cover_path'])): ?> style="background-image:url('<?php echo pf($profileData,'cover_path'); ?>');background-size:cover;background-position:center;background-repeat:no-repeat;"<?php endif; ?>>
+    <div class="cover-img" id="coverImg"<?php if ($profileData && !empty($profileData['cover_path'])): ?> style="background-image:url('<?php echo pfImg($profileData,'cover_path'); ?>');background-size:cover;background-position:center;background-repeat:no-repeat;"<?php endif; ?>>
       <button class="cover-change-btn" onclick="document.getElementById('coverFileInput').click()"><i class="fas fa-camera"></i> Change Cover</button>
       <input type="file" id="coverFileInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="uploadCover(this)">
     </div>
@@ -272,7 +279,7 @@ function pf(?array $p, string $key, string $default = ''): string {
         <div class="company-logo-wrap">
           <div class="company-logo" id="companyLogoEl"><?php
             if ($profileData && !empty($profileData['logo_path'])) {
-                echo '<img src="' . pf($profileData,'logo_path') . '" style="width:100%;height:100%;object-fit:cover;border-radius:11px;" alt="Logo">';
+                echo '<img src="' . pfImg($profileData,'logo_path') . '" style="width:100%;height:100%;object-fit:cover;border-radius:11px;" alt="Logo">';
             } else {
                 echo htmlspecialchars(strtoupper(substr($companyName,0,1)), ENT_QUOTES, 'UTF-8');
             }

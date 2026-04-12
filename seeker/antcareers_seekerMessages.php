@@ -56,7 +56,8 @@ $navActive = 'messages';
     .thread-item:hover{background:var(--soil-hover);}
     .thread-item.active{background:rgba(209,61,44,0.07);border-left:2px solid var(--red-vivid);}
     .thread-item.unread .thread-name{color:#F5F0EE;font-weight:700;}
-    .thread-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+    .thread-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
+    .thread-avatar img{width:100%;height:100%;object-fit:cover;}
     .thread-body{flex:1;min-width:0;}
     .thread-name{font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .thread-preview{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4;}
@@ -67,7 +68,8 @@ $navActive = 'messages';
     /* Chat area */
     .chat-area{display:flex;flex-direction:column;min-height:0;}
     .chat-header{padding:16px 20px;border-bottom:1px solid var(--soil-line);display:flex;align-items:center;gap:14px;}
-    .chat-header-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+    .chat-header-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
+    .chat-header-avatar img{width:100%;height:100%;object-fit:cover;}
     .chat-header-info{flex:1;min-width:0;}
     .chat-header-name{font-size:15px;font-weight:700;color:#F5F0EE;}
     .chat-header-role{font-size:11px;color:var(--red-pale);font-weight:600;margin-top:1px;}
@@ -309,7 +311,7 @@ function renderThreads(query = '') {
   list.innerHTML = filtered.map(t => `
     <div class="thread-item ${t.unread_count > 0 ? 'unread' : ''} ${activeThread === t.partner_id ? 'active' : ''}"
          onclick="openThread(${t.partner_id})">
-      <div class="thread-avatar" style="background:${t.color}">${esc(t.initials)}</div>
+      <div class="thread-avatar" style="background:${t.color}">${t.avatar_url ? `<img src="../${t.avatar_url}" alt="">` : esc(t.initials)}</div>
       <div class="thread-body">
         <div class="thread-name">${esc(t.name)}</div>
         <div class="thread-preview">${t.is_sent ? 'You: ' : ''}${esc(t.preview)}</div>
@@ -362,6 +364,7 @@ function loadConversation(partnerId) {
             const pName = (data.partner && data.partner.name) ? data.partner.name : 'User';
             const pParts = pName.split(/\s+/);
             const ini = t ? t.initials : (pParts.length >= 2 ? (pParts[0][0]+pParts[1][0]).toUpperCase() : pName.substring(0,2).toUpperCase());
+            const avatarUrl = (t && t.avatar_url) ? t.avatar_url : ((data.partner && data.partner.avatar_url) ? data.partner.avatar_url : null);
             const partner = data.partner || {name:'User'};
             const job = data.job;
 
@@ -383,7 +386,7 @@ function loadConversation(partnerId) {
 
             chatArea.innerHTML = `
                 <div class="chat-header">
-                    <div class="chat-header-avatar" style="background:${color}">${esc(ini)}</div>
+                    <div class="chat-header-avatar" style="background:${color}">${avatarUrl ? `<img src="../${avatarUrl}" alt="">` : esc(ini)}</div>
                     <div class="chat-header-info">
                         <div class="chat-header-name">${esc(partner.name)}</div>
                         <div class="chat-header-role">${job ? esc(job.title) : ''}</div>
@@ -490,7 +493,7 @@ function searchNewMsgUsers() {
                 const colors = ['#4A90D9','#D4943A','#4CAF70','#9C27B0','#E05555','#00897B','#5C6BC0','#F4511E'];
                 res.innerHTML = data.users.map((u, i) => `
                     <div class="new-msg-user" onclick="startNewChat(${u.id})">
-                        <div class="new-msg-user-av" style="background:${colors[i % colors.length]}">${esc(u.initials)}</div>
+                        <div class="new-msg-user-av" style="background:${colors[i % colors.length]}">${u.avatar_url ? `<img src="../${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : esc(u.initials)}</div>
                         <div><div style="font-size:13px;font-weight:600;color:var(--text-light);">${esc(u.name)}</div><div style="font-size:11px;color:var(--text-muted);text-transform:capitalize;">${esc(u.type)}</div></div>
                     </div>
                 `).join('');

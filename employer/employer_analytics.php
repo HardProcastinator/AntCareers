@@ -7,6 +7,7 @@ $user        = getUser();
 $fullName    = $user['fullName'];
 $firstName   = $user['firstName'];
 $initials    = $user['initials'];
+$avatarUrl   = $user['avatarUrl'];
 $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'analytics';
 ?>
@@ -15,7 +16,7 @@ $navActive   = 'analytics';
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Analytics — AntCareers Employer</title>
+  <title>AntCareers — Analytics</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -61,13 +62,14 @@ $navActive   = 'analytics';
     .theme-btn:hover { color:var(--red-bright); border-color:var(--red-vivid); }
     .btn-nav-red { padding:7px 16px; border-radius:7px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.2s; white-space:nowrap; letter-spacing:0.02em; box-shadow:0 2px 8px rgba(209,61,44,0.3); text-decoration:none; display:flex; align-items:center; gap:7px; }
     .btn-nav-red:hover { background:var(--red-bright); transform:translateY(-1px); box-shadow:0 4px 14px rgba(209,61,44,0.45); }
-    .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:15px; color:var(--text-muted); flex-shrink:0; }
+    .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; color:var(--text-muted); flex-shrink:0; }
     .notif-btn-nav:hover { color:var(--red-pale); border-color:var(--red-vivid); }
-    .notif-btn-nav .badge { position:absolute; top:-5px; right:-5px; width:17px; height:17px; border-radius:50%; background:var(--red-vivid); color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid var(--soil-dark); }
+    .notif-btn-nav .badge { position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; border-radius:50%; background:var(--red-vivid); color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid var(--soil-dark); overflow:hidden; padding:0 3px; }
     .profile-wrap { position:relative; }
     .profile-btn { display:flex; align-items:center; gap:9px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:6px 12px 6px 8px; cursor:pointer; transition:0.2s; flex-shrink:0; }
     .profile-btn:hover { background:var(--soil-card); }
-    .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, var(--amber), #8a5010); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+    .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, var(--amber), #8a5010); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+    .profile-avatar img { width:100%; height:100%; object-fit:cover; }
     .profile-name { font-size:13px; font-weight:600; color:#F5F0EE; }
     .profile-role { font-size:10px; color:var(--amber); margin-top:1px; letter-spacing:0.02em; font-weight:600; }
     .profile-chevron { font-size:9px; color:var(--text-muted); margin-left:2px; }
@@ -210,10 +212,8 @@ $navActive   = 'analytics';
     body.light .logo-text span { color:var(--red-vivid); }
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
-    body.light .theme-btn { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
-    body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .theme-btn, body.light .notif-btn-nav, body.light .profile-btn, body.light .hamburger { background:#F5EDEB; border-color:#D4B0AB; }
     body.light .profile-name { color:#1A0A09; }
-    body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; }
     body.light .stat-card, body.light .chart-card { background:#FFFFFF; border-color:#E0CECA; }
     body.light .sc-num, body.light .page-title, body.light .chart-title { color:#1A0A09; }
     body.light .profile-dropdown { background:#FFFFFF; border-color:#E0CECA; }
@@ -230,6 +230,8 @@ $navActive   = 'analytics';
     body.light tbody tr:hover td { background:#FEF0EE; }
     body.light .funnel-bar-wrap { background:#F5EEEC; }
     body.light .sc-sub { border-color:#E0CECA; }
+    body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
+    body.light .toast i { color:var(--red-vivid); }
 
     /* ── RESPONSIVE ── */
     @media(max-width:1060px) {
@@ -281,11 +283,6 @@ $navActive   = 'analytics';
 
   <!-- PAGE HEADER -->
   <div class="page-header anim">
-    <div class="breadcrumb">
-      <a href="employer_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
-      <i class="fas fa-chevron-right"></i>
-      <span>Analytics</span>
-    </div>
     <div class="page-title">Analytics <span>Dashboard</span></div>
     <div class="page-sub">Hiring performance overview for Your Company &nbsp;·&nbsp; All figures are mock data for demonstration.</div>
     <!-- Period filter pills — purely visual, no backend needed -->
@@ -395,7 +392,7 @@ $navActive   = 'analytics';
         </div>
       </div>
       <div class="chart-canvas-wrap" style="display:flex;justify-content:center;">
-        <canvas id="donutChart" height="180" style="max-width:360px;"></canvas>
+        <canvas id="donutChart" style="max-width:300px;max-height:300px;"></canvas>
       </div>
     </div>
 

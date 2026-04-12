@@ -67,6 +67,7 @@ try {
             'exp'       => $r['experience_level'] ?? '',
             'status'    => $status,
             'avatar'    => $initA,
+            'avatarUrl' => !empty($r['avatar_url']) ? '../' . $r['avatar_url'] : '',
             'color'     => $colors[$ci % count($colors)],
             'mutual'    => 0,
             'connected' => false,
@@ -186,7 +187,8 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     .person-card:hover { border-color:rgba(209,61,44,0.45); transform:translateY(-3px); box-shadow:0 16px 40px rgba(0,0,0,0.35); }
     .person-card:hover::before { opacity:1; }
     .pc-top { display:flex; align-items:flex-start; gap:14px; margin-bottom:14px; }
-    .pc-avatar { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#fff; flex-shrink:0; }
+    .pc-avatar { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+    .pc-avatar img { width:100%; height:100%; object-fit:cover; }
     .pc-info { flex:1; min-width:0; }
     .pc-name { font-family:var(--font-display); font-size:15px; font-weight:700; color:#F5F0EE; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .pc-title { font-size:12px; color:var(--red-pale); font-weight:600; margin-bottom:4px; }
@@ -211,7 +213,8 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     .person-modal-close { position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); cursor:pointer; }
     .person-modal-close:hover { color:#F5F0EE; border-color:var(--red-vivid); }
     .person-modal-head { display:flex; align-items:center; gap:14px; margin-bottom:14px; padding-right:40px; }
-    .person-modal-avatar { width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:700; flex-shrink:0; }
+    .person-modal-avatar { width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:700; flex-shrink:0; overflow:hidden; }
+    .person-modal-avatar img { width:100%; height:100%; object-fit:cover; }
     .person-modal-meta { min-width:0; }
     .person-modal-name { font-family:var(--font-display); font-size:22px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
     .person-modal-title { color:var(--red-pale); font-size:13px; font-weight:600; margin-bottom:4px; }
@@ -480,7 +483,7 @@ foreach (getIndustryFilterOptions() as $industryOption) {
 
     document.getElementById('personModalBody').innerHTML = `
       <div class="person-modal-head">
-        <div class="person-modal-avatar" style="background:${person.color};">${person.avatar}</div>
+        <div class="person-modal-avatar" style="background:${person.color};">${person.avatarUrl ? `<img src="${person.avatarUrl}" alt="">` : person.avatar}</div>
         <div class="person-modal-meta">
           <div class="person-modal-name">${person.name}</div>
           <div class="person-modal-title">${person.title}</div>
@@ -532,7 +535,7 @@ foreach (getIndustryFilterOptions() as $industryOption) {
       return `
         <div class="person-card anim" style="animation-delay:${i*0.04}s;cursor:pointer;" onclick="openPersonView(${p.id})">
           <div class="pc-top">
-            <div class="pc-avatar" style="background:${p.color};">${p.avatar}</div>
+            <div class="pc-avatar" style="background:${p.color};">${p.avatarUrl ? `<img src="${p.avatarUrl}" alt="">` : p.avatar}</div>
             <div class="pc-info">
               <div class="pc-name">${p.name}</div>
               <div class="pc-title">${p.title}</div>

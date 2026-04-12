@@ -662,6 +662,7 @@ switch ($action) {
                     'id' => (int) $row['id'],
                     'name' => $name,
                     'initials' => initials_for($name),
+                    'avatar_url' => $row['avatar_url'] ?: null,
                     'type' => (string) $row['account_type'],
                 ];
             }

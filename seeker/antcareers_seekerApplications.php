@@ -332,7 +332,12 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
     .toast i { color:var(--red-bright); }
 
     /* LIGHT THEME */
-    body.light { background:#F5EDEC; color:#1A0A09; }
+    body.light {
+      background:#F5EDEC; color:#1A0A09;
+      --soil-dark:#F9F5F4; --soil-card:#FFFFFF; --soil-hover:#FEF0EE; --soil-line:#E0CECA;
+      --text-light:#1A0A09; --text-mid:#4A2828; --text-muted:#7A5555;
+      --amber:#B8620A;
+    }
     body.light .glow-orb { display:none; }
     body.light .sidebar-card, body.light .tabs, body.light .app-card, body.light .empty-state, body.light .modal { background:#FFFFFF; border-color:#E0CECA; }
     body.light .sidebar-title, body.light .sp-name, body.light .page-title, body.light .app-title, body.light .modal-title, body.light .empty-title { color:#1A0A09; }

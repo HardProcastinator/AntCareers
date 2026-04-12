@@ -73,7 +73,8 @@ function _navHref(string $file): string {
   .profile-wrap { position:relative; }
   .profile-btn { display:flex; align-items:center; gap:9px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:6px 12px 6px 8px; cursor:pointer; transition:0.2s; flex-shrink:0; }
   .profile-btn:hover { background:var(--soil-card); }
-  .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--red-vivid),var(--red-deep)); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+  .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--red-vivid),var(--red-deep)); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+  .profile-avatar img { width:100%; height:100%; object-fit:cover; }
   .profile-name { font-size:13px; font-weight:600; color:#F5F0EE; }
   .profile-role-lbl { font-size:10px; color:var(--red-pale); margin-top:1px; letter-spacing:0.02em; font-weight:600; }
   .profile-chevron { font-size:9px; color:var(--text-muted); margin-left:2px; }
@@ -110,7 +111,8 @@ function _navHref(string $file): string {
   .msg-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--soil-line); cursor:pointer; transition:0.15s; }
   .msg-item:last-child { border-bottom:none; }
   .msg-item:hover { opacity:0.85; }
-  .msg-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; }
+  .msg-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+  .msg-avatar img { width:100%; height:100%; object-fit:cover; }
   .msg-name { font-size:13px; font-weight:700; color:#F5F0EE; margin-bottom:2px; }
   .msg-preview { font-size:12px; color:var(--text-muted); line-height:1.4; display:-webkit-box; line-clamp:2; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .msg-time { font-size:10px; color:var(--text-muted); font-weight:600; margin-left:auto; flex-shrink:0; white-space:nowrap; }
@@ -247,7 +249,7 @@ function _navHref(string $file): string {
       <!-- Profile dropdown: account actions only -->
       <div class="profile-wrap" id="profileWrap">
         <button class="profile-btn" id="profileToggle" type="button" aria-haspopup="true" aria-expanded="false">
-          <div class="profile-avatar"><?= htmlspecialchars($user['initials'], ENT_QUOTES, 'UTF-8') ?></div>
+          <div class="profile-avatar"><?php if (!empty($user['avatarUrl'])): ?><img src="<?= htmlspecialchars($user['avatarUrl'], ENT_QUOTES, 'UTF-8') ?>" alt=""><?php else: ?><?= htmlspecialchars($user['initials'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?></div>
           <div>
             <div class="profile-name"><?= htmlspecialchars($user['fullName'], ENT_QUOTES, 'UTF-8') ?></div>
             <div class="profile-role-lbl">Job Seeker</div>
@@ -496,7 +498,7 @@ function _navHref(string $file): string {
           var color = t.color || colors[i % colors.length];
           var unread = t.unread_count > 0 ? '<div class="msg-unread-dot"></div>' : '';
           html += '<div class="msg-item" data-partner-id="' + t.partner_id + '" data-partner-name="' + _esc(t.name) + '">'
-            + '<div class="msg-avatar" style="background:linear-gradient(135deg,' + color + ',' + color + '88)">' + _esc(t.initials) + '</div>'
+            + '<div class="msg-avatar" style="background:' + color + '">' + (t.avatar_url ? '<img src="../' + t.avatar_url + '" alt="">' : _esc(t.initials)) + '</div>'
             + '<div style="flex:1;min-width:0;"><div class="msg-name">' + _esc(t.name) + '</div><div class="msg-preview">' + _esc(t.preview) + '</div></div>'
             + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><div class="msg-time">' + _esc(t.time) + '</div>' + unread + '</div>'
             + '</div>';

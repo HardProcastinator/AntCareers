@@ -111,7 +111,7 @@ try {
     ");
     $cStmt->execute();
     foreach ($cStmt->fetchAll() as $c) {
-        $companies[] = ['name' => $c['name'], 'openRoles' => (int)$c['open_roles'], 'logo' => $c['logo_url'] ?? '', 'employerId' => (int)$c['employer_id']];
+        $companies[] = ['name' => $c['name'], 'openRoles' => (int)$c['open_roles'], 'logo' => ($c['logo_url'] ?? '') ? '../' . $c['logo_url'] : '', 'employerId' => (int)$c['employer_id']];
     }
 } catch (PDOException $e) {
     // Fallback without deadline column
@@ -132,7 +132,7 @@ try {
         ");
         $cStmt->execute();
         foreach ($cStmt->fetchAll() as $c) {
-            $companies[] = ['name' => $c['name'], 'openRoles' => (int)$c['open_roles'], 'logo' => $c['logo_url'] ?? '', 'employerId' => (int)$c['employer_id']];
+            $companies[] = ['name' => $c['name'], 'openRoles' => (int)$c['open_roles'], 'logo' => ($c['logo_url'] ?? '') ? '../' . $c['logo_url'] : '', 'employerId' => (int)$c['employer_id']];
         }
     } catch (PDOException $e2) { /* ignore */ }
 }
@@ -352,6 +352,8 @@ foreach ($industryFilterValues as $industryValue) {
     .ms-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .ms-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:20; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
     .ms-wrap.open .ms-panel { display:block; }
+    .role-section{display:block;margin-top:8px;}
+    .role-section-label{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin:10px 0 6px;display:block;}
     .ms-item { display:flex; align-items:center; gap:8px; padding:7px 12px; font-size:13px; color:var(--text-mid); cursor:pointer; transition:background-color 0.12s; user-select:none; }
     .ms-item:hover { background:var(--soil-hover); }
     .ms-item input[type="checkbox"] { width:14px; height:14px; accent-color:var(--red-vivid); cursor:pointer; flex-shrink:0; }
@@ -741,7 +743,36 @@ foreach ($industryFilterValues as $industryValue) {
     <div class="ms-wrap" id="msSearchIndustry" data-default="All Industries">
       <button class="ms-trigger" type="button"><span class="ms-text">All Industries</span><i class="fas fa-chevron-down ms-arrow"></i></button>
       <div class="ms-panel">
-        <?= $industryCheckboxesHtml ?>
+        <label class="ms-item"><input type="checkbox" value="Accounting"><span>Accounting</span></label>
+        <label class="ms-item"><input type="checkbox" value="Administration &amp; Office Support"><span>Administration &amp; Office Support</span></label>
+        <label class="ms-item"><input type="checkbox" value="Advertising, Arts &amp; Media"><span>Advertising, Arts &amp; Media</span></label>
+        <label class="ms-item"><input type="checkbox" value="Banking &amp; Financial Services"><span>Banking &amp; Financial Services</span></label>
+        <label class="ms-item"><input type="checkbox" value="Call Centre &amp; Customer Service"><span>Call Centre &amp; Customer Service</span></label>
+        <label class="ms-item"><input type="checkbox" value="CEO &amp; General Management"><span>CEO &amp; General Management</span></label>
+        <label class="ms-item"><input type="checkbox" value="Community Services &amp; Development"><span>Community Services &amp; Development</span></label>
+        <label class="ms-item"><input type="checkbox" value="Construction"><span>Construction</span></label>
+        <label class="ms-item"><input type="checkbox" value="Consulting &amp; Strategy"><span>Consulting &amp; Strategy</span></label>
+        <label class="ms-item"><input type="checkbox" value="Design &amp; Architecture"><span>Design &amp; Architecture</span></label>
+        <label class="ms-item"><input type="checkbox" value="Education &amp; Training"><span>Education &amp; Training</span></label>
+        <label class="ms-item"><input type="checkbox" value="Engineering"><span>Engineering</span></label>
+        <label class="ms-item"><input type="checkbox" value="Farming, Animals &amp; Conservation"><span>Farming, Animals &amp; Conservation</span></label>
+        <label class="ms-item"><input type="checkbox" value="Government &amp; Defence"><span>Government &amp; Defence</span></label>
+        <label class="ms-item"><input type="checkbox" value="Healthcare &amp; Medical"><span>Healthcare &amp; Medical</span></label>
+        <label class="ms-item"><input type="checkbox" value="Hospitality &amp; Tourism"><span>Hospitality &amp; Tourism</span></label>
+        <label class="ms-item"><input type="checkbox" value="Human Resources &amp; Recruitment"><span>Human Resources &amp; Recruitment</span></label>
+        <label class="ms-item"><input type="checkbox" value="Information &amp; Communication Technology"><span>Information &amp; Communication Technology</span></label>
+        <label class="ms-item"><input type="checkbox" value="Insurance &amp; Superannuation"><span>Insurance &amp; Superannuation</span></label>
+        <label class="ms-item"><input type="checkbox" value="Legal"><span>Legal</span></label>
+        <label class="ms-item"><input type="checkbox" value="Manufacturing, Transport &amp; Logistics"><span>Manufacturing, Transport &amp; Logistics</span></label>
+        <label class="ms-item"><input type="checkbox" value="Marketing &amp; Communications"><span>Marketing &amp; Communications</span></label>
+        <label class="ms-item"><input type="checkbox" value="Mining, Resources &amp; Energy"><span>Mining, Resources &amp; Energy</span></label>
+        <label class="ms-item"><input type="checkbox" value="Real Estate &amp; Property"><span>Real Estate &amp; Property</span></label>
+        <label class="ms-item"><input type="checkbox" value="Retail &amp; Consumer Products"><span>Retail &amp; Consumer Products</span></label>
+        <label class="ms-item"><input type="checkbox" value="Sales"><span>Sales</span></label>
+        <label class="ms-item"><input type="checkbox" value="Science &amp; Technology"><span>Science &amp; Technology</span></label>
+        <label class="ms-item"><input type="checkbox" value="Self Employment"><span>Self Employment</span></label>
+        <label class="ms-item"><input type="checkbox" value="Sports &amp; Recreation"><span>Sports &amp; Recreation</span></label>
+        <label class="ms-item"><input type="checkbox" value="Trades &amp; Services"><span>Trades &amp; Services</span></label>
       </div>
     </div>
     <button class="search-btn" id="searchBtn"><i class="fas fa-search"></i> Search</button>
@@ -758,10 +789,45 @@ foreach ($industryFilterValues as $industryValue) {
         <div class="ms-wrap" id="msIndustry" data-default="All Industries">
           <button class="ms-trigger" type="button"><span class="ms-text">All Industries</span><i class="fas fa-chevron-down ms-arrow"></i></button>
           <div class="ms-panel">
-            <?= $industryCheckboxesHtml ?>
+            <label class="ms-item"><input type="checkbox" value="Accounting"><span>Accounting</span></label>
+            <label class="ms-item"><input type="checkbox" value="Administration &amp; Office Support"><span>Administration &amp; Office Support</span></label>
+            <label class="ms-item"><input type="checkbox" value="Advertising, Arts &amp; Media"><span>Advertising, Arts &amp; Media</span></label>
+            <label class="ms-item"><input type="checkbox" value="Banking &amp; Financial Services"><span>Banking &amp; Financial Services</span></label>
+            <label class="ms-item"><input type="checkbox" value="Call Centre &amp; Customer Service"><span>Call Centre &amp; Customer Service</span></label>
+            <label class="ms-item"><input type="checkbox" value="CEO &amp; General Management"><span>CEO &amp; General Management</span></label>
+            <label class="ms-item"><input type="checkbox" value="Community Services &amp; Development"><span>Community Services &amp; Development</span></label>
+            <label class="ms-item"><input type="checkbox" value="Construction"><span>Construction</span></label>
+            <label class="ms-item"><input type="checkbox" value="Consulting &amp; Strategy"><span>Consulting &amp; Strategy</span></label>
+            <label class="ms-item"><input type="checkbox" value="Design &amp; Architecture"><span>Design &amp; Architecture</span></label>
+            <label class="ms-item"><input type="checkbox" value="Education &amp; Training"><span>Education &amp; Training</span></label>
+            <label class="ms-item"><input type="checkbox" value="Engineering"><span>Engineering</span></label>
+            <label class="ms-item"><input type="checkbox" value="Farming, Animals &amp; Conservation"><span>Farming, Animals &amp; Conservation</span></label>
+            <label class="ms-item"><input type="checkbox" value="Government &amp; Defence"><span>Government &amp; Defence</span></label>
+            <label class="ms-item"><input type="checkbox" value="Healthcare &amp; Medical"><span>Healthcare &amp; Medical</span></label>
+            <label class="ms-item"><input type="checkbox" value="Hospitality &amp; Tourism"><span>Hospitality &amp; Tourism</span></label>
+            <label class="ms-item"><input type="checkbox" value="Human Resources &amp; Recruitment"><span>Human Resources &amp; Recruitment</span></label>
+            <label class="ms-item"><input type="checkbox" value="Information &amp; Communication Technology"><span>Information &amp; Communication Technology</span></label>
+            <label class="ms-item"><input type="checkbox" value="Insurance &amp; Superannuation"><span>Insurance &amp; Superannuation</span></label>
+            <label class="ms-item"><input type="checkbox" value="Legal"><span>Legal</span></label>
+            <label class="ms-item"><input type="checkbox" value="Manufacturing, Transport &amp; Logistics"><span>Manufacturing, Transport &amp; Logistics</span></label>
+            <label class="ms-item"><input type="checkbox" value="Marketing &amp; Communications"><span>Marketing &amp; Communications</span></label>
+            <label class="ms-item"><input type="checkbox" value="Mining, Resources &amp; Energy"><span>Mining, Resources &amp; Energy</span></label>
+            <label class="ms-item"><input type="checkbox" value="Real Estate &amp; Property"><span>Real Estate &amp; Property</span></label>
+            <label class="ms-item"><input type="checkbox" value="Retail &amp; Consumer Products"><span>Retail &amp; Consumer Products</span></label>
+            <label class="ms-item"><input type="checkbox" value="Sales"><span>Sales</span></label>
+            <label class="ms-item"><input type="checkbox" value="Science &amp; Technology"><span>Science &amp; Technology</span></label>
+            <label class="ms-item"><input type="checkbox" value="Self Employment"><span>Self Employment</span></label>
+            <label class="ms-item"><input type="checkbox" value="Sports &amp; Recreation"><span>Sports &amp; Recreation</span></label>
+            <label class="ms-item"><input type="checkbox" value="Trades &amp; Services"><span>Trades &amp; Services</span></label>
           </div>
         </div>
-        <input type="text" id="positionKeyword" class="fs-text-input" placeholder="Enter job title or position" style="margin-top:6px;">
+        <div class="role-section" id="rolePickerWrap">
+          <span class="role-section-label">Job Role</span>
+          <div class="ms-wrap" id="msJobRole" data-default="All roles">
+            <button class="ms-trigger" type="button"><span class="ms-text">All roles</span><i class="fas fa-chevron-down ms-arrow"></i></button>
+            <div class="ms-panel" id="msJobRolePanel"></div>
+          </div>
+        </div>
       </div>
 
       <div class="fs-divider"></div>
@@ -989,6 +1055,60 @@ foreach ($industryFilterValues as $industryValue) {
 
 
   // ── MULTI-SELECT HELPERS ─────────────────────────────────────────────────
+  /* ── JOB ROLES DATA ── */
+  const JOB_ROLES = {
+    'Accounting':['Accounts Officers / Clerks','Accounts Payable','Accounts Receivable / Credit Control','Analysis & Reporting','Assistant Accountants','Audit - External','Audit - Internal','Bookkeeping & Small Practice Accounting','Business Services & Corporate Advisory','Company Secretaries','Compliance & Risk','Cost Accounting','Financial Accounting & Reporting','Financial Managers & Controllers','Forensic Accounting & Investigation','Insolvency & Corporate Recovery','Inventory & Fixed Assets','Management','Management Accounting & Budgeting','Payroll','Strategy & Planning','Systems Accounting & IT Audit','Taxation','Treasury','Other'],
+    'Administration & Office Support':['Administrative Assistants','Client & Sales Administration','Contracts Administration','Data Entry & Word Processing','Office Management','PA, EA & Secretarial','Receptionists','Records Management & Document Control','Other'],
+    'Advertising, Arts & Media':['Agency Account Management','Art Direction','Editing & Publishing','Event Management','Journalism & Writing','Management','Media Strategy, Planning & Buying','Other'],
+    'Banking & Financial Services':['Account & Relationship Management','Analysis & Reporting','Banking - Business','Banking - Corporate & Institutional','Banking - Retail / Branch','Client Services','Compliance & Risk','Corporate Finance & Investment Banking','Credit','Financial Planning','Funds Management','Management','Mortgages','Settlements','Other'],
+    'Call Centre & Customer Service':['Collections','Customer Service - Call Centre','Customer Service - Customer Facing','Management & Support','Sales - Inbound','Sales - Outbound','Supervisors / Team Leaders','Other'],
+    'CEO & General Management':['Board Appointments','CEO','COO & MD','General / Business Unit Manager','Other'],
+    'Community Services & Development':['Aged & Disability Support','Child Welfare, Youth & Family Services','Community Development','Employment Services','Fundraising','Housing & Homelessness Services','Indigenous & Multicultural Services','Management','Volunteer Coordination & Support','Other'],
+    'Construction':['Contracts Management','Estimating','Foreperson / Supervisors','Health, Safety & Environment','Management','Planning & Scheduling','Plant & Machinery Operators','Project Management','Quality Assurance & Control','Surveying','Other'],
+    'Consulting & Strategy':['Analysts','Corporate Development','Environment & Sustainability Consulting','Management & Change Consulting','Policy','Strategy & Planning','Other'],
+    'Design & Architecture':['Architectural Drafting','Architecture','Fashion Design','Graphic Design','Interior Design','Landscape Architecture','Management','Product Design','Urban Design & Planning','Other'],
+    'Education & Training':['Childcare & Outside School Hours Care','Library Services & Information Management','Management - Schools','Management - Universities','Management - Vocational','Research & Fellowships','Student Services','Teaching - Early Childhood','Teaching - Primary','Teaching - Secondary','Teaching - Tertiary','Teaching - Vocational','Teaching Aides & Special Needs','Tutoring','Workplace Training & Assessment','Other'],
+    'Engineering':['Aerospace Engineering','Automotive Engineering','Building Services Engineering','Chemical Engineering','Civil/Structural Engineering','Electrical/Electronic Engineering','Engineering Drafting','Environmental Engineering','Field Engineering','Industrial Engineering','Maintenance','Management','Materials Handling Engineering','Mechanical Engineering','Process Engineering','Project Engineering','Project Management','Supervisors','Systems Engineering','Water & Waste Engineering','Other'],
+    'Farming, Animals & Conservation':['Agronomy & Farm Services','Conservation, Parks & Wildlife','Farm Labour','Farm Management','Fishing & Aquaculture','Horticulture','Veterinary Services & Animal Welfare','Winery & Viticulture','Other'],
+    'Government & Defence':['Air Force','Army','Emergency Services','Government - Federal','Government - Local','Government - State','Navy','Police & Corrections','Other'],
+    'Healthcare & Medical':['Ambulance/Paramedics','Chiropractic & Osteopathic','Clinical/Medical Research','Dental','Dieticians','Environmental Services','General Practitioners','Management','Medical Administration','Medical Imaging','Medical Specialists','Natural Therapies & Alternative Medicine','Nursing - A&E, Critical Care & ICU','Nursing - Aged Care','Nursing - Community, Maternal & Child Health','Nursing - Educators & Facilitators','Nursing - General Medical & Surgical','Nursing - High Acuity','Nursing - Management','Nursing - Midwifery, Neo-Natal, SCN & NICU','Nursing - Paediatric & PICU','Nursing - Psych, Forensic & Correctional Health','Nursing - Theatre & Recovery','Optical','Pathology','Pharmaceuticals & Medical Devices','Pharmacy','Physiotherapy, OT & Rehabilitation','Psychology, Counselling & Social Work','Residents & Registrars','Sales','Speech Therapy','Other'],
+    'Hospitality & Tourism':['Airlines','Bar & Beverage Staff','Chefs/Cooks','Front Office & Guest Services','Gaming','Housekeeping','Kitchen & Sandwich Hands','Management','Reservations','Tour Guides','Travel Agents/Consultants','Waiting Staff','Other'],
+    'Human Resources & Recruitment':['Consulting & Generalist HR','Industrial & Employee Relations','Management - Agency','Management - Internal','Occupational Health & Safety','Organisational Development','Recruitment - Agency','Recruitment - Internal','Remuneration & Benefits','Training & Development','Other'],
+    'Information & Communication Technology':['Architects','Computer Operators','Consultants','Database Development & Administration','Developers/Programmers','Engineering - Hardware','Engineering - Network','Engineering - Software','Help Desk & IT Support','Management','Networks & Systems Administration','Product Management & Development','Program & Project Management','Sales - Pre & Post','Security','Software Quality Assurance','System Services & Support','Systems Analysis & Modelling','Team Leaders','Technical Writing','Telecommunications','Testing & Quality Assurance','Other'],
+    'Insurance & Superannuation':['Actuarial','Assessment','Brokerage','Claims','Management','Risk Management','Superannuation','Underwriting','Workers\' Compensation','Other'],
+    'Legal':['Banking & Financial Services Law','Construction Law','Corporate & Commercial Law','Criminal Law','Family Law','Generalists - In-house','Generalists - Law Firm','Industrial Relations & Employment Law','Insurance & Superannuation Law','Intellectual Property Law','Legal Secretaries','Litigation & Dispute Resolution','Management','Personal Injury Law','Property Law','Tax Law','Other'],
+    'Manufacturing, Transport & Logistics':['Assembly & Process Work','Aviation Services','Couriers, Drivers & Postal Services','Fleet Management','Freight/Cargo Forwarding','Import/Export & Customs','Inventory & Stock Control','Machine Operators','Management','Methods & Quality Control','Operations','Production, Planning & Scheduling','Public Transport & Taxi Services','Purchasing, Procurement & Inventory','Rail Operations','Road Transport','Shipping','Warehouse, Storage & Distribution','Other'],
+    'Marketing & Communications':['Brand Management','Digital & Search Marketing','Direct Marketing & CRM','Event Management','Internal Communications','Management','Market Research & Analysis','Marketing Assistants/Coordinators','Marketing Communications','Media Strategy, Planning & Buying','Product Management & Development','Public Relations & Corporate Affairs','Trade Marketing','Other'],
+    'Mining, Resources & Energy':['Analysis & Reporting','Corporate Services','Engineering','Health, Safety & Environment','Management','Natural Resources & Water','Oil & Gas - Drilling','Oil & Gas - Exploration & Geoscience','Oil & Gas - Operations','Oil & Gas - Production & Refinement','Operations','Power Generation & Distribution','Project Management','Renewable Energy','Surveying','Other'],
+    'Real Estate & Property':['Administration','Body Corporate & Facilities Management','Commercial Sales, Leasing & Property Mgmt','Management','Residential Leasing & Property Management','Residential Sales','Retail & Shopping Centre Management','Valuation','Other'],
+    'Retail & Consumer Products':['Merchandisers','Management - Area/Multi-site','Management - Department/Assistant','Management - Store','Planning','Purchasing, Procurement & Inventory','Retail Assistants','Sales Representatives/Consultants','Visual Merchandising','Other'],
+    'Sales':['Account & Relationship Management','Analysis & Reporting','Management','New Business Development','Sales Representatives/Consultants','Other'],
+    'Science & Technology':['Biological & Biomedical Sciences','Biotechnology','Chemistry','Environmental, Earth & Geosciences','Food Technology & Safety','Laboratory & Technical Services','Materials Sciences','Mathematics, Statistics & Information Sciences','Modelling & Simulation','Physics','Other'],
+    'Self Employment':['Self Employment'],
+    'Sports & Recreation':['Coaching & Instruction','Fitness & Personal Training','Management','Other'],
+    'Trades & Services':['Automotive Trades','Bakers & Pastry Cooks','Building Trades','Butchers','Caretakers & Handypersons','Cleaning Services','Electricians','Floristry','Gardening & Landscaping','Hair & Beauty Services','Labourers','Locksmiths','Maintenance & Handypersons','Management','Nannies & Babysitters','Painters & Sign Writers','Plumbers','Printing & Publishing Services','Security Services','Tailors & Dressmakers','Technicians','Upholstery & Textile Trades','Other']
+  };
+
+  function updateRolePicker(selectedIndustries) {
+    const wrap = document.getElementById('rolePickerWrap');
+    const panel = document.getElementById('msJobRolePanel');
+    const msWrap = document.getElementById('msJobRole');
+    if (!wrap || !panel) return;
+    const roles = [];
+    selectedIndustries.forEach(ind => {
+      (JOB_ROLES[ind] || []).forEach(r => { if (!roles.includes(r)) roles.push(r); });
+    });
+    if (!roles.length) {
+      panel.innerHTML = '';
+      if (msWrap) { msWrap.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false); updateMsLabel(msWrap); }
+      return;
+    }
+    panel.innerHTML = roles.map(r => `<label class="ms-item"><input type="checkbox" value="${r.replace(/"/g,'&quot;')}"><span>${r.replace(/&/g,'&amp;')}</span></label>`).join('');
+    panel.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => { updateMsLabel(msWrap); renderAllJobs(); });
+    });
+  }
+
   function getMsValues(id) {
     const w = document.getElementById(id);
     return w ? [...w.querySelectorAll('input:checked')].map(i => i.value) : [];
@@ -1026,12 +1146,12 @@ foreach ($industryFilterValues as $industryValue) {
   function getFilters() {
     return {
       keyword:        (document.getElementById('keywordInput')?.value || '').toLowerCase().trim(),
-      position:       (document.getElementById('positionKeyword')?.value || '').toLowerCase().trim(),
       locationKeyword:(document.getElementById('locationKeyword')?.value || '').toLowerCase().trim(),
       salaryKeyword:  (document.getElementById('salaryKeyword')?.value || '').trim(),
       searchIndustries: getMsValues('msSearchIndustry'),
       searchCountry:  document.getElementById('searchCountryFilter')?.value || '',
       industries:     getMsValues('msIndustry'),
+      jobRoles:       getMsValues('msJobRole'),
       sidebarLocation: document.getElementById('sidebarLocationFilter')?.value || '',
       jobTypes:       getMsValues('msWorkType'),
       setups:         getMsValues('msRemote'),
@@ -1044,7 +1164,6 @@ foreach ($industryFilterValues as $industryValue) {
   function matchesFilters(j, f) {
     if (f.keyword && !`${j.title} ${j.company} ${j.description} ${(j.tags||[]).join(' ')}`.toLowerCase().includes(f.keyword)) return false;
     if (f.jobTypes.length && !f.jobTypes.includes(j.jobType)) return false;
-    if (f.position && !j.title.toLowerCase().includes(f.position)) return false;
     // Location: sidebar single-select takes priority, then search bar country
     if (f.sidebarLocation) { if (!j.location.toLowerCase().includes(f.sidebarLocation.toLowerCase())) return false; }
     else if (f.searchCountry && !j.location.toLowerCase().includes(f.searchCountry.toLowerCase())) return false;
@@ -1053,6 +1172,15 @@ foreach ($industryFilterValues as $industryValue) {
     // Industry: sidebar multi-select takes priority, then search bar multi-select
     if (f.industries.length) { if (!f.industries.includes(j.industry)) return false; }
     else if (f.searchIndustries.length && !f.searchIndustries.includes(j.industry)) return false;
+    if (f.jobRoles && f.jobRoles.length) {
+      const tl = j.title.toLowerCase();
+      const matched = f.jobRoles.some(role => {
+        const rl = role.toLowerCase();
+        if (tl.includes(rl)) return true;
+        return rl.split(/[\s\-\/]+/).filter(p => p.length > 3).some(p => tl.includes(p));
+      });
+      if (!matched) return false;
+    }
     if (f.setups.length && !f.setups.includes(j.workSetup)) return false;
     // Salary period (single-select)
     if (f.salaryPeriod && j.salaryPeriod && j.salaryPeriod !== f.salaryPeriod) return false;
@@ -1255,9 +1383,9 @@ foreach ($industryFilterValues as $industryValue) {
   // ── FILTERS ───────────────────────────────────────────────────────────────
   function resetFilters() {
     document.getElementById('keywordInput').value = '';
-    document.getElementById('positionKeyword') && (document.getElementById('positionKeyword').value = '');
     document.getElementById('locationKeyword') && (document.getElementById('locationKeyword').value = '');
     document.getElementById('salaryKeyword') && (document.getElementById('salaryKeyword').value = '');
+    updateRolePicker([]);
     ['searchCountryFilter','sidebarLocationFilter','salaryPeriodFilter'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
     document.querySelectorAll('.ms-wrap').forEach(wrap => {
       wrap.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -1286,8 +1414,8 @@ foreach ($industryFilterValues as $industryValue) {
       const wrap = cb.closest('.ms-wrap');
       updateMsLabel(wrap);
       // Sync industry checkboxes between sidebar and search bar
-      if (wrap.id === 'msIndustry') syncMsCheckboxes('msIndustry', 'msSearchIndustry');
-      else if (wrap.id === 'msSearchIndustry') syncMsCheckboxes('msSearchIndustry', 'msIndustry');
+      if (wrap.id === 'msIndustry') { syncMsCheckboxes('msIndustry', 'msSearchIndustry'); updateRolePicker(getMsValues('msIndustry')); }
+      else if (wrap.id === 'msSearchIndustry') { syncMsCheckboxes('msSearchIndustry', 'msIndustry'); updateRolePicker(getMsValues('msIndustry')); }
       renderAllJobs();
     });
   });
@@ -1323,11 +1451,8 @@ foreach ($industryFilterValues as $industryValue) {
   // ── TIME-BASED GREETING ────────────────────────────────────────────────────
   // (static title — no dynamic greeting needed)
 
-  // Add keyword inputs to filter listeners
-  document.getElementById('positionKeyword')?.addEventListener('input', renderAllJobs);
-  document.getElementById('locationKeyword')?.addEventListener('input', renderAllJobs);
-
   // ── INIT ──────────────────────────────────────────────────────────────────
+  document.getElementById('locationKeyword')?.addEventListener('input', renderAllJobs);
   renderCompanies();
   renderFeatured();
   renderAllJobs();

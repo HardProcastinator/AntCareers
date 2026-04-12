@@ -72,6 +72,11 @@ function getUser(): array
         ? strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[1], 0, 1))
         : strtoupper(substr($firstName, 0, 2));
 
+    $avatarUrl = (string)($_SESSION['avatar_url'] ?? '');
+    if ($avatarUrl && !str_starts_with($avatarUrl, '../') && !str_starts_with($avatarUrl, 'http')) {
+        $avatarUrl = '../' . $avatarUrl;
+    }
+
     return [
         'id'          => (int)($_SESSION['user_id']    ?? 0),
         'fullName'    => $fullName,
@@ -80,5 +85,6 @@ function getUser(): array
         'email'       => (string)($_SESSION['user_email']   ?? ''),
         'role'        => (string)($_SESSION['account_type'] ?? ''),
         'companyName' => (string)($_SESSION['company_name'] ?? ''),
+        'avatarUrl'   => $avatarUrl,
     ];
 }

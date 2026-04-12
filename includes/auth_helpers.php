@@ -51,25 +51,43 @@ function verifyCsrf(string $submitted): void
 // =============================================================================
 
 /**
- * Returns true if the email OR the IP address has accumulated
- * MAX_LOGIN_ATTEMPTS failed attempts in the last LOCKOUT_MINUTES window.
+ * Returns true if the email has accumulated MAX_LOGIN_ATTEMPTS failed attempts
+ * in the last LOCKOUT_MINUTES window, OR the IP has accumulated 3× that threshold.
+ *
+ * Email and IP are checked independently so that shared/NAT IPs (including
+ * localhost 127.0.0.1 on a local XAMPP setup) don't lock out unrelated accounts.
  */
 function isRateLimited(string $email, string $ip): bool
 {
     $db     = getDB();
     $window = date('Y-m-d H:i:s', time() - (LOCKOUT_MINUTES * 60));
 
+    // Per-email lockout: prevents brute-forcing a specific account.
     $stmt = $db->prepare(
         'SELECT COUNT(*) AS cnt
          FROM   login_attempts
          WHERE  success      = 0
            AND  attempted_at > :window
-           AND  (email = :email OR ip_address = :ip)'
+           AND  email        = :email'
     );
-    $stmt->execute([':window' => $window, ':email' => $email, ':ip' => $ip]);
+    $stmt->execute([':window' => $window, ':email' => $email]);
+    $row = $stmt->fetch();
+    if ((int)($row['cnt'] ?? 0) >= MAX_LOGIN_ATTEMPTS) {
+        return true;
+    }
+
+    // Per-IP lockout: higher threshold to avoid false positives on shared/NAT IPs.
+    $stmt = $db->prepare(
+        'SELECT COUNT(*) AS cnt
+         FROM   login_attempts
+         WHERE  success      = 0
+           AND  attempted_at > :window
+           AND  ip_address   = :ip'
+    );
+    $stmt->execute([':window' => $window, ':ip' => $ip]);
     $row = $stmt->fetch();
 
-    return (int)($row['cnt'] ?? 0) >= MAX_LOGIN_ATTEMPTS;
+    return (int)($row['cnt'] ?? 0) >= (MAX_LOGIN_ATTEMPTS * 3);
 }
 
 /**

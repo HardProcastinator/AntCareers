@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/job_titles.php';
+require_once __DIR__ . '/includes/countries.php';
 
 $db = getDB();
 $indexJobs = [];
@@ -49,6 +50,7 @@ try {
             'featured'    => $isFeatured,
             'tags'        => array_values(array_slice($tags, 0, 5)),
             'icon'        => 'fa-briefcase',
+            'postedDate'  => date('M j, Y', strtotime($r['created_at'])),
         ];
     }
 } catch (PDOException $e) { error_log('[AntCareers] index jobs: '.$e->getMessage()); }
@@ -69,6 +71,14 @@ try {
         $indexCompanies[] = ['name' => $c['name'], 'openRoles' => (int)$c['open_roles'], 'icon' => 'fa-building'];
     }
 } catch (PDOException $e) { /* ignore */ }
+
+// Country options for sidebar
+$countrySidebarOptionsHtml = '<option value="">All countries</option>';
+foreach (getCountries() as $country) {
+    $escName = htmlspecialchars((string)$country['name'], ENT_QUOTES, 'UTF-8');
+    $countrySidebarOptionsHtml .= '<option value="' . $escName . '">' . $escName . '</option>';
+}
+$countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
 
 $indexJobsJson = json_encode($indexJobs, JSON_HEX_TAG | JSON_HEX_AMP);
 $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
@@ -208,83 +218,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     }
     .nav-link:hover { color: #F5F0EE; background: var(--soil-hover); }
 
-    /* ==============================
-       CATEGORIES DROPDOWN — restyled
-       ============================== */
-    .dropdown { position: relative; }
-
-    .cat-toggle {
-      display: flex; align-items: center; gap: 6px;
-      padding: 7px 11px; border-radius: 6px;
-      background: none; border: 1px solid transparent;
-      font-family: var(--font-body); font-size: 13px; font-weight: 600;
-      color: var(--text-muted); cursor: pointer; transition: all 0.2s;
-      white-space: nowrap; letter-spacing: 0.01em;
-    }
-    .cat-toggle:hover {
-      color: var(--text-light); background: var(--soil-hover);
-    }
-    .cat-toggle.active {
-      color: var(--red-bright);
-      background: rgba(200,57,42,0.08);
-      border-color: rgba(200,57,42,0.25);
-    }
-    .cat-toggle .chevron {
-      font-size: 9px; transition: transform 0.22s ease;
-    }
-    .cat-toggle.active .chevron { transform: rotate(180deg); }
-
-    .dropdown-menu {
-      position: absolute; top: calc(100% + 10px); left: 0;
-      background: var(--soil-card);
-      border: 1px solid var(--soil-line);
-      border-top: 2px solid var(--red-vivid);
-      border-radius: 10px;
-      padding: 6px;
-      min-width: 220px;
-      opacity: 0; visibility: hidden;
-      transform: translateY(-6px);
-      transition: all 0.18s ease;
-      z-index: 300;
-      box-shadow: 0 24px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(200,57,42,0.05);
-    }
-    .dropdown-menu.open {
-      opacity: 1; visibility: visible; transform: translateY(0);
-    }
-
-    /* Section divider inside dropdown */
-    .dropdown-label {
-      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-      text-transform: uppercase; color: var(--text-muted);
-      padding: 8px 12px 4px;
-    }
-    .dropdown-divider {
-      height: 1px; background: var(--soil-line); margin: 4px 6px;
-    }
-
-    .dropdown-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 7px;
-      font-size: 13px; font-weight: 500;
-      color: var(--text-mid); cursor: pointer; transition: all 0.15s;
-      font-family: var(--font-body);
-    }
-    .dropdown-item .di-icon {
-      width: 30px; height: 30px; border-radius: 7px;
-      background: var(--soil-hover); border: 1px solid var(--soil-line);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; color: var(--red-vivid);
-      flex-shrink: 0; transition: all 0.15s;
-    }
-    .dropdown-item:hover { background: var(--soil-hover); color: var(--text-light); }
-    .dropdown-item:hover .di-icon {
-      background: rgba(200,57,42,0.15);
-      border-color: rgba(200,57,42,0.3);
-      color: var(--red-bright);
-    }
-    .di-name { font-size: 13px; font-weight: 600; color: inherit; }
-    .di-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
-
     /* Nav right */
     .nav-right {
       display: flex; align-items: center; gap: 8px;
@@ -359,11 +292,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     .mobile-link i { color: var(--red-mid); width: 16px; text-align: center; }
     .mobile-link:hover { background: var(--soil-hover); color: var(--text-light); }
     .mobile-divider { height: 1px; background: var(--soil-line); margin: 6px 0; }
-    .mobile-cats-label {
-      font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--text-muted); padding: 6px 14px 2px;
-      font-family: var(--font-body);
-    }
     .mobile-auth {
       display: flex; gap: 8px; padding: 8px 0 2px;
     }
@@ -499,83 +427,56 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     }
 
     /* === SIDEBAR === */
-    .sidebar { position: sticky; top: 72px; height: calc(100vh - 88px); overflow-y: auto; scrollbar-width: none; display:flex; flex-direction:column; }
-    .sidebar::-webkit-scrollbar { display: none; }
-    .sidebar-card {
+    .sidebar { position: sticky; top: 72px; align-self: start; }
+    .filter-sidebar {
       background: var(--soil-card); border: 1px solid var(--soil-line);
-      border-radius: 10px; overflow: hidden; flex:1;
+      border-radius: 12px; padding: 18px; flex:1;
     }
-    .sidebar-head {
-      padding: 16px 18px 12px;
-      display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid var(--soil-line);
+    .fs-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 7px;
     }
-    .sidebar-title {
-      font-family: var(--font-body); font-size: 12px; font-weight: 700;
-      color: #F5F0EE; display: flex; align-items: center; gap: 7px;
-      letter-spacing: 0.07em; text-transform: uppercase;
+    .fs-title i { color: var(--red-bright); }
+    .fs-section { }
+    .fs-section-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 10px;
     }
-    .sidebar-title i { color: var(--red-bright); font-size: 11px; }
-    .reset-link {
-      font-size: 12px; font-weight: 600; color: #927C7A;
-      cursor: pointer; background: none; border: none; font-family: var(--font-body); transition: 0.15s;
+    .fs-divider { height: 1px; background: var(--soil-line); margin: 16px 0; }
+    .fs-reset {
+      width: 100%; padding: 9px; border-radius: 7px; background: transparent;
+      border: 1px solid var(--soil-line); color: var(--text-muted);
+      font-family: var(--font-body); font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.18s;
     }
-    .reset-link:hover { color: var(--red-pale); }
-    .filter-section { padding: 13px 16px; border-bottom: 1px solid var(--soil-line); }
-    .filter-section:last-child { border-bottom: none; }
-    .filter-section-label {
-      font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-      color: #927C7A; margin-bottom: 7px;
-    }
-    .filter-select, .filter-input {
-      width: 100%;
-      background: #0A0909;
-      border: 1px solid var(--soil-line);
-      border-radius: 6px; padding: 8px 30px 8px 11px;
-      font-family: var(--font-body); font-size: 13px; color: #D0BCBA;
+    .fs-reset:hover { border-color: var(--red-vivid); color: var(--red-pale); }
+    .fs-text-input {
+      width: 100%; padding: 9px 12px; background: var(--soil-hover);
+      border: 1px solid var(--soil-line); border-radius: 7px;
+      font-family: var(--font-body); font-size: 12px; color: var(--text-mid);
       outline: none; transition: border-color 0.2s, box-shadow 0.2s;
-      -webkit-appearance: none; appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23927C7A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      cursor: pointer;
     }
-    .filter-input {
-      background-image: none;
-      padding-right: 11px;
-      cursor: text;
+    .fs-text-input::placeholder { color: var(--text-muted); }
+    .fs-text-input:focus { border-color: var(--red-vivid); box-shadow: 0 0 0 2px rgba(209,61,44,0.14); }
+    .fs-select {
+      width: 100%; padding: 9px 12px; background: var(--soil-hover);
+      border: 1px solid var(--soil-line); border-radius: 7px;
+      font-family: var(--font-body); font-size: 12px; color: var(--text-mid);
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none; appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23927C7A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 11px center; background-size: 10px 6px; padding-right: 28px;
     }
-    .filter-select:hover, .filter-input:hover {
-      border-color: var(--red-mid);
-      background-color: var(--soil-hover);
-    }
-    .filter-select:focus, .filter-input:focus {
-      border-color: var(--red-vivid);
-      box-shadow: 0 0 0 2px rgba(209,61,44,0.14);
-    }
-    .filter-select option { background: #131010; color: #D0BCBA; }
+    .fs-select:hover { border-color: var(--red-mid); }
+    .fs-select:focus { border-color: var(--red-vivid); box-shadow: 0 0 0 2px rgba(209,61,44,0.14); }
+    .fs-select option { background: var(--soil-card); color: var(--text-mid); }
 
-    /* Light-mode overrides for filter inputs placed further down */
-    body.light .filter-select,
-    body.light .filter-input {
-      background-color: #FFFFFF;
-      border-color: #D4B0AB;
-      color: #1A0A09;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237A5555' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    }
-    body.light .filter-input { background-image: none; }
-    body.light .filter-select:hover,
-    body.light .filter-input:hover {
-      border-color: var(--red-mid);
-      background-color: #FEF0EE;
-    }
-    body.light .filter-select:focus,
-    body.light .filter-input:focus {
-      border-color: var(--red-vivid);
-      box-shadow: 0 0 0 2px rgba(200,57,42,0.12);
-    }
-    body.light .filter-select option { background: #FFFFFF; color: #1A0A09; }
-    body.light .filter-input::placeholder { color: #9A7070; }
+    /* Light-mode overrides for sidebar */
+    body.light .filter-sidebar { background: #FFFFFF; border-color: #E0CECA; }
+    body.light .fs-text-input { background: #F5EEEC; border-color: #E0CECA; color: #1A0A09; }
+    body.light .fs-text-input::placeholder { color: #B09090; }
+    body.light .fs-select { background: #F5EEEC; border-color: #E0CECA; color: #4A2828; }
+    body.light .fs-select:hover { background-color: #FEF0EE; }
+    body.light .fs-select option { background: #FFFFFF; color: #4A2828; }
 
     /* === MAIN === */
     .sec-header {
@@ -808,28 +709,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     body.light .filter-section-label { color: #7A5555; }
 
     /* Dropdown panel */
-    body.light .dropdown-menu {
-      background: #FFFFFF;
-      border-color: #E8D0CC;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-    }
-    body.light .dropdown-item { color: #4A2828; }
-    body.light .dropdown-item .di-icon {
-      background: #F5E8E6;
-      border-color: #DFC0BB;
-    }
-    body.light .dropdown-item:hover { background: #FEF0EE; color: #1A0A09; }
-    body.light .dropdown-label { color: #9A7070; }
-    body.light .dropdown-divider { background: #E8D0CC; }
-
-    /* Cat toggle active in light */
-    body.light .cat-toggle { color: #5A4040; }
-    body.light .cat-toggle:hover { background: #FEF0EE; color: #1A0A09; }
-    body.light .cat-toggle.active {
-      background: rgba(200,57,42,0.08);
-      border-color: rgba(200,57,42,0.3);
-    }
-
     /* Colony visual (hero right card) */
     body.light .colony-visual { background: #FFFFFF; border-color: #E8D0CC; }
     body.light .mini-job-card { background: #FEF0EE; border-color: #E8D0CC; }
@@ -859,14 +738,11 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     body.light .mobile-link { color: #4A2828; }
     body.light .mobile-link:hover { background: #FEF0EE; color: #1A0A09; }
     body.light .mobile-divider { background: #E8D0CC; }
-    body.light .mobile-cats-label { color: #9A7070; }
-
     /* === LIGHT MODE — hardcoded color overrides === */
     body.light .logo-text { color: #1A0A09; }
     body.light .logo-text span { color: var(--red-vivid); }
     body.light .nav-link { color: #5A4040; }
     body.light .nav-link:hover { color: #1A0A09; background: #FEF0EE; }
-    body.light .sidebar-title { color: #1A0A09; }
     body.light .sec-title { color: #1A0A09; }
     body.light .fc-title { color: #1A0A09; }
     body.light .jr-title { color: #1A0A09; }
@@ -920,10 +796,11 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       .content-layout { grid-template-columns: 1fr; }
       .sidebar { position: static; }
       /* show sidebar filters in a horizontal wrap */
-      .sidebar-card { border-radius: 14px; }
-      .filter-section { display: inline-flex; flex-direction: column; gap: 4px; min-width: 140px; }
-      .sidebar-card { display: flex; flex-wrap: wrap; padding: 0; }
-      .sidebar-head { width: 100%; flex: 0 0 100%; }
+      .filter-sidebar { border-radius: 14px; display: flex; flex-wrap: wrap; padding: 12px; gap: 8px; }
+      .fs-title { width: 100%; flex: 0 0 100%; }
+      .fs-section { display: inline-flex; flex-direction: column; gap: 4px; min-width: 140px; }
+      .fs-divider { display: none; }
+      .fs-reset { margin-top: 4px; }
     }
 
     /* Small tablet / large phone */
@@ -960,6 +837,28 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       .search-bar { border-radius: 12px; }
       .featured-card { min-width: 230px; max-width: 230px; }
     }
+
+    /* === MS-WRAP MULTI-SELECT === */
+    .ms-wrap { position:relative; }
+    .ms-trigger { width:100%; display:flex; align-items:center; justify-content:space-between; background-color:var(--soil-hover); border:1px solid var(--soil-line); border-radius:7px; padding:9px 12px; font-family:var(--font-body); font-size:13px; color:var(--text-mid); cursor:pointer; transition:border-color 0.2s, box-shadow 0.2s, background-color 0.2s; }
+    .ms-trigger:hover { border-color:var(--red-mid); }
+    .ms-wrap.open .ms-trigger { border-color:var(--red-vivid); box-shadow:0 0 0 2px rgba(209,61,44,0.14); }
+    .ms-trigger .ms-arrow { font-size:8px; color:var(--text-muted); transition:transform 0.2s; flex-shrink:0; }
+    .ms-wrap.open .ms-trigger .ms-arrow { transform:rotate(180deg); }
+    .ms-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ms-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:20; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+    .ms-wrap.open .ms-panel { display:block; }
+    .ms-item { display:flex; align-items:center; gap:8px; padding:7px 12px; font-size:13px; color:var(--text-mid); cursor:pointer; transition:background-color 0.12s; user-select:none; }
+    .ms-item:hover { background:var(--soil-hover); }
+    .ms-item input[type="checkbox"] { width:14px; height:14px; accent-color:var(--red-vivid); cursor:pointer; flex-shrink:0; }
+    .role-section { display:block; margin-top:8px; }
+    .role-section-label { font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); margin:10px 0 6px; display:block; }
+    body.light .ms-trigger { background-color:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
+    body.light .ms-trigger:hover { background-color:#FEF0EE; }
+    body.light .ms-wrap.open .ms-trigger { border-color:var(--red-vivid); }
+    body.light .ms-panel { background:#FFFFFF; border-color:#E0CECA; box-shadow:0 8px 24px rgba(0,0,0,0.1); }
+    body.light .ms-item { color:#4A2828; }
+    body.light .ms-item:hover { background:#FEF0EE; }
   </style>
 </head>
 <body>
@@ -1006,26 +905,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     <div class="nav-links">
       <a class="nav-link" data-scroll="featured"><i class="fas fa-star"></i> Featured</a>
       <a class="nav-link" data-scroll="companies"><i class="fas fa-building"></i> Companies</a>
-      <!-- Categories dropdown -->
-      <div class="dropdown" id="catDropdown">
-        <button class="cat-toggle" id="catToggle">
-          <i class="fas fa-th-large"></i> Categories
-          <i class="fas fa-chevron-down chevron"></i>
-        </button>
-        <div class="dropdown-menu" id="catMenu">
-          <div class="dropdown-label">Browse by industry</div>
-          <!-- items injected by JS -->
-          <div class="dropdown-divider"></div>
-          <div class="dropdown-item" data-filter-type="workSetup" data-filter-value="Remote">
-            <div class="di-icon"><i class="fas fa-globe"></i></div>
-            <div class="di-text">
-              <div class="di-name">Remote Work</div>
-              <div class="di-sub">Work from anywhere</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <a class="nav-link" data-scroll="jobs"><i class="fas fa-list"></i> All Jobs</a>
     </div>
 
@@ -1047,11 +926,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   <a class="mobile-link" data-scroll="featured" data-close-mobile><i class="fas fa-star"></i> Featured jobs</a>
   <a class="mobile-link" data-scroll="companies" data-close-mobile><i class="fas fa-building"></i> Companies</a>
   <a class="mobile-link" data-scroll="jobs" data-close-mobile><i class="fas fa-list"></i> All Jobs</a>
-  <div class="mobile-divider"></div>
-  <div class="mobile-cats-label">Browse by industry</div>
-  <?php foreach (getIndustryFilterOptions() as $_idx => $_ind): ?>
-  <a class="mobile-link mobile-cat-link" data-industry="<?= htmlspecialchars($_ind['value'], ENT_QUOTES, 'UTF-8') ?>" data-close-mobile><i class="fas <?= htmlspecialchars($_ind['icon'], ENT_QUOTES, 'UTF-8') ?>"></i> <?= htmlspecialchars($_ind['label'], ENT_QUOTES, 'UTF-8') ?></a>
-  <?php endforeach; ?>
   <div class="mobile-divider"></div>
   <div class="mobile-auth">
     <button class="btn-ghost" id="loginBtnMob" type="button" onclick="window.location.href='auth/antcareers_login.php'"><i class="fas fa-key"></i> Log in</button>
@@ -1110,77 +984,141 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
     <!-- SIDEBAR -->
     <aside class="sidebar anim anim-d1">
-      <div class="sidebar-card">
-        <div class="sidebar-head">
-          <div class="sidebar-title"><i class="fas fa-sliders-h"></i> Refine search</div>
-          <button class="reset-link" id="resetFiltersBtn">Reset all</button>
+      <div class="filter-sidebar">
+        <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
+
+        <div class="fs-section">
+          <div class="fs-section-label">Industry</div>
+          <div class="ms-wrap" id="msIndustry" data-default="All Industries">
+            <button class="ms-trigger" type="button"><span class="ms-text">All Industries</span><i class="fas fa-chevron-down ms-arrow"></i></button>
+            <div class="ms-panel">
+              <label class="ms-item"><input type="checkbox" value="Accounting"><span>Accounting</span></label>
+              <label class="ms-item"><input type="checkbox" value="Administration &amp; Office Support"><span>Administration &amp; Office Support</span></label>
+              <label class="ms-item"><input type="checkbox" value="Advertising, Arts &amp; Media"><span>Advertising, Arts &amp; Media</span></label>
+              <label class="ms-item"><input type="checkbox" value="Banking &amp; Financial Services"><span>Banking &amp; Financial Services</span></label>
+              <label class="ms-item"><input type="checkbox" value="Call Centre &amp; Customer Service"><span>Call Centre &amp; Customer Service</span></label>
+              <label class="ms-item"><input type="checkbox" value="CEO &amp; General Management"><span>CEO &amp; General Management</span></label>
+              <label class="ms-item"><input type="checkbox" value="Community Services &amp; Development"><span>Community Services &amp; Development</span></label>
+              <label class="ms-item"><input type="checkbox" value="Construction"><span>Construction</span></label>
+              <label class="ms-item"><input type="checkbox" value="Consulting &amp; Strategy"><span>Consulting &amp; Strategy</span></label>
+              <label class="ms-item"><input type="checkbox" value="Design &amp; Architecture"><span>Design &amp; Architecture</span></label>
+              <label class="ms-item"><input type="checkbox" value="Education &amp; Training"><span>Education &amp; Training</span></label>
+              <label class="ms-item"><input type="checkbox" value="Engineering"><span>Engineering</span></label>
+              <label class="ms-item"><input type="checkbox" value="Farming, Animals &amp; Conservation"><span>Farming, Animals &amp; Conservation</span></label>
+              <label class="ms-item"><input type="checkbox" value="Government &amp; Defence"><span>Government &amp; Defence</span></label>
+              <label class="ms-item"><input type="checkbox" value="Healthcare &amp; Medical"><span>Healthcare &amp; Medical</span></label>
+              <label class="ms-item"><input type="checkbox" value="Hospitality &amp; Tourism"><span>Hospitality &amp; Tourism</span></label>
+              <label class="ms-item"><input type="checkbox" value="Human Resources &amp; Recruitment"><span>Human Resources &amp; Recruitment</span></label>
+              <label class="ms-item"><input type="checkbox" value="Information &amp; Communication Technology"><span>Information &amp; Communication Technology</span></label>
+              <label class="ms-item"><input type="checkbox" value="Insurance &amp; Superannuation"><span>Insurance &amp; Superannuation</span></label>
+              <label class="ms-item"><input type="checkbox" value="Legal"><span>Legal</span></label>
+              <label class="ms-item"><input type="checkbox" value="Manufacturing, Transport &amp; Logistics"><span>Manufacturing, Transport &amp; Logistics</span></label>
+              <label class="ms-item"><input type="checkbox" value="Marketing &amp; Communications"><span>Marketing &amp; Communications</span></label>
+              <label class="ms-item"><input type="checkbox" value="Mining, Resources &amp; Energy"><span>Mining, Resources &amp; Energy</span></label>
+              <label class="ms-item"><input type="checkbox" value="Real Estate &amp; Property"><span>Real Estate &amp; Property</span></label>
+              <label class="ms-item"><input type="checkbox" value="Retail &amp; Consumer Products"><span>Retail &amp; Consumer Products</span></label>
+              <label class="ms-item"><input type="checkbox" value="Sales"><span>Sales</span></label>
+              <label class="ms-item"><input type="checkbox" value="Science &amp; Technology"><span>Science &amp; Technology</span></label>
+              <label class="ms-item"><input type="checkbox" value="Self Employment"><span>Self Employment</span></label>
+              <label class="ms-item"><input type="checkbox" value="Sports &amp; Recreation"><span>Sports &amp; Recreation</span></label>
+              <label class="ms-item"><input type="checkbox" value="Trades &amp; Services"><span>Trades &amp; Services</span></label>
+            </div>
+          </div>
+          <div class="role-section" id="rolePickerWrap">
+            <span class="role-section-label">Job Role</span>
+            <div class="ms-wrap" id="msJobRole" data-default="All roles">
+              <button class="ms-trigger" type="button"><span class="ms-text">All roles</span><i class="fas fa-chevron-down ms-arrow"></i></button>
+              <div class="ms-panel" id="msJobRolePanel"></div>
+            </div>
+          </div>
         </div>
-        <div class="filter-section">
-          <div class="filter-section-label">Job type</div>
-          <select id="jobTypeFilter" class="filter-select">
-            <option value="">All types</option>
-            <option value="Full-time">Full-time</option>
-            <option value="Part-time">Part-time</option>
-            <option value="Contract">Contract</option>
-            <option value="Internship">Internship</option>
+
+        <div class="fs-divider"></div>
+
+        <div class="fs-section">
+          <div class="fs-section-label">Location</div>
+          <select class="fs-select" id="sidebarLocationFilter">
+            <?= $countrySidebarOptionsHtml ?>
           </select>
+          <input type="text" id="locationKeyword" class="fs-text-input" placeholder="Enter region, province or city" style="margin-top:6px;">
         </div>
-        <div class="filter-section">
-          <div class="filter-section-label">Position</div>
-          <input type="text" id="positionFilter" list="positionOptions" class="filter-input" placeholder="e.g. Product Designer">
-          <datalist id="positionOptions">
-            <?php foreach (getJobTitlesList() as $_jt): ?><option value="<?= htmlspecialchars($_jt, ENT_QUOTES, 'UTF-8') ?>">
-            <?php endforeach; ?>
-          </datalist>
+
+        <div class="fs-divider"></div>
+
+        <div class="fs-section">
+          <div class="fs-section-label">Work Type</div>
+          <div class="ms-wrap" id="msWorkType" data-default="All types">
+            <button class="ms-trigger" type="button"><span class="ms-text">All types</span><i class="fas fa-chevron-down ms-arrow"></i></button>
+            <div class="ms-panel">
+              <label class="ms-item"><input type="checkbox" value="Full-time"><span>Full-time</span></label>
+              <label class="ms-item"><input type="checkbox" value="Part-time"><span>Part-time</span></label>
+              <label class="ms-item"><input type="checkbox" value="Contract"><span>Contract</span></label>
+              <label class="ms-item"><input type="checkbox" value="Freelance"><span>Freelance</span></label>
+              <label class="ms-item"><input type="checkbox" value="Internship"><span>Internship</span></label>
+              <label class="ms-item"><input type="checkbox" value="Casual"><span>Casual</span></label>
+            </div>
+          </div>
         </div>
-        <div class="filter-section">
-          <div class="filter-section-label">Location</div>
-          <input type="text" id="locationFilter" list="locationOptions" class="filter-input" placeholder="e.g. Remote, New York">
-          <datalist id="locationOptions">
-            <option value="New York"><option value="San Francisco">
-            <option value="Remote"><option value="Austin"><option value="Chicago">
-          </datalist>
+
+        <div class="fs-divider"></div>
+
+        <div class="fs-section">
+          <div class="fs-section-label">Remote Options</div>
+          <div class="ms-wrap" id="msRemote" data-default="All setups">
+            <button class="ms-trigger" type="button"><span class="ms-text">All setups</span><i class="fas fa-chevron-down ms-arrow"></i></button>
+            <div class="ms-panel">
+              <label class="ms-item"><input type="checkbox" value="On-site"><span>On-site</span></label>
+              <label class="ms-item"><input type="checkbox" value="Hybrid"><span>Hybrid</span></label>
+              <label class="ms-item"><input type="checkbox" value="Remote"><span>Remote</span></label>
+            </div>
+          </div>
         </div>
-        <div class="filter-section">
-          <div class="filter-section-label">Experience level</div>
-          <select id="expFilter" class="filter-select">
-            <option value="">Any level</option>
-            <option value="Entry">Entry level</option>
-            <option value="Mid">Mid level</option>
-            <option value="Senior">Senior level</option>
+
+        <div class="fs-divider"></div>
+
+        <div class="fs-section">
+          <div class="fs-section-label">Experience</div>
+          <div class="ms-wrap" id="msExperience" data-default="Any level">
+            <button class="ms-trigger" type="button"><span class="ms-text">Any level</span><i class="fas fa-chevron-down ms-arrow"></i></button>
+            <div class="ms-panel">
+              <label class="ms-item"><input type="checkbox" value="Entry"><span>Entry level</span></label>
+              <label class="ms-item"><input type="checkbox" value="Mid"><span>Mid level</span></label>
+              <label class="ms-item"><input type="checkbox" value="Senior"><span>Senior level</span></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="fs-divider"></div>
+
+        <div class="fs-section">
+          <div class="fs-section-label">Salary</div>
+          <select class="fs-select" id="salaryPeriodFilter">
+            <option value="">Any period</option>
+            <option value="Annually">Annually</option>
+            <option value="Monthly">Monthly</option>
+            <option value="Hourly">Hourly</option>
           </select>
+          <input type="text" id="salaryKeyword" class="fs-text-input" placeholder="Enter salary range" style="margin-top:6px;">
         </div>
-        <div class="filter-section">
-          <div class="filter-section-label">Industry</div>
-          <select id="industryFilter" class="filter-select">
-            <option value="">All industries</option>
-            <?php foreach (getIndustryFilterOptions() as $_ind): ?>
-            <option value="<?= htmlspecialchars($_ind['value'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($_ind['label'], ENT_QUOTES, 'UTF-8') ?></option>
-            <?php endforeach; ?>
-          </select>
+
+        <div class="fs-divider"></div>
+
+        <div class="fs-section">
+          <div class="fs-section-label">Listed</div>
+          <div class="ms-wrap" id="msListed" data-default="Any time">
+            <button class="ms-trigger" type="button"><span class="ms-text">Any time</span><i class="fas fa-chevron-down ms-arrow"></i></button>
+            <div class="ms-panel">
+              <label class="ms-item"><input type="checkbox" value="1"><span>Today</span></label>
+              <label class="ms-item"><input type="checkbox" value="3"><span>Last 3 days</span></label>
+              <label class="ms-item"><input type="checkbox" value="7"><span>Last 7 days</span></label>
+              <label class="ms-item"><input type="checkbox" value="14"><span>Last 14 days</span></label>
+              <label class="ms-item"><input type="checkbox" value="30"><span>Last 30 days</span></label>
+            </div>
+          </div>
         </div>
-        <div class="filter-section">
-          <div class="filter-section-label">Salary range (₱)</div>
-          <select id="salaryRangeFilter" class="filter-select">
-            <option value="">Any salary</option>
-            <option value="0-80">Under ₱80k</option>
-            <option value="80-100">₱80k – ₱100k</option>
-            <option value="100-120">₱100k – ₱120k</option>
-            <option value="120-140">₱120k – ₱140k</option>
-            <option value="140-160">₱140k – ₱160k</option>
-            <option value="160-200">₱160k – ₱200k</option>
-            <option value="200+">₱200k+</option>
-          </select>
-        </div>
-        <div class="filter-section">
-          <div class="filter-section-label">Work setup</div>
-          <select id="workSetupFilter" class="filter-select">
-            <option value="">All setups</option>
-            <option value="On-site">On-site</option>
-            <option value="Hybrid">Hybrid</option>
-            <option value="Remote">Remote</option>
-          </select>
-        </div>
+
+        <div class="fs-divider"></div>
+        <button class="fs-reset" id="resetFiltersBtn"><i class="fas fa-undo" style="margin-right:5px;"></i> Reset Filters</button>
       </div>
     </aside>
 
@@ -1242,23 +1180,12 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
   const companies = <?= $indexCompaniesJson ?>;
 
-  const categoryList = <?= json_encode(array_map(function($i) {
-      return ['name' => $i['label'], 'sub' => '', 'icon' => $i['icon'], 'filterType' => 'industry', 'value' => $i['value']];
-  }, getIndustryFilterOptions()), JSON_HEX_TAG | JSON_HEX_AMP) ?>;
-
   let savedJobs = new Set();
 
   const featuredContainer = document.getElementById('featuredJobsContainer');
   const jobsContainer = document.getElementById('jobsContainer');
   const jobCount = document.getElementById('jobCount');
   const keywordInput = document.getElementById('keywordInput');
-  const jobTypeFilter = document.getElementById('jobTypeFilter');
-  const positionFilter = document.getElementById('positionFilter');
-  const locationFilter = document.getElementById('locationFilter');
-  const expFilter = document.getElementById('expFilter');
-  const industryFilter = document.getElementById('industryFilter');
-  const salaryRangeFilter = document.getElementById('salaryRangeFilter');
-  const workSetupFilter = document.getElementById('workSetupFilter');
   const companiesGrid = document.getElementById('companiesGrid');
   const modal = document.getElementById('jobModal');
   const modalBody = document.getElementById('modalBody');
@@ -1308,17 +1235,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   window.addEventListener('resize', updateMobileThemeBtn);
   updateMobileThemeBtn();
 
-  // mobile category links (dynamic)
-  document.querySelectorAll('.mobile-cat-link').forEach(el => {
-    el.addEventListener('click', () => {
-      const val = el.dataset.industry;
-      if (val) industryFilter.value = val;
-      renderAllJobs();
-      closeMobileMenu();
-      document.getElementById('jobs').scrollIntoView({ behavior:'smooth' });
-    });
-  });
-
   // mobile scroll links
   document.querySelectorAll('[data-close-mobile][data-scroll]').forEach(el => {
     el.addEventListener('click', () => { closeMobileMenu(); });
@@ -1328,51 +1244,107 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     hamburger.querySelector('i').className = 'fas fa-bars';
   }
 
-  // ── CATEGORIES DROPDOWN ──
-  const catMenu = document.getElementById('catMenu');
-  const catToggle = document.getElementById('catToggle');
+  // ── MULTI-SELECT HELPERS ─────────────────────────────────────────────────
+  const JOB_ROLES = {
+    'Accounting':['Accounts Officers / Clerks','Accounts Payable','Accounts Receivable / Credit Control','Analysis & Reporting','Assistant Accountants','Audit - External','Audit - Internal','Bookkeeping & Small Practice Accounting','Business Services & Corporate Advisory','Company Secretaries','Compliance & Risk','Cost Accounting','Financial Accounting & Reporting','Financial Managers & Controllers','Forensic Accounting & Investigation','Insolvency & Corporate Recovery','Inventory & Fixed Assets','Management','Management Accounting & Budgeting','Payroll','Strategy & Planning','Systems Accounting & IT Audit','Taxation','Treasury','Other'],
+    'Administration & Office Support':['Administrative Assistants','Client & Sales Administration','Contracts Administration','Data Entry & Word Processing','Office Management','PA, EA & Secretarial','Receptionists','Records Management & Document Control','Other'],
+    'Advertising, Arts & Media':['Agency Account Management','Art Direction','Editing & Publishing','Event Management','Journalism & Writing','Management','Media Strategy, Planning & Buying','Other'],
+    'Banking & Financial Services':['Account & Relationship Management','Analysis & Reporting','Banking - Business','Banking - Corporate & Institutional','Banking - Retail / Branch','Client Services','Compliance & Risk','Corporate Finance & Investment Banking','Credit','Financial Planning','Funds Management','Management','Mortgages','Settlements','Other'],
+    'Call Centre & Customer Service':['Collections','Customer Service - Call Centre','Customer Service - Customer Facing','Management & Support','Sales - Inbound','Sales - Outbound','Supervisors / Team Leaders','Other'],
+    'CEO & General Management':['Board Appointments','CEO','COO & MD','General / Business Unit Manager','Other'],
+    'Community Services & Development':['Aged & Disability Support','Child Welfare, Youth & Family Services','Community Development','Employment Services','Fundraising','Housing & Homelessness Services','Indigenous & Multicultural Services','Management','Volunteer Coordination & Support','Other'],
+    'Construction':['Contracts Management','Estimating','Foreperson / Supervisors','Health, Safety & Environment','Management','Planning & Scheduling','Plant & Machinery Operators','Project Management','Quality Assurance & Control','Surveying','Other'],
+    'Consulting & Strategy':['Analysts','Corporate Development','Environment & Sustainability Consulting','Management & Change Consulting','Policy','Strategy & Planning','Other'],
+    'Design & Architecture':['Architectural Drafting','Architecture','Fashion Design','Graphic Design','Interior Design','Landscape Architecture','Management','Product Design','Urban Design & Planning','Other'],
+    'Education & Training':['Childcare & Outside School Hours Care','Library Services & Information Management','Management - Schools','Management - Universities','Management - Vocational','Research & Fellowships','Student Services','Teaching - Early Childhood','Teaching - Primary','Teaching - Secondary','Teaching - Tertiary','Teaching - Vocational','Teaching Aides & Special Needs','Tutoring','Workplace Training & Assessment','Other'],
+    'Engineering':['Aerospace Engineering','Automotive Engineering','Building Services Engineering','Chemical Engineering','Civil/Structural Engineering','Electrical/Electronic Engineering','Engineering Drafting','Environmental Engineering','Field Engineering','Industrial Engineering','Maintenance','Management','Materials Handling Engineering','Mechanical Engineering','Process Engineering','Project Engineering','Project Management','Supervisors','Systems Engineering','Water & Waste Engineering','Other'],
+    'Farming, Animals & Conservation':['Agronomy & Farm Services','Conservation, Parks & Wildlife','Farm Labour','Farm Management','Fishing & Aquaculture','Horticulture','Veterinary Services & Animal Welfare','Winery & Viticulture','Other'],
+    'Government & Defence':['Air Force','Army','Emergency Services','Government - Federal','Government - Local','Government - State','Navy','Police & Corrections','Other'],
+    'Healthcare & Medical':['Ambulance/Paramedics','Chiropractic & Osteopathic','Clinical/Medical Research','Dental','Dieticians','Environmental Services','General Practitioners','Management','Medical Administration','Medical Imaging','Medical Specialists','Natural Therapies & Alternative Medicine','Nursing - A&E, Critical Care & ICU','Nursing - Aged Care','Nursing - Community, Maternal & Child Health','Nursing - Educators & Facilitators','Nursing - General Medical & Surgical','Nursing - High Acuity','Nursing - Management','Nursing - Midwifery, Neo-Natal, SCN & NICU','Nursing - Paediatric & PICU','Nursing - Psych, Forensic & Correctional Health','Nursing - Theatre & Recovery','Optical','Pathology','Pharmaceuticals & Medical Devices','Pharmacy','Physiotherapy, OT & Rehabilitation','Psychology, Counselling & Social Work','Residents & Registrars','Sales','Speech Therapy','Other'],
+    'Hospitality & Tourism':['Airlines','Bar & Beverage Staff','Chefs/Cooks','Front Office & Guest Services','Gaming','Housekeeping','Kitchen & Sandwich Hands','Management','Reservations','Tour Guides','Travel Agents/Consultants','Waiting Staff','Other'],
+    'Human Resources & Recruitment':['Consulting & Generalist HR','Industrial & Employee Relations','Management - Agency','Management - Internal','Occupational Health & Safety','Organisational Development','Recruitment - Agency','Recruitment - Internal','Remuneration & Benefits','Training & Development','Other'],
+    'Information & Communication Technology':['Architects','Computer Operators','Consultants','Database Development & Administration','Developers/Programmers','Engineering - Hardware','Engineering - Network','Engineering - Software','Help Desk & IT Support','Management','Networks & Systems Administration','Product Management & Development','Program & Project Management','Sales - Pre & Post','Security','Software Quality Assurance','System Services & Support','Systems Analysis & Modelling','Team Leaders','Technical Writing','Telecommunications','Testing & Quality Assurance','Other'],
+    'Insurance & Superannuation':['Actuarial','Assessment','Brokerage','Claims','Management','Risk Management','Superannuation','Underwriting','Workers\' Compensation','Other'],
+    'Legal':['Banking & Financial Services Law','Construction Law','Corporate & Commercial Law','Criminal Law','Family Law','Generalists - In-house','Generalists - Law Firm','Industrial Relations & Employment Law','Insurance & Superannuation Law','Intellectual Property Law','Legal Secretaries','Litigation & Dispute Resolution','Management','Personal Injury Law','Property Law','Tax Law','Other'],
+    'Manufacturing, Transport & Logistics':['Assembly & Process Work','Aviation Services','Couriers, Drivers & Postal Services','Fleet Management','Freight/Cargo Forwarding','Import/Export & Customs','Inventory & Stock Control','Machine Operators','Management','Methods & Quality Control','Operations','Production, Planning & Scheduling','Public Transport & Taxi Services','Purchasing, Procurement & Inventory','Rail Operations','Road Transport','Shipping','Warehouse, Storage & Distribution','Other'],
+    'Marketing & Communications':['Brand Management','Digital & Search Marketing','Direct Marketing & CRM','Event Management','Internal Communications','Management','Market Research & Analysis','Marketing Assistants/Coordinators','Marketing Communications','Media Strategy, Planning & Buying','Product Management & Development','Public Relations & Corporate Affairs','Trade Marketing','Other'],
+    'Mining, Resources & Energy':['Analysis & Reporting','Corporate Services','Engineering','Health, Safety & Environment','Management','Natural Resources & Water','Oil & Gas - Drilling','Oil & Gas - Exploration & Geoscience','Oil & Gas - Operations','Oil & Gas - Production & Refinement','Operations','Power Generation & Distribution','Project Management','Renewable Energy','Surveying','Other'],
+    'Real Estate & Property':['Administration','Body Corporate & Facilities Management','Commercial Sales, Leasing & Property Mgmt','Management','Residential Leasing & Property Management','Residential Sales','Retail & Shopping Centre Management','Valuation','Other'],
+    'Retail & Consumer Products':['Merchandisers','Management - Area/Multi-site','Management - Department/Assistant','Management - Store','Planning','Purchasing, Procurement & Inventory','Retail Assistants','Sales Representatives/Consultants','Visual Merchandising','Other'],
+    'Sales':['Account & Relationship Management','Analysis & Reporting','Management','New Business Development','Sales Representatives/Consultants','Other'],
+    'Science & Technology':['Biological & Biomedical Sciences','Biotechnology','Chemistry','Environmental, Earth & Geosciences','Food Technology & Safety','Laboratory & Technical Services','Materials Sciences','Mathematics, Statistics & Information Sciences','Modelling & Simulation','Physics','Other'],
+    'Self Employment':['Self Employment'],
+    'Sports & Recreation':['Coaching & Instruction','Fitness & Personal Training','Management','Other'],
+    'Trades & Services':['Automotive Trades','Bakers & Pastry Cooks','Building Trades','Butchers','Caretakers & Handypersons','Cleaning Services','Electricians','Floristry','Gardening & Landscaping','Hair & Beauty Services','Labourers','Locksmiths','Maintenance & Handypersons','Management','Nannies & Babysitters','Painters & Sign Writers','Plumbers','Printing & Publishing Services','Security Services','Tailors & Dressmakers','Technicians','Upholstery & Textile Trades','Other']
+  };
 
-  // build industry items (remote item already in HTML as last)
-  const industryItems = categoryList.map(c => `
-    <div class="dropdown-item" data-filter-type="${c.filterType}" data-filter-value="${c.value}">
-      <div class="di-icon"><i class="fas ${c.icon}"></i></div>
-      <div class="di-text">
-        <div class="di-name">${c.name}</div>
-        <div class="di-sub">${c.sub}</div>
-      </div>
-    </div>`).join('');
-  // insert before divider
-  const divider = catMenu.querySelector('.dropdown-divider');
-  divider.insertAdjacentHTML('beforebegin', industryItems);
+  function getMsValues(id) {
+    const w = document.getElementById(id);
+    return w ? [...w.querySelectorAll('input:checked')].map(i => i.value) : [];
+  }
+  function updateMsLabel(wrap) {
+    const checked = [...wrap.querySelectorAll('input:checked')];
+    const label = wrap.querySelector('.ms-text');
+    const def = wrap.dataset.default || 'Select';
+    if (!checked.length) label.textContent = def;
+    else if (checked.length === 1) label.textContent = checked[0].nextElementSibling?.textContent || checked[0].value;
+    else label.textContent = checked.length + ' selected';
+  }
+  function updateRolePicker(selectedIndustries) {
+    const wrap = document.getElementById('rolePickerWrap');
+    const panel = document.getElementById('msJobRolePanel');
+    const msWrap = document.getElementById('msJobRole');
+    if (!wrap || !panel) return;
+    const roles = [];
+    selectedIndustries.forEach(ind => {
+      (JOB_ROLES[ind] || []).forEach(r => { if (!roles.includes(r)) roles.push(r); });
+    });
+    if (!roles.length) {
+      panel.innerHTML = '';
+      if (msWrap) { msWrap.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false); updateMsLabel(msWrap); }
+      return;
+    }
+    panel.innerHTML = roles.map(r => `<label class="ms-item"><input type="checkbox" value="${r.replace(/"/g,'&quot;')}"><span>${r.replace(/&/g,'&amp;')}</span></label>`).join('');
+    panel.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => { updateMsLabel(msWrap); renderAllJobs(); });
+    });
+  }
 
-  catToggle.addEventListener('click', e => {
-    e.stopPropagation();
-    const open = catMenu.classList.toggle('open');
-    catToggle.classList.toggle('active', open);
-  });
-  document.addEventListener('click', () => {
-    catMenu.classList.remove('open');
-    catToggle.classList.remove('active');
-  });
-
-  catMenu.querySelectorAll('.dropdown-item').forEach(item => {
-    item.addEventListener('click', e => {
+  // ── MS-WRAP WIRING ────────────────────────────────────────────────────
+  document.querySelectorAll('.ms-wrap').forEach(wrap => {
+    const trigger = wrap.querySelector('.ms-trigger');
+    if (!trigger) return;
+    trigger.addEventListener('click', e => {
       e.stopPropagation();
-      const ft = item.dataset.filterType, fv = item.dataset.filterValue;
-      if (ft === 'industry') industryFilter.value = fv;
-      else if (ft === 'workSetup') workSetupFilter.value = fv;
-      renderAllJobs();
-      document.getElementById('jobs').scrollIntoView({ behavior:'smooth' });
-      catMenu.classList.remove('open');
-      catToggle.classList.remove('active');
+      const wasOpen = wrap.classList.contains('open');
+      document.querySelectorAll('.ms-wrap.open').forEach(w => w.classList.remove('open'));
+      if (!wasOpen) wrap.classList.add('open');
+    });
+    wrap.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        updateMsLabel(wrap);
+        if (wrap.id === 'msIndustry') updateRolePicker(getMsValues('msIndustry'));
+        renderAllJobs();
+      });
+    });
+  });
+  document.addEventListener('click', e => {
+    document.querySelectorAll('.ms-wrap.open').forEach(w => {
+      if (!w.contains(e.target)) w.classList.remove('open');
     });
   });
 
   // ── FILTERING ──
   function isFiltering() {
-    return !!(keywordInput.value.trim() || jobTypeFilter.value || positionFilter.value.trim() ||
-              locationFilter.value.trim() || expFilter.value || industryFilter.value ||
-              salaryRangeFilter.value || workSetupFilter.value);
+    const kw = (keywordInput?.value || '').trim();
+    const loc = (document.getElementById('locationKeyword')?.value || '').trim();
+    const sLoc = document.getElementById('sidebarLocationFilter')?.value || '';
+    const salKw = (document.getElementById('salaryKeyword')?.value || '').trim();
+    const salPer = document.getElementById('salaryPeriodFilter')?.value || '';
+    return !!(kw || loc || sLoc || salKw || salPer ||
+      getMsValues('msIndustry').length || getMsValues('msJobRole').length ||
+      getMsValues('msWorkType').length || getMsValues('msRemote').length ||
+      getMsValues('msExperience').length || getMsValues('msListed').length);
   }
 
   function setSearchMode(active) {
@@ -1382,24 +1354,57 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     document.getElementById('jobsSectionText').textContent = active ? 'Search results ' : 'Live opportunities ';
   }
   function getFiltered() {
-    const kw = keywordInput.value.trim().toLowerCase();
-    const jt = jobTypeFilter.value, pos = positionFilter.value.trim();
-    const loc = locationFilter.value.trim(), exp = expFilter.value;
-    const ind = industryFilter.value, sal = salaryRangeFilter.value, ws = workSetupFilter.value;
+    const kw  = (keywordInput?.value || '').trim().toLowerCase();
+    const locKw = (document.getElementById('locationKeyword')?.value || '').trim().toLowerCase();
+    const sLoc = document.getElementById('sidebarLocationFilter')?.value || '';
+    const salKw = (document.getElementById('salaryKeyword')?.value || '').trim();
+    const salPer = document.getElementById('salaryPeriodFilter')?.value || '';
+    const industries = getMsValues('msIndustry');
+    const roles      = getMsValues('msJobRole');
+    const jobTypes   = getMsValues('msWorkType');
+    const setups     = getMsValues('msRemote');
+    const exps       = getMsValues('msExperience');
+    const dateDays   = getMsValues('msListed');
     return jobsData.filter(j => {
-      const mk = !kw || j.title.toLowerCase().includes(kw) || j.company.toLowerCase().includes(kw) || j.description.toLowerCase().includes(kw);
-      const mjt = !jt || j.jobType === jt;
-      const mpos = !pos || j.title.toLowerCase().includes(pos.toLowerCase());
-      const ml = !loc || j.location.toLowerCase().includes(loc.toLowerCase());
-      const me = !exp || j.experience === exp;
-      const mi = !ind || j.industry === ind;
-      const mws = !ws || j.workSetup === ws;
-      let ms = true;
-      if (sal) {
-        if (sal.endsWith('+')) ms = j.salaryMin >= 200;
-        else { const [minS,maxS] = sal.split('-').map(Number); ms = j.salaryMin >= minS && j.salaryMax <= maxS; }
+      if (kw && !`${j.title} ${j.company} ${j.description} ${(j.tags||[]).join(' ')}`.toLowerCase().includes(kw)) return false;
+      if (sLoc && !j.location.toLowerCase().includes(sLoc.toLowerCase())) return false;
+      if (locKw && !j.location.toLowerCase().includes(locKw)) return false;
+      if (industries.length && !industries.includes(j.industry)) return false;
+      if (roles.length) {
+        const tl = j.title.toLowerCase();
+        const matched = roles.some(role => {
+          const rl = role.toLowerCase();
+          if (tl.includes(rl)) return true;
+          return rl.split(/[\s\-\/]+/).filter(p => p.length > 3).some(p => tl.includes(p));
+        });
+        if (!matched) return false;
       }
-      return mk && mjt && mpos && ml && me && mi && mws && ms;
+      if (jobTypes.length && !jobTypes.includes(j.jobType)) return false;
+      if (setups.length && !setups.includes(j.workSetup)) return false;
+      if (exps.length && !exps.includes(j.experience)) return false;
+      if (salPer && j.salaryPeriod && j.salaryPeriod !== salPer) return false;
+      if (salKw) {
+        const sk = salKw.toLowerCase().replace(/[₱,\s]/g, '');
+        const nums = sk.match(/\d+/g);
+        if (nums && nums.length >= 1) {
+          let lo = parseInt(nums[0]);
+          let hi = nums.length >= 2 ? parseInt(nums[1]) : 0;
+          if (sk.includes('k') || lo < 1000) lo *= 1000;
+          if (hi && (sk.includes('k') || hi < 1000)) hi *= 1000;
+          lo = lo / 1000; hi = hi ? hi / 1000 : 0;
+          if (hi && j.salaryMax && j.salaryMax < lo) return false;
+          if (hi && j.salaryMin && j.salaryMin > hi) return false;
+          if (!hi && j.salaryMax && j.salaryMax < lo) return false;
+        }
+      }
+      if (dateDays.length) {
+        const maxDays = Math.max(...dateDays.map(d => parseInt(d)));
+        const posted = new Date(j.postedDate);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - maxDays);
+        if (posted < cutoff) return false;
+      }
+      return true;
     });
   }
 
@@ -1567,13 +1572,20 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   // Filter events
   document.getElementById('searchBtn').addEventListener('click', renderAllJobs);
   keywordInput.addEventListener('keyup', e => { if (e.key==='Enter') renderAllJobs(); });
-  [jobTypeFilter,positionFilter,locationFilter,expFilter,industryFilter,salaryRangeFilter,workSetupFilter].forEach(el => {
-    el.addEventListener('change', renderAllJobs);
-    el.addEventListener('input', renderAllJobs);
-  });
+  document.getElementById('locationKeyword')?.addEventListener('input', renderAllJobs);
+  document.getElementById('sidebarLocationFilter')?.addEventListener('change', renderAllJobs);
+  document.getElementById('salaryKeyword')?.addEventListener('input', renderAllJobs);
+  document.getElementById('salaryPeriodFilter')?.addEventListener('change', renderAllJobs);
   document.getElementById('resetFiltersBtn').addEventListener('click', () => {
     keywordInput.value = '';
-    [jobTypeFilter,positionFilter,locationFilter,expFilter,industryFilter,salaryRangeFilter,workSetupFilter].forEach(el => el.value='');
+    document.querySelectorAll('.ms-wrap input[type=checkbox]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.ms-wrap').forEach(updateMsLabel);
+    updateRolePicker([]);
+    const locKw = document.getElementById('locationKeyword');
+    if (locKw) locKw.value = '';
+    const salKw = document.getElementById('salaryKeyword');
+    if (salKw) salKw.value = '';
+    ['sidebarLocationFilter','salaryPeriodFilter'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
     renderAllJobs();
     document.querySelector('.hero').scrollIntoView({ behavior:'smooth', block:'start' });
   });

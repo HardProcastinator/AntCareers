@@ -19,6 +19,10 @@ $_chatParts = preg_split('/\s+/', $_SESSION['user_name'] ?? 'Employer') ?: ['E']
 $_chatInitials = count($_chatParts) >= 2
     ? strtoupper(substr($_chatParts[0],0,1).substr($_chatParts[1],0,1))
     : strtoupper(substr($_chatParts[0],0,2));
+$_chatAvatarUrl = $_SESSION['avatar_url'] ?? '';
+if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_with($_chatAvatarUrl, 'http')) {
+    $_chatAvatarUrl = '../' . $_chatAvatarUrl;
+}
 ?>
 
 <!-- ═══════════════════════════════════════════════════════════════════
@@ -202,7 +206,8 @@ $_chatInitials = count($_chatParts) >= 2
 .sb-thread-item { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-bottom:1px solid var(--soil-line); cursor:pointer; transition:0.15s; position:relative; }
 .sb-thread-item:hover { background:var(--soil-hover); }
 .sb-thread-item.unread .sb-t-name { font-weight:700; color:var(--text-light); }
-.sb-t-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; }
+.sb-t-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+.sb-t-avatar img { width:100%; height:100%; object-fit:cover; }
 .sb-t-body { flex:1; min-width:0; }
 .sb-t-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:2px; }
 .sb-t-name { font-size:13px; font-weight:600; color:var(--text-mid); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -214,7 +219,8 @@ $_chatInitials = count($_chatParts) >= 2
 /* Chat view in sidebar */
 .msg-sb-chat { display:flex; flex-direction:column; flex:1; overflow:hidden; }
 .msg-sb-chat-head { display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--soil-line); }
-.msg-sb-chat-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; }
+.msg-sb-chat-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+.msg-sb-chat-avatar img { width:100%; height:100%; object-fit:cover; }
 .msg-sb-chat-name { font-size:14px; font-weight:700; color:var(--text-light); }
 .msg-sb-chat-meta { font-size:11px; color:var(--text-muted); }
 .msg-sb-messages { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; scrollbar-width:thin; }
@@ -304,7 +310,8 @@ $_chatInitials = count($_chatParts) >= 2
 .fs-t-item:hover { background:var(--soil-hover); }
 .fs-t-item.active { background:rgba(209,61,44,0.08); border-left:2px solid var(--red-vivid); }
 .fs-t-item.unread .fs-t-name { font-weight:700; color:var(--text-light); }
-.fs-t-avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; }
+.fs-t-avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+.fs-t-avatar img { width:100%; height:100%; object-fit:cover; }
 .fs-t-body { flex:1; min-width:0; }
 .fs-t-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:2px; }
 .fs-t-name { font-size:13px; font-weight:600; color:var(--text-mid); }
@@ -319,7 +326,8 @@ $_chatInitials = count($_chatParts) >= 2
 .fs-empty-icon { width:56px; height:56px; border-radius:50%; background:var(--soil-hover); display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--text-muted); }
 .fs-active-chat { display:flex; flex-direction:column; height:100%; }
 .fs-chat-head2 { display:flex; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid var(--soil-line); flex-shrink:0; }
-.fs-ch-avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; }
+.fs-ch-avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+.fs-ch-avatar img { width:100%; height:100%; object-fit:cover; }
 .fs-ch-name { font-size:15px; font-weight:700; color:var(--text-light); }
 .fs-ch-meta { font-size:12px; color:var(--text-muted); }
 .fs-ch-info { flex:1; }
@@ -336,7 +344,8 @@ $_chatInitials = count($_chatParts) >= 2
 .fs-msg-date span { background:var(--soil-card); padding:0 10px; position:relative; }
 .fs-msg-row { display:flex; gap:8px; align-items:flex-end; }
 .fs-msg-row.sent { flex-direction:row-reverse; }
-.fs-msg-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; flex-shrink:0; }
+.fs-msg-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+.fs-msg-avatar img { width:100%; height:100%; object-fit:cover; }
 .fs-bubble { max-width:60%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; word-break:break-word; }
 .fs-bubble-recv { background:var(--soil-hover); color:var(--text-light); border-bottom-left-radius:4px; }
 .fs-bubble-sent { background:var(--red-vivid); color:#fff; border-bottom-right-radius:4px; }
@@ -379,6 +388,7 @@ body.light .chat-toast { background:#FFFFFF; border-color:#E0CECA; }
    ═══════════════════════════════════════════════════════════════════════ */
 const API_URL = '../api/messages.php';
 const MY_INITIALS = <?= json_encode($_chatInitials) ?>;
+const MY_AVATAR_URL = <?= json_encode($_chatAvatarUrl) ?>;
 let _threads = [];
 let _sbActivePartner = null;
 let _fsActivePartner = null;
@@ -455,7 +465,7 @@ function renderSbThreads(list) {
     }
     el.innerHTML = list.map(t => `
         <div class="sb-thread-item${t.unread_count > 0 ? ' unread' : ''}" onclick="sbOpenThread(${t.partner_id})">
-            <div class="sb-t-avatar" style="background:${t.color}">${t.initials}</div>
+            <div class="sb-t-avatar" style="background:${t.color}">${t.avatar_url ? `<img src="../${t.avatar_url}" alt="">` : t.initials}</div>
             <div class="sb-t-body">
                 <div class="sb-t-top">
                     <div class="sb-t-name">${esc(t.name)}</div>
@@ -477,7 +487,7 @@ function renderFsThreads(list) {
     }
     el.innerHTML = list.map(t => `
         <div class="fs-t-item${t.unread_count > 0 ? ' unread' : ''}${_fsActivePartner === t.partner_id ? ' active' : ''}" onclick="fsOpenThread(${t.partner_id})">
-            <div class="fs-t-avatar" style="background:${t.color}">${t.initials}</div>
+            <div class="fs-t-avatar" style="background:${t.color}">${t.avatar_url ? `<img src="../${t.avatar_url}" alt="">` : t.initials}</div>
             <div class="fs-t-body">
                 <div class="fs-t-top">
                     <div class="fs-t-name">${esc(t.name)}</div>
@@ -562,18 +572,27 @@ function loadConversation(partnerId, mode) {
             const pParts = pName.split(/\s+/);
             const defaultIni = pParts.length >= 2 ? (pParts[0][0]+pParts[1][0]).toUpperCase() : pName.substring(0,2).toUpperCase();
             const ini = t ? t.initials : defaultIni;
+            const partnerAvUrl = (t && t.avatar_url) ? t.avatar_url : ((data.partner && data.partner.avatar_url) ? data.partner.avatar_url : null);
             const partner = data.partner || {name: 'User'};
             const job = data.job;
 
             if (mode === 'sidebar') {
                 document.getElementById('sbChatAvatar').style.background = color;
-                document.getElementById('sbChatAvatar').textContent = ini;
+                if (partnerAvUrl) {
+                    document.getElementById('sbChatAvatar').innerHTML = `<img src="../${partnerAvUrl}" alt="">`;
+                } else {
+                    document.getElementById('sbChatAvatar').textContent = ini;
+                }
                 document.getElementById('sbChatName').textContent = partner.name;
                 document.getElementById('sbChatMeta').textContent = job ? job.title : '';
                 renderSbMessages(data.messages, color, ini);
             } else {
                 document.getElementById('fsChatAvatar').style.background = color;
-                document.getElementById('fsChatAvatar').textContent = ini;
+                if (partnerAvUrl) {
+                    document.getElementById('fsChatAvatar').innerHTML = `<img src="../${partnerAvUrl}" alt="">`;
+                } else {
+                    document.getElementById('fsChatAvatar').textContent = ini;
+                }
                 document.getElementById('fsChatName').textContent = partner.name;
                 document.getElementById('fsChatMeta').textContent = job ? job.title : '';
                 const statusEl = document.getElementById('fsChatStatus');
@@ -584,7 +603,7 @@ function loadConversation(partnerId, mode) {
                 } else {
                     statusEl.style.display = 'none';
                 }
-                renderFsMessages(data.messages, color, ini);
+                renderFsMessages(data.messages, color, ini, partnerAvUrl);
             }
             // Update thread unread count
             if (t) t.unread_count = 0;
@@ -609,19 +628,19 @@ function renderSbMessages(msgs, color, ini) {
     el.scrollTop = el.scrollHeight;
 }
 
-function renderFsMessages(msgs, color, ini) {
+function renderFsMessages(msgs, color, ini, partnerAvUrl) {
     const el = document.getElementById('fsChatMessages');
     el.innerHTML = '';
     msgs.forEach(m => {
         if (m.show_date) el.innerHTML += `<div class="fs-msg-date"><span>${m.date}</span></div>`;
         if (m.from === 'me') {
             el.innerHTML += `<div class="fs-msg-row sent">
-                <div class="fs-msg-avatar" style="background:linear-gradient(135deg,#D4943A,#8a5010)">${MY_INITIALS}</div>
+                <div class="fs-msg-avatar" style="background:linear-gradient(135deg,#D4943A,#8a5010)">${MY_AVATAR_URL ? `<img src="${MY_AVATAR_URL}" alt="">` : MY_INITIALS}</div>
                 <div><div class="fs-bubble fs-bubble-sent">${esc(m.body)}<div class="fs-bubble-time">${m.time} <i class="fas fa-check-double" style="font-size:9px;"></i></div></div></div>
             </div>`;
         } else {
             el.innerHTML += `<div class="fs-msg-row">
-                <div class="fs-msg-avatar" style="background:${color}">${ini}</div>
+                <div class="fs-msg-avatar" style="background:${color}">${partnerAvUrl ? `<img src="../${partnerAvUrl}" alt="">` : ini}</div>
                 <div><div class="fs-bubble fs-bubble-recv">${esc(m.body)}<div class="fs-bubble-time">${m.time}</div></div></div>
             </div>`;
         }
@@ -820,7 +839,7 @@ function sbSearchNewChat() {
                 const colors = ['#4A90D9','#D4943A','#4CAF70','#9C27B0','#E05555','#00897B','#5C6BC0','#F4511E'];
                 res.innerHTML = data.users.map((u, i) => `
                     <div class="sb-new-chat-user" onclick="sbStartNewChat(${u.id})">
-                        <div class="sb-new-chat-user-av" style="background:${colors[i % colors.length]}">${esc(u.initials)}</div>
+                        <div class="sb-new-chat-user-av" style="background:${colors[i % colors.length]}">${u.avatar_url ? `<img src="../${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : esc(u.initials)}</div>
                         <div><div class="sb-new-chat-user-name">${esc(u.name)}</div><div class="sb-new-chat-user-type">${esc(u.type)}</div></div>
                     </div>
                 `).join('');
@@ -860,7 +879,7 @@ function fsSearchNewChat() {
                 const colors = ['#4A90D9','#D4943A','#4CAF70','#9C27B0','#E05555','#00897B','#5C6BC0','#F4511E'];
                 res.innerHTML = data.users.map((u, i) => `
                     <div class="sb-new-chat-user" onclick="fsStartNewChat(${u.id})">
-                        <div class="sb-new-chat-user-av" style="background:${colors[i % colors.length]}">${esc(u.initials)}</div>
+                        <div class="sb-new-chat-user-av" style="background:${colors[i % colors.length]}">${u.avatar_url ? `<img src="../${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : esc(u.initials)}</div>
                         <div><div class="sb-new-chat-user-name">${esc(u.name)}</div><div class="sb-new-chat-user-type">${esc(u.type)}</div></div>
                     </div>
                 `).join('');
