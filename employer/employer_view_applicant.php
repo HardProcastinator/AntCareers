@@ -14,6 +14,7 @@ $user        = getUser();
 $fullName    = $user['fullName'];
 $firstName   = $user['firstName'];
 $initials    = $user['initials'];
+$avatarUrl   = $user['avatarUrl'];
 $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'applicants';
 $navbarShowMessage = true;
@@ -160,6 +161,7 @@ $sInitials = count($sParts) >= 2
     : strtoupper(substr($sParts[0],0,2));
 
 $sAvatarUrl = $seeker['avatar_url'] ?? '';
+if ($sAvatarUrl && !str_starts_with($sAvatarUrl, '../') && !str_starts_with($sAvatarUrl, 'http')) $sAvatarUrl = '../' . $sAvatarUrl;
 $sEmail = $seeker['email'] ?? '';
 $sPhone = $seeker['phone'] ?? '';
 $sHeadline = $seeker['headline'] ?? ($seeker['desired_position'] ?? '');
@@ -240,9 +242,13 @@ $skillLevelColors = [
     .nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0;}
     .theme-btn{width:34px;height:34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:13px;flex-shrink:0;}
     .theme-btn:hover{color:var(--red-bright);border-color:var(--red-vivid);}
+    .notif-btn-nav{position:relative;width:36px;height:36px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:14px;color:var(--text-muted);flex-shrink:0;}
+    .notif-btn-nav:hover{color:var(--red-pale);border-color:var(--red-vivid);}
+    .notif-btn-nav .badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:50%;background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--soil-dark);overflow:hidden;padding:0 3px;}
     .profile-wrap{position:relative;}
     .profile-btn{display:flex;align-items:center;gap:9px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:6px 12px 6px 8px;cursor:pointer;transition:0.2s;flex-shrink:0;}
-    .profile-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#8a5010);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+    .profile-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#8a5010);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
+    .profile-avatar img{width:100%;height:100%;object-fit:cover;}
     .profile-name{font-size:13px;font-weight:600;color:#F5F0EE;}
     .profile-role{font-size:10px;color:var(--amber);margin-top:1px;letter-spacing:0.02em;font-weight:600;}
     .profile-chevron{font-size:9px;color:var(--text-muted);margin-left:2px;}
@@ -348,7 +354,7 @@ $skillLevelColors = [
     body.light .navbar{background:rgba(255,253,252,0.98);border-bottom-color:#D4B0AB;box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08);}
     body.light .logo-text{color:#1A0A09;} body.light .logo-text span{color:var(--red-vivid);}
     body.light .nav-link{color:#5A4040;} body.light .nav-link:hover,body.light .nav-link.active{color:#1A0A09;background:#FEF0EE;}
-    body.light .theme-btn,body.light .profile-btn{background:#F5EEEC;border-color:#E0CECA;}
+    body.light .theme-btn,body.light .notif-btn-nav,body.light .profile-btn,body.light .hamburger{background:#F5EDEB;border-color:#D4B0AB;}
     body.light .profile-name{color:#1A0A09;} body.light .profile-dropdown{background:#FFFFFF;border-color:#E0CECA;}
     body.light .pd-item{color:#4A2828;} body.light .pd-item:hover{background:#FEF0EE;color:#1A0A09;}
     body.light .pdh-name{color:#1A0A09;}

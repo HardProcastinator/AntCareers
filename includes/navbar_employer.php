@@ -18,6 +18,7 @@ $fullName    = $fullName    ?? 'Employer';
 $initials    = $initials    ?? 'EM';
 $companyName = $companyName ?? 'Your Company';
 $navActive   = $navActive   ?? '';
+$avatarUrl   = $avatarUrl   ?? '';
 $navbarShowMessage    = $navbarShowMessage    ?? true;
 $navbarShowNotif      = $navbarShowNotif      ?? true;
 $navbarShowPostJob    = $navbarShowPostJob    ?? true;
@@ -89,7 +90,7 @@ function navHref(string $page): string {
 
       <div class="profile-wrap" id="profileWrap">
         <button class="profile-btn" id="profileToggle">
-          <div class="profile-avatar"><?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?></div>
+          <div class="profile-avatar"><?php if (!empty($avatarUrl)): ?><img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%"><?php else: ?><?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></div>
           <div>
             <div class="profile-name"><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></div>
 <?php

@@ -108,7 +108,9 @@ try {
 $avatarStmt = $db->prepare("SELECT avatar_url FROM users WHERE id = :uid LIMIT 1");
 $avatarStmt->execute([':uid' => $userId]);
 $avatarUrl = $avatarStmt->fetchColumn() ?: '';
+if ($avatarUrl && !str_starts_with($avatarUrl, '../') && !str_starts_with($avatarUrl, 'http')) $avatarUrl = '../' . $avatarUrl;
 $bannerUrl = $sp['banner_url'] ?? '';
+if ($bannerUrl && !str_starts_with($bannerUrl, '../') && !str_starts_with($bannerUrl, 'http')) $bannerUrl = '../' . $bannerUrl;
 
 // resume — fetch here so PHP can render it directly in HTML (no JS dependency)
 $dbResume = null;

@@ -16,6 +16,7 @@ $user        = getUser();
 $fullName    = $user['fullName'];
 $firstName   = $user['firstName'];
 $initials    = $user['initials'];
+$avatarUrl   = $user['avatarUrl'];
 $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'messages';
 $pageSub     = $accountType === 'seeker'
@@ -87,14 +88,15 @@ try {
     .theme-btn { width:34px; height:34px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:13px; flex-shrink:0; }
     .theme-btn:hover { color:var(--red-bright); border-color:var(--red-vivid); }
     .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; color:var(--text-muted); flex-shrink:0; }
-    .notif-btn-nav:hover, .notif-btn-nav.active { color:var(--red-bright); border-color:var(--red-vivid); }
+    .notif-btn-nav:hover, .notif-btn-nav.active { color:var(--red-pale); border-color:var(--red-vivid); }
     .badge { position:absolute; top:-5px; right:-5px; width:17px; height:17px; border-radius:50%; background:var(--red-vivid); color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid var(--soil-dark); }
-    .btn-nav-red { padding:7px 16px; border-radius:7px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.2s; white-space:nowrap; box-shadow:0 2px 8px rgba(209,61,44,0.3); text-decoration:none; display:flex; align-items:center; gap:7px; }
-    .btn-nav-red:hover { background:var(--red-bright); transform:translateY(-1px); }
+    .btn-nav-red { padding:7px 16px; border-radius:7px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.2s; white-space:nowrap; letter-spacing:0.02em; box-shadow:0 2px 8px rgba(209,61,44,0.3); text-decoration:none; display:flex; align-items:center; gap:7px; }
+    .btn-nav-red:hover { background:var(--red-bright); transform:translateY(-1px); box-shadow:0 4px 14px rgba(209,61,44,0.45); }
     .profile-wrap { position:relative; }
     .profile-btn { display:flex; align-items:center; gap:9px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:6px 12px 6px 8px; cursor:pointer; transition:0.2s; flex-shrink:0; }
     .profile-btn:hover { background:var(--soil-card); }
-    .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--amber),#8a5010); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+    .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--amber),#8a5010); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+    .profile-avatar img { width:100%; height:100%; object-fit:cover; }
     .profile-name { font-size:13px; font-weight:600; color:var(--text-light); }
     .profile-role { font-size:10px; color:var(--amber); margin-top:1px; font-weight:600; }
     .profile-chevron { font-size:9px; color:var(--text-muted); margin-left:2px; }
@@ -145,7 +147,8 @@ try {
     .thread-item.active { background:rgba(209,61,44,0.08); border-right:2px solid var(--red-vivid); }
     .thread-item.unread .t-name { color:var(--text-light); font-weight:700; }
     .thread-item.unread .t-preview { color:var(--text-mid); }
-    .t-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#fff; flex-shrink:0; }
+    .t-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+    .t-avatar img { width:100%; height:100%; object-fit:cover; }
     .t-body { flex:1; min-width:0; }
     .t-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:3px; }
     .t-name { font-size:13px; font-weight:600; color:var(--text-mid); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -157,7 +160,8 @@ try {
     /* CHAT PANEL */
     .chat-panel { display:flex; flex-direction:column; overflow:hidden; }
     .chat-header { padding:14px 20px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; gap:12px; }
-    .chat-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#fff; flex-shrink:0; }
+    .chat-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+    .chat-avatar img { width:100%; height:100%; object-fit:cover; }
     .chat-info { flex:1; }
     .chat-name { font-size:15px; font-weight:700; color:var(--text-light); }
     .chat-meta { font-size:12px; color:var(--text-muted); margin-top:1px; }
@@ -178,7 +182,8 @@ try {
     .msg-date-divider span { background:var(--soil-card); padding:0 12px; position:relative; }
     .msg-row { display:flex; gap:10px; align-items:flex-end; }
     .msg-row.sent { flex-direction:row-reverse; }
-    .msg-row-avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+    .msg-row-avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+    .msg-row-avatar img { width:100%; height:100%; object-fit:cover; }
     .bubble { max-width:65%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; word-break:break-word; }
     .bubble-received { background:var(--soil-hover); color:var(--text-light); border-bottom-left-radius:4px; }
     .bubble-sent { background:var(--red-vivid); color:#fff; border-bottom-right-radius:4px; }
@@ -212,7 +217,8 @@ try {
     .new-chat-results { max-height:200px; overflow-y:auto; margin-top:6px; scrollbar-width:thin; }
     .new-chat-user { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; cursor:pointer; transition:0.15s; }
     .new-chat-user:hover { background:var(--soil-hover); }
-    .new-chat-user-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; }
+    .new-chat-user-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+    .new-chat-user-avatar img { width:100%; height:100%; object-fit:cover; }
     .new-chat-user-info { flex:1; min-width:0; }
     .new-chat-user-name { font-size:13px; font-weight:600; color:var(--text-light); }
     .new-chat-user-type { font-size:11px; color:var(--text-muted); text-transform:capitalize; }
@@ -356,6 +362,7 @@ try {
 <script>
 const API = '../api/messages.php';
 const MY_INI = <?= json_encode($initials) ?>;
+const MY_AVATAR = <?= json_encode($avatarUrl) ?>;
 let threads = [];
 let activeThread = null;
 let filteredThreads = [];
@@ -386,7 +393,7 @@ function renderThreads(list) {
     }
     el.innerHTML = list.map(t => `
         <div class="thread-item${t.unread_count > 0 ? ' unread' : ''}${activeThread === t.partner_id ? ' active' : ''}" onclick="openThread(${t.partner_id})">
-            <div class="t-avatar" style="background:${esc(t.color)}">${esc(t.initials)}</div>
+            <div class="t-avatar" style="background:${esc(t.color)}">${t.avatar_url ? `<img src="../${t.avatar_url}" alt="">` : esc(t.initials)}</div>
             <div class="t-body">
                 <div class="t-top">
                     <div class="t-name">${esc(t.name)}</div>
@@ -432,8 +439,13 @@ function loadMessages(partnerId) {
             const ini = t ? t.initials : defaultIni;
             const job = data.job;
 
+            const avatarUrl = (t && t.avatar_url) ? t.avatar_url : ((data.partner && data.partner.avatar_url) ? data.partner.avatar_url : null);
             document.getElementById('chatAvatar').style.background = color;
-            document.getElementById('chatAvatar').textContent = ini;
+            if (avatarUrl) {
+                document.getElementById('chatAvatar').innerHTML = `<img src="../${avatarUrl}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
+            } else {
+                document.getElementById('chatAvatar').textContent = ini;
+            }
             document.getElementById('chatName').textContent = partner.name;
             document.getElementById('chatMeta').textContent = job ? job.title : 'Applicant';
 
@@ -446,7 +458,7 @@ function loadMessages(partnerId) {
                 statusEl.style.display = 'none';
             }
 
-            renderMessages(data.messages, color, ini);
+            renderMessages(data.messages, color, ini, avatarUrl);
 
             // Update unread in thread list
             if (t) t.unread_count = 0;
@@ -456,7 +468,7 @@ function loadMessages(partnerId) {
         .catch(e => console.error('Messages load error:', e));
 }
 
-function renderMessages(msgs, color, ini) {
+function renderMessages(msgs, color, ini, partnerAvatarUrl) {
     const el = document.getElementById('chatMessages');
     el.innerHTML = '';
     if (!msgs.length) {
@@ -469,12 +481,12 @@ function renderMessages(msgs, color, ini) {
         }
         if (m.from === 'me') {
             el.innerHTML += `<div class="msg-row sent">
-                <div class="msg-row-avatar" style="background:linear-gradient(135deg,#D4943A,#8a5010)">${MY_INI}</div>
+                <div class="msg-row-avatar" style="background:linear-gradient(135deg,#D4943A,#8a5010)">${MY_AVATAR ? `<img src="${MY_AVATAR}" alt="">` : MY_INI}</div>
                 <div><div class="bubble bubble-sent">${esc(m.body)}<div class="bubble-time">${esc(m.time)} <i class="fas fa-check-double" style="font-size:9px;"></i></div></div></div>
             </div>`;
         } else {
             el.innerHTML += `<div class="msg-row">
-                <div class="msg-row-avatar" style="background:${color}">${ini}</div>
+                <div class="msg-row-avatar" style="background:${color}">${partnerAvatarUrl ? `<img src="../${partnerAvatarUrl}" alt="">` : ini}</div>
                 <div><div class="bubble bubble-received">${esc(m.body)}<div class="bubble-time">${esc(m.time)}</div></div></div>
             </div>`;
         }
@@ -646,7 +658,7 @@ function searchNewChatUsers() {
                 const colors = ['#4A90D9','#D4943A','#4CAF70','#9C27B0','#E05555','#00897B','#5C6BC0','#F4511E'];
                 results.innerHTML = data.users.map((u, i) => `
                     <div class="new-chat-user" onclick="startNewChat(${u.id}, '${esc(u.name).replace(/'/g, "\\'")}')">
-                        <div class="new-chat-user-avatar" style="background:${colors[i % colors.length]}">${esc(u.initials)}</div>
+                        <div class="new-chat-user-avatar" style="background:${colors[i % colors.length]}">${u.avatar_url ? `<img src="../${u.avatar_url}" alt="">` : esc(u.initials)}</div>
                         <div class="new-chat-user-info">
                             <div class="new-chat-user-name">${esc(u.name)}</div>
                             <div class="new-chat-user-type">${esc(u.type)}</div>

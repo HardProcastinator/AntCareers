@@ -7,6 +7,7 @@ $user        = getUser();
 $fullName    = $user['fullName'];
 $firstName   = $user['firstName'];
 $initials    = $user['initials'];
+$avatarUrl   = $user['avatarUrl'];
 $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'browse';
 
@@ -141,7 +142,7 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Browse Jobs — AntCareers Employer</title>
+  <title>AntCareers — Browse Jobs</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -172,13 +173,15 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
     .nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0;}
     .theme-btn{width:34px;height:34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:13px;flex-shrink:0;}
     .theme-btn:hover{color:var(--red-bright);border-color:var(--red-vivid);}
-    .notif-btn-nav{position:relative;width:34px;height:34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:13px;flex-shrink:0;}
-    .notif-btn-nav .badge{position:absolute;top:-4px;right:-4px;background:var(--red-vivid);color:#fff;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
-    .btn-nav-red{padding:7px 16px;border-radius:7px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;transition:0.2s;white-space:nowrap;text-decoration:none;display:flex;align-items:center;gap:7px;}
-    .btn-nav-red:hover{background:var(--red-bright);}
+    .notif-btn-nav{position:relative;width:36px;height:36px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:14px;color:var(--text-muted);flex-shrink:0;}
+    .notif-btn-nav:hover{color:var(--red-pale);border-color:var(--red-vivid);}
+    .notif-btn-nav .badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:50%;background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--soil-dark);overflow:hidden;padding:0 3px;}
+    .btn-nav-red{padding:7px 16px;border-radius:7px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;transition:0.2s;white-space:nowrap;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(209,61,44,0.3);text-decoration:none;display:flex;align-items:center;gap:7px;}
+    .btn-nav-red:hover{background:var(--red-bright);transform:translateY(-1px);box-shadow:0 4px 14px rgba(209,61,44,0.45);}
     .profile-wrap{position:relative;}
     .profile-btn{display:flex;align-items:center;gap:9px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:6px 12px 6px 8px;cursor:pointer;transition:0.2s;flex-shrink:0;}
-    .profile-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#8a5010);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+    .profile-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#8a5010);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
+    .profile-avatar img{width:100%;height:100%;object-fit:cover;}
     .profile-name{font-size:13px;font-weight:600;color:#F5F0EE;}
     .profile-role{font-size:10px;color:var(--amber);margin-top:1px;letter-spacing:0.02em;font-weight:600;}
     .profile-chevron{font-size:9px;color:var(--text-muted);margin-left:2px;}
@@ -233,6 +236,8 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
     .ms-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:7px;max-height:200px;overflow-y:auto;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
     .ms-wrap.open .ms-panel{display:block;}
+    .role-section{display:block;margin-top:8px;}
+    .role-section-label{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin:10px 0 6px;display:block;}
     .ms-item{display:flex;align-items:center;gap:8px;padding:7px 12px;font-size:13px;color:var(--text-mid);cursor:pointer;transition:background-color 0.12s;user-select:none;}
     .ms-item:hover{background:var(--soil-hover);}
     .ms-item input[type="checkbox"]{width:14px;height:14px;accent-color:var(--red-vivid);cursor:pointer;flex-shrink:0;}
@@ -348,6 +353,7 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
     body.light .nav-link:hover,body.light .nav-link.active{color:#1A0A09;background:#FEF0EE;}
     body.light .theme-btn,body.light .notif-btn-nav,body.light .profile-btn{background:#F5EDEB;border-color:#D4B0AB;}
     body.light .profile-name{color:#1A0A09;}
+    body.light .pdh-name{color:#1A0A09;}
     body.light .profile-dropdown,body.light .mobile-menu{background:#FFF8F7;border-color:#D4B0AB;}
     body.light .pd-item{color:#4A3030;}
     body.light .pd-item:hover{background:#FEF0EE;}
@@ -453,21 +459,35 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
       <button class="ms-trigger" type="button"><span class="ms-text">All Industries</span><i class="fas fa-chevron-down ms-arrow"></i></button>
       <div class="ms-panel">
         <label class="ms-item"><input type="checkbox" value="Accounting"><span>Accounting</span></label>
-        <label class="ms-item"><input type="checkbox" value="Administration & Support"><span>Administration &amp; Support</span></label>
-        <label class="ms-item"><input type="checkbox" value="Banking & Financial Services"><span>Banking &amp; Financial Services</span></label>
-        <label class="ms-item"><input type="checkbox" value="Design & Architecture"><span>Design &amp; Architecture</span></label>
-        <label class="ms-item"><input type="checkbox" value="Education & Training"><span>Education &amp; Training</span></label>
+        <label class="ms-item"><input type="checkbox" value="Administration &amp; Office Support"><span>Administration &amp; Office Support</span></label>
+        <label class="ms-item"><input type="checkbox" value="Advertising, Arts &amp; Media"><span>Advertising, Arts &amp; Media</span></label>
+        <label class="ms-item"><input type="checkbox" value="Banking &amp; Financial Services"><span>Banking &amp; Financial Services</span></label>
+        <label class="ms-item"><input type="checkbox" value="Call Centre &amp; Customer Service"><span>Call Centre &amp; Customer Service</span></label>
+        <label class="ms-item"><input type="checkbox" value="CEO &amp; General Management"><span>CEO &amp; General Management</span></label>
+        <label class="ms-item"><input type="checkbox" value="Community Services &amp; Development"><span>Community Services &amp; Development</span></label>
+        <label class="ms-item"><input type="checkbox" value="Construction"><span>Construction</span></label>
+        <label class="ms-item"><input type="checkbox" value="Consulting &amp; Strategy"><span>Consulting &amp; Strategy</span></label>
+        <label class="ms-item"><input type="checkbox" value="Design &amp; Architecture"><span>Design &amp; Architecture</span></label>
+        <label class="ms-item"><input type="checkbox" value="Education &amp; Training"><span>Education &amp; Training</span></label>
         <label class="ms-item"><input type="checkbox" value="Engineering"><span>Engineering</span></label>
-        <label class="ms-item"><input type="checkbox" value="Healthcare & Medical"><span>Healthcare &amp; Medical</span></label>
-        <label class="ms-item"><input type="checkbox" value="Hospitality & Tourism"><span>Hospitality &amp; Tourism</span></label>
-        <label class="ms-item"><input type="checkbox" value="Information & Communication Technology"><span>Information &amp; Communication Technology</span></label>
+        <label class="ms-item"><input type="checkbox" value="Farming, Animals &amp; Conservation"><span>Farming, Animals &amp; Conservation</span></label>
+        <label class="ms-item"><input type="checkbox" value="Government &amp; Defence"><span>Government &amp; Defence</span></label>
+        <label class="ms-item"><input type="checkbox" value="Healthcare &amp; Medical"><span>Healthcare &amp; Medical</span></label>
+        <label class="ms-item"><input type="checkbox" value="Hospitality &amp; Tourism"><span>Hospitality &amp; Tourism</span></label>
+        <label class="ms-item"><input type="checkbox" value="Human Resources &amp; Recruitment"><span>Human Resources &amp; Recruitment</span></label>
+        <label class="ms-item"><input type="checkbox" value="Information &amp; Communication Technology"><span>Information &amp; Communication Technology</span></label>
+        <label class="ms-item"><input type="checkbox" value="Insurance &amp; Superannuation"><span>Insurance &amp; Superannuation</span></label>
         <label class="ms-item"><input type="checkbox" value="Legal"><span>Legal</span></label>
-        <label class="ms-item"><input type="checkbox" value="Manufacturing & Communications"><span>Manufacturing &amp; Communications</span></label>
-        <label class="ms-item"><input type="checkbox" value="Real Estate & Property"><span>Real Estate &amp; Property</span></label>
-        <label class="ms-item"><input type="checkbox" value="Retail & Consumer Products"><span>Retail &amp; Consumer Products</span></label>
+        <label class="ms-item"><input type="checkbox" value="Manufacturing, Transport &amp; Logistics"><span>Manufacturing, Transport &amp; Logistics</span></label>
+        <label class="ms-item"><input type="checkbox" value="Marketing &amp; Communications"><span>Marketing &amp; Communications</span></label>
+        <label class="ms-item"><input type="checkbox" value="Mining, Resources &amp; Energy"><span>Mining, Resources &amp; Energy</span></label>
+        <label class="ms-item"><input type="checkbox" value="Real Estate &amp; Property"><span>Real Estate &amp; Property</span></label>
+        <label class="ms-item"><input type="checkbox" value="Retail &amp; Consumer Products"><span>Retail &amp; Consumer Products</span></label>
         <label class="ms-item"><input type="checkbox" value="Sales"><span>Sales</span></label>
-        <label class="ms-item"><input type="checkbox" value="Science & Technology"><span>Science &amp; Technology</span></label>
-        <label class="ms-item"><input type="checkbox" value="Technology"><span>Technology</span></label>
+        <label class="ms-item"><input type="checkbox" value="Science &amp; Technology"><span>Science &amp; Technology</span></label>
+        <label class="ms-item"><input type="checkbox" value="Self Employment"><span>Self Employment</span></label>
+        <label class="ms-item"><input type="checkbox" value="Sports &amp; Recreation"><span>Sports &amp; Recreation</span></label>
+        <label class="ms-item"><input type="checkbox" value="Trades &amp; Services"><span>Trades &amp; Services</span></label>
       </div>
     </div>
     <button class="search-btn" id="searchBtn"><i class="fas fa-search"></i> Search</button>
@@ -490,13 +510,33 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
             <label class="ms-item"><input type="checkbox" value="Design & Architecture"><span>Design &amp; Architecture</span></label>
             <label class="ms-item"><input type="checkbox" value="Education & Training"><span>Education &amp; Training</span></label>
             <label class="ms-item"><input type="checkbox" value="Engineering"><span>Engineering</span></label>
-            <label class="ms-item"><input type="checkbox" value="Healthcare & Medical"><span>Healthcare &amp; Medical</span></label>
-            <label class="ms-item"><input type="checkbox" value="Information & Communication Technology"><span>Information &amp; Communication Technology</span></label>
-            <label class="ms-item"><input type="checkbox" value="Science & Technology"><span>Science &amp; Technology</span></label>
-            <label class="ms-item"><input type="checkbox" value="Technology"><span>Technology</span></label>
+            <label class="ms-item"><input type="checkbox" value="Farming, Animals &amp; Conservation"><span>Farming, Animals &amp; Conservation</span></label>
+            <label class="ms-item"><input type="checkbox" value="Government &amp; Defence"><span>Government &amp; Defence</span></label>
+            <label class="ms-item"><input type="checkbox" value="Healthcare &amp; Medical"><span>Healthcare &amp; Medical</span></label>
+            <label class="ms-item"><input type="checkbox" value="Hospitality &amp; Tourism"><span>Hospitality &amp; Tourism</span></label>
+            <label class="ms-item"><input type="checkbox" value="Human Resources &amp; Recruitment"><span>Human Resources &amp; Recruitment</span></label>
+            <label class="ms-item"><input type="checkbox" value="Information &amp; Communication Technology"><span>Information &amp; Communication Technology</span></label>
+            <label class="ms-item"><input type="checkbox" value="Insurance &amp; Superannuation"><span>Insurance &amp; Superannuation</span></label>
+            <label class="ms-item"><input type="checkbox" value="Legal"><span>Legal</span></label>
+            <label class="ms-item"><input type="checkbox" value="Manufacturing, Transport &amp; Logistics"><span>Manufacturing, Transport &amp; Logistics</span></label>
+            <label class="ms-item"><input type="checkbox" value="Marketing &amp; Communications"><span>Marketing &amp; Communications</span></label>
+            <label class="ms-item"><input type="checkbox" value="Mining, Resources &amp; Energy"><span>Mining, Resources &amp; Energy</span></label>
+            <label class="ms-item"><input type="checkbox" value="Real Estate &amp; Property"><span>Real Estate &amp; Property</span></label>
+            <label class="ms-item"><input type="checkbox" value="Retail &amp; Consumer Products"><span>Retail &amp; Consumer Products</span></label>
+            <label class="ms-item"><input type="checkbox" value="Sales"><span>Sales</span></label>
+            <label class="ms-item"><input type="checkbox" value="Science &amp; Technology"><span>Science &amp; Technology</span></label>
+            <label class="ms-item"><input type="checkbox" value="Self Employment"><span>Self Employment</span></label>
+            <label class="ms-item"><input type="checkbox" value="Sports &amp; Recreation"><span>Sports &amp; Recreation</span></label>
+            <label class="ms-item"><input type="checkbox" value="Trades &amp; Services"><span>Trades &amp; Services</span></label>
           </div>
         </div>
-        <input type="text" id="positionKeyword" class="fs-text-input" placeholder="Enter job title or position" style="margin-top:6px;">
+        <div class="role-section" id="rolePickerWrap">
+          <span class="role-section-label">Job Role</span>
+          <div class="ms-wrap" id="msJobRole" data-default="All roles">
+            <button class="ms-trigger" type="button"><span class="ms-text">All roles</span><i class="fas fa-chevron-down ms-arrow"></i></button>
+            <div class="ms-panel" id="msJobRolePanel"></div>
+          </div>
+        </div>
       </div>
 
       <div class="fs-divider"></div>
@@ -695,6 +735,60 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
   }
 
   /* ── MULTI-SELECT HELPERS ── */
+  /* ── JOB ROLES DATA ── */
+  const JOB_ROLES = {
+    'Accounting':['Accounts Officers / Clerks','Accounts Payable','Accounts Receivable / Credit Control','Analysis & Reporting','Assistant Accountants','Audit - External','Audit - Internal','Bookkeeping & Small Practice Accounting','Business Services & Corporate Advisory','Company Secretaries','Compliance & Risk','Cost Accounting','Financial Accounting & Reporting','Financial Managers & Controllers','Forensic Accounting & Investigation','Insolvency & Corporate Recovery','Inventory & Fixed Assets','Management','Management Accounting & Budgeting','Payroll','Strategy & Planning','Systems Accounting & IT Audit','Taxation','Treasury','Other'],
+    'Administration & Office Support':['Administrative Assistants','Client & Sales Administration','Contracts Administration','Data Entry & Word Processing','Office Management','PA, EA & Secretarial','Receptionists','Records Management & Document Control','Other'],
+    'Advertising, Arts & Media':['Agency Account Management','Art Direction','Editing & Publishing','Event Management','Journalism & Writing','Management','Media Strategy, Planning & Buying','Other'],
+    'Banking & Financial Services':['Account & Relationship Management','Analysis & Reporting','Banking - Business','Banking - Corporate & Institutional','Banking - Retail / Branch','Client Services','Compliance & Risk','Corporate Finance & Investment Banking','Credit','Financial Planning','Funds Management','Management','Mortgages','Settlements','Other'],
+    'Call Centre & Customer Service':['Collections','Customer Service - Call Centre','Customer Service - Customer Facing','Management & Support','Sales - Inbound','Sales - Outbound','Supervisors / Team Leaders','Other'],
+    'CEO & General Management':['Board Appointments','CEO','COO & MD','General / Business Unit Manager','Other'],
+    'Community Services & Development':['Aged & Disability Support','Child Welfare, Youth & Family Services','Community Development','Employment Services','Fundraising','Housing & Homelessness Services','Indigenous & Multicultural Services','Management','Volunteer Coordination & Support','Other'],
+    'Construction':['Contracts Management','Estimating','Foreperson / Supervisors','Health, Safety & Environment','Management','Planning & Scheduling','Plant & Machinery Operators','Project Management','Quality Assurance & Control','Surveying','Other'],
+    'Consulting & Strategy':['Analysts','Corporate Development','Environment & Sustainability Consulting','Management & Change Consulting','Policy','Strategy & Planning','Other'],
+    'Design & Architecture':['Architectural Drafting','Architecture','Fashion Design','Graphic Design','Interior Design','Landscape Architecture','Management','Product Design','Urban Design & Planning','Other'],
+    'Education & Training':['Childcare & Outside School Hours Care','Library Services & Information Management','Management - Schools','Management - Universities','Management - Vocational','Research & Fellowships','Student Services','Teaching - Early Childhood','Teaching - Primary','Teaching - Secondary','Teaching - Tertiary','Teaching - Vocational','Teaching Aides & Special Needs','Tutoring','Workplace Training & Assessment','Other'],
+    'Engineering':['Aerospace Engineering','Automotive Engineering','Building Services Engineering','Chemical Engineering','Civil/Structural Engineering','Electrical/Electronic Engineering','Engineering Drafting','Environmental Engineering','Field Engineering','Industrial Engineering','Maintenance','Management','Materials Handling Engineering','Mechanical Engineering','Process Engineering','Project Engineering','Project Management','Supervisors','Systems Engineering','Water & Waste Engineering','Other'],
+    'Farming, Animals & Conservation':['Agronomy & Farm Services','Conservation, Parks & Wildlife','Farm Labour','Farm Management','Fishing & Aquaculture','Horticulture','Veterinary Services & Animal Welfare','Winery & Viticulture','Other'],
+    'Government & Defence':['Air Force','Army','Emergency Services','Government - Federal','Government - Local','Government - State','Navy','Police & Corrections','Other'],
+    'Healthcare & Medical':['Ambulance/Paramedics','Chiropractic & Osteopathic','Clinical/Medical Research','Dental','Dieticians','Environmental Services','General Practitioners','Management','Medical Administration','Medical Imaging','Medical Specialists','Natural Therapies & Alternative Medicine','Nursing - A&E, Critical Care & ICU','Nursing - Aged Care','Nursing - Community, Maternal & Child Health','Nursing - Educators & Facilitators','Nursing - General Medical & Surgical','Nursing - High Acuity','Nursing - Management','Nursing - Midwifery, Neo-Natal, SCN & NICU','Nursing - Paediatric & PICU','Nursing - Psych, Forensic & Correctional Health','Nursing - Theatre & Recovery','Optical','Pathology','Pharmaceuticals & Medical Devices','Pharmacy','Physiotherapy, OT & Rehabilitation','Psychology, Counselling & Social Work','Residents & Registrars','Sales','Speech Therapy','Other'],
+    'Hospitality & Tourism':['Airlines','Bar & Beverage Staff','Chefs/Cooks','Front Office & Guest Services','Gaming','Housekeeping','Kitchen & Sandwich Hands','Management','Reservations','Tour Guides','Travel Agents/Consultants','Waiting Staff','Other'],
+    'Human Resources & Recruitment':['Consulting & Generalist HR','Industrial & Employee Relations','Management - Agency','Management - Internal','Occupational Health & Safety','Organisational Development','Recruitment - Agency','Recruitment - Internal','Remuneration & Benefits','Training & Development','Other'],
+    'Information & Communication Technology':['Architects','Computer Operators','Consultants','Database Development & Administration','Developers/Programmers','Engineering - Hardware','Engineering - Network','Engineering - Software','Help Desk & IT Support','Management','Networks & Systems Administration','Product Management & Development','Program & Project Management','Sales - Pre & Post','Security','Software Quality Assurance','System Services & Support','Systems Analysis & Modelling','Team Leaders','Technical Writing','Telecommunications','Testing & Quality Assurance','Other'],
+    'Insurance & Superannuation':['Actuarial','Assessment','Brokerage','Claims','Management','Risk Management','Superannuation','Underwriting','Workers\' Compensation','Other'],
+    'Legal':['Banking & Financial Services Law','Construction Law','Corporate & Commercial Law','Criminal Law','Family Law','Generalists - In-house','Generalists - Law Firm','Industrial Relations & Employment Law','Insurance & Superannuation Law','Intellectual Property Law','Legal Secretaries','Litigation & Dispute Resolution','Management','Personal Injury Law','Property Law','Tax Law','Other'],
+    'Manufacturing, Transport & Logistics':['Assembly & Process Work','Aviation Services','Couriers, Drivers & Postal Services','Fleet Management','Freight/Cargo Forwarding','Import/Export & Customs','Inventory & Stock Control','Machine Operators','Management','Methods & Quality Control','Operations','Production, Planning & Scheduling','Public Transport & Taxi Services','Purchasing, Procurement & Inventory','Rail Operations','Road Transport','Shipping','Warehouse, Storage & Distribution','Other'],
+    'Marketing & Communications':['Brand Management','Digital & Search Marketing','Direct Marketing & CRM','Event Management','Internal Communications','Management','Market Research & Analysis','Marketing Assistants/Coordinators','Marketing Communications','Media Strategy, Planning & Buying','Product Management & Development','Public Relations & Corporate Affairs','Trade Marketing','Other'],
+    'Mining, Resources & Energy':['Analysis & Reporting','Corporate Services','Engineering','Health, Safety & Environment','Management','Natural Resources & Water','Oil & Gas - Drilling','Oil & Gas - Exploration & Geoscience','Oil & Gas - Operations','Oil & Gas - Production & Refinement','Operations','Power Generation & Distribution','Project Management','Renewable Energy','Surveying','Other'],
+    'Real Estate & Property':['Administration','Body Corporate & Facilities Management','Commercial Sales, Leasing & Property Mgmt','Management','Residential Leasing & Property Management','Residential Sales','Retail & Shopping Centre Management','Valuation','Other'],
+    'Retail & Consumer Products':['Merchandisers','Management - Area/Multi-site','Management - Department/Assistant','Management - Store','Planning','Purchasing, Procurement & Inventory','Retail Assistants','Sales Representatives/Consultants','Visual Merchandising','Other'],
+    'Sales':['Account & Relationship Management','Analysis & Reporting','Management','New Business Development','Sales Representatives/Consultants','Other'],
+    'Science & Technology':['Biological & Biomedical Sciences','Biotechnology','Chemistry','Environmental, Earth & Geosciences','Food Technology & Safety','Laboratory & Technical Services','Materials Sciences','Mathematics, Statistics & Information Sciences','Modelling & Simulation','Physics','Other'],
+    'Self Employment':['Self Employment'],
+    'Sports & Recreation':['Coaching & Instruction','Fitness & Personal Training','Management','Other'],
+    'Trades & Services':['Automotive Trades','Bakers & Pastry Cooks','Building Trades','Butchers','Caretakers & Handypersons','Cleaning Services','Electricians','Floristry','Gardening & Landscaping','Hair & Beauty Services','Labourers','Locksmiths','Maintenance & Handypersons','Management','Nannies & Babysitters','Painters & Sign Writers','Plumbers','Printing & Publishing Services','Security Services','Tailors & Dressmakers','Technicians','Upholstery & Textile Trades','Other']
+  };
+
+  function updateRolePicker(selectedIndustries) {
+    const wrap = document.getElementById('rolePickerWrap');
+    const panel = document.getElementById('msJobRolePanel');
+    const msWrap = document.getElementById('msJobRole');
+    if (!wrap || !panel) return;
+    const roles = [];
+    selectedIndustries.forEach(ind => {
+      (JOB_ROLES[ind] || []).forEach(r => { if (!roles.includes(r)) roles.push(r); });
+    });
+    if (!roles.length) {
+      panel.innerHTML = '';
+      if (msWrap) { msWrap.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false); updateMsLabel(msWrap); }
+      return;
+    }
+    panel.innerHTML = roles.map(r => `<label class="ms-item"><input type="checkbox" value="${r.replace(/"/g,'&quot;')}"><span>${r.replace(/&/g,'&amp;')}</span></label>`).join('');
+    panel.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => { updateMsLabel(msWrap); renderAllJobs(); });
+    });
+  }
+
   function getMsValues(id) {
     const w = document.getElementById(id);
     return w ? [...w.querySelectorAll('input:checked')].map(i => i.value) : [];
@@ -712,12 +806,12 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
   function getFilters() {
     return {
       keyword:        (document.getElementById('keywordInput')?.value || '').toLowerCase().trim(),
-      position:       (document.getElementById('positionKeyword')?.value || '').toLowerCase().trim(),
       locationKeyword:(document.getElementById('locationKeyword')?.value || '').toLowerCase().trim(),
       salaryKeyword:  (document.getElementById('salaryKeyword')?.value || '').trim(),
       searchIndustries: getMsValues('msSearchIndustry'),
       searchCountry:  document.getElementById('searchCountryFilter')?.value || '',
       industries:     getMsValues('msIndustry'),
+      jobRoles:       getMsValues('msJobRole'),
       sidebarLocation: document.getElementById('sidebarLocationFilter')?.value || '',
       jobTypes:       getMsValues('msWorkType'),
       setups:         getMsValues('msRemote'),
@@ -729,13 +823,21 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
   function matchesFilters(j, f) {
     if (f.keyword && !`${j.title} ${j.company} ${j.description} ${(j.tags||[]).join(' ')}`.toLowerCase().includes(f.keyword)) return false;
     if (f.jobTypes.length && !f.jobTypes.includes(j.jobType)) return false;
-    if (f.position && !j.title.toLowerCase().includes(f.position)) return false;
     if (f.sidebarLocation) { if (!j.location.toLowerCase().includes(f.sidebarLocation.toLowerCase())) return false; }
     else if (f.searchCountry && !j.location.toLowerCase().includes(f.searchCountry.toLowerCase())) return false;
     if (f.locationKeyword && !j.location.toLowerCase().includes(f.locationKeyword)) return false;
     if (f.experiences.length && !f.experiences.includes(j.experience)) return false;
     if (f.industries.length) { if (!f.industries.includes(j.industry)) return false; }
     else if (f.searchIndustries.length && !f.searchIndustries.includes(j.industry)) return false;
+    if (f.jobRoles && f.jobRoles.length) {
+      const tl = j.title.toLowerCase();
+      const matched = f.jobRoles.some(role => {
+        const rl = role.toLowerCase();
+        if (tl.includes(rl)) return true;
+        return rl.split(/[\s\-\/]+/).filter(p => p.length > 3).some(p => tl.includes(p));
+      });
+      if (!matched) return false;
+    }
     if (f.setups.length && !f.setups.includes(j.workSetup)) return false;
     if (f.salaryKeyword) {
       const sk = f.salaryKeyword.toLowerCase().replace(/[₱,\s]/g, '');
@@ -847,7 +949,7 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
   /* ── RESET FILTERS ── */
   function resetFilters() {
     document.getElementById('keywordInput').value = '';
-    const posEl = document.getElementById('positionKeyword'); if (posEl) posEl.value = '';
+    updateRolePicker([]);
     const locEl = document.getElementById('locationKeyword'); if (locEl) locEl.value = '';
     const salEl = document.getElementById('salaryKeyword'); if (salEl) salEl.value = '';
     ['searchCountryFilter','sidebarLocationFilter'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
@@ -899,7 +1001,11 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
       wrap.classList.toggle('open');
     });
     wrap.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', () => { updateMsLabel(wrap); renderAllJobs(); });
+      cb.addEventListener('change', () => {
+        updateMsLabel(wrap);
+        if (wrap.id === 'msIndustry' || wrap.id === 'msSearchIndustry') updateRolePicker(getMsValues('msIndustry'));
+        renderAllJobs();
+      });
     });
   });
   document.addEventListener('click', () => document.querySelectorAll('.ms-wrap.open').forEach(w => w.classList.remove('open')));
@@ -907,7 +1013,7 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
   /* ── FILTER EVENT LISTENERS ── */
   document.getElementById('searchBtn').addEventListener('click', renderAllJobs);
   document.getElementById('keywordInput').addEventListener('keyup', e => { if (e.key === 'Enter') renderAllJobs(); });
-  ['positionKeyword','locationKeyword','salaryKeyword'].forEach(id => {
+  ['locationKeyword','salaryKeyword'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', renderAllJobs);
   });

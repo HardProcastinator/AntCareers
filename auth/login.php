@@ -89,7 +89,7 @@ if (isRateLimited($email, $ip)) {
 $db   = getDB();
 $stmt = $db->prepare(
     'SELECT id, email, password_hash, full_name, account_type, is_verified, is_active, company_name,
-            COALESCE(must_change_password, 0) AS must_change_password
+            avatar_url, COALESCE(must_change_password, 0) AS must_change_password
      FROM users
      WHERE email = :email
      LIMIT 1'
@@ -129,6 +129,7 @@ $_SESSION['user_email']   = $user['email'];
 $_SESSION['user_name']    = $user['full_name'];
 $_SESSION['account_type'] = $accountType;
 $_SESSION['company_name'] = $user['company_name'] ?? '';
+$_SESSION['avatar_url']   = $user['avatar_url'] ?? '';
 
 // Check if must change password (recruiter first-login)
 if ((int)$user['must_change_password'] === 1) {

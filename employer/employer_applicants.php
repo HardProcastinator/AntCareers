@@ -7,6 +7,7 @@ $user        = getUser();
 $fullName    = $user['fullName'];
 $firstName   = $user['firstName'];
 $initials    = $user['initials'];
+$avatarUrl   = $user['avatarUrl'];
 $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'applicants';
 
@@ -159,7 +160,7 @@ try {
         $lk="%{$search}%"; $p[]=$lk; $p[]=$lk; $p[]=$lk;
     }
     $wc='WHERE '.implode(' AND ',$w);
-    $st=$db->prepare("SELECT a.id AS app_id,a.status,a.cover_letter,a.resume_url,a.applied_at,a.reviewed_at,a.employer_notes,u.id AS seeker_id,u.full_name AS seeker_name,u.email AS seeker_email,j.id AS job_id,j.title AS job_title,j.job_type,j.setup,j.location AS job_location,(SELECT COUNT(*) FROM interview_schedules i WHERE i.application_id=a.id AND i.status='Scheduled') AS has_interview,iv_cur.interview_type AS iv_type,iv_cur.scheduled_at AS iv_date,iv_cur.meeting_link AS iv_link,iv_cur.location AS iv_location,iv_cur.venue_name AS iv_venue,iv_cur.full_address AS iv_address,iv_cur.map_link AS iv_map,iv_cur.phone_number AS iv_phone,iv_cur.contact_person AS iv_contact,iv_cur.notes AS iv_notes FROM applications a JOIN jobs j ON j.id=a.job_id JOIN users u ON u.id=a.seeker_id LEFT JOIN interview_schedules iv_cur ON iv_cur.application_id=a.id AND iv_cur.status='Scheduled' {$wc} GROUP BY a.id ORDER BY FIELD(a.status,'Pending','Reviewed','Shortlisted','Hired','Rejected'),a.applied_at DESC");
+    $st=$db->prepare("SELECT a.id AS app_id,a.status,a.cover_letter,a.resume_url,a.applied_at,a.reviewed_at,a.employer_notes,u.id AS seeker_id,u.full_name AS seeker_name,u.email AS seeker_email,u.avatar_url AS seeker_avatar,j.id AS job_id,j.title AS job_title,j.job_type,j.setup,j.location AS job_location,(SELECT COUNT(*) FROM interview_schedules i WHERE i.application_id=a.id AND i.status='Scheduled') AS has_interview,iv_cur.interview_type AS iv_type,iv_cur.scheduled_at AS iv_date,iv_cur.meeting_link AS iv_link,iv_cur.location AS iv_location,iv_cur.venue_name AS iv_venue,iv_cur.full_address AS iv_address,iv_cur.map_link AS iv_map,iv_cur.phone_number AS iv_phone,iv_cur.contact_person AS iv_contact,iv_cur.notes AS iv_notes FROM applications a JOIN jobs j ON j.id=a.job_id JOIN users u ON u.id=a.seeker_id LEFT JOIN interview_schedules iv_cur ON iv_cur.application_id=a.id AND iv_cur.status='Scheduled' {$wc} GROUP BY a.id ORDER BY FIELD(a.status,'Pending','Reviewed','Shortlisted','Hired','Rejected'),a.applied_at DESC");
     $st->execute($p);
     $applicants=$st->fetchAll(PDO::FETCH_ASSOC);
     $js=$db->prepare("SELECT id,title FROM jobs WHERE employer_id=? AND status='Active' ORDER BY created_at DESC");
@@ -203,14 +204,16 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     .nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0;}
     .theme-btn{width:34px;height:34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:13px;flex-shrink:0;}
     .theme-btn:hover{color:var(--red-bright);border-color:var(--red-vivid);}
-    .notif-btn-nav{position:relative;width:34px;height:34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:13px;flex-shrink:0;}
-    .notif-btn-nav:hover{color:var(--red-bright);}
+    .notif-btn-nav{position:relative;width:36px;height:36px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:14px;color:var(--text-muted);flex-shrink:0;}
+    .notif-btn-nav:hover{color:var(--red-pale);border-color:var(--red-vivid);}
+    .notif-btn-nav .badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:50%;background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--soil-dark);overflow:hidden;padding:0 3px;}
     .badge{position:absolute;top:-4px;right:-4px;background:var(--red-vivid);color:#fff;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
-    .btn-nav-red{padding:7px 16px;border-radius:7px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;transition:0.2s;white-space:nowrap;text-decoration:none;display:flex;align-items:center;gap:7px;}
-    .btn-nav-red:hover{background:var(--red-bright);}
+    .btn-nav-red{padding:7px 16px;border-radius:7px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;transition:0.2s;white-space:nowrap;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(209,61,44,0.3);text-decoration:none;display:flex;align-items:center;gap:7px;}
+    .btn-nav-red:hover{background:var(--red-bright);transform:translateY(-1px);box-shadow:0 4px 14px rgba(209,61,44,0.45);}
     .profile-wrap{position:relative;}
     .profile-btn{display:flex;align-items:center;gap:9px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:6px 12px 6px 8px;cursor:pointer;transition:0.2s;flex-shrink:0;}
-    .profile-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#8a5010);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+    .profile-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#8a5010);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
+    .profile-avatar img{width:100%;height:100%;object-fit:cover;}
     .profile-name{font-size:13px;font-weight:600;color:#F5F0EE;}
     .profile-role{font-size:10px;color:var(--amber);margin-top:1px;letter-spacing:0.02em;font-weight:600;}
     .profile-chevron{font-size:9px;color:var(--text-muted);margin-left:2px;}
@@ -235,12 +238,15 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     .mobile-link:hover{background:var(--soil-hover);color:#F5F0EE;}
     .mobile-divider{height:1px;background:var(--soil-line);margin:6px 0;}
     @media(max-width:880px){.nav-links{display:none;}.hamburger{display:flex;}}
-    body.light{background:#FAF7F5;color:#1A0A09;}
-    body.light .navbar{background:rgba(255,253,252,0.98);border-bottom-color:#D4B0AB;}
+    body.light{background:#FAF7F5;color:#1A0A09;--soil-dark:#F9F5F4;--soil-card:#FFFFFF;--soil-hover:#FEF0EE;--soil-line:#E0CECA;--text-light:#1A0A09;--text-mid:#4A2828;--text-muted:#7A5555;--amber-dim:#FFF4E0;--amber:#B8620A;}
+    body.light .navbar{background:rgba(255,253,252,0.98);border-bottom-color:#D4B0AB;box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08);}
+    body.light .logo-text{color:#1A0A09;}
+    body.light .logo-text span{color:var(--red-vivid);}
     body.light .nav-link{color:#5A4040;}
     body.light .nav-link:hover,body.light .nav-link.active{color:#1A0A09;background:#FEF0EE;}
     body.light .theme-btn,body.light .notif-btn-nav,body.light .profile-btn{background:#F5EDEB;border-color:#D4B0AB;}
     body.light .profile-name{color:#1A0A09;}
+    body.light .pdh-name{color:#1A0A09;}
     body.light .profile-dropdown,body.light .mobile-menu{background:#FFF8F7;border-color:#D4B0AB;}
     body.light .pd-item{color:#4A3030;}
     body.light .pd-item:hover{background:#FEF0EE;}
@@ -261,12 +267,12 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
     .search-bar{display:flex;align-items:center;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;overflow:hidden;flex:1;min-width:200px;transition:0.25s;}
     .search-bar:focus-within{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,0.1);}
-    .search-bar .si{padding:0 13px;color:var(--text-muted);font-size:14px;}
-    .search-bar input{flex:1;padding:11px 0;background:none;border:none;outline:none;font-family:var(--font-body);font-size:14px;color:#F5F0EE;}
+    .search-bar .si{padding:0 14px;color:var(--text-muted);font-size:14px;}
+    .search-bar input{flex:1;padding:13px 0;background:none;border:none;outline:none;font-family:var(--font-body);font-size:14px;color:#F5F0EE;}
     .search-bar input::placeholder{color:var(--text-muted);}
     body.light .search-bar{background:#fff;border-color:#E0CECA;}
     body.light .search-bar input{color:#1A0A09;}
-    select.fsel{padding:10px 13px;border-radius:8px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-mid);font-family:var(--font-body);font-size:13px;cursor:pointer;outline:none;}
+    select.fsel{padding:13px 13px;border-radius:8px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-mid);font-family:var(--font-body);font-size:13px;cursor:pointer;outline:none;}
     select.fsel:focus{border-color:var(--red-vivid);}
     body.light select.fsel{background:#fff;border-color:#E0CECA;color:#3A2020;}
     .app-list{display:flex;flex-direction:column;gap:10px;}
@@ -274,7 +280,8 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     .app-card:hover{border-color:rgba(209,61,44,.4);box-shadow:0 6px 24px rgba(0,0,0,.3);}
     body.light .app-card{background:#fff;border-color:#E0CECA;}
     .app-main{display:grid;grid-template-columns:44px 1fr auto;gap:14px;padding:16px 18px;align-items:start;}
-    .app-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--red-vivid),var(--red-deep));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;}
+    .app-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--red-vivid),var(--red-deep));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
+    .app-avatar img{width:100%;height:100%;object-fit:cover;}
     .app-info{min-width:0;}
     .app-name{font-family:var(--font-display);font-size:15px;font-weight:700;color:#F5F0EE;margin-bottom:2px;transition:color 0.2s;}
     a.app-name:hover{color:var(--red-bright);}
@@ -300,9 +307,11 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     .btn:hover{background:var(--soil-hover);color:#F5F0EE;}
     .btn.primary{background:var(--red-vivid);border-color:var(--red-vivid);color:#fff;}
     .btn.primary:hover{background:var(--red-bright);}
+    .toolbar .btn.primary{padding:13px 24px;border-radius:10px;font-size:13px;}
     .btn.amb{border-color:rgba(212,148,58,.4);color:var(--amber);}
     .btn.amb:hover{background:rgba(212,148,58,.1);}
     body.light .btn{border-color:#D4B0AB;color:#5A4040;}
+    body.light .btn.primary{color:#fff;}
     .app-expand{border-top:1px solid var(--soil-line);padding:16px 18px;display:none;background:var(--soil-hover);}
     body.light .app-expand{background:#FAF7F5;border-color:#E0CECA;}
     .app-expand.open{display:block;}
@@ -402,7 +411,7 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   ?>
   <div class="app-card" id="card-<?=$a['app_id']?>">
     <div class="app-main">
-      <a href="employer_view_applicant.php?id=<?=$a['seeker_id']?>" class="app-avatar" style="text-decoration:none;color:#fff;"><?=htmlspecialchars($ini)?></a>
+      <a href="employer_view_applicant.php?id=<?=$a['seeker_id']?>" class="app-avatar" style="text-decoration:none;color:#fff;"><?php if(!empty($a['seeker_avatar'])):?><img src="../<?=htmlspecialchars($a['seeker_avatar'])?>" alt=""><?php else:?><?=htmlspecialchars($ini)?><?php endif;?></a>
       <div class="app-info">
         <a href="employer_view_applicant.php?id=<?=$a['seeker_id']?>" class="app-name" style="text-decoration:none;color:inherit;"><?=htmlspecialchars($a['seeker_name'])?></a>
         <div class="app-email"><?=htmlspecialchars($a['seeker_email'])?></div>

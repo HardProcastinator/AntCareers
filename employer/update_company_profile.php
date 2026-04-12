@@ -84,7 +84,7 @@ if ($action === 'upload_logo') {
     $upd = $db->prepare("UPDATE company_profiles SET logo_path = :p, updated_at = NOW() WHERE user_id = :uid");
     $upd->execute([':p' => $relPath, ':uid' => $userId]);
 
-    echo json_encode(['ok' => true, 'path' => $relPath]);
+    echo json_encode(['ok' => true, 'path' => '../' . $relPath]);
     exit;
 }
 
@@ -135,7 +135,7 @@ if ($action === 'upload_cover') {
     $upd = $db->prepare("UPDATE company_profiles SET cover_path = :p, updated_at = NOW() WHERE user_id = :uid");
     $upd->execute([':p' => $relPath, ':uid' => $userId]);
 
-    echo json_encode(['ok' => true, 'path' => $relPath]);
+    echo json_encode(['ok' => true, 'path' => '../' . $relPath]);
     exit;
 }
 

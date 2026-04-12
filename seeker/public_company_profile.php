@@ -90,6 +90,7 @@ if (!empty($company['perks'])) {
 
 // Resolve cover image: try cover_path, fall back to banner_url column if exists
 $coverImage = $company['cover_path'] ?? '';
+if ($coverImage && !str_starts_with($coverImage, '../') && !str_starts_with($coverImage, 'http')) $coverImage = '../' . $coverImage;
 
 // Is the current seeker following this company?
 $isFollowing = false;
@@ -458,7 +459,11 @@ $openJobCount      = count($companyJobs);
       <div class="cp-logo-row">
         <div class="cp-logo">
           <?php if (!empty($company['logo_path'])): ?>
-            <img src="<?= htmlspecialchars((string)$company['logo_path'], ENT_QUOTES) ?>"
+          <?php
+            $logoSrc = (string)$company['logo_path'];
+            if ($logoSrc && !str_starts_with($logoSrc, '../') && !str_starts_with($logoSrc, 'http')) $logoSrc = '../' . $logoSrc;
+          ?>
+            <img src="<?= htmlspecialchars($logoSrc, ENT_QUOTES) ?>"
                  alt="<?= htmlspecialchars((string)$company['company_name'], ENT_QUOTES) ?>"
                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
             <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;">

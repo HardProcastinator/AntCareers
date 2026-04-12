@@ -86,6 +86,8 @@ if ($type === 'avatar') {
     // avatar_url lives on the users table — always has a row
     $stmt = $db->prepare("UPDATE users SET avatar_url = :url WHERE id = :uid");
     $stmt->execute([':url' => $relativePath, ':uid' => $userId]);
+    // Update session so navbar reflects the change immediately
+    $_SESSION['avatar_url'] = $relativePath;
 } else {
     // banner_url lives on seeker_profiles — upsert so it works even if no profile row exists yet
     $stmt = $db->prepare("
@@ -96,4 +98,4 @@ if ($type === 'avatar') {
     $stmt->execute([':uid' => $userId, ':url' => $relativePath, ':url2' => $relativePath]);
 }
 
-echo json_encode(['ok' => true, 'url' => $relativePath]);
+echo json_encode(['ok' => true, 'url' => '../' . $relativePath]);
