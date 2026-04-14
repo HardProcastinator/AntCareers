@@ -224,7 +224,7 @@ if (isset($_GET['pw'])) {
 
     /* Page header */
     .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
-    .page-title { font-family:var(--font-display); font-size:24px; font-weight:700; color:#F5F0EE; }
+    .page-title { font-family:var(--font-display); font-size:24px; font-weight:700; color:var(--text-light); }
     .page-sub { font-size:13px; color:var(--text-muted); margin-top:4px; }
 
     /* Section cards */
@@ -358,6 +358,24 @@ if (isset($_GET['pw'])) {
     body.light .sb-browse-wrap { background:#FFFFFF; border-color:#E0CECA; }
     body.light .btn-secondary { border-color:#D0BCBA; color:#4A2828; }
     body.light .btn-secondary:hover { background:#FEF0EE; }
+    body.light .settings-sidebar { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .sidebar-item { color:#4A2828; }
+    body.light .sidebar-item:hover, body.light .sidebar-item.active { background:#FEF0EE; color:#1A0A09; }
+    body.light .sidebar-item i { color:#7A5555; }
+    body.light .sidebar-item.active i { color:var(--red-bright); }
+    body.light .settings-card, body.light .s-card { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .s-card-title, body.light .settings-title { color:#1A0A09; }
+    body.light .s-card-sub { color:#7A5555; }
+    body.light .settings-label { color:#7A5555; }
+    body.light .settings-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
+    body.light .settings-input::placeholder { color:#7A5555; }
+    body.light .account-value { color:#1A0A09; }
+    body.light .account-label { color:#7A5555; }
+    body.light .toggle-track.on { background:var(--red-vivid); }
+    body.light .section-desc { color:#7A5555; }
+    body.light .flash-success { background:rgba(76,175,112,0.1); border-color:rgba(76,175,112,0.2); color:#2E7D4C; }
+    body.light .flash-error { background:rgba(209,61,44,0.1); border-color:rgba(209,61,44,0.2); color:var(--red-bright); }
+    body.light .footer { border-top-color:#E0CECA; color:#7A5555; }
 
     /* ── RESPONSIVE ── */
     @media(max-width:600px) {

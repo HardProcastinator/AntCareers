@@ -427,14 +427,8 @@ try {
   function doDelete(){var id=document.getElementById('delJobId').value;doPost({action:'delete_job',job_id:id},function(d){document.getElementById('confirmModal').classList.remove('open');if(d.ok){var c=document.getElementById('jc-'+id);if(c){c.style.opacity='0';c.style.transform='translateX(20px)';c.style.transition='.35s';setTimeout(function(){c.remove();},350);}toast('Job deleted','ok');}else{toast(d.msg||'Error','err');}});}
   function doPost(data,cb){var b=Object.keys(data).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(data[k]);}).join('&');fetch('employer_manageJobs.php',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b}).then(function(r){return r.json();}).then(cb).catch(function(){toast('Network error','err');});}
   function toast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');clearTimeout(t._t);t._t=setTimeout(function(){t.className='toast';},3000);}
-  function setTheme(t){document.body.classList.toggle('light',t==='light');localStorage.setItem('ac-theme',t);document.getElementById('themeToggle').querySelector('i').className=t==='light'?'fas fa-sun':'fas fa-moon';}
-  const _guard_themeToggle = document.getElementById('themeToggle'); if (_guard_themeToggle) _guard_themeToggle.addEventListener('click',function(){setTheme(document.body.classList.contains('light')?'dark':'light');});
-  var hb=document.getElementById('hamburger'),mm=document.getElementById('mobileMenu');
-  hb.addEventListener('click',function(e){e.stopPropagation();var o=mm.classList.toggle('open');hb.querySelector('i').className=o?'fas fa-times':'fas fa-bars';});
-  const _guard_profileToggle = document.getElementById('profileToggle'); if (_guard_profileToggle) _guard_profileToggle.addEventListener('click',function(e){e.stopPropagation();document.getElementById('profileDropdown').classList.toggle('open');});
-  document.addEventListener('click',function(e){if(!document.getElementById('profileWrap').contains(e.target))document.getElementById('profileDropdown').classList.remove('open');if(!mm.contains(e.target)&&e.target!==hb){mm.classList.remove('open');hb.querySelector('i').className='fas fa-bars';}});
+  // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
   ['jobModal','confirmModal'].forEach(function(id){document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});});
-  (function(){var p=new URLSearchParams(window.location.search).get('theme'),s=localStorage.getItem('ac-theme'),t=p||s||'light';if(p)localStorage.setItem('ac-theme',p);setTheme(t);})();
   if(new URLSearchParams(window.location.search).get('postjob')==='1')openPost();
 </script>
 <?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>

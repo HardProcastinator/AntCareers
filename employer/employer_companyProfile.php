@@ -128,13 +128,13 @@ function pfImg(?array $p, string $key): string {
 
     /* Cover + logo hero */
     .cover-section { position:relative; border-radius:14px; overflow:hidden; margin-bottom:28px; background:var(--soil-card); border:1px solid var(--soil-line); }
-    .cover-img { height:160px; background:linear-gradient(135deg, #3A0F0F 0%, #1C0808 40%, #2A0A1A 100%); position:relative; overflow:hidden; }
+    .cover-img { height:180px; background:linear-gradient(135deg, #3A0F0F 0%, #1C0808 40%, #2A0A1A 100%); position:relative; overflow:hidden; }
     .cover-img::after { content:''; position:absolute; inset:0; background:repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(209,61,44,0.04) 20px, rgba(209,61,44,0.04) 21px); }
     .cover-change-btn { position:absolute; bottom:12px; right:12px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.15); color:#F5F0EE; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font-body); transition:0.2s; z-index:2; display:flex; align-items:center; gap:6px; }
     .cover-change-btn:hover { background:rgba(209,61,44,0.4); }
     .cover-bottom { display:flex; align-items:flex-end; justify-content:space-between; padding:0 24px 20px; gap:16px; flex-wrap:wrap; }
     .company-logo-wrap { margin-top:-40px; position:relative; }
-    .company-logo { width:80px; height:80px; border-radius:14px; background:var(--soil-hover); border:3px solid var(--soil-dark); display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:800; color:var(--red-bright); font-family:var(--font-display); position:relative; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.4); }
+    .company-logo { width:88px; height:88px; border-radius:14px; background:var(--soil-hover); border:3px solid var(--soil-dark); display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:800; color:var(--red-bright); font-family:var(--font-display); position:relative; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.4); }
     .logo-upload-btn { position:absolute; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; font-size:20px; cursor:pointer; color:#fff; border-radius:11px; }
     .company-logo-wrap:hover .logo-upload-btn { display:flex; }
     .cover-company-name { font-size:20px; font-weight:700; color:#F5F0EE; font-family:var(--font-display); }
@@ -142,7 +142,7 @@ function pfImg(?array $p, string $key): string {
     .cover-actions { display:flex; gap:8px; align-items:center; padding-bottom:4px; }
 
     /* Form cards */
-    .form-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:24px; margin-bottom:20px; }
+    .form-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:14px; padding:28px; margin-bottom:20px; }
     .fc-title { font-size:15px; font-weight:700; color:#F5F0EE; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
     .fc-title i { color:var(--red-bright); font-size:14px; }
     .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
@@ -212,19 +212,29 @@ function pfImg(?array $p, string $key): string {
     body.light .mobile-menu { background:rgba(255,253,252,0.97); border-color:#E0CECA; }
     body.light .mobile-link { color:#4A2828; }
     body.light .page-title { color:#1A0A09; }
-    body.light .form-card { background:#FFFFFF; border-color:#E0CECA; }
-    body.light .fc-title { color:#1A0A09; }
+    body.light .page-sub { color:#7A5555; }
+    body.light .cover-company-name { color:#1A0A09; }
+    body.light .cover-company-sub { color:var(--amber); }
     body.light .form-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
+    body.light .form-input::placeholder { color:#7A5555; }
+    body.light .form-input:focus { border-color:var(--red-mid); }
+    body.light .form-label { color:#7A5555; }
+    body.light .fc-title { color:#1A0A09; }
     body.light .social-item { background:#F5EEEC; border-color:#E0CECA; }
     body.light .social-input { color:#4A2828; }
-    body.light .perk-chip { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; cursor:pointer; }
-    body.light .perk-chip.selected { background:rgba(209,61,44,0.15); border-color:var(--red-mid); color:var(--red-vivid); }
-    body.light .company-logo { background:#F5EEEC; border-color:#E0CECA; }
-    body.light .cover-section { background:#FFFFFF; border-color:#E0CECA; }
-    body.light .cover-company-name { color:#1A0A09; }
-    body.light .save-info { color:#7A5555; }
+    body.light .social-input::placeholder { color:#7A5555; }
+    body.light .perk-chip { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
+    body.light .perk-chip.selected { background:rgba(209,61,44,0.08); border-color:var(--red-mid); color:var(--red-bright); }
     body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
-    body.light .footer { border-color:#E0CECA; }
+    body.light .save-info { color:#7A5555; }
+    body.light .btn-cancel { border-color:#E0CECA; color:#7A5555; }
+    body.light .btn-cancel:hover { border-color:#7A5555; color:#1A0A09; }
+    body.light .cover-section { border-color:#E0CECA; }
+    body.light .form-card { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .footer { border-top-color:#E0CECA; color:#7A5555; }
+    body.light select.form-input { background:#F5EEEC; color:#1A0A09; }
+    body.light .char-count { color:#7A5555; }
+    body.light .company-logo { background:#F5EEEC; border-color:#E0CECA; }
 
     @media(max-width:760px) {
       .nav-links{display:none} .hamburger{display:flex}
@@ -259,13 +269,7 @@ function pfImg(?array $p, string $key): string {
 
 <!-- PAGE CONTENT -->
 <div class="page-shell">
-  <div class="breadcrumb">
-    <a href="employer_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
-    <i class="fas fa-chevron-right"></i>
-    <span>Company Profile</span>
-  </div>
 
-  <div class="page-title">Company Profile</div>
   <div class="page-sub">Manage your company's public-facing information seen by job seekers.</div>
 
   <!-- Cover + Logo -->
@@ -683,46 +687,7 @@ function pfImg(?array $p, string $key): string {
     setTimeout(() => t.remove(), 2400);
   }
 
-  // Theme
-  function setTheme(t) {
-    document.body.classList.toggle('light', t==='light'); document.body.classList.toggle('dark', t!=='light');
-    localStorage.setItem('ac-theme', t);
-    document.getElementById('themeToggle').querySelector('i').className = t==='light' ? 'fas fa-sun' : 'fas fa-moon';
-  }
-  const _guard_themeToggle = document.getElementById('themeToggle'); if (_guard_themeToggle) _guard_themeToggle.addEventListener('click', () =>
-    setTheme(document.body.classList.contains('light') ? 'dark' : 'light'));
-
-  // Hamburger
-  const hamburger = document.getElementById('hamburger');
-  const mobileMenu = document.getElementById('mobileMenu');
-  hamburger.addEventListener('click', e => {
-    e.stopPropagation();
-    const open = mobileMenu.classList.toggle('open');
-    hamburger.querySelector('i').className = open ? 'fas fa-times' : 'fas fa-bars';
-  });
-
-  // Profile dropdown
-  const _guard_profileToggle = document.getElementById('profileToggle'); if (_guard_profileToggle) _guard_profileToggle.addEventListener('click', e => {
-    e.stopPropagation();
-    document.getElementById('profileDropdown').classList.toggle('open');
-  });
-  document.addEventListener('click', e => {
-    if (!document.getElementById('profileWrap').contains(e.target))
-      document.getElementById('profileDropdown').classList.remove('open');
-    if (!mobileMenu.contains(e.target) && e.target !== hamburger) {
-      mobileMenu.classList.remove('open');
-      hamburger.querySelector('i').className = 'fas fa-bars';
-    }
-  });
-
-  // Init theme
-  (function() {
-    const p = new URLSearchParams(window.location.search).get('theme');
-    const s = localStorage.getItem('ac-theme');
-    const t = p || s || 'light';
-    if (p) localStorage.setItem('ac-theme', p);
-    setTheme(t);
-  })();
+  // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
 </script>
 <?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>

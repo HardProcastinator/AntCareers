@@ -769,44 +769,7 @@ try {
     if (e.key==='Enter') document.getElementById('searchBtn').click();
   });
 
-  // ── THEME ──
-  function setTheme(t) {
-    document.body.classList.toggle('light', t==='light');
-    document.body.classList.toggle('dark', t!=='light');
-    document.querySelectorAll('#themeToggle i').forEach(i => i.className = t==='light' ? 'fas fa-sun' : 'fas fa-moon');
-    localStorage.setItem('ac-theme', t);
-  }
-  const _guard_themeToggle = document.getElementById('themeToggle'); if (_guard_themeToggle) _guard_themeToggle.addEventListener('click', () =>
-    setTheme(document.body.classList.contains('light') ? 'dark' : 'light'));
-  const _urlTheme = new URLSearchParams(window.location.search).get('theme');
-  const _initTheme = _urlTheme || localStorage.getItem('ac-theme') || 'dark';
-  if (_urlTheme) localStorage.setItem('ac-theme', _urlTheme);
-  setTheme(_initTheme);
-
-  // ── HAMBURGER ──
-  const hamburger = document.getElementById('hamburger');
-  const mobileMenu = document.getElementById('mobileMenu');
-  hamburger.addEventListener('click', e => {
-    e.stopPropagation();
-    const open = mobileMenu.classList.toggle('open');
-    hamburger.querySelector('i').className = open ? 'fas fa-times' : 'fas fa-bars';
-  });
-
-  // ── PROFILE DROPDOWN ──
-  const _guard_profileToggle = document.getElementById('profileToggle'); if (_guard_profileToggle) _guard_profileToggle.addEventListener('click', e => {
-    e.stopPropagation();
-    document.getElementById('profileDropdown').classList.toggle('open');
-  });
-
-  // ── CLICK OUTSIDE ──
-  document.addEventListener('click', e => {
-    if (!mobileMenu.contains(e.target) && e.target !== hamburger) {
-      mobileMenu.classList.remove('open');
-      hamburger.querySelector('i').className = 'fas fa-bars';
-    }
-    if (!document.getElementById('profileToggle').contains(e.target) && !document.getElementById('profileDropdown').contains(e.target))
-      document.getElementById('profileDropdown').classList.remove('open');
-  });
+  // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
 
   // ── MODAL ──
 
