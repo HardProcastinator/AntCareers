@@ -21,7 +21,7 @@ $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'messages';
 $pageSub     = $accountType === 'seeker'
     ? 'Message employers, follow up on applications, and keep conversations organized.'
-    : 'Communicate with applicants and keep interview conversations in one place.';
+    : 'Communicate with applicants and keep conversations organized.';
 
 // Get unread counts
 $db = getDB();
@@ -129,7 +129,7 @@ try {
     .page-sub { font-size:14px; color:var(--text-muted); margin-top:4px; }
 
     /* MESSAGES LAYOUT */
-    .msg-layout { display:grid; grid-template-columns:320px 1fr; gap:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; overflow:hidden; height:calc(100vh - 200px); min-height:500px; }
+    .msg-layout { display:grid; grid-template-columns:320px 1fr; gap:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; overflow:hidden; height:calc(100vh - 160px); min-height:680px; }
 
     /* THREAD LIST */
     .thread-list { border-right:1px solid var(--soil-line); display:flex; flex-direction:column; overflow:hidden; }
@@ -184,7 +184,7 @@ try {
     .msg-row.sent { flex-direction:row-reverse; }
     .msg-row-avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
     .msg-row-avatar img { width:100%; height:100%; object-fit:cover; }
-    .bubble { max-width:65%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; word-break:break-word; }
+    .bubble { max-width:70%; min-width:60px; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; word-break:break-word; white-space:pre-wrap; }
     .bubble-received { background:var(--soil-hover); color:var(--text-light); border-bottom-left-radius:4px; }
     .bubble-sent { background:var(--red-vivid); color:#fff; border-bottom-right-radius:4px; }
     .bubble-time { font-size:10px; margin-top:4px; opacity:0.6; }
@@ -238,8 +238,29 @@ try {
     body.light .logo-text span { color:var(--red-vivid); }
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
+    body.light .page-title { color:#1A0A09; }
+    body.light .page-sub { color:#7A5555; }
     body.light .msg-layout { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .thread-list { border-right-color:#E0CECA; }
+    body.light .thread-search-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
+    body.light .thread-search-input::placeholder { color:#7A5555; }
+    body.light .thread-name { color:#4A2828; }
+    body.light .thread-item.unread .thread-name { color:#1A0A09; }
+    body.light .thread-item { border-bottom-color:#E0CECA; }
     body.light .thread-item:hover { background:#FEF0EE; }
+    body.light .thread-item.active { background:rgba(209,61,44,0.06); }
+    body.light .chat-header { border-bottom-color:#E0CECA; }
+    body.light .chat-header-name { color:#1A0A09; }
+    body.light .chat-input-area { border-top-color:#E0CECA; }
+    body.light .chat-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
+    body.light .chat-input::placeholder { color:#7A5555; }
+    body.light .msg-group.received .msg-bubble { background:#F5EEEC; color:#1A0A09; }
+    body.light .msg-time { color:#7A5555; }
+    body.light .msg-date-divider { color:#7A5555; }
+    body.light .filter-pill { color:#7A5555; }
+    body.light .filter-pill.active { color:var(--red-bright); background:rgba(209,61,44,0.08); }
+    body.light .filter-pill:hover:not(.active) { color:#1A0A09; background:#FEF0EE; }
+    body.light .footer { border-top-color:#E0CECA; color:#7A5555; }
     body.light .bubble-received { background:#F5EEEC; }
     body.light .chat-input-row { background:#F5EEEC; border-color:#E0CECA; }
     body.light .thread-search-bar { background:#F5EEEC; border-color:#E0CECA; }
@@ -284,7 +305,7 @@ try {
 <div class="page-shell">
   <div class="page-header">
     <div>
-      <div class="page-title">Messages <span>&</span> Conversations</div>
+      <div class="page-title">Messages</div>
             <div class="page-sub"><?php echo htmlspecialchars($pageSub, ENT_QUOTES, 'UTF-8'); ?></div>
     </div>
   </div>
@@ -482,12 +503,12 @@ function renderMessages(msgs, color, ini, partnerAvatarUrl) {
         if (m.from === 'me') {
             el.innerHTML += `<div class="msg-row sent">
                 <div class="msg-row-avatar" style="background:linear-gradient(135deg,#D4943A,#8a5010)">${MY_AVATAR ? `<img src="${MY_AVATAR}" alt="">` : MY_INI}</div>
-                <div><div class="bubble bubble-sent">${esc(m.body)}<div class="bubble-time">${esc(m.time)} <i class="fas fa-check-double" style="font-size:9px;"></i></div></div></div>
+                <div class="bubble bubble-sent">${esc(m.body)}<div class="bubble-time">${esc(m.time)} <i class="fas fa-check-double" style="font-size:9px;"></i></div></div>
             </div>`;
         } else {
             el.innerHTML += `<div class="msg-row">
                 <div class="msg-row-avatar" style="background:${color}">${partnerAvatarUrl ? `<img src="../${partnerAvatarUrl}" alt="">` : ini}</div>
-                <div><div class="bubble bubble-received">${esc(m.body)}<div class="bubble-time">${esc(m.time)}</div></div></div>
+                <div class="bubble bubble-received">${esc(m.body)}<div class="bubble-time">${esc(m.time)}</div></div>
             </div>`;
         }
     });
@@ -603,26 +624,7 @@ if (_navNotifBtn) _navNotifBtn.addEventListener('click', function(e) {
     if (typeof openNotifSidebar === 'function') openNotifSidebar();
 });
 
-// ── THEME ─────────────────────────────────────────────────────────────
-const saved = localStorage.getItem('ac-theme') || 'dark';
-if (saved === 'light') document.body.classList.add('light');
-document.getElementById('themeToggle').addEventListener('click', () => {
-    document.body.classList.toggle('light');
-    const isLight = document.body.classList.contains('light');
-    localStorage.setItem('ac-theme', isLight ? 'light' : 'dark');
-    document.getElementById('themeToggle').innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-});
-if (saved === 'light') document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i>';
-
-// Profile dropdown
-document.getElementById('profileToggle').addEventListener('click', e => {
-    e.stopPropagation();
-    document.getElementById('profileDropdown').classList.toggle('open');
-});
-document.addEventListener('click', () => document.getElementById('profileDropdown').classList.remove('open'));
-
-// Hamburger
-document.getElementById('hamburger').addEventListener('click', () => document.getElementById('mobileMenu').classList.toggle('open'));
+// Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
 
 // ── NEW CONVERSATION ──────────────────────────────────────────────────
 let newChatTimeout = null;

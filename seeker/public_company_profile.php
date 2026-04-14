@@ -386,6 +386,21 @@ $openJobCount      = count($companyJobs);
     body.light .cp-perk-chip { background:rgba(209,61,44,0.06); color:#4A2828; }
     body.light .chip { background:#F5EEEC; border-color:#E0CECA; }
     body.light .jdm-cover-ta { background:#FEF0EE; border-color:#E0CECA; color:#1A0A09; }
+    body.light .glow-orb { display:none; }
+    body.light .cp-hero { border-color:#E0CECA; box-shadow:0 4px 24px rgba(0,0,0,0.08); }
+    body.light .cp-card { border-color:#E0CECA; }
+    body.light .cp-card-head { border-bottom-color:#E0CECA; }
+    body.light .cp-stats-row { border-top-color:#E0CECA; }
+    body.light .cp-stat { border-right-color:#E0CECA; }
+    body.light .btn-follow.following { border-color:#E0CECA; color:#4A2828; }
+    body.light .btn-website { border-color:#E0CECA; color:#4A2828; }
+    body.light .jdm-box { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .jdm-badge { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
+    body.light .jdm-desc { color:#4A2828; }
+    body.light .jdm-footer { background:#FFFFFF; border-top-color:#E0CECA; }
+    body.light .job-row:hover { background:#FEF0EE; }
+    body.light .job-row { border-bottom-color:#E0CECA; }
+    body.light #cpToast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
 
     @media(max-width:860px) {
       .cp-layout { grid-template-columns:1fr; }
@@ -422,10 +437,34 @@ $openJobCount      = count($companyJobs);
 <nav style="position:sticky;top:0;z-index:400;background:rgba(10,9,9,0.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(209,61,44,0.35);padding:0 24px;height:64px;display:flex;align-items:center;gap:14px;">
   <a href="../index.php" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
     <div style="width:34px;height:34px;background:var(--red-vivid);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;">🐜</div>
-    <span style="font-family:var(--font-display);font-weight:700;font-size:19px;color:#F5F0EE;">Ant<span style="color:var(--red-bright);">Careers</span></span>
+    <span style="font-family:var(--font-display);font-weight:700;font-size:19px;color:var(--text-light);">Ant<span style="color:var(--red-bright);">Careers</span></span>
   </a>
-  <a href="javascript:history.back()" style="font-size:13px;font-weight:600;color:var(--text-muted);text-decoration:none;margin-left:10px;padding:6px 10px;border-radius:6px;transition:0.18s;" onmouseover="this.style.color='#F5F0EE'" onmouseout="this.style.color='var(--text-muted)'"><i class="fas fa-arrow-left"></i> Go Back</a>
+  <a href="javascript:history.back()" style="font-size:13px;font-weight:600;color:var(--text-muted);text-decoration:none;margin-left:10px;padding:6px 10px;border-radius:6px;transition:0.18s;" onmouseover="this.style.color='var(--text-light)'" onmouseout="this.style.color='var(--text-muted)'"><i class="fas fa-arrow-left"></i> Go Back</a>
+  <div style="margin-left:auto;">
+    <button id="themeToggle" style="width:34px;height:34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:0.2s;">
+      <i class="fas fa-sun" id="themeIcon"></i>
+    </button>
+  </div>
 </nav>
+<script>
+(function(){
+  function applyTheme(t){
+    var isLight = t==='light';
+    document.body.classList.toggle('light',isLight);
+    document.documentElement.classList.toggle('theme-light',isLight);
+    var icon=document.querySelector('#themeToggle i');
+    if(icon) icon.className=isLight?'fas fa-sun':'fas fa-moon';
+    localStorage.setItem('ac-theme',t);
+  }
+  var p=new URLSearchParams(window.location.search).get('theme');
+  var s=localStorage.getItem('ac-theme')||'light';
+  var t=p||s;
+  if(p) localStorage.setItem('ac-theme',p);
+  applyTheme(t);
+  var btn=document.getElementById('themeToggle');
+  if(btn) btn.addEventListener('click',function(){applyTheme(document.body.classList.contains('light')?'dark':'light');});
+})();
+</script>
 <?php endif; ?>
 
 <div class="page-shell">
@@ -876,21 +915,7 @@ $openJobCount      = count($companyJobs);
     btn.disabled = false;
   }
 
-  // ── THEME (used by seeker navbar) ──
-  (function(){
-    const body = document.body;
-    if (document.documentElement.classList.contains('theme-light')) body.classList.add('light');
-    const tb = document.getElementById('themeToggle');
-    if (tb) {
-      function setIcon() { const i = tb.querySelector('i'); if (i) i.className = body.classList.contains('light') ? 'fas fa-moon' : 'fas fa-sun'; }
-      setIcon();
-      tb.addEventListener('click', () => {
-        body.classList.toggle('light');
-        localStorage.setItem('ac-theme', body.classList.contains('light') ? 'light' : 'dark');
-        setIcon();
-      });
-    }
-  })();
+  // Theme is handled by seeker_navbar.php shared script (no duplicate handler needed)
 
   // ── INIT ──
   renderJobs();

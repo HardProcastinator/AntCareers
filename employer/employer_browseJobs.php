@@ -971,26 +971,7 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
     setTimeout(() => t.remove(), 3000);
   }
 
-  /* ── THEME ── */
-  function setTheme(t) {
-    document.body.classList.toggle('light', t === 'light');
-    localStorage.setItem('ac-theme', t);
-    document.getElementById('themeToggle').querySelector('i').className = t === 'light' ? 'fas fa-sun' : 'fas fa-moon';
-  }
-  document.getElementById('themeToggle').addEventListener('click', () => {
-    setTheme(document.body.classList.contains('light') ? 'dark' : 'light');
-  });
-
-  /* ── HAMBURGER ── */
-  const hb = document.getElementById('hamburger'), mm = document.getElementById('mobileMenu');
-  hb.addEventListener('click', e => { e.stopPropagation(); const o = mm.classList.toggle('open'); hb.querySelector('i').className = o ? 'fas fa-times' : 'fas fa-bars'; });
-
-  /* ── PROFILE DROPDOWN ── */
-  document.getElementById('profileToggle').addEventListener('click', e => { e.stopPropagation(); document.getElementById('profileDropdown').classList.toggle('open'); });
-  document.addEventListener('click', e => {
-    if (!document.getElementById('profileWrap').contains(e.target)) document.getElementById('profileDropdown').classList.remove('open');
-    if (!mm.contains(e.target) && e.target !== hb) { mm.classList.remove('open'); hb.querySelector('i').className = 'fas fa-bars'; }
-  });
+  // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
 
   /* ── MULTI-SELECT WIRING ── */
   document.querySelectorAll('.ms-wrap').forEach(wrap => {
@@ -1024,14 +1005,6 @@ $companiesJson = json_encode($companies, JSON_HEX_TAG | JSON_HEX_AMP);
   document.getElementById('resetFiltersBtn')?.addEventListener('click', resetFilters);
 
   /* ── INIT ── */
-  (function(){
-    var p = new URLSearchParams(window.location.search).get('theme');
-    var s = localStorage.getItem('ac-theme');
-    var t = p || s || 'light';
-    if (p) localStorage.setItem('ac-theme', p);
-    setTheme(t);
-  })();
-
   renderFeatured();
   renderCompanies();
   renderAllJobs();

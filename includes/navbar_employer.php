@@ -139,6 +139,97 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   </div><!-- /nav-inner -->
 </nav>
 
+<!-- Light mode overrides for employer navbar -->
+<style>
+  body.light .navbar { background:rgba(249,245,244,0.97); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }
+  body.light .logo-text { color:#1A0A09; }
+  body.light .logo-text span { color:var(--red-vivid); }
+  body.light .nav-link { color:#5A4040; }
+  body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
+  body.light .theme-btn { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+  body.light .notif-btn-nav { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+  body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
+  body.light .profile-name { color:#1A0A09; }
+  body.light .profile-role { color:var(--amber); }
+  body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; color:#5A4040; }
+  body.light .profile-dropdown { background:#FFFFFF; border-color:#E0CECA; box-shadow:0 20px 40px rgba(0,0,0,0.12); }
+  body.light .profile-dropdown-head { border-color:#E0CECA; }
+  body.light .pdh-name { color:#1A0A09; }
+  body.light .pd-item { color:#4A2828; }
+  body.light .pd-item:hover { background:#FEF0EE; color:#1A0A09; }
+  body.light .pd-item i { color:#7A5555; }
+  body.light .pd-item:hover i { color:var(--red-bright); }
+  body.light .pd-divider { background:#E0CECA; }
+  body.light .mobile-menu { background:rgba(249,245,244,0.97); border-color:#E0CECA; }
+  body.light .mobile-link { color:#4A2828; }
+  body.light .mobile-link:hover { background:#FEF0EE; color:#1A0A09; }
+  body.light .mobile-divider { background:#E0CECA; }
+  body.light .btn-nav-red { box-shadow:0 2px 8px rgba(209,61,44,0.2); }
+  body.light .glow-orb { display:none; }
+</style>
+
+<!-- Employer shared theme + interactions script -->
+<script>
+(function(){
+  'use strict';
+
+  // ── THEME ──
+  function applyTheme(t) {
+    var isLight = t === 'light';
+    document.body.classList.toggle('light', isLight);
+    document.body.classList.toggle('dark', !isLight);
+    document.documentElement.classList.toggle('theme-light', isLight);
+    var icon = document.querySelector('#themeToggle i');
+    if (icon) icon.className = isLight ? 'fas fa-sun' : 'fas fa-moon';
+    localStorage.setItem('ac-theme', t);
+  }
+  var paramTheme = new URLSearchParams(window.location.search).get('theme');
+  var storedTheme = localStorage.getItem('ac-theme') || 'light';
+  var initTheme = paramTheme || storedTheme;
+  if (paramTheme) localStorage.setItem('ac-theme', paramTheme);
+  applyTheme(initTheme);
+
+  // Expose globally so page scripts (e.g. settings selectAppearance) can call it
+  window.applyTheme = applyTheme;
+  window.setTheme = applyTheme;
+
+  var themeBtn = document.getElementById('themeToggle');
+  if (themeBtn) themeBtn.addEventListener('click', function() {
+    applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
+  });
+
+  // ── HAMBURGER ──
+  var hamburger = document.getElementById('hamburger');
+  var mobileMenu = document.getElementById('mobileMenu');
+  if (hamburger && mobileMenu) {
+    hamburger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var open = mobileMenu.classList.toggle('open');
+      hamburger.querySelector('i').className = open ? 'fas fa-times' : 'fas fa-bars';
+    });
+  }
+
+  // ── PROFILE DROPDOWN ──
+  var profileToggle = document.getElementById('profileToggle');
+  var profileDropdown = document.getElementById('profileDropdown');
+  var profileWrap = document.getElementById('profileWrap');
+  if (profileToggle && profileDropdown) {
+    profileToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      profileDropdown.classList.toggle('open');
+    });
+  }
+  document.addEventListener('click', function(e) {
+    if (profileWrap && !profileWrap.contains(e.target) && profileDropdown)
+      profileDropdown.classList.remove('open');
+    if (mobileMenu && hamburger && !mobileMenu.contains(e.target) && e.target !== hamburger) {
+      mobileMenu.classList.remove('open');
+      hamburger.querySelector('i').className = 'fas fa-bars';
+    }
+  });
+})();
+</script>
+
 <!-- Mobile Menu -->
 <?php if ($navbarShowMobileMenu): ?>
 <div class="mobile-menu" id="mobileMenu">

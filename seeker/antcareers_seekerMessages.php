@@ -30,22 +30,22 @@ $navActive = 'messages';
     /* Page shell */
     .page-shell{max-width:1380px;margin:0 auto;padding:24px 24px 48px;position:relative;z-index:2;}
     .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
-    .page-title{font-family:var(--font-display);font-size:26px;font-weight:700;color:#F5F0EE;display:flex;align-items:center;gap:10px;}
-    .page-title i{color:var(--red-bright);font-size:20px;}
+    .page-title{font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--text-light);}
     .page-sub{font-size:13px;color:var(--text-muted);margin-top:3px;}
     .new-msg-btn{display:flex;align-items:center;gap:7px;padding:9px 18px;background:var(--red-vivid);border:none;border-radius:8px;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;transition:0.2s;}
     .new-msg-btn:hover{background:var(--red-bright);}
 
     /* Messages layout */
-    .msg-layout{display:grid;grid-template-columns:320px 1fr;gap:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;overflow:hidden;height:calc(100vh - 190px);min-height:680px;}
+    .msg-layout{display:grid;grid-template-columns:320px 1fr;gap:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;overflow:hidden;height:calc(100vh - 160px);min-height:680px;}
 
     /* Thread list */
     .thread-list{border-right:1px solid var(--soil-line);display:flex;flex-direction:column;min-height:0;}
-    .thread-search{padding:16px;border-bottom:1px solid var(--soil-line);}
-    .thread-search-input{width:100%;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:9px 14px 9px 36px;color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:0.2s;position:relative;}
-    .thread-search-input:focus{border-color:var(--red-vivid);}
-    .thread-search-wrap{position:relative;}
-    .thread-search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:12px;pointer-events:none;}
+    .thread-search{padding:14px 16px;border-bottom:1px solid var(--soil-line);}
+    .thread-search-bar{display:flex;align-items:center;gap:8px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:8px 12px;transition:0.2s;}
+    .thread-search-bar:focus-within{border-color:var(--red-vivid);}
+    .thread-search-bar input{flex:1;background:none;border:none;outline:none;font-family:var(--font-body);font-size:13px;color:var(--text-light);}
+    .thread-search-bar input::placeholder{color:var(--text-muted);}
+    .thread-search-bar i{color:var(--text-muted);font-size:13px;}
     .thread-tabs{display:flex;padding:8px 12px;gap:4px;border-bottom:1px solid var(--soil-line);}
     .ttab{flex:1;padding:6px;border-radius:6px;background:none;border:none;font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;transition:0.15s;text-align:center;}
     .ttab.active{background:rgba(209,61,44,0.1);color:var(--red-pale);}
@@ -59,14 +59,15 @@ $navActive = 'messages';
     .thread-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
     .thread-avatar img{width:100%;height:100%;object-fit:cover;}
     .thread-body{flex:1;min-width:0;}
-    .thread-name{font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .thread-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+    .thread-name{font-size:13px;font-weight:600;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .thread-preview{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4;}
-    .thread-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
-    .thread-time{font-size:10px;color:var(--text-muted);font-weight:600;}
-    .unread-dot{width:7px;height:7px;border-radius:50%;background:var(--red-vivid);}
+    .thread-job{font-size:11px;color:var(--red-pale);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .thread-time{font-size:10px;color:var(--text-muted);flex-shrink:0;margin-left:8px;}
+    .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--red-vivid);position:absolute;top:16px;right:14px;}
 
     /* Chat area */
-    .chat-area{display:flex;flex-direction:column;min-height:0;}
+    .chat-area{display:flex;flex-direction:column;overflow:hidden;}
     .chat-header{padding:16px 20px;border-bottom:1px solid var(--soil-line);display:flex;align-items:center;gap:14px;}
     .chat-header-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
     .chat-header-avatar img{width:100%;height:100%;object-fit:cover;}
@@ -81,12 +82,22 @@ $navActive = 'messages';
     .msg-group{display:flex;flex-direction:column;gap:4px;}
     .msg-group.sent{align-items:flex-end;}
     .msg-group.received{align-items:flex-start;}
-    .msg-bubble{max-width:68%;padding:11px 16px;border-radius:12px;font-size:13px;line-height:1.55;position:relative;}
+    .msg-bubble{max-width:70%;min-width:60px;padding:11px 16px;border-radius:12px;font-size:13px;line-height:1.55;position:relative;white-space:pre-wrap;}
     .msg-group.sent .msg-bubble{background:var(--red-vivid);color:#fff;border-bottom-right-radius:4px;}
     .msg-group.received .msg-bubble{background:var(--soil-hover);color:var(--text-light);border-bottom-left-radius:4px;}
     .msg-time{font-size:10px;color:var(--text-muted);font-weight:600;padding:0 4px;}
     .msg-date-divider{text-align:center;font-size:11px;color:var(--text-muted);font-weight:600;margin:8px 0;display:flex;align-items:center;gap:10px;}
     .msg-date-divider::before,.msg-date-divider::after{content:'';flex:1;height:1px;background:var(--soil-line);}
+    /* Row-based message layout with avatars */
+    .msg-row{display:flex;gap:10px;align-items:flex-end;}
+    .msg-row.sent{flex-direction:row-reverse;}
+    .msg-row-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
+    .msg-row-avatar img{width:100%;height:100%;object-fit:cover;}
+    .bubble{max-width:70%;min-width:60px;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55;word-break:break-word;white-space:pre-wrap;}
+    .bubble-received{background:var(--soil-hover);color:var(--text-light);border-bottom-left-radius:4px;}
+    .bubble-sent{background:var(--red-vivid);color:#fff;border-bottom-right-radius:4px;}
+    .bubble-time{font-size:10px;margin-top:4px;opacity:0.6;}
+    .bubble-sent .bubble-time{text-align:right;}
 
     .chat-input-area{padding:16px 20px;border-top:1px solid var(--soil-line);}
     .chat-input-row{display:flex;gap:10px;align-items:flex-end;}
@@ -113,13 +124,35 @@ $navActive = 'messages';
     html.theme-light body,body.light{--soil-dark:#F9F5F4;--soil-card:#FFFFFF;--soil-hover:#FEF0EE;--soil-line:#E0CECA;--text-light:#1A0A09;--text-mid:#4A2828;--text-muted:#7A5555;--amber-dim:#FFF4E0;--amber:#B8620A;}
     body.light .glow-orb{display:none;}
     body.light .chat-input{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
-    body.light .thread-search-input{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
+    body.light .chat-input::placeholder{color:#7A5555;}
+    body.light .thread-search-bar{background:#F5EEEC;border-color:#E0CECA;}
+    body.light .thread-search-bar input{color:#1A0A09;}
     body.light .msg-group.received .msg-bubble{background:#F5EEEC;color:#1A0A09;}
+    body.light .bubble-received{background:#F5EEEC;color:#1A0A09;}
     body.light .chat-header-name{color:#1A0A09;}
+    body.light .chat-header-role{color:var(--red-bright);}
     body.light .thread-name{color:#4A2828;}
     body.light .thread-item.unread .thread-name{color:#1A0A09;}
     body.light .thread-item:hover{background:#FEF0EE;}
     body.light .thread-item.active{background:rgba(209,61,44,0.06);}
+    body.light .page-title{color:#1A0A09;}
+    body.light .page-sub{color:#7A5555;}
+    body.light .new-msg-btn{box-shadow:0 2px 8px rgba(209,61,44,0.2);}
+    body.light .thread-list{border-right-color:#E0CECA;}
+    body.light .thread-tabs{border-bottom-color:#E0CECA;}
+    body.light .ttab{color:#7A5555;}
+    body.light .ttab.active{color:var(--red-bright);background:rgba(209,61,44,0.08);}
+    body.light .ttab:hover:not(.active){color:#1A0A09;background:#FEF0EE;}
+    body.light .thread-search{border-bottom-color:#E0CECA;}
+    body.light .thread-item{border-bottom-color:#E0CECA;}
+    body.light .chat-header{border-bottom-color:#E0CECA;}
+    body.light .chat-input-area{border-top-color:#E0CECA;}
+    body.light .msg-time{color:#7A5555;}
+    body.light .msg-date-divider{color:#7A5555;}
+    body.light .msg-date-divider::before,.body.light .msg-date-divider::after{background:#E0CECA;}
+    body.light .new-msg-search-bar{background:#F5EEEC;border-color:var(--red-vivid);}
+    body.light .new-msg-search-bar input{color:#1A0A09;}
+    body.light .footer{border-top-color:#E0CECA;color:#7A5555;}
 
     /* Responsive */
     @media(max-width:800px){.msg-layout{grid-template-columns:1fr;height:auto;min-height:72vh}.thread-list{display:none}.thread-list.mobile-show{display:flex}}
@@ -162,7 +195,7 @@ $navActive = 'messages';
 <div class="page-shell anim">
   <div class="page-header">
     <div>
-      <div class="page-title"><i class="fas fa-envelope"></i> Messages</div>
+      <div class="page-title">Messages</div>
       <div class="page-sub">Your conversations with employers and recruiters</div>
     </div>
     <button class="new-msg-btn" onclick="toggleNewMsgSearch()">
@@ -184,9 +217,9 @@ $navActive = 'messages';
         <div class="new-msg-results" id="newMsgResults"></div>
       </div>
       <div class="thread-search">
-        <div class="thread-search-wrap">
+        <div class="thread-search-bar">
           <i class="fas fa-search"></i>
-          <input class="thread-search-input" type="text" placeholder="Search conversations…" id="threadSearch" oninput="filterThreads(this.value)">
+          <input type="text" placeholder="Search conversations…" id="threadSearch" oninput="filterThreads(this.value)">
         </div>
       </div>
       <div class="thread-tabs">
@@ -221,6 +254,8 @@ $navActive = 'messages';
 
 <script>
 const API = '../api/messages.php';
+const MY_INI = <?= json_encode($user['initials'] ?? 'ME') ?>;
+const MY_AVATAR = <?= json_encode($user['avatarUrl'] ?? '') ?>;
 let threads = [];
 let activeThread = null;
 let currentTab = 'all';
@@ -313,13 +348,14 @@ function renderThreads(query = '') {
          onclick="openThread(${t.partner_id})">
       <div class="thread-avatar" style="background:${t.color}">${t.avatar_url ? `<img src="../${t.avatar_url}" alt="">` : esc(t.initials)}</div>
       <div class="thread-body">
-        <div class="thread-name">${esc(t.name)}</div>
+        <div class="thread-top">
+          <div class="thread-name">${esc(t.name)}</div>
+          <div class="thread-time">${t.time}</div>
+        </div>
         <div class="thread-preview">${t.is_sent ? 'You: ' : ''}${esc(t.preview)}</div>
+        ${t.job_title ? `<div class="thread-job"><i class="fas fa-briefcase" style="font-size:9px;"></i> ${esc(t.job_title)}</div>` : ''}
       </div>
-      <div class="thread-meta">
-        <div class="thread-time">${t.time}</div>
-        ${t.unread_count > 0 ? '<div class="unread-dot"></div>' : ''}
-      </div>
+      ${t.unread_count > 0 ? '<div class="unread-dot"></div>' : ''}
     </div>`).join('');
 }
 
@@ -374,10 +410,17 @@ function loadConversation(partnerId) {
                 msgsHtml = data.messages.map(m => {
                     let html = '';
                     if (m.show_date) html += `<div class="msg-date-divider">${m.date}</div>`;
-                    html += `<div class="msg-group ${m.from === 'me' ? 'sent' : 'received'}">
-                        <div class="msg-bubble">${esc(m.body)}</div>
-                        <div class="msg-time">${m.time}</div>
-                    </div>`;
+                    if (m.from === 'me') {
+                        html += `<div class="msg-row sent">
+                            <div class="msg-row-avatar" style="background:linear-gradient(135deg,#D4943A,#8a5010)">${MY_AVATAR ? `<img src="${MY_AVATAR}" alt="">` : MY_INI}</div>
+                            <div class="bubble bubble-sent">${esc(m.body)}<div class="bubble-time">${m.time} <i class="fas fa-check-double" style="font-size:9px;"></i></div></div>
+                        </div>`;
+                    } else {
+                        html += `<div class="msg-row">
+                            <div class="msg-row-avatar" style="background:${color}">${avatarUrl ? `<img src="../${avatarUrl}" alt="">` : esc(ini)}</div>
+                            <div class="bubble bubble-received">${esc(m.body)}<div class="bubble-time">${m.time}</div></div>
+                        </div>`;
+                    }
                     return html;
                 }).join('');
             } else {

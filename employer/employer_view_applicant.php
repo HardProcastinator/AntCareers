@@ -18,10 +18,10 @@ $avatarUrl   = $user['avatarUrl'];
 $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'applicants';
 $navbarShowMessage = true;
-$navbarShowNotif   = false;
+$navbarShowNotif   = true;
 $navbarShowPostJob = false;
-$navbarShowHamburger = false;
-$navbarShowMobileMenu = false;
+$navbarShowHamburger = true;
+$navbarShowMobileMenu = true;
 $uid = (int)$_SESSION['user_id'];
 
 $db = getDB();
@@ -582,11 +582,7 @@ $skillLevelColors = [
 </div>
 
 <script>
-  function setTheme(t){document.body.classList.toggle('light',t==='light');localStorage.setItem('ac-theme',t);document.getElementById('themeToggle').querySelector('i').className=t==='light'?'fas fa-sun':'fas fa-moon';}
-  document.getElementById('themeToggle').addEventListener('click',function(){setTheme(document.body.classList.contains('light')?'dark':'light');});
-  document.getElementById('profileToggle').addEventListener('click',function(e){e.stopPropagation();document.getElementById('profileDropdown').classList.toggle('open');});
-  document.addEventListener('click',function(e){if(!document.getElementById('profileWrap').contains(e.target))document.getElementById('profileDropdown').classList.remove('open');});
-  (function(){var p=new URLSearchParams(window.location.search).get('theme'),s=localStorage.getItem('ac-theme'),t=p||s||'dark';if(p)localStorage.setItem('ac-theme',p);setTheme(t);})();
+  // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
 </script>
 <?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>

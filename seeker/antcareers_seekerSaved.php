@@ -145,19 +145,19 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     .sidebar { position:sticky; top:72px; }
     .sidebar-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; }
     .sidebar-head { padding:16px 18px 12px; border-bottom:1px solid var(--soil-line); }
-    .sidebar-title { font-size:12px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:7px; letter-spacing:0.07em; text-transform:uppercase; }
+    .sidebar-title { font-size:12px; font-weight:700; color:var(--text-light); display:flex; align-items:center; gap:7px; letter-spacing:0.07em; text-transform:uppercase; }
     .sidebar-title i { color:var(--red-bright); font-size:11px; }
     .sidebar-profile { padding:16px 16px 14px; border-bottom:1px solid var(--soil-line); }
     .sp-avatar { width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,var(--red-vivid),var(--red-deep)); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#fff; margin-bottom:10px; }
-    .sp-name { font-size:14px; font-weight:700; color:#F5F0EE; }
+    .sp-name { font-size:14px; font-weight:700; color:var(--text-light); }
     .sp-role { font-size:11px; color:var(--red-pale); margin-top:2px; font-weight:600; letter-spacing:0.05em; }
     .sidebar-stats { padding:14px 16px; border-bottom:1px solid var(--soil-line); display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .sb-stat { background:var(--soil-hover); border-radius:7px; padding:10px 12px; }
-    .sb-stat-num { font-size:18px; font-weight:800; color:#F5F0EE; }
+    .sb-stat-num { font-size:18px; font-weight:800; color:var(--text-light); }
     .sb-stat-lbl { font-size:10px; color:var(--text-muted); font-weight:600; letter-spacing:0.05em; text-transform:uppercase; margin-top:2px; }
     .sb-nav-item { display:flex; align-items:center; gap:10px; padding:11px 18px; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:all 0.18s; border:none; background:none; font-family:var(--font-body); width:100%; text-align:left; border-bottom:1px solid var(--soil-line); }
     .sb-nav-item:last-child { border-bottom:none; }
-    .sb-nav-item:hover { color:#F5F0EE; background:var(--soil-hover); }
+    .sb-nav-item:hover { color:var(--text-light); background:var(--soil-hover); }
     .sb-nav-item.active { color:var(--red-pale); background:rgba(209,61,44,0.08); border-right:2px solid var(--red-vivid); }
     .sb-nav-item i { width:16px; text-align:center; font-size:12px; color:var(--red-bright); }
     .sb-badge { margin-left:auto; background:var(--red-vivid); color:#fff; font-size:10px; font-weight:700; border-radius:10px; padding:1px 7px; }
@@ -168,7 +168,7 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     .sb-browse:hover { background:var(--red-bright); transform:translateY(-1px); }
 
     .page-header { margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
-    .page-title { font-family:var(--font-display); font-size:24px; font-weight:700; color:#F5F0EE; }
+    .page-title { font-family:var(--font-display); font-size:24px; font-weight:700; color:var(--text-light); }
     .page-sub { font-size:13px; color:var(--text-muted); margin-top:4px; }
 
     /* SORT/FILTER BAR */
@@ -186,7 +186,7 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     .card-head { display:flex; align-items:flex-start; gap:12px; }
     .card-icon { width:44px; height:44px; border-radius:8px; background:rgba(209,61,44,0.12); display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--red-pale); flex-shrink:0; }
     .card-info { flex:1; min-width:0; }
-    .card-title { font-size:14px; font-weight:700; color:#F5F0EE; line-height:1.3; }
+    .card-title { font-size:14px; font-weight:700; color:var(--text-light); line-height:1.3; }
     .card-company { font-size:12px; color:var(--red-pale); font-weight:600; margin-top:3px; }
     .unsave-btn { position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--red-pale); font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.18s; }
     .unsave-btn:hover { background:rgba(224,80,80,0.1); border-color:#E05050; color:#E05050; }
@@ -194,7 +194,7 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     .chip { padding:3px 10px; border-radius:99px; background:var(--soil-hover); border:1px solid var(--soil-line); font-size:11px; font-weight:600; color:var(--text-muted); display:flex; align-items:center; gap:4px; }
     .chip i { font-size:10px; color:var(--red-pale); }
     .chip.featured { background:rgba(209,61,44,0.1); border-color:rgba(209,61,44,0.25); color:var(--red-pale); }
-    .salary-row { font-size:15px; font-weight:800; color:#F5F0EE; display:flex; align-items:center; gap:6px; }
+    .salary-row { font-size:15px; font-weight:800; color:var(--text-light); display:flex; align-items:center; gap:6px; }
     .salary-row small { font-size:11px; font-weight:500; color:var(--text-muted); }
     .saved-date { font-size:11px; color:var(--text-muted); }
     .card-actions { display:flex; gap:8px; }
@@ -205,7 +205,7 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
 
     .empty-state { text-align:center; padding:60px 20px; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; }
     .empty-icon { font-size:40px; color:var(--soil-line); margin-bottom:14px; }
-    .empty-title { font-size:16px; font-weight:700; color:#F5F0EE; margin-bottom:6px; }
+    .empty-title { font-size:16px; font-weight:700; color:var(--text-light); margin-bottom:6px; }
     .empty-sub { font-size:13px; color:var(--text-muted); margin-bottom:20px; }
     .btn-primary { padding:10px 22px; border-radius:8px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.2s; }
 
@@ -215,11 +215,11 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     .modal { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:14px; padding:28px; width:100%; max-width:480px; max-height:88vh; overflow-y:auto; transform:translateY(10px); transition:all 0.22s; }
     .modal-overlay.open .modal { transform:translateY(0); }
     .modal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
-    .modal-title { font-size:17px; font-weight:700; color:#F5F0EE; }
+    .modal-title { font-size:17px; font-weight:700; color:var(--text-light); }
     .modal-close-btn { width:30px; height:30px; border-radius:6px; background:var(--soil-hover); border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; }
     .form-group { margin-bottom:14px; }
     .form-label { display:block; font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:5px; }
-    .form-input { width:100%; padding:10px 14px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:7px; font-family:var(--font-body); font-size:13px; color:#F5F0EE; outline:none; transition:0.18s; }
+    .form-input { width:100%; padding:10px 14px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:7px; font-family:var(--font-body); font-size:13px; color:var(--text-light); outline:none; transition:0.18s; }
     .form-input:focus { border-color:var(--red-vivid); }
     .form-textarea { resize:vertical; min-height:80px; line-height:1.5; }
     .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; padding-top:14px; border-top:1px solid var(--soil-line); }
@@ -236,12 +236,14 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     body.light .sb-nav-item.active { color:var(--red-mid); }
     body.light .sb-browse-wrap { background:#FFFFFF; border-color:#E0CECA; }
     body.light .page-title { color:#1A0A09; }
+    body.light .page-sub { color:#7A5555; }
     body.light .saved-card { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .saved-card:hover { border-color:#D4B0AB; }
     body.light .card-title { color:#1A0A09; }
     body.light .salary-row { color:#1A0A09; }
     body.light .chip { background:#F0E4E2; border-color:#D0BCBA; }
     body.light .filter-select { background:#FFFFFF; border-color:#D0BCBA; color:#3A2020; }
-    body.light .empty-state { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .empty-state { background:#FFFFFF; border-color:#E0CECA; color:#7A5555; }
     body.light .empty-title { color:#1A0A09; }
     body.light .modal { background:#FFFFFF; border-color:#E0CECA; }
     body.light .modal-title { color:#1A0A09; }
@@ -262,10 +264,10 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     .dmo.open .dm { transform:translateY(0); }
     .dm-scroll { overflow-y:auto; flex:1; padding:28px 28px 20px; position:relative; }
     .dm-close { position:absolute; top:16px; right:16px; width:32px; height:32px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.15s; }
-    .dm-close:hover { color:#F5F0EE; border-color:var(--red-mid); background:rgba(209,61,44,0.08); }
+    .dm-close:hover { color:var(--text-light); border-color:var(--red-mid); background:rgba(209,61,44,0.08); }
     .dm-header { display:flex; align-items:center; gap:14px; margin-bottom:18px; padding-right:36px; }
     .dm-icon { width:52px; height:52px; border-radius:12px; flex-shrink:0; background:rgba(209,61,44,0.1); border:1px solid rgba(209,61,44,0.18); display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--red-pale); }
-    .dm-title { font-family:var(--font-display); font-size:19px; font-weight:700; color:#F5F0EE; line-height:1.3; }
+    .dm-title { font-family:var(--font-display); font-size:19px; font-weight:700; color:var(--text-light); line-height:1.3; }
     .dm-company { font-size:13px; color:var(--red-pale); font-weight:600; margin-top:3px; }
     .dm-badges { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px; }
     .dm-badge { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:500; padding:5px 11px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); }

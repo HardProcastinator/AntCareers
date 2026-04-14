@@ -102,24 +102,49 @@ function _navHref(string $file): string {
   body.light .msg-btn-nav .badge, body.light .notif-btn-nav .badge { border-color:#F9F5F4; }
 
   /* Messages panel */
-  .msg-panel { position:fixed; top:64px; right:0; bottom:0; width:360px; background:var(--soil-card); border-left:1px solid var(--soil-line); z-index:150; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.4); }
+  .msg-panel { position:fixed; top:0; right:0; bottom:0; width:380px; max-width:100vw; background:var(--soil-card); border-left:1px solid var(--soil-line); z-index:500; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.4); }
   .msg-panel.open { transform:translateX(0); }
-  .msg-panel-head { padding:20px 20px 16px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-  .msg-panel-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:8px; }
+  .msg-panel-head { padding:18px 18px 14px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  .msg-panel-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:var(--text-light); display:flex; align-items:center; gap:8px; }
   .msg-panel-title i { color:var(--red-bright); }
-  .msg-panel-body { flex:1; overflow-y:auto; padding:12px 16px; }
-  .msg-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--soil-line); cursor:pointer; transition:0.15s; }
+  #msgThreadView { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+  .msg-panel-body { flex:1; overflow-y:auto; min-height:0; padding:0; scrollbar-width:thin; scrollbar-color:var(--soil-line) transparent; }
+  .msg-panel-search { padding:10px 14px; border-bottom:1px solid var(--soil-line); flex-shrink:0; }
+  .msg-panel-search-bar { display:flex; align-items:center; gap:8px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:8px 12px; }
+  .msg-panel-search-bar input { flex:1; background:none; border:none; outline:none; font-family:var(--font-body); font-size:13px; color:var(--text-light); }
+  .msg-panel-search-bar input::placeholder { color:var(--text-muted); }
+  .msg-panel-search-bar i { color:var(--text-muted); font-size:12px; }
+  /* New compose area inside panel */
+  .msg-panel-new-chat { padding:10px 14px; border-bottom:1px solid var(--soil-line); flex-shrink:0; }
+  .msg-panel-new-chat-bar { display:flex; align-items:center; gap:8px; background:var(--soil-hover); border:1px solid var(--red-vivid); border-radius:8px; padding:8px 12px; }
+  .msg-panel-new-chat-bar input { flex:1; background:none; border:none; outline:none; font-family:var(--font-body); font-size:13px; color:var(--text-light); }
+  .msg-panel-new-chat-bar input::placeholder { color:var(--text-muted); }
+  .msg-panel-new-chat-bar i { color:var(--red-bright); font-size:13px; }
+  .msg-panel-new-chat-results { max-height:180px; overflow-y:auto; margin-top:6px; scrollbar-width:thin; }
+  .msg-panel-new-chat-user { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; cursor:pointer; transition:0.15s; }
+  .msg-panel-new-chat-user:hover { background:var(--soil-hover); }
+  .msg-panel-new-chat-user-av { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+  .msg-panel-new-chat-user-av img { width:100%; height:100%; object-fit:cover; }
+  body.light .msg-panel-new-chat-bar { border-color:var(--red-vivid); background:#F5EEEC; }
+  body.light .msg-panel-new-chat-bar input { color:#1A0A09; }
+  .msg-item { display:flex; align-items:flex-start; gap:12px; padding:12px 16px; border-bottom:1px solid var(--soil-line); cursor:pointer; transition:0.15s; position:relative; }
   .msg-item:last-child { border-bottom:none; }
-  .msg-item:hover { opacity:0.85; }
-  .msg-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+  .msg-item:hover { background:var(--soil-hover); }
+  .msg-avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
   .msg-avatar img { width:100%; height:100%; object-fit:cover; }
-  .msg-name { font-size:13px; font-weight:700; color:#F5F0EE; margin-bottom:2px; }
-  .msg-preview { font-size:12px; color:var(--text-muted); line-height:1.4; display:-webkit-box; line-clamp:2; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .msg-time { font-size:10px; color:var(--text-muted); font-weight:600; margin-left:auto; flex-shrink:0; white-space:nowrap; }
-  body.light .msg-panel { background:#FFFFFF; border-color:#E0CECA; }
+  .msg-name { font-size:13px; font-weight:600; color:var(--text-mid); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .msg-item.unread .msg-name { font-weight:700; color:var(--text-light); }
+  .msg-preview { font-size:12px; color:var(--text-muted); line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .msg-time { font-size:10px; color:var(--text-muted); font-weight:600; flex-shrink:0; white-space:nowrap; }
+  .msg-job-tag { font-size:11px; color:var(--red-pale); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  body.light .msg-panel { background:#FFFFFF; border-color:#E0CECA; box-shadow:-8px 0 32px rgba(0,0,0,0.1); }
   body.light .msg-panel-title { color:#1A0A09; }
   body.light .msg-item { border-color:#E0CECA; }
-  body.light .msg-name { color:#1A0A09; }
+  body.light .msg-item:hover { background:#FEF0EE; }
+  body.light .msg-panel-search-bar { background:#F5EEEC; border-color:#E0CECA; }
+  body.light .msg-panel-search-bar input { color:#1A0A09; }
+  body.light .msg-name { color:#4A2828; }
+  body.light .msg-item.unread .msg-name { color:#1A0A09; }
 
   /* Hamburger */
   .hamburger { display:none; width:34px; height:34px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); align-items:center; justify-content:center; cursor:pointer; font-size:14px; flex-shrink:0; margin-left:8px; }
@@ -183,12 +208,49 @@ function _navHref(string $file): string {
   body.light .notif-close { background:#F0E4E2; border-color:#E0CECA; color:#7A5555; }
   body.light .n-dot.read { background:#E0CECA; }
 
-  /* In-panel conversation bubbles */
-  .sp-msg-bubble { max-width:82%; padding:8px 12px; border-radius:12px; font-size:13px; line-height:1.5; word-break:break-word; }
-  .sp-msg-bubble.me { align-self:flex-end; background:var(--red-vivid); color:#fff; border-bottom-right-radius:4px; }
-  .sp-msg-bubble.them { align-self:flex-start; background:var(--soil-hover); color:var(--text-mid); border-bottom-left-radius:4px; }
-  .sp-msg-time-label { font-size:10px; color:var(--text-muted); text-align:center; padding:6px 0; }
-  body.light .sp-msg-bubble.them { background:#F0E4E2; color:#3A2020; }
+  /* Conversation slide-over — mirrors employer .msg-sb-chat */
+  #msgConvoView {
+    position:absolute; inset:0;
+    background:var(--soil-card);
+    display:flex; flex-direction:column;
+    transform:translateX(100%);
+    transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    z-index:1;
+  }
+  #msgConvoView.open { transform:translateX(0); }
+  body.light #msgConvoView { background:#FFFFFF; }
+  .sp-chat-head { display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--soil-line); flex-shrink:0; }
+  .sp-chat-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+  .sp-chat-avatar img { width:100%; height:100%; object-fit:cover; }
+  .sp-chat-name { font-size:14px; font-weight:700; color:var(--text-light); }
+  .sp-chat-meta { font-size:11px; color:var(--text-muted); margin-top:1px; }
+  .sp-chat-messages { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; scrollbar-width:thin; min-height:0; }
+  .sp-chat-input { padding:10px 14px; border-top:1px solid var(--soil-line); flex-shrink:0; }
+  .sp-chat-input-row { display:flex; align-items:flex-end; gap:8px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:8px 10px; transition:0.2s; }
+  .sp-chat-input-row:focus-within { border-color:var(--red-vivid); box-shadow:0 0 0 2px rgba(209,61,44,0.1); }
+  .sp-chat-input-row textarea { flex:1; background:none; border:none; outline:none; font-family:var(--font-body); font-size:13px; color:var(--text-light); resize:none; min-height:32px; max-height:80px; line-height:1.4; }
+  .sp-chat-input-row textarea::placeholder { color:var(--text-muted); }
+  .sp-chat-send { width:32px; height:32px; border-radius:6px; background:var(--red-vivid); border:none; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; transition:0.2s; flex-shrink:0; }
+  .sp-chat-send:hover { background:var(--red-bright); transform:scale(1.05); }
+  .sp-msg-row { display:flex; gap:6px; align-items:flex-end; }
+  .sp-msg-row.sent { flex-direction:row-reverse; }
+  .sp-msg-date { text-align:center; font-size:10px; color:var(--text-muted); padding:4px 0; position:relative; }
+  .sp-msg-date::before { content:''; position:absolute; left:0; right:0; top:50%; height:1px; background:var(--soil-line); }
+  .sp-msg-date span { background:var(--soil-card); padding:0 8px; position:relative; }
+  body.light .sp-msg-date span { background:#FFFFFF; }
+  body.light .sp-chat-name { color:#1A0A09; }
+  body.light .sp-chat-input-row { background:#F5EEEC; border-color:#E0CECA; }
+  body.light .sp-chat-input-row textarea { color:#1A0A09; }
+  body.light .sp-chat-head { border-color:#E0CECA; }
+  body.light .sp-chat-input { border-color:#E0CECA; }
+
+  /* Bubble styles shared with conversation view */
+  .sb-bubble { max-width:80%; min-width:48px; padding:8px 12px; border-radius:12px; font-size:13px; line-height:1.45; word-break:break-word; white-space:pre-wrap; }
+  .sb-bubble-recv { background:var(--soil-hover); color:var(--text-light); border-bottom-left-radius:4px; }
+  .sb-bubble-sent { background:var(--red-vivid); color:#fff; border-bottom-right-radius:4px; }
+  .sb-bubble-time { font-size:9px; margin-top:3px; opacity:0.6; }
+  .sb-bubble-sent .sb-bubble-time { text-align:right; }
+  body.light .sb-bubble-recv { background:#F5EEEC; color:#1A0A09; }
 
   /* Unread dot on thread item */
   .msg-item .msg-unread-dot { width:8px; height:8px; border-radius:50%; background:var(--red-vivid); flex-shrink:0; margin-top:4px; }
@@ -308,37 +370,60 @@ function _navHref(string $file): string {
 
 <!-- Messages slide-in panel -->
 <div class="msg-panel" id="msgPanel" aria-hidden="true">
-  <!-- Thread list view (default) -->
-  <div id="msgThreadView">
-    <div class="msg-panel-head">
-      <div class="msg-panel-title"><i class="fas fa-envelope"></i> Messages</div>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <a class="notif-close" id="msgExpandFull" href="<?= _navHref($navRoutes['messages']) ?>" title="Open full page" style="text-decoration:none"><i class="fas fa-expand"></i></a>
-        <button class="notif-close" id="msgClose" aria-label="Close messages"><i class="fas fa-times"></i></button>
-      </div>
-    </div>
-    <div class="msg-panel-body" id="msgThreadList">
-      <div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;" id="msgThreadLoading">
-        <i class="fas fa-spinner fa-spin"></i> Loading messages…
-      </div>
+  <!-- Persistent header — always visible -->
+  <div class="msg-panel-head">
+    <div class="msg-panel-title"><i class="fas fa-envelope"></i> Messages</div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button class="notif-close" id="msgNewChat" title="New Conversation" style="background:var(--red-vivid);color:#fff;border-color:var(--red-vivid);"><i class="fas fa-pen-to-square"></i></button>
+      <a class="notif-close" id="msgExpandFull" href="<?= _navHref($navRoutes['messages']) ?>" title="Open full page" style="text-decoration:none"><i class="fas fa-expand"></i></a>
+      <button class="notif-close" id="msgClose" aria-label="Close messages"><i class="fas fa-times"></i></button>
     </div>
   </div>
-  <!-- Conversation view (shown when a thread is clicked) -->
-  <div id="msgConvoView" style="display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
-    <div class="msg-panel-head">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button class="notif-close" id="msgConvoBack" aria-label="Back to threads"><i class="fas fa-arrow-left"></i></button>
-        <div class="msg-panel-title" id="msgConvoTitle">Conversation</div>
+
+  <!-- Content area: threads + conversation slide-over -->
+  <div id="msgContentArea" style="flex:1;position:relative;min-height:0;overflow:hidden;display:flex;flex-direction:column;">
+    <!-- Thread list view (default) -->
+    <div id="msgThreadView">
+      <!-- New chat search -->
+      <div class="msg-panel-new-chat" id="msgNewChatPanel" style="display:none;">
+        <div class="msg-panel-new-chat-bar">
+          <i class="fas fa-search"></i>
+          <input type="text" id="msgNewChatSearch" placeholder="Search users to message..." oninput="searchMsgPanelNewChat()">
+        </div>
+        <div class="msg-panel-new-chat-results" id="msgNewChatResults"></div>
       </div>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <a class="notif-close" id="msgConvoExpandFull" href="<?= _navHref($navRoutes['messages']) ?>" title="Open full page" style="text-decoration:none"><i class="fas fa-expand"></i></a>
-        <button class="notif-close" onclick="closeMsgPanel()" aria-label="Close"><i class="fas fa-times"></i></button>
+      <div class="msg-panel-search">
+        <div class="msg-panel-search-bar">
+          <i class="fas fa-search"></i>
+          <input type="text" id="msgPanelSearch" placeholder="Search conversations..." oninput="filterMsgPanelList(this.value)">
+        </div>
+      </div>
+      <div class="msg-panel-body" id="msgThreadList">
+        <div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;" id="msgThreadLoading">
+          <i class="fas fa-spinner fa-spin"></i> Loading messages…
+        </div>
       </div>
     </div>
-    <div class="msg-panel-body" id="msgConvoBody" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:6px;"></div>
-    <div style="padding:10px 12px;border-top:1px solid var(--soil-line);display:flex;gap:8px;flex-shrink:0;">
-      <input type="text" id="msgConvoInput" placeholder="Type a message…" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--soil-line);background:var(--soil-hover);color:var(--text-mid);font-size:13px;outline:none;">
-      <button id="msgConvoSend" style="padding:8px 14px;border-radius:6px;background:var(--red-vivid);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600;"><i class="fas fa-paper-plane"></i></button>
+
+    <!-- Conversation view (slides over thread list) -->
+    <div id="msgConvoView">
+      <div class="sp-chat-head">
+        <button class="notif-close" id="msgConvoBack" aria-label="Back"><i class="fas fa-arrow-left"></i></button>
+        <div class="sp-chat-avatar" id="msgConvoAvatar"></div>
+        <div style="flex:1;min-width:0;">
+          <div class="sp-chat-name" id="msgConvoName"></div>
+          <div class="sp-chat-meta" id="msgConvoMeta"></div>
+        </div>
+      </div>
+      <div class="sp-chat-messages" id="msgConvoBody"></div>
+      <div class="sp-chat-input">
+        <div class="sp-chat-input-row">
+          <textarea id="msgConvoInput" placeholder="Write a message..." rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();seekerSendMsg();}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px';"></textarea>
+          <button class="sp-chat-send" id="msgConvoSend"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -433,6 +518,7 @@ function _navHref(string $file): string {
   const msgThreadView = document.getElementById('msgThreadView');
   const msgConvoView  = document.getElementById('msgConvoView');
   var _seekerCurrentPartner = null;
+  var _seekerThreadsCache   = [];
 
   function getCurrentTheme() {
     return document.body.classList.contains('light') ? 'light' : 'dark';
@@ -470,14 +556,12 @@ function _navHref(string $file): string {
   };
 
   function showThreadView() {
-    msgThreadView.style.display = '';
-    msgConvoView.style.display = 'none';
+    msgConvoView.classList.remove('open');
     _seekerCurrentPartner = null;
     refreshFullMessageLinks();
   }
   function showConvoView() {
-    msgThreadView.style.display = 'none';
-    msgConvoView.style.display = 'flex';
+    msgConvoView.classList.add('open');
   }
 
   function _esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
@@ -494,13 +578,22 @@ function _navHref(string $file): string {
         }
         var html = '';
         var colors = ['#4A90D9','#9B59B6','#27AE60','#E74C3C','#D4943A','#3498DB','#E67E22','#1ABC9C'];
+        _seekerThreadsCache = data.threads;
         data.threads.forEach(function (t, i) {
           var color = t.color || colors[i % colors.length];
-          var unread = t.unread_count > 0 ? '<div class="msg-unread-dot"></div>' : '';
-          html += '<div class="msg-item" data-partner-id="' + t.partner_id + '" data-partner-name="' + _esc(t.name) + '">'
+          var unread = t.unread_count > 0 ? ' unread' : '';
+          var unreadDot = t.unread_count > 0 ? '<div class="msg-unread-dot"></div>' : '';
+          html += '<div class="msg-item' + unread + '" data-partner-id="' + t.partner_id + '" data-partner-name="' + _esc(t.name) + '">'
             + '<div class="msg-avatar" style="background:' + color + '">' + (t.avatar_url ? '<img src="../' + t.avatar_url + '" alt="">' : _esc(t.initials)) + '</div>'
-            + '<div style="flex:1;min-width:0;"><div class="msg-name">' + _esc(t.name) + '</div><div class="msg-preview">' + _esc(t.preview) + '</div></div>'
-            + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><div class="msg-time">' + _esc(t.time) + '</div>' + unread + '</div>'
+            + '<div style="flex:1;min-width:0;">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">'
+            + '<div class="msg-name">' + _esc(t.name) + '</div>'
+            + '<div class="msg-time">' + _esc(t.time) + '</div>'
+            + '</div>'
+            + '<div class="msg-preview">' + (t.is_sent ? 'You: ' : '') + _esc(t.preview) + '</div>'
+            + (t.job_title ? '<div class="msg-job-tag"><i class="fas fa-briefcase" style="font-size:9px;"></i> ' + _esc(t.job_title) + '</div>' : '')
+            + '</div>'
+            + unreadDot
             + '</div>';
         });
         container.innerHTML = html;
@@ -515,10 +608,30 @@ function _navHref(string $file): string {
       });
   }
 
+  function filterMsgPanelList(q) {
+    var items = document.getElementById('msgThreadList').querySelectorAll('.msg-item');
+    q = (q || '').toLowerCase();
+    items.forEach(function(el) {
+      var name = (el.getAttribute('data-partner-name') || '').toLowerCase();
+      el.style.display = (!q || name.includes(q)) ? '' : 'none';
+    });
+  }
+
   // ── Open conversation inside panel ──
   function openSeekerConvo(partnerId, partnerName) {
     _seekerCurrentPartner = partnerId;
-    document.getElementById('msgConvoTitle').textContent = partnerName || 'Conversation';
+    // Find thread data for avatar/color/meta
+    var t = (_seekerThreadsCache || []).find(function(x){ return x.partner_id == partnerId; });
+    var color = (t && t.color) ? t.color : '#4A90D9';
+    var ini = (t && t.initials) ? t.initials : (partnerName ? partnerName.substring(0,2).toUpperCase() : '?');
+    var avatarUrl = t && t.avatar_url ? t.avatar_url : null;
+    // Set header
+    var avatarEl = document.getElementById('msgConvoAvatar');
+    avatarEl.style.background = color;
+    if (avatarUrl) { avatarEl.innerHTML = '<img src="../' + avatarUrl + '" alt="">'; }
+    else { avatarEl.textContent = ini; }
+    document.getElementById('msgConvoName').textContent = partnerName || 'Conversation';
+    document.getElementById('msgConvoMeta').textContent = (t && t.job_title) ? t.job_title : '';
     showConvoView();
     refreshFullMessageLinks();
     var body = document.getElementById('msgConvoBody');
@@ -526,23 +639,35 @@ function _navHref(string $file): string {
     fetch('../api/messages.php?action=messages&user_id=' + partnerId)
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        if (!data.success || !data.messages || data.messages.length === 0) {
-          body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">No messages yet. Say hello!</div>';
-          return;
-        }
-        var html = '';
-        data.messages.forEach(function (m) {
-          if (m.show_date) html += '<div class="sp-msg-time-label">' + _esc(m.date) + '</div>';
-          html += '<div class="sp-msg-bubble ' + (m.from === 'me' ? 'me' : 'them') + '">' + _esc(m.body) + '<div style="font-size:10px;opacity:0.7;margin-top:2px;">' + _esc(m.time) + '</div></div>';
-        });
-        body.innerHTML = html;
-        body.scrollTop = body.scrollHeight;
-        markSeekerConversationRead(partnerId);
-        updateSeekerBadges();
+        renderSeekerConvoMsgs(body, data, color, ini, avatarUrl);
+        if (data.success) { markSeekerConversationRead(partnerId); updateSeekerBadges(); }
       })
       .catch(function () {
         body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">Failed to load conversation</div>';
       });
+  }
+
+  function renderSeekerConvoMsgs(body, data, color, ini, avatarUrl) {
+    if (!data.success || !data.messages || !data.messages.length) {
+      body.innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--text-muted);font-size:12px;"><i class="fas fa-comment-dots" style="font-size:24px;display:block;margin-bottom:8px;"></i>No messages yet. Say hello!</div>';
+      return;
+    }
+    var html = '';
+    data.messages.forEach(function (m) {
+      if (m.show_date) html += '<div class="sp-msg-date"><span>' + _esc(m.date) + '</span></div>';
+      if (m.from === 'me') {
+        html += '<div class="sp-msg-row sent">'
+          + '<div class="sb-bubble sb-bubble-sent">' + _esc(m.body) + '<div class="sb-bubble-time">' + _esc(m.time) + ' <i class="fas fa-check-double" style="font-size:8px;"></i></div></div>'
+          + '</div>';
+      } else {
+        html += '<div class="sp-msg-row">'
+          + '<div class="sp-chat-avatar" style="background:' + color + ';width:26px;height:26px;font-size:10px;">' + (avatarUrl ? '<img src="../' + avatarUrl + '" alt="">' : ini) + '</div>'
+          + '<div class="sb-bubble sb-bubble-recv">' + _esc(m.body) + '<div class="sb-bubble-time">' + _esc(m.time) + '</div></div>'
+          + '</div>';
+      }
+    });
+    body.innerHTML = html;
+    body.scrollTop = body.scrollHeight;
   }
 
   function markSeekerConversationRead(partnerId) {
@@ -555,20 +680,17 @@ function _navHref(string $file): string {
 
   // ── Send message from panel ──
   document.getElementById('msgConvoSend').addEventListener('click', seekerSendMsg);
-  document.getElementById('msgConvoInput').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); seekerSendMsg(); }
-  });
   function seekerSendMsg() {
     var input = document.getElementById('msgConvoInput');
     var text = input.value.trim();
     if (!text || !_seekerCurrentPartner) return;
     input.value = '';
+    input.style.height = 'auto';
     var body = document.getElementById('msgConvoBody');
-    var bubble = document.createElement('div');
-    bubble.className = 'sp-msg-bubble me';
-    bubble.innerHTML = _esc(text) + '<div data-time-slot style="font-size:10px;opacity:0.7;margin-top:2px;">Sending\u2026</div>';
-    var timeEl = bubble.querySelector('[data-time-slot]');
-    body.appendChild(bubble);
+    var row = document.createElement('div');
+    row.className = 'sp-msg-row sent';
+    row.innerHTML = '<div class="sb-bubble sb-bubble-sent">' + _esc(text) + '<div class="sb-bubble-time" id="_sp_sending">Sending\u2026</div></div>';
+    body.appendChild(row);
     body.scrollTop = body.scrollHeight;
     fetch('../api/messages.php?action=send', {
       method: 'POST',
@@ -577,10 +699,22 @@ function _navHref(string $file): string {
     })
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      if (data.success) { if (timeEl) { timeEl.textContent = data.time || new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); } }
-      else { bubble.style.opacity = '0.5'; if (timeEl) { timeEl.textContent = 'Failed'; } }
+      var timeEl = row.querySelector('#_sp_sending');
+      if (data.success) {
+        if (timeEl) timeEl.textContent = data.time || new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        var t = (_seekerThreadsCache || []).find(function(x){ return x.partner_id == _seekerCurrentPartner; });
+        var clr = (t && t.color) ? t.color : '#4A90D9';
+        var ini = (t && t.initials) ? t.initials : '?';
+        var avu = t && t.avatar_url ? t.avatar_url : null;
+        fetch('../api/messages.php?action=messages&user_id=' + _seekerCurrentPartner)
+          .then(function(r2){ return r2.json(); })
+          .then(function(d2){ renderSeekerConvoMsgs(body, d2, clr, ini, avu); });
+      } else {
+        row.style.opacity = '0.5';
+        if (timeEl) timeEl.textContent = 'Failed';
+      }
     })
-    .catch(function () { bubble.style.opacity = '0.5'; if (timeEl) { timeEl.textContent = 'Failed'; } });
+    .catch(function () { row.style.opacity = '0.5'; });
   }
 
   // ── Back button ──
@@ -639,6 +773,48 @@ function _navHref(string $file): string {
   setInterval(updateSeekerBadges, 30000);
 
   document.getElementById('msgClose').addEventListener('click', closeMsgPanel);
+  document.getElementById('msgNewChat').addEventListener('click', function(e) {
+    e.stopPropagation();
+    var panel = document.getElementById('msgNewChatPanel');
+    var searchInput = document.getElementById('msgNewChatSearch');
+    var results = document.getElementById('msgNewChatResults');
+    if (panel.style.display === 'none') {
+      panel.style.display = '';
+      results.innerHTML = '<div style="padding:10px;text-align:center;color:var(--text-muted);font-size:12px;">Type a name to search</div>';
+      setTimeout(function() { searchInput.value = ''; searchInput.focus(); }, 50);
+    } else {
+      panel.style.display = 'none';
+    }
+  });
+
+  var _newChatTimer = null;
+  window.searchMsgPanelNewChat = function() {
+    var q = document.getElementById('msgNewChatSearch').value.trim();
+    var results = document.getElementById('msgNewChatResults');
+    if (q.length < 2) { results.innerHTML = '<div style="padding:10px;text-align:center;color:var(--text-muted);font-size:12px;">Type at least 2 characters</div>'; return; }
+    if (_newChatTimer) clearTimeout(_newChatTimer);
+    _newChatTimer = setTimeout(function() {
+      results.innerHTML = '<div style="padding:10px;text-align:center;color:var(--text-muted);font-size:12px;"><i class="fas fa-spinner fa-spin"></i></div>';
+      fetch('../api/messages.php?action=search_users&q=' + encodeURIComponent(q))
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+          if (!data.success || !data.users || !data.users.length) { results.innerHTML = '<div style="padding:10px;text-align:center;color:var(--text-muted);font-size:12px;">No users found</div>'; return; }
+          var clrs = ['#4A90D9','#D4943A','#4CAF70','#9C27B0','#E05555','#00897B'];
+          results.innerHTML = data.users.map(function(u, i) {
+            return '<div class="msg-panel-new-chat-user" onclick="msgPanelStartChat(' + u.id + ',_esc(' + JSON.stringify(u.name) + '))">' +
+              '<div class="msg-panel-new-chat-user-av" style="background:' + clrs[i % clrs.length] + '">' + (u.avatar_url ? '<img src="../' + u.avatar_url + '" alt="">' : _esc(u.initials)) + '</div>' +
+              '<div><div style="font-size:13px;font-weight:600;color:var(--text-light);">' + _esc(u.name) + '</div><div style="font-size:11px;color:var(--text-muted);text-transform:capitalize;">' + _esc(u.type) + '</div></div>' +
+              '</div>';
+          }).join('');
+        })
+        .catch(function() { results.innerHTML = '<div style="padding:10px;text-align:center;color:var(--text-muted);font-size:12px;">Search failed</div>'; });
+    }, 300);
+  };
+
+  window.msgPanelStartChat = function(userId, userName) {
+    document.getElementById('msgNewChatPanel').style.display = 'none';
+    openSeekerConvo(userId, userName);
+  };
   document.getElementById('msgToggle').addEventListener('click', function (e) {
     e.stopPropagation();
     msgPanel.classList.contains('open') ? closeMsgPanel() : openMsgPanel();

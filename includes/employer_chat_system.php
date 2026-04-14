@@ -251,7 +251,7 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
 .sb-msg-date { text-align:center; font-size:10px; color:var(--text-muted); padding:6px 0; }
 .sb-msg-row { display:flex; gap:6px; align-items:flex-end; }
 .sb-msg-row.sent { flex-direction:row-reverse; }
-.sb-bubble { max-width:75%; padding:8px 12px; border-radius:12px; font-size:13px; line-height:1.45; word-break:break-word; }
+.sb-bubble { max-width:80%; min-width:48px; padding:8px 12px; border-radius:12px; font-size:13px; line-height:1.45; word-break:break-word; white-space:pre-wrap; }
 .sb-bubble-recv { background:var(--soil-hover); color:var(--text-light); border-bottom-left-radius:4px; }
 .sb-bubble-sent { background:var(--red-vivid); color:#fff; border-bottom-right-radius:4px; }
 .sb-bubble-time { font-size:9px; margin-top:3px; opacity:0.6; }
@@ -293,7 +293,7 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
 .fs-chat-title i { color:var(--red-bright); }
 .fs-chat-close { width:34px; height:34px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; transition:0.15s; }
 .fs-chat-close:hover { color:var(--text-light); border-color:var(--red-vivid); }
-.fs-chat-body { display:grid; grid-template-columns:300px 1fr; flex:1; overflow:hidden; }
+.fs-chat-body { display:grid; grid-template-columns:320px 1fr; flex:1; overflow:hidden; }
 
 /* Fullscreen thread panel */
 .fs-thread-panel { border-right:1px solid var(--soil-line); display:flex; flex-direction:column; overflow:hidden; }
@@ -342,11 +342,12 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
 .fs-msg-date { text-align:center; font-size:11px; color:var(--text-muted); position:relative; }
 .fs-msg-date::before { content:''; position:absolute; left:0; right:0; top:50%; height:1px; background:var(--soil-line); }
 .fs-msg-date span { background:var(--soil-card); padding:0 10px; position:relative; }
-.fs-msg-row { display:flex; gap:8px; align-items:flex-end; }
+.fs-msg-row { display:flex; gap:8px; align-items:flex-end; max-width:100%; }
 .fs-msg-row.sent { flex-direction:row-reverse; }
+.fs-msg-row > div:not(.fs-msg-avatar) { min-width:0; max-width:calc(100% - 40px); }
 .fs-msg-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
 .fs-msg-avatar img { width:100%; height:100%; object-fit:cover; }
-.fs-bubble { max-width:60%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; word-break:break-word; }
+.fs-bubble { max-width:70%; min-width:60px; padding:10px 16px; border-radius:12px; font-size:13px; line-height:1.5; word-break:break-word; white-space:pre-wrap; }
 .fs-bubble-recv { background:var(--soil-hover); color:var(--text-light); border-bottom-left-radius:4px; }
 .fs-bubble-sent { background:var(--red-vivid); color:#fff; border-bottom-right-radius:4px; }
 .fs-bubble-time { font-size:10px; margin-top:3px; opacity:0.6; }
@@ -366,12 +367,33 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
 .chat-toast i { color:var(--red-bright); }
 
 /* Light theme overrides */
-body.light .msg-sidebar, body.light .notif-sidebar { background:#FFFFFF; border-color:#E0CECA; }
+body.light .msg-sidebar, body.light .notif-sidebar { background:#FFFFFF; border-color:#E0CECA; box-shadow:-8px 0 32px rgba(0,0,0,0.1); }
 body.light .fs-chat-container { background:#FFFFFF; border-color:#E0CECA; }
-body.light .sb-bubble-recv, body.light .fs-bubble-recv { background:#F5EEEC; }
+body.light .sb-bubble-recv, body.light .fs-bubble-recv { background:#F5EEEC; color:#1A0A09; }
 body.light .msg-sb-search-bar, body.light .fs-search-bar, body.light .msg-sb-input-row, body.light .fs-input-row { background:#F5EEEC; border-color:#E0CECA; }
+body.light .msg-sb-search-bar input, body.light .fs-search-bar input, body.light .msg-sb-input-row textarea, body.light .fs-input-row textarea { color:#1A0A09; }
 body.light .sb-thread-item:hover, body.light .fs-t-item:hover { background:#FEF0EE; }
-body.light .chat-toast { background:#FFFFFF; border-color:#E0CECA; }
+body.light .sb-thread-item { border-bottom-color:#E0CECA; }
+body.light .fs-t-item { border-bottom-color:#E0CECA; }
+body.light .sb-t-name, body.light .fs-t-name { color:#4A2828; }
+body.light .sb-thread-item.unread .sb-t-name, body.light .fs-t-item.unread .fs-t-name { color:#1A0A09; }
+body.light .msg-sb-head, body.light .notif-sb-head, body.light .fs-chat-header { border-bottom-color:#E0CECA; }
+body.light .msg-sb-title, body.light .notif-sb-title, body.light .fs-chat-title { color:#1A0A09; }
+body.light .msg-sb-chat-name, body.light .fs-ch-name { color:#1A0A09; }
+body.light .msg-sb-chat-head, body.light .fs-chat-head2 { border-bottom-color:#E0CECA; }
+body.light .msg-sb-input, body.light .fs-input-area { border-top-color:#E0CECA; }
+body.light .fs-thread-panel { border-right-color:#E0CECA; }
+body.light .fs-thread-search, body.light .fs-thread-filters { border-bottom-color:#E0CECA; }
+body.light .sb-new-chat-bar { border-color:var(--red-vivid); }
+body.light .sb-new-chat-user-name { color:#1A0A09; }
+body.light .chat-toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
+body.light .notif-sb-body { color:#4A2828; }
+body.light .notif-sb-item { border-bottom-color:#E0CECA; }
+body.light .nsb-text { color:#3A2020; }
+body.light .msg-sb-close, body.light .msg-sb-expand, body.light .msg-sb-back,
+body.light .notif-sb-close, body.light .notif-sb-mark-all, body.light .fs-chat-close { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+body.light .fs-tf { border-color:#E0CECA; color:#7A5555; }
+body.light .fs-tf.active, body.light .fs-tf:hover { color:var(--red-bright); background:rgba(209,61,44,0.08); }
 
 @media(max-width:768px) {
   .msg-sidebar, .notif-sidebar { width:100%; max-width:100%; }
@@ -619,7 +641,7 @@ function renderSbMessages(msgs, color, ini) {
     msgs.forEach(m => {
         if (m.show_date) el.innerHTML += `<div class="sb-msg-date">${m.date}</div>`;
         if (m.from === 'me') {
-            el.innerHTML += `<div class="sb-msg-row sent"><div class="sb-bubble sb-bubble-sent">${esc(m.body)}<div class="sb-bubble-time">${m.time}</div></div></div>`;
+            el.innerHTML += `<div class="sb-msg-row sent"><div class="sb-bubble sb-bubble-sent">${esc(m.body)}<div class="sb-bubble-time">${m.time} <i class="fas fa-check-double" style="font-size:9px;"></i></div></div></div>`;
         } else {
             el.innerHTML += `<div class="sb-msg-row"><div class="sb-bubble sb-bubble-recv">${esc(m.body)}<div class="sb-bubble-time">${m.time}</div></div></div>`;
         }
@@ -636,12 +658,12 @@ function renderFsMessages(msgs, color, ini, partnerAvUrl) {
         if (m.from === 'me') {
             el.innerHTML += `<div class="fs-msg-row sent">
                 <div class="fs-msg-avatar" style="background:linear-gradient(135deg,#D4943A,#8a5010)">${MY_AVATAR_URL ? `<img src="${MY_AVATAR_URL}" alt="">` : MY_INITIALS}</div>
-                <div><div class="fs-bubble fs-bubble-sent">${esc(m.body)}<div class="fs-bubble-time">${m.time} <i class="fas fa-check-double" style="font-size:9px;"></i></div></div></div>
+                <div class="fs-bubble fs-bubble-sent">${esc(m.body)}<div class="fs-bubble-time">${m.time} <i class="fas fa-check-double" style="font-size:9px;"></i></div></div>
             </div>`;
         } else {
             el.innerHTML += `<div class="fs-msg-row">
                 <div class="fs-msg-avatar" style="background:${color}">${partnerAvUrl ? `<img src="../${partnerAvUrl}" alt="">` : ini}</div>
-                <div><div class="fs-bubble fs-bubble-recv">${esc(m.body)}<div class="fs-bubble-time">${m.time}</div></div></div>
+                <div class="fs-bubble fs-bubble-recv">${esc(m.body)}<div class="fs-bubble-time">${m.time}</div></div>
             </div>`;
         }
     });

@@ -747,45 +747,7 @@ function setPeriod(el, period) {
   showToast(`Showing data for: ${labels[period]}`, 'fa-calendar');
 }
 
-/* ─────────────────────────────────────────────
-   THEME TOGGLE — same logic as all other pages
-───────────────────────────────────────────── */
-(function() {
-  const p = new URLSearchParams(window.location.search).get('theme');
-  const t = p || localStorage.getItem('ac-theme') || 'dark';
-  if (p) localStorage.setItem('ac-theme', t);
-  if (t === 'light') document.body.classList.add('light');
-  document.getElementById('themeToggle').innerHTML = t === 'light'
-    ? '<i class="fas fa-sun"></i>'
-    : '<i class="fas fa-moon"></i>';
-})();
-
-const _guard_themeToggle = document.getElementById('themeToggle'); if (_guard_themeToggle) _guard_themeToggle.addEventListener('click', () => {
-  document.body.classList.toggle('light');
-  const isLight = document.body.classList.contains('light');
-  localStorage.setItem('ac-theme', isLight ? 'light' : 'dark');
-  document.getElementById('themeToggle').innerHTML = isLight
-    ? '<i class="fas fa-sun"></i>'
-    : '<i class="fas fa-moon"></i>';
-});
-
-/* ─────────────────────────────────────────────
-   PROFILE DROPDOWN — same as other pages
-───────────────────────────────────────────── */
-const _guard_profileToggle = document.getElementById('profileToggle'); if (_guard_profileToggle) _guard_profileToggle.addEventListener('click', e => {
-  e.stopPropagation();
-  document.getElementById('profileDropdown').classList.toggle('open');
-});
-document.addEventListener('click', () => {
-  document.getElementById('profileDropdown').classList.remove('open');
-});
-
-/* ─────────────────────────────────────────────
-   HAMBURGER MOBILE MENU
-───────────────────────────────────────────── */
-const _guard_hamburger = document.getElementById('hamburger'); if (_guard_hamburger) _guard_hamburger.addEventListener('click', () => {
-  document.getElementById('mobileMenu').classList.toggle('open');
-});
+// Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
 
 /* ─────────────────────────────────────────────
    TOAST — same helper as all other pages

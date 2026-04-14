@@ -213,10 +213,10 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     .person-modal-close { position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); cursor:pointer; }
     .person-modal-close:hover { color:#F5F0EE; border-color:var(--red-vivid); }
     .person-modal-head { display:flex; align-items:center; gap:14px; margin-bottom:14px; padding-right:40px; }
-    .person-modal-avatar { width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:700; flex-shrink:0; overflow:hidden; }
+    .person-modal-avatar { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:700; flex-shrink:0; overflow:hidden; }
     .person-modal-avatar img { width:100%; height:100%; object-fit:cover; }
     .person-modal-meta { min-width:0; }
-    .person-modal-name { font-family:var(--font-display); font-size:22px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
+    .person-modal-name { font-family:var(--font-display); font-size:22px; font-weight:700; color:var(--text-light); margin-bottom:4px; }
     .person-modal-title { color:var(--red-pale); font-size:13px; font-weight:600; margin-bottom:4px; }
     .person-modal-location { color:var(--text-muted); font-size:12px; display:flex; align-items:center; gap:5px; }
     .person-modal-section { margin-top:14px; }
@@ -234,6 +234,21 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     .person-modal-btn.secondary:hover { border-color:var(--red-vivid); }
     .person-modal-btn.primary { background:var(--red-vivid); border-color:var(--red-vivid); color:#fff; }
     .person-modal-btn.primary:hover { background:var(--red-bright); }
+    body.light .person-modal-overlay { background:rgba(0,0,0,0.5); }
+    body.light .person-modal-box { background:#FFFFFF; border-color:#E0CECA; box-shadow:0 32px 80px rgba(0,0,0,0.18); }
+    body.light .person-modal-close { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .person-modal-close:hover { color:#1A0A09; border-color:var(--red-vivid); }
+    body.light .person-modal-name { color:#1A0A09; }
+    body.light .person-modal-title { color:var(--red-bright); }
+    body.light .person-modal-location { color:#7A5555; }
+    body.light .person-modal-section-label { color:#7A5555; }
+    body.light .person-skill-chip { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
+    body.light .person-skill-empty { color:#7A5555; }
+    body.light .person-modal-btn.secondary { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
+    body.light .person-modal-btn.secondary:hover { border-color:var(--red-vivid); }
+    body.light .person-modal-status.seeking { background:rgba(209,61,44,0.08); border-color:rgba(209,61,44,0.2); color:var(--red-bright); }
+    body.light .person-modal-status.hiring { background:rgba(76,175,112,0.08); border-color:rgba(76,175,112,0.2); color:#2E7D4C; }
+    body.light .person-modal-status.neutral { background:rgba(212,148,58,0.08); border-color:rgba(212,148,58,0.2); color:#8B5E1E; }
     .open-badge { font-size:10px; font-weight:700; letter-spacing:0.07em; padding:2px 8px; border-radius:3px; text-transform:uppercase; flex-shrink:0; margin-left:auto; }
     .open-badge.hiring { background:rgba(76,175,112,0.12); border:1px solid rgba(76,175,112,0.25); color:#6ccf8a; }
     .open-badge.seeking { background:rgba(209,61,44,0.1); border:1px solid rgba(209,61,44,0.2); color:var(--red-pale); }
