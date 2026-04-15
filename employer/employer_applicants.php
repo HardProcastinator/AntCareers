@@ -11,10 +11,17 @@ $avatarUrl   = $user['avatarUrl'];
 $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'applicants';
 
+function generateTempPassword(): string {
+    $chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$';
+    $pass = '';
+    for ($i = 0; $i < 12; $i++) $pass .= $chars[random_int(0, strlen($chars) - 1)];
+    return $pass;
+}
+
 /* ── AJAX ── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json; charset=utf-8');
-    $allowed = ['Pending','Reviewed','Shortlisted','Rejected','Hired'];
+    $allowed = ['Pending','Reviewed','Shortlisted','Interviewed','Rejected','Hired'];
     $action  = (string)($_POST['action'] ?? '');
 
     if ($action === 'update_status') {
@@ -25,9 +32,116 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
         try {
             $db  = getDB();
-            $chk = $db->prepare("SELECT a.id FROM applications a JOIN jobs j ON j.id=a.job_id WHERE a.id=? AND j.employer_id=?");
-            $chk->execute([$appId,(int)$_SESSION['user_id']]);
-            if (!$chk->fetch()) { echo json_encode(['ok'=>false,'msg'=>'Unauthorized']); exit; }
+            $uid = (int)$_SESSION['user_id'];
+            $chk = $db->prepare("SELECT a.id, a.seeker_id, j.id AS job_id, j.title AS job_title FROM applications a JOIN jobs j ON j.id=a.job_id WHERE a.id=? AND j.employer_id=?");
+            $chk->execute([$appId, $uid]);
+            $row = $chk->fetch(PDO::FETCH_ASSOC);
+            if (!$row) { echo json_encode(['ok'=>false,'msg'=>'Unauthorized']); exit; }
+
+            /* ── Hired trigger — auto-create recruiter account ── */
+            if ($newS === 'Hired') {
+                $db->beginTransaction();
+                try {
+                    $db->prepare("UPDATE applications SET status='Hired',reviewed_at=NOW() WHERE id=?")->execute([$appId]);
+
+                    // Get seeker info
+                    $su = $db->prepare("SELECT full_name, email FROM users WHERE id=?");
+                    $su->execute([$row['seeker_id']]);
+                    $seeker = $su->fetch(PDO::FETCH_ASSOC);
+                    if (!$seeker) { $db->rollBack(); echo json_encode(['ok'=>false,'msg'=>'Seeker not found']); exit; }
+
+                    // Get employer's company
+                    $cp = $db->prepare("SELECT id, company_name FROM company_profiles WHERE user_id=?");
+                    $cp->execute([$uid]);
+                    $company = $cp->fetch(PDO::FETCH_ASSOC);
+                    if (!$company) {
+                        // Auto-create from users.company_name
+                        $uq = $db->prepare("SELECT company_name FROM users WHERE id=?");
+                        $uq->execute([$uid]);
+                        $uRow = $uq->fetch(PDO::FETCH_ASSOC);
+                        $fbName = $uRow && $uRow['company_name'] ? $uRow['company_name'] : 'Company';
+                        $db->prepare("INSERT INTO company_profiles (user_id, company_name) VALUES (?,?)")
+                           ->execute([$uid, $fbName]);
+                        $company = ['id' => (int)$db->lastInsertId(), 'company_name' => $fbName];
+                    }
+                    $companyId = (int)$company['id'];
+
+                    // Generate platform email: f.lastname@company.work
+                    $nameParts = preg_split('/\s+/', trim($seeker['full_name']));
+                    $fChar = strtolower(substr($nameParts[0] ?? 'u', 0, 1));
+                    $lName = strtolower(preg_replace('/[^a-zA-Z]/', '', end($nameParts) ?: 'user'));
+                    $companySlug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $company['company_name'] ?? 'company'));
+                    if ($companySlug === '') $companySlug = 'company';
+                    $platformEmail = $fChar . '.' . $lName . '@' . $companySlug . '.work';
+
+                    // Ensure uniqueness
+                    $chkEmail = $db->prepare("SELECT id FROM users WHERE email=?");
+                    $chkEmail->execute([$platformEmail]);
+                    if ($chkEmail->fetch()) {
+                        $sfx = 1;
+                        do {
+                            $tryEmail = $fChar . '.' . $lName . $sfx . '@' . $companySlug . '.work';
+                            $chkEmail->execute([$tryEmail]);
+                            $sfx++;
+                        } while ($chkEmail->fetch());
+                        $platformEmail = $tryEmail;
+                    }
+
+                    // Generate temp credentials
+                    $tempPass = generateTempPassword();
+                    $hashedPass = password_hash($tempPass, PASSWORD_BCRYPT);
+
+                    // Create recruiter user account
+                    $db->prepare("INSERT INTO users (email, password_hash, full_name, account_type, is_active, must_change_password) VALUES (?,?,?,'recruiter',1,1)")
+                       ->execute([$platformEmail, $hashedPass, $seeker['full_name']]);
+                    $newUserId = (int)$db->lastInsertId();
+
+                    // Create recruiters record
+                    $db->prepare("INSERT INTO recruiters (user_id, company_id, employer_id, role, is_active, accepted_at) VALUES (?,?,?,'recruiter',1,NOW())")
+                       ->execute([$newUserId, $companyId, $uid]);
+
+                    // Store personal email in recruiter_profiles
+                    $db->prepare("INSERT INTO recruiter_profiles (user_id, personal_email) VALUES (?,?)")
+                       ->execute([$newUserId, $seeker['email']]);
+
+                    // Store in hired_credentials
+                    $tempUser = $fChar . '.' . $lName;
+                    $db->prepare("INSERT INTO hired_credentials (application_id, seeker_id, recruiter_user_id, company_id, temp_username, temp_password_hash) VALUES (?,?,?,?,?,?)")
+                       ->execute([$appId, $row['seeker_id'], $newUserId, $companyId, $tempUser, $hashedPass]);
+
+                    // Send credentials to seeker via in-platform message
+                    $convKey = 'direct:' . min($uid, $row['seeker_id']) . ':' . max($uid, $row['seeker_id']);
+                    $cs = $db->prepare("SELECT id FROM conversations WHERE conversation_key=?");
+                    $cs->execute([$convKey]);
+                    $conv = $cs->fetch();
+                    if ($conv) {
+                        $convId = (int)$conv['id'];
+                    } else {
+                        $db->prepare("INSERT INTO conversations (conversation_key, participant_a_id, participant_b_id) VALUES (?,?,?)")
+                           ->execute([$convKey, min($uid, $row['seeker_id']), max($uid, $row['seeker_id'])]);
+                        $convId = (int)$db->lastInsertId();
+                    }
+                    $msgBody = "Hi {$seeker['full_name']},\n\nGreat news — you've been hired for the position \"{$row['job_title']}\"!\n\nHere are your recruiter portal credentials:\n• Platform Email: {$platformEmail}\n• Temporary Password: {$tempPass}\n\nPlease log in and change your password immediately.\n\nWelcome to the team!";
+                    $db->prepare("INSERT INTO messages (sender_id, receiver_id, conversation_id, subject, body, is_read) VALUES (?,?,?,?,?,0)")
+                       ->execute([$uid, $row['seeker_id'], $convId, 'Congratulations — You\'re Hired!', $msgBody]);
+                    $msgId = (int)$db->lastInsertId();
+                    $db->prepare("UPDATE conversations SET latest_message_id=?, latest_message_at=NOW() WHERE id=?")
+                       ->execute([$msgId, $convId]);
+
+                    // Notification for seeker
+                    $notifContent = "Congratulations! You've been hired for \"{$row['job_title']}\". Check your messages for your recruiter portal credentials.";
+                    $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'hired_credential',?,?)")
+                       ->execute([$row['seeker_id'], $notifContent, $appId]);
+
+                    $db->commit();
+                    echo json_encode(['ok'=>true,'status'=>'Hired','credentials'=>['email'=>$platformEmail,'temp_password'=>$tempPass]]); exit;
+                } catch (Exception $e) {
+                    $db->rollBack();
+                    error_log('[AntCareers] employer hire error: ' . $e->getMessage());
+                    echo json_encode(['ok'=>false,'msg'=>'Failed to process hire: '.$e->getMessage()]); exit;
+                }
+            }
+
             $db->prepare("UPDATE applications SET status=?,reviewed_at=NOW() WHERE id=?")->execute([$newS,$appId]);
             echo json_encode(['ok'=>true,'status'=>$newS]);
         } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
@@ -121,7 +235,7 @@ $filterJob    = (int)($_GET['job_id'] ?? 0);
 $search       = trim((string)($_GET['q'] ?? ''));
 $uid          = (int)$_SESSION['user_id'];
 $applicants   = [];
-$sCounts      = ['Pending'=>0,'Reviewed'=>0,'Shortlisted'=>0,'Rejected'=>0,'Hired'=>0];
+$sCounts      = ['Pending'=>0,'Reviewed'=>0,'Shortlisted'=>0,'Interviewed'=>0,'Rejected'=>0,'Hired'=>0];
 $total        = 0;
 $jobsList     = [];
 $dbErr        = false;
@@ -171,7 +285,7 @@ try {
     error_log('[AntCareers] applicants fetch: '.$e->getMessage());
 }
 
-$smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>'fa-eye'],'Shortlisted'=>['c'=>'green','i'=>'fa-star'],'Rejected'=>['c'=>'red','i'=>'fa-times-circle'],'Hired'=>['c'=>'purple','i'=>'fa-check-circle']];
+$smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>'fa-eye'],'Shortlisted'=>['c'=>'green','i'=>'fa-star'],'Interviewed'=>['c'=>'blue','i'=>'fa-video'],'Rejected'=>['c'=>'red','i'=>'fa-times-circle'],'Hired'=>['c'=>'purple','i'=>'fa-check-circle']];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -372,6 +486,7 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     'Pending'=>['i'=>'fa-clock','l'=>'Pending','c'=>'var(--amber)','n'=>$sCounts['Pending']],
     'Reviewed'=>['i'=>'fa-eye','l'=>'Reviewed','c'=>'#7ab8f0','n'=>$sCounts['Reviewed']],
     'Shortlisted'=>['i'=>'fa-star','l'=>'Shortlisted','c'=>'#6ccf8a','n'=>$sCounts['Shortlisted']],
+    'Interviewed'=>['i'=>'fa-video','l'=>'Interviewed','c'=>'#7ab8f0','n'=>$sCounts['Interviewed']],
     'Hired'=>['i'=>'fa-check-circle','l'=>'Hired','c'=>'#cf8ae0','n'=>$sCounts['Hired']],
     'Rejected'=>['i'=>'fa-times-circle','l'=>'Rejected','c'=>'#ff8080','n'=>$sCounts['Rejected']],
   ];
@@ -443,7 +558,7 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
           <div class="etitle"><i class="fas fa-tasks"></i> Update Status</div>
           <div class="status-row">
             <select class="status-sel" id="sel-<?=$a['app_id']?>">
-              <?php foreach(['Pending','Reviewed','Shortlisted','Rejected','Hired'] as $s):?>
+              <?php foreach(['Pending','Reviewed','Shortlisted','Interviewed','Rejected','Hired'] as $s):?>
               <option value="<?=$s?>"<?=$s===$a['status']?' selected':''?>><?=$s?></option>
               <?php endforeach;?>
             </select>
@@ -503,7 +618,7 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
 
 <script>
   function toggleExp(id){var p=document.getElementById('exp-'+id),c=document.getElementById('chev-'+id),o=p.classList.toggle('open');c.style.transform=o?'rotate(180deg)':'';}
-  function saveStatus(id){var s=document.getElementById('sel-'+id).value;doPost({action:'update_status',application_id:id,status:s},function(d){if(d.ok){var b=document.getElementById('badge-'+id),m={Pending:{c:'amber',i:'fa-clock'},Reviewed:{c:'blue',i:'fa-eye'},Shortlisted:{c:'green',i:'fa-star'},Rejected:{c:'red',i:'fa-times-circle'},Hired:{c:'purple',i:'fa-check-circle'}}[d.status]||{c:'muted',i:'fa-circle'};b.className='sbadge '+m.c;b.innerHTML='<i class="fas '+m.i+'"></i> '+d.status;toast('Status: '+d.status,'ok');}else{toast(d.msg||'Error','err');}});}
+  function saveStatus(id){var s=document.getElementById('sel-'+id).value;doPost({action:'update_status',application_id:id,status:s},function(d){if(d.ok){var b=document.getElementById('badge-'+id),m={Pending:{c:'amber',i:'fa-clock'},Reviewed:{c:'blue',i:'fa-eye'},Shortlisted:{c:'green',i:'fa-star'},Interviewed:{c:'blue',i:'fa-video'},Rejected:{c:'red',i:'fa-times-circle'},Hired:{c:'purple',i:'fa-check-circle'}}[d.status]||{c:'muted',i:'fa-circle'};b.className='sbadge '+m.c;b.innerHTML='<i class="fas '+m.i+'"></i> '+d.status;toast('Status: '+d.status,'ok');if(d.status==='Hired'&&d.credentials){alert('Recruiter account created!\\n\\nEmail: '+d.credentials.email+'\\nTemp Password: '+d.credentials.temp_password+'\\n\\nThese credentials were also sent to the seeker via message and notification.');}}else{toast(d.msg||'Error','err');}});}
 
   // Dynamic interview type field switching
   function onInterviewTypeChange(){

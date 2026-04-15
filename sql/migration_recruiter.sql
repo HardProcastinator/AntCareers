@@ -10,6 +10,8 @@
 --   5. Add 'Interviewed' to applications.status ENUM
 --   6. Add must_change_password to users table
 --   7. Add hired_credentials table
+--   8. Add recruiter_stats table
+--   9. Add recruiter_profiles table
 -- =============================================================================
 
 -- 1. Expand account_type to include 'recruiter'
@@ -98,21 +100,40 @@ CREATE TABLE IF NOT EXISTS `hired_credentials` (
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. Recruiter stats tracking
+-- 8. Recruiter stats table — tracks performance metrics per recruiter
 CREATE TABLE IF NOT EXISTS `recruiter_stats` (
-    `id`              INT UNSIGNED     NOT NULL AUTO_INCREMENT,
-    `recruiter_id`    INT UNSIGNED     NOT NULL,       -- FK → recruiters.id
-    `jobs_posted`     INT UNSIGNED     NOT NULL DEFAULT 0,
-    `applicants_reviewed` INT UNSIGNED NOT NULL DEFAULT 0,
-    `interviews_scheduled` INT UNSIGNED NOT NULL DEFAULT 0,
-    `hires_made`      INT UNSIGNED     NOT NULL DEFAULT 0,
-    `last_activity_at` DATETIME        DEFAULT NULL,
-    `updated_at`      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `id`                  INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+    `recruiter_id`        INT UNSIGNED     NOT NULL,          -- FK → recruiters.id
+    `jobs_posted`         INT UNSIGNED     NOT NULL DEFAULT 0,
+    `applicants_reviewed` INT UNSIGNED     NOT NULL DEFAULT 0,
+    `interviews_scheduled` INT UNSIGNED    NOT NULL DEFAULT 0,
+    `hires_made`          INT UNSIGNED     NOT NULL DEFAULT 0,
+    `updated_at`          DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_stats_recruiter` (`recruiter_id`),
 
     CONSTRAINT `fk_stats_recruiter`
         FOREIGN KEY (`recruiter_id`) REFERENCES `recruiters`(`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 9. Recruiter profiles table — personal details editable by the recruiter
+CREATE TABLE IF NOT EXISTS `recruiter_profiles` (
+    `id`              INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+    `user_id`         INT UNSIGNED     NOT NULL,           -- FK → users.id
+    `position`        VARCHAR(200)     DEFAULT NULL,
+    `department`      VARCHAR(200)     DEFAULT NULL,
+    `phone`           VARCHAR(30)      DEFAULT NULL,
+    `bio`             TEXT             DEFAULT NULL,
+    `linkedin_url`    VARCHAR(500)     DEFAULT NULL,
+    `created_at`      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_rec_profile_user` (`user_id`),
+
+    CONSTRAINT `fk_rec_profile_user`
+        FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

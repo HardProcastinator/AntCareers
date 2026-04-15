@@ -36,7 +36,7 @@ define('DB_PASS',    '');
 define('DB_CHARSET', 'utf8mb4');
 
 // ── Application settings ──────────────────────────────────────────────────────
-define('APP_URL',    'http://localhost/antcareers'); // ← local XAMPP development
+define('APP_URL',    'http://localhost/AntCareers'); // ← local XAMPP development
 define('APP_NAME', 'AntCareers');
 
 // ── Auth / security constants ─────────────────────────────────────────────────

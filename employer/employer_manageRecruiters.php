@@ -308,17 +308,29 @@ $navActive   = 'manage-jobs';
   <div class="modal-box">
     <button class="modal-close" onclick="closeInviteModal()"><i class="fas fa-times"></i></button>
     <div class="modal-title">Add a Recruiter</div>
-    <div class="modal-sub">Create a recruiter account for <?php echo htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8'); ?>. They'll receive login credentials.</div>
+    <div class="modal-sub">Create a recruiter account for <?php echo htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8'); ?>. Credentials will be sent via in-platform message.</div>
     <div class="modal-label">First Name</div>
-    <input class="modal-input" type="text" placeholder="First name" id="inviteFirstName">
+    <input class="modal-input" type="text" placeholder="First name" id="inviteFirstName" oninput="previewCredentials()">
     <div class="modal-label">Last Name</div>
-    <input class="modal-input" type="text" placeholder="Last name" id="inviteLastName">
-    <div class="modal-label">Email Address</div>
-    <input class="modal-input" type="email" placeholder="recruiter@example.com" id="inviteEmail">
+    <input class="modal-input" type="text" placeholder="Last name" id="inviteLastName" oninput="previewCredentials()">
+    <div class="modal-label">Position / Job Title</div>
+    <input class="modal-input" type="text" placeholder="e.g. Senior Recruiter" id="invitePosition">
+    <div class="modal-label">Personal Email</div>
+    <input class="modal-input" type="email" placeholder="personal@example.com" id="inviteEmail">
+    <div style="font-size:11px;color:var(--text-muted);margin:-8px 0 14px;">This is where credentials will be sent via the in-platform message system.</div>
+
+    <div style="background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px;"><i class="fas fa-key"></i> Auto-Generated Credentials (Preview)</div>
+      <div class="modal-label" style="margin-bottom:4px;">Platform Email</div>
+      <div class="modal-input" id="previewPlatformEmail" style="background:var(--soil-dark);color:var(--amber);user-select:all;cursor:default;font-family:monospace;font-size:13px;">—</div>
+      <div class="modal-label" style="margin-bottom:4px;">Temporary Password</div>
+      <div class="modal-input" id="previewTempPassword" style="background:var(--soil-dark);color:var(--amber);user-select:all;cursor:default;font-family:monospace;font-size:13px;margin-bottom:0;">—</div>
+    </div>
+
     <div id="modalError" style="display:none;font-size:12px;color:var(--red-bright);margin-bottom:12px;"></div>
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="closeInviteModal()">Cancel</button>
-      <button class="btn-send" id="addRecruiterBtn" onclick="addRecruiter()"><i class="fas fa-user-plus"></i> Add Recruiter</button>
+      <button class="btn-send" id="addRecruiterBtn" onclick="addRecruiter()"><i class="fas fa-paper-plane"></i> Send Invite</button>
     </div>
   </div>
 </div>
@@ -327,14 +339,50 @@ $navActive   = 'manage-jobs';
 <div class="modal-overlay" id="credentialsModal">
   <div class="modal-box">
     <button class="modal-close" onclick="closeCredentialsModal()"><i class="fas fa-times"></i></button>
-    <div class="modal-title">Recruiter Account Created</div>
-    <div class="modal-sub">Share these credentials securely. The recruiter will be asked to change their password on first login.</div>
-    <div class="modal-label">Email</div>
-    <div class="modal-input" id="credEmail" style="background:var(--soil-hover);user-select:all;cursor:text;"></div>
+    <div class="modal-title"><i class="fas fa-check-circle" style="color:var(--green);"></i> Recruiter Account Created</div>
+    <div class="modal-sub">Credentials have been sent to the recruiter via in-platform message. They must change their password on first login.</div>
+    <div class="modal-label">Platform Email (Login)</div>
+    <div class="modal-input" id="credEmail" style="background:var(--soil-hover);user-select:all;cursor:text;font-family:monospace;"></div>
     <div class="modal-label">Temporary Password</div>
     <div class="modal-input" id="credPassword" style="background:var(--soil-hover);user-select:all;cursor:text;font-family:monospace;"></div>
+    <div class="modal-label">Credentials Sent To</div>
+    <div class="modal-input" id="credSentTo" style="background:var(--soil-hover);user-select:all;cursor:text;"></div>
     <div class="modal-footer">
       <button class="btn-send" onclick="closeCredentialsModal()"><i class="fas fa-check"></i> Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Stats Modal -->
+<div class="modal-overlay" id="statsModal">
+  <div class="modal-box" style="max-width:500px;">
+    <button class="modal-close" onclick="closeStatsModal()"><i class="fas fa-times"></i></button>
+    <div class="modal-title"><i class="fas fa-chart-bar" style="color:var(--red-bright);"></i> Recruiter Stats</div>
+    <div class="modal-sub" id="statsRecName">Loading...</div>
+    <div id="statsContent" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="text-align:center;padding:20px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading stats...</div>
+    </div>
+    <div class="modal-footer" style="margin-top:16px;">
+      <button class="btn-modal-cancel" onclick="closeStatsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reassign Jobs Modal -->
+<div class="modal-overlay" id="reassignModal">
+  <div class="modal-box" style="max-width:460px;">
+    <button class="modal-close" onclick="closeReassignModal()"><i class="fas fa-times"></i></button>
+    <div class="modal-title"><i class="fas fa-exchange-alt" style="color:var(--amber);"></i> Reassign Jobs</div>
+    <div class="modal-sub" id="reassignDesc">Move all active job posts from this recruiter to another.</div>
+    <input type="hidden" id="reassignFromId" value="">
+    <div class="modal-label">Reassign To</div>
+    <select class="modal-input" id="reassignToSelect" style="cursor:pointer;">
+      <option value="">Select an active recruiter...</option>
+    </select>
+    <div id="reassignError" style="display:none;font-size:12px;color:var(--red-bright);margin-top:-8px;margin-bottom:12px;"></div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="closeReassignModal()">Cancel</button>
+      <button class="btn-send" id="reassignBtn" onclick="doReassign()"><i class="fas fa-exchange-alt"></i> Reassign</button>
     </div>
   </div>
 </div>
@@ -387,6 +435,24 @@ $navActive   = 'manage-jobs';
   function filterRecruiters(q) { currentSearch = q; applyFilters(); }
   function filterByStatus(s) { currentFilter = s; applyFilters(); }
 
+  const COMPANY_SLUG = <?php echo json_encode(strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $companyName))); ?>;
+
+  // -------- Preview Credentials --------
+  function previewCredentials() {
+    const first = document.getElementById('inviteFirstName').value.trim();
+    const last = document.getElementById('inviteLastName').value.trim();
+    const emailEl = document.getElementById('previewPlatformEmail');
+    const pwEl = document.getElementById('previewTempPassword');
+    if (first && last) {
+      const slug = COMPANY_SLUG || 'company';
+      emailEl.textContent = first.charAt(0).toLowerCase() + '.' + last.toLowerCase().replace(/[^a-z]/g, '') + '@' + slug + '.work';
+      pwEl.textContent = '(auto-generated on submit)';
+    } else {
+      emailEl.textContent = '—';
+      pwEl.textContent = '—';
+    }
+  }
+
   // -------- Render --------
   const avatarColors = [
     'linear-gradient(135deg,#D13D2C,#7A1515)',
@@ -411,8 +477,8 @@ $navActive   = 'manage-jobs';
       <div class="recruiter-row" data-id="${r.id}">
         <div class="rec-avatar" style="background:${avatarColors[i % avatarColors.length]}">${r.avatar_url ? `<img src="../${r.avatar_url}" alt="">` : getInitials(r.name)}</div>
         <div class="rec-info">
-          <div class="rec-name">${esc(r.name)} <span class="rec-badge rb-recruiter">${esc(r.role_label || 'Recruiter')}</span></div>
-          <div class="rec-email">${esc(r.email)}</div>
+          <div class="rec-name">${esc(r.name)} <span class="rec-badge rb-recruiter">${esc(r.position || r.role_label || 'Recruiter')}</span></div>
+          <div class="rec-email">${esc(r.email)}${r.personal_email ? ' <span style="color:var(--text-muted);font-size:11px;">(' + esc(r.personal_email) + ')</span>' : ''}</div>
           <div class="rec-meta">
             <span class="rec-stat"><i class="fas fa-briefcase"></i> ${r.jobs_posted || 0} jobs posted</span>
             <span class="rec-stat"><i class="fas fa-users"></i> ${r.applicants_reviewed || 0} reviewed</span>
@@ -422,6 +488,7 @@ $navActive   = 'manage-jobs';
         </div>
         <div class="rec-actions">
           <div class="rec-status rs-online" title="Active"></div>
+          <button class="rec-action-btn" onclick="viewStats(${r.id},'${esc(r.name)}')"><i class="fas fa-chart-bar"></i> View Stats</button>
           <button class="rec-action-btn" onclick="resetPassword(${r.id},'${esc(r.name)}')"><i class="fas fa-key"></i> Reset PW</button>
           <button class="rec-action-btn danger" onclick="deactivateRecruiter(${r.id},'${esc(r.name)}')"><i class="fas fa-user-minus"></i> Deactivate</button>
         </div>
@@ -443,6 +510,7 @@ $navActive   = 'manage-jobs';
         </div>
         <div class="rec-actions">
           <div class="rec-status rs-offline" title="Inactive"></div>
+          <button class="rec-action-btn" onclick="openReassignModal(${r.id},'${esc(r.name)}')"><i class="fas fa-exchange-alt"></i> Reassign Jobs</button>
           <button class="rec-action-btn" style="color:var(--green);" onclick="reactivateRecruiter(${r.id},'${esc(r.name)}')"><i class="fas fa-user-check"></i> Reactivate</button>
         </div>
       </div>
@@ -453,27 +521,28 @@ $navActive   = 'manage-jobs';
   async function addRecruiter() {
     const first = document.getElementById('inviteFirstName').value.trim();
     const last  = document.getElementById('inviteLastName').value.trim();
+    const position = document.getElementById('invitePosition').value.trim();
     const email = document.getElementById('inviteEmail').value.trim();
     const errEl = document.getElementById('modalError');
     errEl.style.display = 'none';
 
     if (!first || !last || !email) {
-      errEl.textContent = 'All fields are required.'; errEl.style.display = 'block'; return;
+      errEl.textContent = 'First name, last name, and personal email are required.'; errEl.style.display = 'block'; return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return;
     }
 
     const btn = document.getElementById('addRecruiterBtn');
-    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
     try {
       const fd = new FormData();
       fd.append('action', 'add_recruiter');
       fd.append('first_name', first);
       fd.append('last_name', last);
-      fd.append('email', email);
-      fd.append('role_label', 'Recruiter');
+      fd.append('position', position);
+      fd.append('personal_email', email);
 
       const res = await fetch(API, { method: 'POST', body: fd });
       const data = await res.json();
@@ -481,10 +550,11 @@ $navActive   = 'manage-jobs';
       if (data.success) {
         closeInviteModal();
         // Show credentials modal
-        document.getElementById('credEmail').textContent = data.recruiter.email;
+        document.getElementById('credEmail').textContent = data.recruiter.platform_email;
         document.getElementById('credPassword').textContent = data.recruiter.temp_password;
+        document.getElementById('credSentTo').textContent = data.recruiter.personal_email;
         document.getElementById('credentialsModal').classList.add('open');
-        showToast('Recruiter account created', 'fa-user-plus');
+        showToast('Recruiter added — credentials sent via message', 'fa-paper-plane');
         loadRecruiters();
       } else {
         errEl.textContent = data.message || 'Failed to add recruiter.'; errEl.style.display = 'block';
@@ -492,7 +562,7 @@ $navActive   = 'manage-jobs';
     } catch(e) {
       errEl.textContent = 'Network error.'; errEl.style.display = 'block';
     }
-    btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus"></i> Add Recruiter';
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Invite';
   }
 
   async function deactivateRecruiter(id, name) {
@@ -537,11 +607,85 @@ $navActive   = 'manage-jobs';
     } catch(e) { showToast('Network error', 'fa-exclamation-triangle'); }
   }
 
+  // -------- View Stats --------
+  async function viewStats(id, name) {
+    document.getElementById('statsRecName').textContent = name;
+    document.getElementById('statsContent').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading stats...</div>';
+    document.getElementById('statsModal').classList.add('open');
+    try {
+      const res = await fetch(API + '?action=recruiter_stats&recruiter_id=' + id);
+      const data = await res.json();
+      if (data.success && data.stats) {
+        const s = data.stats;
+        document.getElementById('statsContent').innerHTML = `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="stat-card"><div class="stat-num">${s.jobs_posted || 0}</div><div class="stat-label">Jobs Posted</div></div>
+            <div class="stat-card"><div class="stat-num amber">${s.applicants_reviewed || 0}</div><div class="stat-label">Applicants Reviewed</div></div>
+            <div class="stat-card"><div class="stat-num green">${s.interviews_scheduled || 0}</div><div class="stat-label">Interviews Scheduled</div></div>
+            <div class="stat-card"><div class="stat-num red">${s.hires_made || 0}</div><div class="stat-label">Hires Made</div></div>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+            <i class="fas fa-clock"></i> Last active: ${s.last_login_at ? formatDate(s.last_login_at) : 'Never'}
+          </div>`;
+      } else {
+        document.getElementById('statsContent').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No stats available for this recruiter.</div>';
+      }
+    } catch(e) {
+      document.getElementById('statsContent').innerHTML = '<div style="text-align:center;padding:20px;color:var(--red-bright);">Failed to load stats.</div>';
+    }
+  }
+  function closeStatsModal() { document.getElementById('statsModal').classList.remove('open'); }
+
+  // -------- Reassign Jobs --------
+  function openReassignModal(fromId, fromName) {
+    document.getElementById('reassignFromId').value = fromId;
+    document.getElementById('reassignDesc').textContent = `Move all active job posts from ${fromName} to another recruiter.`;
+    document.getElementById('reassignError').style.display = 'none';
+    const sel = document.getElementById('reassignToSelect');
+    sel.innerHTML = '<option value="">Select an active recruiter...</option>';
+    allRecruiters.filter(r => r.status === 'active' && r.id !== fromId).forEach(r => {
+      sel.innerHTML += `<option value="${r.id}">${esc(r.name)}</option>`;
+    });
+    document.getElementById('reassignModal').classList.add('open');
+  }
+  function closeReassignModal() { document.getElementById('reassignModal').classList.remove('open'); }
+
+  async function doReassign() {
+    const fromId = document.getElementById('reassignFromId').value;
+    const toId = document.getElementById('reassignToSelect').value;
+    const errEl = document.getElementById('reassignError');
+    errEl.style.display = 'none';
+    if (!toId) { errEl.textContent = 'Please select a recruiter.'; errEl.style.display = 'block'; return; }
+    const btn = document.getElementById('reassignBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reassigning...';
+    try {
+      const fd = new FormData();
+      fd.append('action', 'reassign_jobs');
+      fd.append('from_recruiter_id', fromId);
+      fd.append('to_recruiter_id', toId);
+      const res = await fetch(API, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) {
+        closeReassignModal();
+        showToast(data.message || 'Jobs reassigned', 'fa-exchange-alt');
+        loadRecruiters();
+      } else {
+        errEl.textContent = data.message || 'Failed.'; errEl.style.display = 'block';
+      }
+    } catch(e) {
+      errEl.textContent = 'Network error.'; errEl.style.display = 'block';
+    }
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-exchange-alt"></i> Reassign';
+  }
+
   // -------- Modals --------
   function openInviteModal() {
     document.getElementById('inviteFirstName').value = '';
     document.getElementById('inviteLastName').value = '';
+    document.getElementById('invitePosition').value = '';
     document.getElementById('inviteEmail').value = '';
+    document.getElementById('previewPlatformEmail').textContent = '—';
+    document.getElementById('previewTempPassword').textContent = '—';
     document.getElementById('modalError').style.display = 'none';
     document.getElementById('inviteModal').classList.add('open');
   }
@@ -569,6 +713,8 @@ $navActive   = 'manage-jobs';
   document.addEventListener('click', e => {
     if (e.target === document.getElementById('inviteModal')) closeInviteModal();
     if (e.target === document.getElementById('credentialsModal')) closeCredentialsModal();
+    if (e.target === document.getElementById('statsModal')) closeStatsModal();
+    if (e.target === document.getElementById('reassignModal')) closeReassignModal();
   });
 
   // Load on page ready
