@@ -31,6 +31,41 @@ function pfImg(?array $p, string $key): string {
     if ($v && !str_starts_with($v, '../') && !str_starts_with($v, 'http')) $v = '../' . $v;
     return htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 }
+
+// ── Compute company profile completeness ──
+$cpScore = 0;
+$cpMissing = [];
+$cpFields = [
+    ['key'=>'company_name', 'label'=>'Company Name',   'pts'=>10],
+    ['key'=>'industry',     'label'=>'Industry',        'pts'=>10],
+    ['key'=>'company_size', 'label'=>'Company Size',    'pts'=>5],
+    ['key'=>'company_type', 'label'=>'Company Type',    'pts'=>5],
+    ['key'=>'founded_year', 'label'=>'Founded Year',    'pts'=>5],
+    ['key'=>'website',      'label'=>'Website',         'pts'=>5],
+    ['key'=>'tagline',      'label'=>'Tagline',         'pts'=>5],
+    ['key'=>'about',        'label'=>'Description',     'pts'=>15],
+    ['key'=>'city',         'label'=>'City',            'pts'=>5],
+    ['key'=>'province',     'label'=>'Province/State',  'pts'=>5],
+    ['key'=>'logo_path',    'label'=>'Company Logo',    'pts'=>10],
+    ['key'=>'cover_path',   'label'=>'Cover Photo',     'pts'=>5],
+    ['key'=>'social_linkedin','label'=>'LinkedIn',      'pts'=>5],
+    ['key'=>'perks',        'label'=>'Perks & Benefits','pts'=>10],
+];
+foreach ($cpFields as $f) {
+    $val = (string)($profileData[$f['key']] ?? '');
+    if ($f['key'] === 'perks') {
+        $decoded = json_decode($val, true);
+        $filled = is_array($decoded) && count($decoded) > 0;
+    } else {
+        $filled = $val !== '';
+    }
+    if ($filled) {
+        $cpScore += $f['pts'];
+    } else {
+        $cpMissing[] = $f['label'];
+    }
+}
+$cpScore = min($cpScore, 100);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -193,6 +228,21 @@ function pfImg(?array $p, string $key): string {
     .footer { position:relative; z-index:2; border-top:1px solid var(--soil-line); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:10px; }
     .footer-logo { font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--red-bright); }
 
+    /* Completeness */
+    .completeness-bar-wrap{margin-bottom:20px;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:14px;padding:18px 22px;}
+    .completeness-label{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;}
+    .completeness-label span{font-size:13px;font-weight:600;color:var(--text-mid);}
+    .completeness-pct{font-size:13px;font-weight:700;color:var(--red-bright);}
+    .completeness-track{width:100%;height:6px;background:var(--soil-hover);border-radius:3px;overflow:hidden;}
+    .completeness-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red-vivid),var(--amber));transition:width .5s ease;}
+    .completeness-toggle{margin-top:10px;background:none;border:none;color:var(--text-muted);font-size:12px;font-family:var(--font-body);cursor:pointer;padding:0;display:flex;align-items:center;gap:5px;}
+    .completeness-toggle:hover{color:var(--red-bright);}
+    .completeness-checklist{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--soil-line);}
+    .completeness-checklist.open{display:block;}
+    .cl-item{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;color:var(--text-muted);}
+    .cl-item i.fa-check-circle{color:var(--green);font-size:13px;}
+    .cl-item i.fa-circle{color:var(--soil-line);font-size:13px;}
+
     /* Light mode */
     body.light {
       --soil-dark:#F9F5F4; --soil-card:#FFFFFF; --soil-hover:#FEF0EE; --soil-line:#E0CECA;
@@ -223,6 +273,9 @@ function pfImg(?array $p, string $key): string {
     body.light .social-item { background:#F5EEEC; border-color:#E0CECA; }
     body.light .social-input { color:#4A2828; }
     body.light .social-input::placeholder { color:#7A5555; }
+    body.light .completeness-bar-wrap { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .completeness-label span { color:#4A2828; }
+    body.light .cl-item { color:#7A5555; }
     body.light .perk-chip { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
     body.light .perk-chip.selected { background:rgba(209,61,44,0.08); border-color:var(--red-mid); color:var(--red-bright); }
     body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
@@ -300,6 +353,27 @@ function pfImg(?array $p, string $key): string {
         <button class="btn-cancel" onclick="openPreview()"><i class="fas fa-eye"></i> Preview</button>
       </div>
     </div>
+  </div>
+
+  <!-- Completeness -->
+  <div class="completeness-bar-wrap">
+    <div class="completeness-label">
+      <span>Company Profile Completeness</span>
+      <span class="completeness-pct"><?php echo $cpScore; ?>%</span>
+    </div>
+    <div class="completeness-track"><div class="completeness-fill" style="width:<?php echo $cpScore; ?>%"></div></div>
+    <?php if (!empty($cpMissing)): ?>
+    <button class="completeness-toggle" onclick="toggleChecklist()"><i class="fas fa-exclamation-circle"></i> What's missing?</button>
+    <div class="completeness-checklist" id="completenessChecklist">
+      <?php foreach ($cpFields as $f):
+        $val = (string)($profileData[$f['key']] ?? '');
+        if ($f['key'] === 'perks') { $ok = is_array(json_decode($val,true)) && count(json_decode($val,true)) > 0; }
+        else { $ok = $val !== ''; }
+      ?>
+      <div class="cl-item"><i class="fas <?php echo $ok ? 'fa-check-circle' : 'fa-circle'; ?>"></i> <?php echo $f['label']; ?></div>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
   </div>
 
   <!-- Basic Info -->
@@ -603,6 +677,11 @@ function pfImg(?array $p, string $key): string {
   }
 
   /* ---- PREVIEW MODAL ---- */
+  function toggleChecklist(){
+    const el=document.getElementById('completenessChecklist');
+    if(el) el.classList.toggle('open');
+  }
+
   function openPreview() {
     const name = document.getElementById('companyName').value.trim() || 'Your Company';
     const ind  = document.getElementById('industry').value;

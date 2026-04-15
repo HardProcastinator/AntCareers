@@ -236,6 +236,16 @@ try {
     body.light .stat-pill{background:#fff;border-color:#E0CECA;}
     body.light .sp-count{color:#1A0A09;}
     .job-list{display:flex;flex-direction:column;gap:10px;}
+    /* ── Search Toolbar ── */
+    .filter-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+    .filter-toolbar .search-wrap{flex:1;min-width:200px;position:relative;}
+    .filter-toolbar .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text-muted);}
+    .filter-toolbar .search-wrap input{width:100%;padding:9px 13px 9px 34px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:#F5F0EE;font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
+    .filter-toolbar .search-wrap input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
+    .filter-toolbar select{padding:9px 13px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:#F5F0EE;font-family:var(--font-body);font-size:13px;cursor:pointer;outline:none;transition:.2s;}
+    .filter-toolbar select:focus{border-color:var(--red-vivid);}
+    body.light .filter-toolbar .search-wrap input{background:#F5EDEB;border-color:#D4B0AB;color:#1A0A09;}
+    body.light .filter-toolbar select{background:#F5EDEB;border-color:#D4B0AB;color:#1A0A09;}
     .job-card{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:18px 20px;display:flex;align-items:start;gap:14px;transition:all 0.2s;position:relative;}
     .job-card:hover{border-color:rgba(209,61,44,.4);box-shadow:0 6px 24px rgba(0,0,0,.25);}
     body.light .job-card{background:#fff;border-color:#E0CECA;}
@@ -340,6 +350,16 @@ try {
     <span class="sp-label">Applicants</span>
     <span class="sp-count"><?=$counts['applicants']?></span>
   </div>
+  </div>
+
+  <div class="filter-toolbar">
+    <div class="search-wrap"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search jobs by title, location, skills…" oninput="filterJobCards()"></div>
+    <select id="statusFilter" onchange="filterJobCards()">
+      <option value="">All Statuses</option>
+      <option value="active"<?=$filterStatus==='Active'?' selected':''?>>Active</option>
+      <option value="closed"<?=$filterStatus==='Closed'?' selected':''?>>Closed</option>
+      <option value="draft"<?=$filterStatus==='Draft'?' selected':''?>>Draft</option>
+    </select>
   </div>
 
   <div class="job-list" id="jobList">
@@ -456,6 +476,26 @@ function onCountryChange(){var code=document.getElementById('fCountry').value;va
   // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
   ['jobModal','confirmModal'].forEach(function(id){document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});});
   if(new URLSearchParams(window.location.search).get('postjob')==='1')openPost();
+
+  /* ── Client-side search + status filter ── */
+  function filterJobCards(){
+    var q=(document.getElementById('searchInput').value||'').toLowerCase();
+    var sf=document.getElementById('statusFilter').value.toLowerCase();
+    var cards=document.querySelectorAll('#jobList .job-card');
+    var empty=document.getElementById('emptyFilter');
+    var vis=0;
+    cards.forEach(function(c){
+      var text=c.textContent.toLowerCase();
+      var badge=c.querySelector('.sbadge');
+      var st=badge?badge.textContent.trim().toLowerCase():'';
+      var show=true;
+      if(q&&text.indexOf(q)===-1)show=false;
+      if(sf&&st!==sf)show=false;
+      c.style.display=show?'':'none';
+      if(show)vis++;
+    });
+    if(empty){empty.style.display=vis?'none':'block';}
+  }
 </script>
 <?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>

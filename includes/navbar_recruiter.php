@@ -140,7 +140,7 @@ function _recActive(string $key, string $active): string {
   .mobile-divider{height:1px;background:var(--soil-line);margin:6px 0}
 
   /* Notifications panel */
-  .notif-panel-side{position:fixed;top:64px;right:0;bottom:0;width:360px;background:var(--soil-card);border-left:1px solid var(--soil-line);z-index:150;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,0.4)}
+  .notif-panel-side{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:100vw;background:var(--soil-card);border-left:1px solid var(--soil-line);z-index:500;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,0.4)}
   .notif-panel-side.open{transform:translateX(0)}
   .notif-panel-head{padding:20px 20px 16px;border-bottom:1px solid var(--soil-line);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
   .notif-panel-title{font-family:var(--font-display);font-size:17px;font-weight:700;color:#F5F0EE;display:flex;align-items:center;gap:8px}

@@ -259,9 +259,11 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
     .cp-roles{font-size:11px;color:var(--text-muted);margin-top:1px;}
 
     /* Job list */
-    .job-list{display:flex;flex-direction:column;gap:8px;}
-    .job-row{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:22px 24px;cursor:pointer;transition:all 0.18s;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;position:relative;}
-    .job-row:hover{border-color:rgba(209,61,44,0.5);background:var(--soil-hover);transform:translateX(2px);box-shadow:0 4px 16px rgba(0,0,0,0.12);}
+    .job-list{display:flex;flex-direction:column;gap:10px;}
+    .job-row{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:22px 24px;cursor:pointer;transition:border-color 0.18s,transform 0.18s,box-shadow 0.18s;display:flex;gap:14px;align-items:flex-start;position:relative;}
+    .job-row:hover{border-color:rgba(209,61,44,0.45);transform:translateX(2px);box-shadow:0 4px 16px rgba(0,0,0,0.12);}
+    .jr-icon{width:40px;height:40px;border-radius:10px;flex-shrink:0;margin-top:1px;background:rgba(209,61,44,0.1);border:1px solid rgba(209,61,44,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--red-pale);}
+    .jr-left{flex:1;min-width:0;}
     .jr-top{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
     .jr-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:#F5F0EE;}
     .jr-badge-new{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6ccf8a;background:rgba(76,175,112,0.1);border:1px solid rgba(76,175,112,0.25);padding:2px 7px;border-radius:4px;}
@@ -526,7 +528,13 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
 
       <div class="fs-section">
         <div class="fs-section-label">Salary</div>
-        <input type="text" id="salaryKeyword" class="fs-text-input" placeholder="e.g. 30k or 30000-50000">
+        <select class="fs-select" id="salaryPeriodFilter">
+          <option value="">Any period</option>
+          <option value="Annually">Annually</option>
+          <option value="Monthly">Monthly</option>
+          <option value="Hourly">Hourly</option>
+        </select>
+        <input type="text" id="salaryKeyword" class="fs-text-input" placeholder="Enter salary range" style="margin-top:6px;">
       </div>
 
       <div class="fs-divider"></div>
@@ -673,6 +681,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
       keyword:        (document.getElementById('keywordInput')?.value || '').toLowerCase().trim(),
       locationKeyword:(document.getElementById('locationKeyword')?.value || '').toLowerCase().trim(),
       salaryKeyword:  (document.getElementById('salaryKeyword')?.value || '').trim(),
+      salaryPeriod:   document.getElementById('salaryPeriodFilter')?.value || '',
       searchIndustries: getMsValues('msSearchIndustry'),
       searchCountry:  document.getElementById('searchCountryFilter')?.value || '',
       industries:     getMsValues('msIndustry'),
@@ -765,7 +774,8 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
       const tags = (j.tags||[]).slice(0,4).map(t => `<span class="chip">${esc(t)}</span>`).join('');
       return `
         <div class="job-row" style="animation:fadeUp 0.3s ${i*0.04}s both ease;" onclick="openJobModal(${j.id})">
-          <div>
+          <div class="jr-icon"><i class="fas ${jobIcon(j.industry)}"></i></div>
+          <div class="jr-left">
             <div class="jr-top">
               <div class="jr-title">${esc(j.title)}</div>
               ${jobBadge(j)}
@@ -777,7 +787,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
               <span><i class="fas fa-briefcase"></i> ${esc(j.jobType)}</span>
               ${j.experience ? `<span><i class="fas fa-layer-group"></i> ${esc(j.experience)}</span>` : ''}
             </div>
-            <div class="jr-chips">${tags}</div>
+            ${tags ? `<div class="jr-chips">${tags}</div>` : ''}
           </div>
           <div class="job-row-right">
             <div class="jr-salary">${esc(j.salary)}</div>
@@ -835,6 +845,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
     updateRolePicker([]);
     const locEl = document.getElementById('locationKeyword'); if (locEl) locEl.value = '';
     const salEl = document.getElementById('salaryKeyword'); if (salEl) salEl.value = '';
+    ['searchCountryFilter','sidebarLocationFilter','salaryPeriodFilter'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
     ['searchCountryFilter','sidebarLocationFilter'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
     document.querySelectorAll('.ms-wrap').forEach(wrap => {
       wrap.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -881,11 +892,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', renderAllJobs);
   });
-  ['searchCountryFilter','sidebarLocationFilter'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('change', renderAllJobs);
-  });
-  document.getElementById('resetFiltersBtn')?.addEventListener('click', resetFilters);
+  ['searchCountryFilter','sidebarLocationFilter','salaryPeriodFilter'].forEach(id => {\n    const el = document.getElementById(id);\n    if (el) el.addEventListener('change', renderAllJobs);\n  });\n  document.getElementById('resetFiltersBtn')?.addEventListener('click', resetFilters);", "oldString": "  ['searchCountryFilter','sidebarLocationFilter'].forEach(id => {\n    const el = document.getElementById(id);\n    if (el) el.addEventListener('change', renderAllJobs);\n  });\n  document.getElementById('resetFiltersBtn')?.addEventListener('click', resetFilters);
 
   /* ── INIT ── */
   renderAllJobs();

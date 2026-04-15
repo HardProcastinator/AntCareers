@@ -3,6 +3,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
 require_once dirname(__DIR__) . '/includes/countries.php';
+require_once dirname(__DIR__) . '/includes/job_titles.php';
 requireLogin('recruiter');
 $user        = getUser();
 $fullName    = $user['fullName'];
@@ -37,8 +38,8 @@ try {
         LEFT JOIN seeker_skills sk ON sk.user_id = u.id
         LEFT JOIN seeker_resumes sr ON sr.user_id = u.id AND sr.is_active = 1
         WHERE u.id != ? AND u.is_active = 1
-          AND u.account_type IN ('seeker','employer')
-          AND (u.account_type <> 'seeker' OR COALESCE(sp.show_in_people_search, 1) = 1)
+          AND u.account_type = 'seeker'
+          AND COALESCE(sp.show_in_people_search, 1) = 1
         GROUP BY u.id
         ORDER BY u.full_name ASC
         LIMIT 100
@@ -104,6 +105,19 @@ foreach (getCountries() as $country) {
   $countrySidebarOptionsHtml .= '<option value="' . $escName . '">' . $escName . '</option>';
 }
 $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
+
+$categoryOptionsHtml = '<option value="">Any classification</option>';
+$jobTitlesTree = [];
+foreach (getJobCategories() as $catName => $cat) {
+    $esc = htmlspecialchars($catName, ENT_QUOTES, 'UTF-8');
+    $categoryOptionsHtml .= '<option value="' . $esc . '">' . $esc . '</option>';
+    $titles = [];
+    foreach ($cat['subcategories'] as $subTitles) {
+        foreach ($subTitles as $t) $titles[] = $t;
+    }
+    $jobTitlesTree[$catName] = $titles;
+}
+$jobTitlesTreeJson = json_encode($jobTitlesTree, JSON_HEX_TAG | JSON_HEX_AMP);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -248,7 +262,7 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
     body.light .person-skill-chip { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
     body.light .person-skill-empty { color:#7A5555; }
     body.light .person-modal-btn.secondary { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
-    body.light .person-modal-btn.secondary:hover { border-color:var(--red-vivid); }
+    body.light .person-modal-btn.secondary:hover { border-color:var(--red-vivid); color:#1A0A09; }
     body.light .person-modal-status.seeking { background:rgba(209,61,44,0.08); border-color:rgba(209,61,44,0.2); color:var(--red-bright); }
     body.light .person-modal-status.hiring { background:rgba(76,175,112,0.08); border-color:rgba(76,175,112,0.2); color:#2E7D4C; }
     body.light .person-modal-status.neutral { background:rgba(212,148,58,0.08); border-color:rgba(212,148,58,0.2); color:#8B5E1E; }
@@ -366,6 +380,8 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
     body.light .skill-chip { background:#F5EEEC; border-color:#E0CECA; color:#5A3838; }
     body.light .pc-connect { background:#F5EEEC; border-color:#E0CECA; }
     body.light .pc-footer { border-color:#E0CECA; }
+    body.light .pc-btn:hover { color:#1A0A09; background:#F0E4E2; }
+    body.light .pc-btn.primary:hover { color:#fff; }
     @media(max-width:1060px) { .layout{grid-template-columns:1fr} .filter-sidebar{position:static} }
     @media(max-width:640px) { .people-grid{grid-template-columns:1fr} .search-row{flex-direction:column} .nav-links{display:none} .hamburger{display:flex} }
 </style>
@@ -444,38 +460,11 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
       <!-- Classification of Interest -->
       <div class="fs-section">
         <div class="fs-section-label">Classification of Interest</div>
-        <select class="fs-select" id="filterClassification" onchange="filterPeople()">
-          <option value="">Any classification</option>
-          <option>Accounting</option>
-          <option>Administration &amp; Office Support</option>
-          <option>Advertising, Arts &amp; Media</option>
-          <option>Banking &amp; Financial Services</option>
-          <option>Call Centre &amp; Customer Service</option>
-          <option>CEO &amp; General Management</option>
-          <option>Community Services &amp; Development</option>
-          <option>Construction</option>
-          <option>Consulting &amp; Strategy</option>
-          <option>Design &amp; Architecture</option>
-          <option>Education &amp; Training</option>
-          <option>Engineering</option>
-          <option>Farming, Animals &amp; Conservation</option>
-          <option>Government &amp; Defence</option>
-          <option>Healthcare &amp; Medical</option>
-          <option>Hospitality &amp; Tourism</option>
-          <option>Human Resources &amp; Recruitment</option>
-          <option>Information &amp; Communication Technology</option>
-          <option>Insurance &amp; Superannuation</option>
-          <option>Legal</option>
-          <option>Manufacturing, Transport &amp; Logistics</option>
-          <option>Marketing &amp; Communications</option>
-          <option>Mining, Resources &amp; Energy</option>
-          <option>Real Estate &amp; Property</option>
-          <option>Retail &amp; Consumer Products</option>
-          <option>Sales</option>
-          <option>Science &amp; Technology</option>
-          <option>Self Employment</option>
-          <option>Sports &amp; Recreation</option>
-          <option>Trades &amp; Services</option>
+        <select class="fs-select" id="filterClassification" onchange="updateJobTitles(); filterPeople()" style="margin-bottom:6px;">
+          <?= $categoryOptionsHtml ?>
+        </select>
+        <select class="fs-select" id="filterJobTitle" onchange="filterPeople()">
+          <option value="">Any job title</option>
         </select>
       </div>
 
@@ -562,7 +551,7 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
         <select class="sort-select" onchange="filterPeople()">
           <option>Most Relevant</option>
           <option>Recently Active</option>
-          <option>Mutual Connections</option>
+          <option>Mutual Followers</option>
         </select>
       </div>
       <div class="people-grid anim anim-d3" id="peopleGrid"></div>
@@ -573,7 +562,6 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
 
 <div class="person-modal-overlay" id="personModal" style="display:none;">
   <div class="person-modal-box">
-    <button class="person-modal-close" type="button" onclick="closePersonView()"><i class="fas fa-times"></i></button>
     <div id="personModalBody"></div>
   </div>
 </div>
@@ -583,6 +571,16 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
   const peopleById = Object.fromEntries(peopleData.map(p => [String(p.id), p]));
 
   let connections = new Set();
+
+  const _jobTitlesTree = <?= $jobTitlesTreeJson ?>;
+  function updateJobTitles() {
+    const cat = document.getElementById('filterClassification').value;
+    const sel = document.getElementById('filterJobTitle');
+    sel.innerHTML = '<option value="">Any job title</option>';
+    if (cat && _jobTitlesTree[cat]) {
+      _jobTitlesTree[cat].forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o); });
+    }
+  }
 
   function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 
@@ -637,7 +635,7 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
       </div>
       ${resumeSection}
       <div class="person-modal-actions">
-        <button class="person-modal-btn secondary" type="button" onclick="openPersonMessage(${person.id})"><i class="fas fa-comment-dots"></i> Message</button>
+        <button class="person-modal-btn secondary" type="button" onclick="openPersonMessageFullPage(${person.id})"><i class="fas fa-comment-dots"></i> Message</button>
         <button class="person-modal-btn primary" type="button" onclick="closePersonView()">Close</button>
       </div>`;
 
@@ -650,6 +648,12 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
     window.dispatchEvent(new CustomEvent('recruiter:openMessageSidebar', {
       detail: { userId: person.id, userName: person.name }
     }));
+  }
+
+  function openPersonMessageFullPage(personId) {
+    const person = peopleById[String(personId)];
+    if (!person) return;
+    window.location.href = 'recruiter_messages.php?user=' + person.id;
   }
 
   function closePersonView() {
@@ -683,13 +687,13 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
               <div class="pc-location"><i class="fas fa-map-marker-alt"></i> ${p.location}</div>
             </div>
             ${badge}
-            <button class="pc-connect ${isConnected?'connected':''}" title="${isConnected?'Connected':'Connect'}" onclick="event.stopPropagation();toggleConnect(${p.id},this)">
+            <button class="pc-connect ${isConnected?'connected':''}" title="${isConnected?'Following':'Follow'}" onclick="event.stopPropagation();toggleConnect(${p.id},this)">
               <i class="fas fa-${isConnected?'check':'user-plus'}"></i>
             </button>
           </div>
           <div class="pc-skills">${skills}</div>
           <div class="pc-footer">
-            <div class="pc-mutual">${p.mutual>0?`<i class="fas fa-users"></i> ${p.mutual} mutual connection${p.mutual!==1?'s':''}`:``}</div>
+            <div class="pc-mutual">${p.mutual>0?`<i class="fas fa-users"></i> ${p.mutual} mutual follower${p.mutual!==1?'s':''}`:``}</div>
             <div class="pc-actions">
               <button class="pc-btn" onclick="event.stopPropagation();openPersonMessage(${p.id});">Message</button>
               <button class="pc-btn primary" onclick="event.stopPropagation();openPersonView(${p.id})">View</button>
@@ -724,6 +728,7 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
     const rightToWork = document.getElementById('filterRightToWork').value;
     const salaryMin = parseFloat(document.getElementById('filterSalaryMin').value) || 0;
     const salaryMax = parseFloat(document.getElementById('filterSalaryMax').value) || 0;
+    const filterJobTitle = document.getElementById('filterJobTitle').value.toLowerCase();
 
     let filtered = peopleData.filter(p => {
       const matchQ = !q || p.name.toLowerCase().includes(q) || p.title.toLowerCase().includes(q) || p.skills.some(s=>s.toLowerCase().includes(q));
@@ -738,7 +743,8 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
       const pSalary = parseFloat(p.salary) || 0;
       const matchSalMin = !salaryMin || pSalary >= salaryMin;
       const matchSalMax = !salaryMax || pSalary <= salaryMax;
-      return matchQ && matchOtw && matchAvail && matchClass && matchExp && matchWork && matchCountry && matchLocKw && matchRtw && matchSalMin && matchSalMax;
+      const matchJobTitle = !filterJobTitle || (p.classification && p.classification.toLowerCase().includes(filterJobTitle));
+      return matchQ && matchOtw && matchAvail && matchClass && matchExp && matchWork && matchCountry && matchLocKw && matchRtw && matchSalMin && matchSalMax && matchJobTitle;
     });
     renderPeople(filtered);
   }
@@ -748,6 +754,8 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
     document.getElementById('filterOpenToWork').checked = false;
     document.getElementById('filterAvailability').value = '';
     document.getElementById('filterClassification').value = '';
+    document.getElementById('filterJobTitle').value = '';
+    updateJobTitles();
     document.getElementById('filterExperience').value = '';
     document.getElementById('sidebarLocationFilter').value = '';
     document.getElementById('sidebarLocationKeyword').value = '';
@@ -787,14 +795,14 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
       connections.delete(key);
       btn.classList.remove('connected');
       btn.innerHTML = '<i class="fas fa-user-plus"></i>';
-      btn.title = 'Connect';
-      showToast('Connection removed','fa-user-minus');
+      btn.title = 'Follow';
+      showToast('Unfollowed','fa-user-minus');
     } else {
       connections.add(key);
       btn.classList.add('connected');
       btn.innerHTML = '<i class="fas fa-check"></i>';
-      btn.title = 'Connected';
-      showToast('Connection request sent!','fa-handshake');
+      btn.title = 'Following';
+      showToast('Followed!','fa-heart');
     }
   }
 

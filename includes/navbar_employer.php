@@ -61,6 +61,10 @@ function navHref(string $page): string {
          href="employer_analytics.php">
         <i class="fas fa-chart-bar"></i> Analytics
       </a>
+      <a class="nav-link <?= $navActive==='recruiters'?'active':'' ?>"
+         onclick="<?= navHref('../employer/employer_manageRecruiters.php') ?>">
+        <i class="fas fa-user-tie"></i> Recruiters
+      </a>
     </div><!-- /nav-links -->
 
     <div class="nav-right">
@@ -68,7 +72,7 @@ function navHref(string $page): string {
 
       <?php if ($navbarShowMessage): ?>
       <button class="notif-btn-nav" id="navMsgBtn"
-              onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();}">
+              onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();}else{this.classList.toggle('active');}">
         <i class="fas fa-envelope"></i>
         <span class="badge msg-badge-count" style="display:none">0</span>
       </button>
@@ -113,9 +117,6 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
           </div>
           <div class="pd-item" onclick="<?= navHref('../employer/employer_manageJobs.php') ?>">
             <i class="fas fa-briefcase"></i> Manage Jobs
-          </div>
-          <div class="pd-item" onclick="<?= navHref('../employer/employer_manageRecruiters.php') ?>">
-            <i class="fas fa-user-tie"></i> Manage Recruiters
           </div>
           <div class="pd-item" onclick="<?= navHref('../employer/employer_settings.php') ?>">
             <i class="fas fa-cog"></i> Settings
@@ -166,9 +167,6 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   body.light .mobile-divider { background:#E0CECA; }
   body.light .btn-nav-red { box-shadow:0 2px 8px rgba(209,61,44,0.2); }
   body.light .glow-orb { display:none; }
-  /* Toast light-mode contrast fix */
-  body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; box-shadow:0 10px 30px rgba(0,0,0,0.1); }
-  body.light .toast i { color:var(--red-vivid); }
 </style>
 
 <!-- Employer shared theme + interactions script -->

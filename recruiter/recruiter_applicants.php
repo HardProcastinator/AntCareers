@@ -234,12 +234,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $st = $db->prepare("
                 SELECT a.id, a.status, a.cover_letter, a.resume_url, a.applied_at,
                        u.full_name, u.email, u.avatar_url,
-                       sp.headline, CONCAT_WS(', ', sp.city_name, sp.province_name) AS seeker_location, sp.experience_level, sp.bio, sp.phone
+                       sp.headline, CONCAT_WS(', ', sp.city_name, sp.province_name) AS seeker_location,
+                       sp.experience_level, sp.bio, sp.phone,
+                       sp.nr_availability, sp.nr_work_types, sp.nr_right_to_work,
+                       sp.nr_classification, sp.nr_salary, sp.nr_salary_period,
+                       sp.professional_summary,
+                       GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.sort_order SEPARATOR ',') AS skills,
+                       sr.file_path AS resume_path, sr.original_filename AS resume_name
                 FROM applications a
                 JOIN jobs j ON j.id=a.job_id
                 JOIN users u ON u.id=a.seeker_id
                 LEFT JOIN seeker_profiles sp ON sp.user_id=u.id
+                LEFT JOIN seeker_skills sk ON sk.user_id=u.id
+                LEFT JOIN seeker_resumes sr ON sr.user_id=u.id AND sr.is_active=1
                 WHERE a.id=? AND j.recruiter_id=?
+                GROUP BY a.id
             ");
             $st->execute([$appId, $uid]);
             $r = $st->fetch(PDO::FETCH_ASSOC);
@@ -436,9 +445,28 @@ $jobsListJson   = json_encode($jobsList ?: []);
     .detail-avatar img { width:100%; height:100%; object-fit:cover; }
     .detail-name { font-family:var(--font-display); font-size:18px; font-weight:700; color:#F5F0EE; }
     .detail-meta { font-size:12px; color:var(--text-muted); margin-top:2px; }
-    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .detail-item { font-size:13px; color:var(--text-mid); }
-    .detail-item strong { color:var(--text-light); font-weight:600; display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); margin-bottom:2px; }
+    .pm-section-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .pm-info-card { background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:10px; padding:11px 14px; }
+    .pm-info-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:4px; }
+    .pm-info-value { font-size:13px; font-weight:600; color:#F5F0EE; word-break:break-word; }
+    .pm-about { font-size:13px; color:var(--text-mid); line-height:1.65; white-space:pre-wrap; }
+    .pm-resume-btn { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:8px; border:1px solid rgba(76,175,112,0.3); background:rgba(76,175,112,0.08); color:#6ccf8a; font-size:12px; font-weight:700; font-family:var(--font-body); cursor:pointer; text-decoration:none; transition:0.18s; margin-top:8px; }
+    .pm-resume-btn:hover { background:rgba(76,175,112,0.15); border-color:rgba(76,175,112,0.5); }
+    .pm-resume-btn i { font-size:13px; }
+    .pm-detail-row { font-size:12px; color:var(--text-muted); margin-top:3px; display:flex; align-items:center; gap:6px; }
+    .pm-detail-row i { font-size:11px; color:var(--red-bright); }
+    .person-skill-row { display:flex; flex-wrap:wrap; gap:6px; }
+    .person-skill-chip { padding:4px 10px; border-radius:5px; background:var(--soil-hover); border:1px solid var(--soil-line); font-size:11px; font-weight:600; color:var(--text-mid); }
+    .person-skill-empty { font-size:12px; color:var(--text-muted); font-style:italic; }
+    .pm-status-badge { display:inline-block; font-size:11px; font-weight:700; padding:5px 14px; border-radius:20px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:14px; }
+    .pm-status-badge.seeking { background:rgba(209,61,44,0.08); border:1px solid rgba(209,61,44,0.2); color:var(--red-bright); }
+    .pm-status-badge.hired { background:rgba(76,175,112,0.1); border:1px solid rgba(76,175,112,0.2); color:#6ccf8a; }
+    .pm-status-badge.neutral { background:rgba(212,148,58,0.08); border:1px solid rgba(212,148,58,0.2); color:var(--amber); }
+    body.light .pm-info-card { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .pm-info-value { color:#1A0A09; }
+    body.light .pm-about { color:#4A2828; }
+    body.light .pm-resume-btn { background:rgba(76,175,112,0.06); border-color:rgba(76,175,112,0.25); color:#2E7D4C; }
+    @media(max-width:500px) { .pm-section-grid { grid-template-columns:1fr; } }
 
     /* ── EMPTY STATE ── */
     .empty { text-align:center; padding:55px 20px; color:var(--text-muted); }
@@ -488,6 +516,7 @@ $jobsListJson   = json_encode($jobsList ?: []);
     body.light .modal-title { color:#1A0A09; }
     body.light .fi { background:#F5EDEB; border-color:#D4B0AB; color:#1A0A09; }
     body.light .detail-name { color:#1A0A09; }
+    body.light .person-skill-chip { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
 
     /* ── RESPONSIVE ── */
     @media(max-width:880px) { .nav-links { display:none; } .hamburger { display:flex; } }
@@ -500,7 +529,8 @@ $jobsListJson   = json_encode($jobsList ?: []);
       .app-right { display:none; }
       .footer { flex-direction:column; text-align:center; padding:16px; }
       .frow { grid-template-columns:1fr; }
-      .detail-grid { grid-template-columns:1fr; }
+      .pm-section-grid { grid-template-columns:1fr; }
+      .detail-header { flex-direction:column; text-align:center; }
     }
     @media(max-width:480px) {
       .stats-row { gap:6px; }
@@ -619,10 +649,10 @@ $jobsListJson   = json_encode($jobsList ?: []);
 
 <!-- APPLICANT DETAIL MODAL -->
 <div class="modal-bd" id="dModal">
-  <div class="modal-box" style="max-width:560px;">
+  <div class="modal-box" style="max-width:640px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">
     <button class="modal-close" onclick="closeModal('dModal')"><i class="fas fa-times"></i></button>
-    <div class="modal-title"><i class="fas fa-user" style="color:var(--red-bright)"></i> Applicant Details</div>
-    <div id="dContent"><div style="text-align:center;padding:30px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading…</div></div>
+    <div class="modal-title" style="flex-shrink:0;"><i class="fas fa-user" style="color:var(--red-bright)"></i> Applicant Details</div>
+    <div id="dContent" style="overflow-y:auto;flex:1;min-height:0;padding-right:6px;"><div style="text-align:center;padding:30px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading…</div></div>
   </div>
 </div>
 
@@ -938,31 +968,51 @@ $jobsListJson   = json_encode($jobsList ?: []);
       var avatarHtml = a.avatar_url
         ? '<img src="../'+esc(a.avatar_url)+'" alt="">'
         : esc(ini);
-      var resumeUrl = a.resume_url || '';
 
       var html = '<div class="detail-header">'
         +'<div class="detail-avatar" style="background:'+grad+'">'+avatarHtml+'</div>'
         +'<div><div class="detail-name">'+esc(a.full_name)+'</div>'
         +'<div class="detail-meta">'+esc(a.email)+'</div>'
         +(a.headline ? '<div class="detail-meta" style="color:var(--text-mid)">'+esc(a.headline)+'</div>' : '')
+        +(a.phone ? '<div class="pm-detail-row"><i class="fas fa-phone"></i> '+esc(a.phone)+'</div>' : '')
         +'</div></div>';
 
-      html += '<div class="detail-section"><div class="detail-grid">';
-      if (a.seeker_location) html += '<div class="detail-item"><strong>Location</strong>'+esc(a.seeker_location)+'</div>';
-      if (a.experience_level) html += '<div class="detail-item"><strong>Experience</strong>'+esc(a.experience_level)+'</div>';
-      if (a.phone) html += '<div class="detail-item"><strong>Phone</strong>'+esc(a.phone)+'</div>';
-      html += '<div class="detail-item"><strong>Status</strong>'+esc(a.status)+'</div>';
-      html += '<div class="detail-item"><strong>Applied</strong>'+formatDate(a.applied_at)+'</div>';
-      html += '</div></div>';
+      var statusMap = {Pending:'neutral',Reviewed:'neutral',Shortlisted:'hired',Interviewed:'hired',Offered:'hired',Rejected:'seeking'};
+      html += '<div class="pm-status-badge '+(statusMap[a.status]||'neutral')+'">'+esc(a.status)+'</div>';
 
-      if (a.bio) {
-        html += '<div class="detail-section"><div class="etitle"><i class="fas fa-user-circle"></i> Bio</div><p class="cover-text">'+esc(a.bio)+'</p></div>';
+      var aboutText = a.professional_summary || a.bio || '';
+      if (aboutText) {
+        html += '<div class="detail-section"><div class="etitle"><i class="fas fa-user-circle"></i> About</div><div class="pm-about">'+esc(aboutText)+'</div></div>';
       }
+
+      var infoCards = '';
+      if (a.experience_level) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Experience</div><div class="pm-info-value">'+esc(a.experience_level)+'</div></div>';
+      if (a.nr_availability) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Availability</div><div class="pm-info-value">'+esc(a.nr_availability)+'</div></div>';
+      if (a.nr_work_types) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Work Type</div><div class="pm-info-value">'+esc(a.nr_work_types)+'</div></div>';
+      if (a.nr_right_to_work) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Right to Work</div><div class="pm-info-value">'+esc(a.nr_right_to_work)+'</div></div>';
+      if (a.nr_classification) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Classification</div><div class="pm-info-value">'+esc(a.nr_classification)+'</div></div>';
+      if (a.seeker_location) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Location</div><div class="pm-info-value">'+esc(a.seeker_location)+'</div></div>';
+      if (a.nr_salary) {
+        var salaryDisplay = a.nr_salary + (a.nr_salary_period ? ' ' + a.nr_salary_period : '');
+        infoCards += '<div class="pm-info-card"><div class="pm-info-label">Salary Expectation</div><div class="pm-info-value">'+esc(salaryDisplay)+'</div></div>';
+      }
+      infoCards += '<div class="pm-info-card"><div class="pm-info-label">Applied</div><div class="pm-info-value">'+esc(a.applied_at ? new Date(a.applied_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—')+'</div></div>';
+      if (infoCards) html += '<div class="detail-section"><div class="etitle"><i class="fas fa-info-circle"></i> Details</div><div class="pm-section-grid">'+infoCards+'</div></div>';
+
+      var skills = (a.skills||'').split(',').filter(Boolean);
+      if (skills.length) {
+        html += '<div class="detail-section"><div class="etitle"><i class="fas fa-tags"></i> Skills</div><div class="person-skill-row">'+skills.map(function(s){return '<span class="person-skill-chip">'+esc(s.trim())+'</span>';}).join('')+'</div></div>';
+      }
+
       if (a.cover_letter) {
-        html += '<div class="detail-section"><div class="etitle"><i class="fas fa-envelope-open-text"></i> Cover Letter</div><p class="cover-text">'+esc(a.cover_letter).replace(/\n/g,'<br>')+'</p></div>';
+        html += '<div class="detail-section"><div class="etitle"><i class="fas fa-envelope-open-text"></i> Cover Letter</div><div class="pm-about">'+esc(a.cover_letter).replace(/\n/g,'<br>')+'</div></div>';
       }
+
+      var resumeUrl = a.resume_path || a.resume_url || '';
+      var resumeName = a.resume_name || 'Download Resume';
       if (resumeUrl) {
-        html += '<div class="detail-section"><a href="'+esc(resumeUrl)+'" target="_blank" class="btn primary"><i class="fas fa-download"></i> Download Resume</a></div>';
+        var href = resumeUrl.startsWith('http')||resumeUrl.startsWith('../') ? resumeUrl : '../'+resumeUrl;
+        html += '<div class="detail-section"><a class="pm-resume-btn" href="'+esc(href)+'" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> '+esc(resumeName)+'</a></div>';
       }
 
       document.getElementById('dContent').innerHTML = html;
