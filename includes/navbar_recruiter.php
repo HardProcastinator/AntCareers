@@ -610,6 +610,15 @@ function _recActive(string $key, string $active): string {
   document.getElementById('msgConvoBack').addEventListener('click',function(){ showRecThreadView(); loadRecThreads(); });
 
   /* Load notifications */
+  function getRecNotifUrl(type, refId){
+    switch(type){
+      case 'message': return 'recruiter_messages.php' + (refId ? '?user_id=' + refId : '');
+      case 'application': return 'recruiter_applicants.php';
+      case 'recruiter_credentials': case 'recruiter_added': return 'recruiter_profile.php';
+      case 'offer_credential': return 'recruiter_applicants.php';
+      default: return 'recruiter_dashboard.php';
+    }
+  }
   function loadRecNotifications(){
     var container=document.getElementById('notifList');
     fetch('../api/messages.php?action=notifications')
@@ -622,7 +631,8 @@ function _recActive(string $key, string $active): string {
         var html='';
         data.notifications.forEach(function(n){
           var dotClass=n.is_read?'read':(n.type==='message'?'red':(n.type==='application'?'green':'amber'));
-          html+='<div class="notif-item" data-notif-id="'+n.id+'">'
+          var href=getRecNotifUrl(n.type, n.reference_id);
+          html+='<div class="notif-item" data-notif-id="'+n.id+'" data-href="'+href+'">'
             +'<div class="n-dot '+dotClass+'"></div>'
             +'<div><div class="n-text">'+n.content+'</div><div class="n-time">'+_esc(n.time)+'</div></div></div>';
         });
@@ -630,8 +640,9 @@ function _recActive(string $key, string $active): string {
         container.querySelectorAll('.notif-item').forEach(function(el){
           el.addEventListener('click',function(){
             var nid=el.getAttribute('data-notif-id');
+            var href=el.getAttribute('data-href');
             fetch('../api/messages.php?action=mark_notif_read&id='+nid,{method:'POST'})
-              .then(function(){el.querySelector('.n-dot').className='n-dot read'; updateRecBadges();});
+              .then(function(){el.querySelector('.n-dot').className='n-dot read'; updateRecBadges(); if(href) window.location.href=href;});
           });
         });
       })
@@ -736,3 +747,4 @@ function _recActive(string $key, string $active): string {
   refreshRecFullMessageLinks();
 })();
 </script>
+

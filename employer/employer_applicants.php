@@ -143,6 +143,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
 
             $db->prepare("UPDATE applications SET status=?,reviewed_at=NOW() WHERE id=?")->execute([$newS,$appId]);
+
+            // Notify seeker of status change
+            $statusMessages = [
+                'Reviewed'     => "Your application for \"{$row['job_title']}\" has been reviewed.",
+                'Shortlisted'  => "Great news! Your application for \"{$row['job_title']}\" has been shortlisted.",
+                'Interviewed'  => "Your application for \"{$row['job_title']}\" has progressed to interviewed.",
+                'Rejected'     => "Your application for \"{$row['job_title']}\" was not successful this time.",
+            ];
+            if (isset($statusMessages[$newS])) {
+                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'application',?,?)")
+                   ->execute([$row['seeker_id'], $statusMessages[$newS], $appId]);
+            }
+
             echo json_encode(['ok'=>true,'status'=>$newS]);
         } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
         exit;
@@ -188,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $db->exec("ALTER TABLE interview_schedules ADD COLUMN venue_name VARCHAR(300) DEFAULT NULL AFTER location, ADD COLUMN full_address VARCHAR(500) DEFAULT NULL AFTER venue_name, ADD COLUMN map_link VARCHAR(500) DEFAULT NULL AFTER full_address, ADD COLUMN phone_number VARCHAR(50) DEFAULT NULL AFTER map_link, ADD COLUMN contact_person VARCHAR(150) DEFAULT NULL AFTER phone_number");
             }
 
-            $chk = $db->prepare("SELECT a.seeker_id FROM applications a JOIN jobs j ON j.id=a.job_id WHERE a.id=? AND j.employer_id=?");
+            $chk = $db->prepare("SELECT a.seeker_id, a.status AS current_status, j.title AS job_title FROM applications a JOIN jobs j ON j.id=a.job_id WHERE a.id=? AND j.employer_id=?");
             $chk->execute([$appId,(int)$_SESSION['user_id']]);
             $row = $chk->fetch(PDO::FETCH_ASSOC);
             if (!$row) { echo json_encode(['ok'=>false,'msg'=>'Unauthorized']); exit; }
@@ -222,6 +235,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
 
             $db->prepare("UPDATE applications SET status='Shortlisted',reviewed_at=NOW() WHERE id=? AND status IN ('Pending','Reviewed')")->execute([$appId]);
+
+            // Notify seeker of interview scheduling + shortlist
+            if (in_array($row['current_status'] ?? '', ['Pending', 'Reviewed'], true)) {
+                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'application',?,?)")
+                   ->execute([$row['seeker_id'], "Great news! Your application for \"{$row['job_title']}\" has been shortlisted and an interview has been scheduled.", $appId]);
+            } else {
+                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'application',?,?)")
+                   ->execute([$row['seeker_id'], "An interview has been scheduled for your application to \"{$row['job_title']}\".", $appId]);
+            }
+
             echo json_encode(['ok'=>true,'updated'=>(bool)$existingId]);
         } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error: '.$e->getMessage()]); }
         exit;

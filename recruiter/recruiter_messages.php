@@ -334,7 +334,7 @@ function showToast(msg, icon) {
 }
 
 /* ── Load conversations ───────────────────────────────────────────── */
-function loadPageThreads() {
+function loadPageThreads(cb) {
     fetch(API + '?action=threads')
         .then(r => r.json())
         .then(data => {
@@ -342,13 +342,15 @@ function loadPageThreads() {
                 document.getElementById('threadsList').innerHTML =
                     '<div class="loading-spinner" style="color:var(--text-muted)"><i class="fas fa-exclamation-circle" style="font-size:20px;display:block;margin-bottom:8px;"></i>' +
                     esc(data.message || 'Could not load conversations') + '</div>';
+                if (cb) cb();
                 return;
             }
             threads = data.threads;
             filteredThreads = [...threads];
             renderThreads(filteredThreads);
+            if (cb) cb();
         })
-        .catch(e => console.error('Thread load error:', e));
+        .catch(e => { console.error('Thread load error:', e); if (cb) cb(); });
 }
 
 function renderThreads(list) {
@@ -642,7 +644,9 @@ const _navMsgBtn = document.getElementById('navMsgBtn');
 if (_navMsgBtn) _navMsgBtn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
 
 /* ── Init ─────────────────────────────────────────────────────────── */
-loadPageThreads();
+const _params = new URLSearchParams(window.location.search);
+const _targetUser = Number(_params.get('user_id') || 0);
+loadPageThreads(() => { if (_targetUser > 0) openThread(_targetUser); });
 startPolling();
 updateBadges();
 </script>
