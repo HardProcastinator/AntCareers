@@ -27,14 +27,18 @@ try {
             u.id, u.full_name, u.avatar_url, u.account_type,
             sp.headline, sp.industry, sp.experience_level,
             sp.city_name, sp.province_name, sp.country_name,
-            sp.nr_availability,
-            GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.sort_order SEPARATOR ',') AS skills
+            sp.nr_availability, sp.nr_work_types, sp.nr_right_to_work,
+            sp.nr_salary, sp.nr_salary_period, sp.nr_classification,
+            sp.professional_summary, sp.bio, sp.phone,
+            GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.sort_order SEPARATOR ',') AS skills,
+            sr.file_path AS resume_path, sr.original_filename AS resume_name
         FROM users u
         LEFT JOIN seeker_profiles sp ON sp.user_id = u.id
         LEFT JOIN seeker_skills sk ON sk.user_id = u.id
+        LEFT JOIN seeker_resumes sr ON sr.user_id = u.id AND sr.is_active = 1
         WHERE u.id != ? AND u.is_active = 1
-          AND u.account_type IN ('seeker','employer')
-          AND (u.account_type <> 'seeker' OR COALESCE(sp.show_in_people_search, 1) = 1)
+          AND u.account_type = 'seeker'
+          AND COALESCE(sp.show_in_people_search, 1) = 1
         GROUP BY u.id
         ORDER BY u.full_name ASC
         LIMIT 100
@@ -73,6 +77,18 @@ try {
             'connected' => false,
           'accountType' => $r['account_type'] ?? 'seeker',
           'profileUrl'  => ($r['account_type'] === 'employer') ? ('public_company_profile.php?employer_id=' . (int)$r['id']) : null,
+          'availability' => $r['nr_availability'] ?? '',
+          'workTypes'   => $r['nr_work_types'] ?? '',
+          'rightToWork' => $r['nr_right_to_work'] ?? '',
+          'salary'      => $r['nr_salary'] ?? '',
+          'salaryPeriod'=> $r['nr_salary_period'] ?? '',
+          'classification' => $r['nr_classification'] ?? '',
+          'summary'     => $r['professional_summary'] ?? '',
+          'bio'         => $r['bio'] ?? '',
+          'phone'       => $r['phone'] ?? '',
+          'country'     => $r['country_name'] ?? '',
+          'resumePath'  => !empty($r['resume_path']) ? '../' . $r['resume_path'] : '',
+          'resumeName'  => $r['resume_name'] ?? '',
         ];
         $ci++;
     }
@@ -98,6 +114,19 @@ foreach (getIndustryFilterOptions() as $industryOption) {
   $label = htmlspecialchars((string)$industryOption['label'], ENT_QUOTES, 'UTF-8');
   $industryCheckboxesHtml .= '<label class="ms-item"><input type="checkbox" value="' . $value . '"><span>' . $label . '</span></label>';
 }
+
+$categoryOptionsHtml = '<option value="">Any classification</option>';
+$jobTitlesTree = [];
+foreach (getJobCategories() as $catName => $cat) {
+    $esc = htmlspecialchars($catName, ENT_QUOTES, 'UTF-8');
+    $categoryOptionsHtml .= '<option value="' . $esc . '">' . $esc . '</option>';
+    $titles = [];
+    foreach ($cat['subcategories'] as $subTitles) {
+        foreach ($subTitles as $t) $titles[] = $t;
+    }
+    $jobTitlesTree[$catName] = $titles;
+}
+$jobTitlesTreeJson = json_encode($jobTitlesTree, JSON_HEX_TAG | JSON_HEX_AMP);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -209,7 +238,7 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     .pc-btn.primary { background:var(--red-vivid); border-color:var(--red-vivid); color:#fff; }
     .pc-btn.primary:hover { background:var(--red-bright); }
     .person-modal-overlay { position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.82); backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; padding:20px; }
-    .person-modal-box { width:min(560px,100%); background:var(--soil-card); border:1px solid var(--soil-line); border-radius:16px; padding:24px; box-shadow:0 32px 80px rgba(0,0,0,0.55); position:relative; animation:fadeUp 0.22s ease both; }
+    .person-modal-box { width:min(640px,100%); max-height:85vh; overflow-y:auto; scrollbar-width:thin; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:16px; padding:24px; box-shadow:0 32px 80px rgba(0,0,0,0.55); position:relative; animation:fadeUp 0.22s ease both; }
     .person-modal-close { position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); cursor:pointer; }
     .person-modal-close:hover { color:#F5F0EE; border-color:var(--red-vivid); }
     .person-modal-head { display:flex; align-items:center; gap:14px; margin-bottom:14px; padding-right:40px; }
@@ -234,6 +263,16 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     .person-modal-btn.secondary:hover { border-color:var(--red-vivid); }
     .person-modal-btn.primary { background:var(--red-vivid); border-color:var(--red-vivid); color:#fff; }
     .person-modal-btn.primary:hover { background:var(--red-bright); }
+    .pm-detail-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted); margin-top:4px; }
+    .pm-detail-row i { width:14px; text-align:center; color:var(--red-mid); font-size:11px; }
+    .pm-section-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+    .pm-info-card { background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:10px 12px; }
+    .pm-info-label { font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; }
+    .pm-info-value { font-size:13px; font-weight:600; color:var(--text-light); }
+    .pm-about { font-size:13px; color:var(--text-mid); line-height:1.6; margin-top:6px; white-space:pre-wrap; }
+    .pm-resume-btn { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:8px; border:1px solid rgba(76,175,112,0.3); background:rgba(76,175,112,0.08); color:#6ccf8a; font-size:12px; font-weight:700; font-family:var(--font-body); cursor:pointer; text-decoration:none; transition:0.18s; margin-top:8px; }
+    .pm-resume-btn:hover { background:rgba(76,175,112,0.15); border-color:rgba(76,175,112,0.5); }
+    .pm-resume-btn i { font-size:13px; }
     body.light .person-modal-overlay { background:rgba(0,0,0,0.5); }
     body.light .person-modal-box { background:#FFFFFF; border-color:#E0CECA; box-shadow:0 32px 80px rgba(0,0,0,0.18); }
     body.light .person-modal-close { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
@@ -245,10 +284,15 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     body.light .person-skill-chip { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
     body.light .person-skill-empty { color:#7A5555; }
     body.light .person-modal-btn.secondary { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
-    body.light .person-modal-btn.secondary:hover { border-color:var(--red-vivid); }
+    body.light .person-modal-btn.secondary:hover { border-color:var(--red-vivid); color:#1A0A09; }
+    body.light .pm-info-card { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .pm-info-value { color:#1A0A09; }
+    body.light .pm-about { color:#4A2828; }
+    body.light .pm-resume-btn { background:rgba(76,175,112,0.06); border-color:rgba(76,175,112,0.25); color:#2E7D4C; }
     body.light .person-modal-status.seeking { background:rgba(209,61,44,0.08); border-color:rgba(209,61,44,0.2); color:var(--red-bright); }
     body.light .person-modal-status.hiring { background:rgba(76,175,112,0.08); border-color:rgba(76,175,112,0.2); color:#2E7D4C; }
     body.light .person-modal-status.neutral { background:rgba(212,148,58,0.08); border-color:rgba(212,148,58,0.2); color:#8B5E1E; }
+    @media(max-width:500px) { .pm-section-grid { grid-template-columns:1fr; } }
     .open-badge { font-size:10px; font-weight:700; letter-spacing:0.07em; padding:2px 8px; border-radius:3px; text-transform:uppercase; flex-shrink:0; margin-left:auto; }
     .open-badge.hiring { background:rgba(76,175,112,0.12); border:1px solid rgba(76,175,112,0.25); color:#6ccf8a; }
     .open-badge.seeking { background:rgba(209,61,44,0.1); border:1px solid rgba(209,61,44,0.2); color:var(--red-pale); }
@@ -336,6 +380,8 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     body.light .skill-chip { background:#F5EEEC; border-color:#E0CECA; color:#5A3838; }
     body.light .pc-connect { background:#F5EEEC; border-color:#E0CECA; }
     body.light .pc-footer { border-color:#E0CECA; }
+    body.light .pc-btn:hover { color:#1A0A09; background:#F0E4E2; }
+    body.light .pc-btn.primary:hover { color:#fff; }
     @media(max-width:1060px) { .layout{grid-template-columns:1fr} .filter-sidebar{position:static} }
     @media(max-width:640px) { .people-grid{grid-template-columns:1fr} .search-row{flex-direction:column} .nav-links{display:none} .hamburger{display:flex} }
 </style>
@@ -396,14 +442,13 @@ foreach (getIndustryFilterOptions() as $industryOption) {
       <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
 
       <div class="fs-section">
-        <div class="fs-section-label">Industry</div>
-        <div class="ms-wrap" id="msSidebarIndustry" data-default="All Industries">
-          <button class="ms-trigger" type="button"><span class="ms-text">All Industries</span><i class="fas fa-chevron-down ms-arrow"></i></button>
-          <div class="ms-panel">
-            <?= $industryCheckboxesHtml ?>
-          </div>
-        </div>
-        <input type="text" id="sidebarPositionKeyword" class="fs-text-input" placeholder="Enter job title or position" oninput="filterPeople()" style="margin-top:6px;">
+        <div class="fs-section-label">Classification of Interest</div>
+        <select class="fs-select" id="filterClassification" onchange="updateJobTitles(); filterPeople()" style="margin-bottom:6px;">
+          <?= $categoryOptionsHtml ?>
+        </select>
+        <select class="fs-select" id="filterJobTitle" onchange="filterPeople()">
+          <option value="">Any job title</option>
+        </select>
       </div>
 
       <div class="fs-divider"></div>
@@ -462,7 +507,7 @@ foreach (getIndustryFilterOptions() as $industryOption) {
         <select class="sort-select" onchange="filterPeople()">
           <option>Most Relevant</option>
           <option>Recently Active</option>
-          <option>Mutual Connections</option>
+          <option>Mutual Followers</option>
         </select>
       </div>
       <div class="people-grid anim anim-d3" id="peopleGrid"></div>
@@ -473,7 +518,6 @@ foreach (getIndustryFilterOptions() as $industryOption) {
 
 <div class="person-modal-overlay" id="personModal" style="display:none;">
   <div class="person-modal-box">
-    <button class="person-modal-close" type="button" onclick="closePersonView()"><i class="fas fa-times"></i></button>
     <div id="personModalBody"></div>
   </div>
 </div>
@@ -484,6 +528,18 @@ foreach (getIndustryFilterOptions() as $industryOption) {
 
   let connections = new Set();
 
+  const _jobTitlesTree = <?= $jobTitlesTreeJson ?>;
+  function updateJobTitles() {
+    const cat = document.getElementById('filterClassification').value;
+    const sel = document.getElementById('filterJobTitle');
+    sel.innerHTML = '<option value="">Any job title</option>';
+    if (cat && _jobTitlesTree[cat]) {
+      _jobTitlesTree[cat].forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o); });
+    }
+  }
+
+  function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
   function openPersonView(personId) {
     const person = peopleById[String(personId)];
     if (!person) return;
@@ -492,26 +548,50 @@ foreach (getIndustryFilterOptions() as $industryOption) {
       return;
     }
 
-    const skills = (person.skills || []).slice(0, 6).map(s => `<span class="person-skill-chip">${s}</span>`).join('');
+    const skills = (person.skills || []).slice(0, 8).map(s => `<span class="person-skill-chip">${esc(s)}</span>`).join('');
     const statusLabel = person.status === 'seeking' ? 'Open to work' : person.status === 'hiring' ? 'Actively hiring' : 'Available';
     const statusClass = person.status === 'seeking' ? 'seeking' : person.status === 'hiring' ? 'hiring' : 'neutral';
 
+    let infoCards = '';
+    if (person.exp) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Experience</div><div class="pm-info-value">${esc(person.exp)}</div></div>`;
+    if (person.availability) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Availability</div><div class="pm-info-value">${esc(person.availability)}</div></div>`;
+    if (person.workTypes) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Work Type</div><div class="pm-info-value">${esc(person.workTypes)}</div></div>`;
+    if (person.rightToWork) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Right to Work</div><div class="pm-info-value">${esc(person.rightToWork)}</div></div>`;
+    if (person.classification) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Classification</div><div class="pm-info-value">${esc(person.classification)}</div></div>`;
+    if (person.salary) {
+      const salaryDisplay = person.salary + (person.salaryPeriod ? ' ' + person.salaryPeriod : '');
+      infoCards += `<div class="pm-info-card"><div class="pm-info-label">Salary Expectation</div><div class="pm-info-value">${esc(salaryDisplay)}</div></div>`;
+    }
+
+    const aboutText = person.summary || person.bio || '';
+    const aboutSection = aboutText
+      ? `<div class="person-modal-section"><div class="person-modal-section-label">About</div><div class="pm-about">${esc(aboutText)}</div></div>`
+      : '';
+
+    const resumeSection = person.resumePath
+      ? `<div class="person-modal-section"><div class="person-modal-section-label">Resume</div><a class="pm-resume-btn" href="${esc(person.resumePath)}" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> ${esc(person.resumeName || 'View Resume')}</a></div>`
+      : '';
+
     document.getElementById('personModalBody').innerHTML = `
       <div class="person-modal-head">
-        <div class="person-modal-avatar" style="background:${person.color};">${person.avatarUrl ? `<img src="${person.avatarUrl}" alt="">` : person.avatar}</div>
+        <div class="person-modal-avatar" style="background:${person.color};">${person.avatarUrl ? `<img src="${esc(person.avatarUrl)}" alt="">` : esc(person.avatar)}</div>
         <div class="person-modal-meta">
-          <div class="person-modal-name">${person.name}</div>
-          <div class="person-modal-title">${person.title}</div>
-          <div class="person-modal-location"><i class="fas fa-map-marker-alt"></i> ${person.location}</div>
+          <div class="person-modal-name">${esc(person.name)}</div>
+          <div class="person-modal-title">${esc(person.title)}</div>
+          <div class="person-modal-location"><i class="fas fa-map-marker-alt"></i> ${esc(person.location)}</div>
+          ${person.phone ? `<div class="pm-detail-row"><i class="fas fa-phone"></i> ${esc(person.phone)}</div>` : ''}
         </div>
       </div>
       <div class="person-modal-status ${statusClass}">${statusLabel}</div>
+      ${aboutSection}
+      ${infoCards ? `<div class="person-modal-section"><div class="person-modal-section-label">Details</div><div class="pm-section-grid">${infoCards}</div></div>` : ''}
       <div class="person-modal-section">
         <div class="person-modal-section-label">Skills</div>
         <div class="person-skill-row">${skills || '<span class="person-skill-empty">No skills listed</span>'}</div>
       </div>
+      ${resumeSection}
       <div class="person-modal-actions">
-        <button class="person-modal-btn secondary" type="button" onclick="openPersonMessage(${person.id})"><i class="fas fa-comment-dots"></i> Message</button>
+        <button class="person-modal-btn secondary" type="button" onclick="openPersonMessageFullPage(${person.id})"><i class="fas fa-comment-dots"></i> Message</button>
         <button class="person-modal-btn primary" type="button" onclick="closePersonView()">Close</button>
       </div>`;
 
@@ -524,6 +604,12 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     window.dispatchEvent(new CustomEvent('seeker:openMessageSidebar', {
       detail: { userId: person.id, userName: person.name }
     }));
+  }
+
+  function openPersonMessageFullPage(personId) {
+    const person = peopleById[String(personId)];
+    if (!person) return;
+    window.location.href = 'antcareers_seekerMessages.php?user=' + person.id;
   }
 
   function closePersonView() {
@@ -557,13 +643,13 @@ foreach (getIndustryFilterOptions() as $industryOption) {
               <div class="pc-location"><i class="fas fa-map-marker-alt"></i> ${p.location}</div>
             </div>
             ${badge}
-            <button class="pc-connect ${isConnected?'connected':''}" title="${isConnected?'Connected':'Connect'}" onclick="event.stopPropagation();toggleConnect(${p.id},this)">
+            <button class="pc-connect ${isConnected?'connected':''}" title="${isConnected?'Following':'Follow'}" onclick="event.stopPropagation();toggleConnect(${p.id},this)">
               <i class="fas fa-${isConnected?'check':'user-plus'}"></i>
             </button>
           </div>
           <div class="pc-skills">${skills}</div>
           <div class="pc-footer">
-            <div class="pc-mutual">${p.mutual>0?`<i class="fas fa-users"></i> ${p.mutual} mutual connection${p.mutual!==1?'s':''}`:``}</div>
+            <div class="pc-mutual">${p.mutual>0?`<i class="fas fa-users"></i> ${p.mutual} mutual follower${p.mutual!==1?'s':''}`:``}</div>
             <div class="pc-actions">
               <button class="pc-btn" onclick="event.stopPropagation();openPersonMessage(${p.id});">Message</button>
               <button class="pc-btn primary" onclick="event.stopPropagation();openPersonView(${p.id})">View</button>
@@ -616,24 +702,24 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     const q = document.getElementById('peopleSearch').value.toLowerCase();
     const loc = document.getElementById('locationFilter').value;
     const searchIndustries = getMsValues('msSearchIndustry');
-    const sidebarIndustries = getMsValues('msSidebarIndustry');
+    const classification = document.getElementById('filterClassification').value;
     const expLevels = getMsValues('msExperience');
     const statuses = getMsValues('msStatus');
     const sidebarLoc = document.getElementById('sidebarLocationFilter')?.value || '';
     const locKeyword = (document.getElementById('sidebarLocationKeyword')?.value || '').toLowerCase();
-    const posKeyword = (document.getElementById('sidebarPositionKeyword')?.value || '').toLowerCase();
     const companyQ = (document.getElementById('sidebarCompanyFilter')?.value || '').toLowerCase();
+    const filterJobTitle = document.getElementById('filterJobTitle').value.toLowerCase();
     let filtered = peopleData.filter(p => {
       const matchQ = !q || p.name.toLowerCase().includes(q) || p.title.toLowerCase().includes(q) || p.skills.some(s=>s.toLowerCase().includes(q));
       const matchL = !loc || p.location === loc;
-      const matchI = sidebarIndustries.length ? sidebarIndustries.includes(p.industry) : (!searchIndustries.length || searchIndustries.includes(p.industry));
+      const matchI = classification ? (p.classification && p.classification.toLowerCase().includes(classification.toLowerCase())) : (!searchIndustries.length || searchIndustries.includes(p.industry));
       const matchExp = !expLevels.length || expLevels.includes(p.exp);
       const matchStatus = !statuses.length || statuses.includes(p.status);
       const matchSidebarLoc = !sidebarLoc || p.location.includes(sidebarLoc);
       const matchLocKw = !locKeyword || p.location.toLowerCase().includes(locKeyword);
-      const matchPosKw = !posKeyword || p.title.toLowerCase().includes(posKeyword);
       const matchCompany = !companyQ || (p.company && p.company.toLowerCase().includes(companyQ)) || p.title.toLowerCase().includes(companyQ);
-      return matchQ && matchL && matchI && matchExp && matchStatus && matchSidebarLoc && matchLocKw && matchPosKw && matchCompany;
+      const matchJobTitle = !filterJobTitle || (p.classification && p.classification.toLowerCase().includes(filterJobTitle));
+      return matchQ && matchL && matchI && matchExp && matchStatus && matchSidebarLoc && matchLocKw && matchCompany && matchJobTitle;
     });
     renderPeople(filtered);
   }
@@ -649,6 +735,9 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     document.getElementById('sidebarLocationKeyword') && (document.getElementById('sidebarLocationKeyword').value='');
     document.getElementById('sidebarPositionKeyword') && (document.getElementById('sidebarPositionKeyword').value='');
     document.getElementById('sidebarCompanyFilter') && (document.getElementById('sidebarCompanyFilter').value='');
+    document.getElementById('filterClassification').value = '';
+    document.getElementById('filterJobTitle').value = '';
+    updateJobTitles();
     document.getElementById('peopleSearch').value='';
     filterPeople();
   }
@@ -681,14 +770,14 @@ foreach (getIndustryFilterOptions() as $industryOption) {
       connections.delete(key);
       btn.classList.remove('connected');
       btn.innerHTML = '<i class="fas fa-user-plus"></i>';
-      btn.title = 'Connect';
-      showToast('Connection removed','fa-user-minus');
+      btn.title = 'Follow';
+      showToast('Unfollowed','fa-user-minus');
     } else {
       connections.add(key);
       btn.classList.add('connected');
       btn.innerHTML = '<i class="fas fa-check"></i>';
-      btn.title = 'Connected';
-      showToast('Connection request sent!','fa-handshake');
+      btn.title = 'Following';
+      showToast('Followed!','fa-heart');
     }
   }
   // theme handled by seeker_navbar.php

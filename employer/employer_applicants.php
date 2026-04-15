@@ -226,6 +226,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error: '.$e->getMessage()]); }
         exit;
     }
+
+    /* ── get_applicant ── */
+    if ($action === 'get_applicant') {
+        $appId = (int)($_POST['application_id'] ?? 0);
+        if (!$appId) { echo json_encode(['ok'=>false,'msg'=>'Invalid ID']); exit; }
+        try {
+            $db  = getDB();
+            $uid = (int)$_SESSION['user_id'];
+            $st = $db->prepare("
+                SELECT a.id, a.status, a.cover_letter, a.resume_url, a.applied_at,
+                       u.full_name, u.email, u.avatar_url,
+                       sp.headline, CONCAT_WS(', ', sp.city_name, sp.province_name) AS seeker_location,
+                       sp.experience_level, sp.bio, sp.phone,
+                       sp.nr_availability, sp.nr_work_types, sp.nr_right_to_work,
+                       sp.nr_classification, sp.nr_salary, sp.nr_salary_period,
+                       sp.professional_summary,
+                       GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.sort_order SEPARATOR ',') AS skills,
+                       sr.file_path AS resume_path, sr.original_filename AS resume_name
+                FROM applications a
+                JOIN jobs j ON j.id=a.job_id
+                JOIN users u ON u.id=a.seeker_id
+                LEFT JOIN seeker_profiles sp ON sp.user_id=u.id
+                LEFT JOIN seeker_skills sk ON sk.user_id=u.id
+                LEFT JOIN seeker_resumes sr ON sr.user_id=u.id AND sr.is_active=1
+                WHERE a.id=? AND j.employer_id=?
+                GROUP BY a.id
+            ");
+            $st->execute([$appId, $uid]);
+            $r = $st->fetch(PDO::FETCH_ASSOC);
+            if (!$r) { echo json_encode(['ok'=>false,'msg'=>'Not found']); exit; }
+            echo json_encode(['ok'=>true,'data'=>$r]);
+        } catch (Exception $e) {
+            error_log('[AntCareers] employer get_applicant: ' . $e->getMessage());
+            echo json_encode(['ok'=>false,'msg'=>'DB error']);
+        }
+        exit;
+    }
+
     echo json_encode(['ok'=>false,'msg'=>'Unknown action']); exit;
 }
 
@@ -456,6 +494,37 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     textarea.fi{resize:vertical;min-height:72px;}
     .frow{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
     .mfoot{display:flex;justify-content:flex-end;gap:9px;margin-top:18px;}
+    /* ── DETAIL MODAL ── */
+    .detail-section { margin-bottom:16px; }
+    .detail-section:last-child { margin-bottom:0; }
+    .detail-header { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .detail-avatar { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; color:#fff; overflow:hidden; }
+    .detail-avatar img { width:100%; height:100%; object-fit:cover; }
+    .detail-name { font-family:var(--font-display); font-size:18px; font-weight:700; color:#F5F0EE; }
+    .detail-meta { font-size:12px; color:var(--text-muted); margin-top:2px; }
+    body.light .detail-name { color:#1A0A09; }
+    .pm-section-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .pm-info-card { background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:10px; padding:11px 14px; }
+    .pm-info-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:4px; }
+    .pm-info-value { font-size:13px; font-weight:600; color:#F5F0EE; word-break:break-word; }
+    .pm-about { font-size:13px; color:var(--text-mid); line-height:1.65; white-space:pre-wrap; }
+    .pm-resume-btn { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:8px; border:1px solid rgba(76,175,112,0.3); background:rgba(76,175,112,0.08); color:#6ccf8a; font-size:12px; font-weight:700; font-family:var(--font-body); cursor:pointer; text-decoration:none; transition:0.18s; margin-top:8px; }
+    .pm-resume-btn:hover { background:rgba(76,175,112,0.15); border-color:rgba(76,175,112,0.5); }
+    .pm-resume-btn i { font-size:13px; }
+    .pm-detail-row { font-size:12px; color:var(--text-muted); margin-top:3px; display:flex; align-items:center; gap:6px; }
+    .pm-detail-row i { font-size:11px; color:var(--red-bright); }
+    .person-skill-row { display:flex; flex-wrap:wrap; gap:6px; }
+    .person-skill-chip { padding:4px 10px; border-radius:5px; background:var(--soil-hover); border:1px solid var(--soil-line); font-size:11px; font-weight:600; color:var(--text-mid); }
+    .person-skill-empty { font-size:12px; color:var(--text-muted); font-style:italic; }
+    .pm-status-badge { display:inline-block; font-size:11px; font-weight:700; padding:5px 14px; border-radius:20px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:14px; }
+    .pm-status-badge.seeking { background:rgba(209,61,44,0.08); border:1px solid rgba(209,61,44,0.2); color:var(--red-bright); }
+    .pm-status-badge.hired { background:rgba(76,175,112,0.1); border:1px solid rgba(76,175,112,0.2); color:#6ccf8a; }
+    .pm-status-badge.neutral { background:rgba(212,148,58,0.08); border:1px solid rgba(212,148,58,0.2); color:var(--amber); }
+    body.light .pm-info-card { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .pm-info-value { color:#1A0A09; }
+    body.light .pm-about { color:#4A2828; }
+    body.light .pm-resume-btn { background:rgba(76,175,112,0.06); border-color:rgba(76,175,112,0.25); color:#2E7D4C; }
+    @media(max-width:500px) { .pm-section-grid { grid-template-columns:1fr; } }
     .empty{text-align:center;padding:55px 20px;color:var(--text-muted);}
     .empty i{font-size:42px;margin-bottom:12px;color:var(--soil-line);display:block;}
     .empty p{font-size:14px;}
@@ -503,15 +572,20 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   </div>
 
   <form method="get" action="employer_applicants.php">
-    <?php if($filterStatus):?><input type="hidden" name="status" value="<?=htmlspecialchars($filterStatus)?>"><?php endif;?>
     <div class="toolbar">
       <div class="search-bar"><i class="fas fa-search si"></i><input type="text" name="q" placeholder="Search name, email or job…" value="<?=htmlspecialchars($search)?>"></div>
       <select name="job_id" class="fsel" onchange="this.form.submit()">
         <option value="">All Jobs</option>
         <?php foreach($jobsList as $j):?><option value="<?=$j['id']?>"<?=$filterJob===$j['id']?' selected':''?>><?=htmlspecialchars($j['title'])?></option><?php endforeach;?>
       </select>
+      <select name="status" class="fsel" onchange="this.form.submit()">
+        <option value="">All Statuses</option>
+        <?php foreach(['Pending','Reviewed','Shortlisted','Interviewed','Offered','Rejected'] as $st):?>
+        <option value="<?=$st?>"<?=$filterStatus===$st?' selected':''?>><?=$st?></option>
+        <?php endforeach;?>
+      </select>
       <button type="submit" class="btn primary"><i class="fas fa-search"></i> Search</button>
-      <?php if($search||$filterJob):?><a href="employer_applicants.php<?=$filterStatus?"?status={$filterStatus}":''?>" class="btn"><i class="fas fa-times"></i> Clear</a><?php endif;?>
+      <?php if($search||$filterJob||$filterStatus):?><a href="employer_applicants.php" class="btn"><i class="fas fa-times"></i> Clear</a><?php endif;?>
     </div>
   </form>
 
@@ -528,7 +602,7 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     <div class="app-main">
       <a href="employer_view_applicant.php?id=<?=$a['seeker_id']?>" class="app-avatar" style="text-decoration:none;color:#fff;"><?php if(!empty($a['seeker_avatar'])):?><img src="../<?=htmlspecialchars($a['seeker_avatar'])?>" alt=""><?php else:?><?=htmlspecialchars($ini)?><?php endif;?></a>
       <div class="app-info">
-        <a href="employer_view_applicant.php?id=<?=$a['seeker_id']?>" class="app-name" style="text-decoration:none;color:inherit;"><?=htmlspecialchars($a['seeker_name'])?></a>
+        <a href="javascript:void(0)" onclick="viewApplicant(<?=$a['app_id']?>)" class="app-name" style="text-decoration:none;color:inherit;"><?=htmlspecialchars($a['seeker_name'])?></a>
         <div class="app-email"><?=htmlspecialchars($a['seeker_email'])?></div>
         <div class="app-meta">
           <span><i class="fas fa-briefcase"></i> <span class="app-job"><?=htmlspecialchars($a['job_title'])?></span></span>
@@ -540,6 +614,7 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
       <div class="app-right">
         <span class="app-date"><?=$dA?></span>
         <div class="app-actions">
+          <button class="btn" onclick="viewApplicant(<?=$a['app_id']?>)"><i class="fas fa-eye"></i> View</button>
           <button class="btn" onclick="toggleExp(<?=$a['app_id']?>)"><i class="fas fa-chevron-down" id="chev-<?=$a['app_id']?>"></i> Review</button>
           <button class="btn amb" onclick="openInterview(<?=$a['app_id']?>,'<?=htmlspecialchars($a['seeker_name'],ENT_QUOTES)?>',<?=htmlspecialchars(json_encode($a['has_interview'] ? ['type'=>$a['iv_type']??'','date'=>$a['iv_date']??'','link'=>$a['iv_link']??'','venue'=>$a['iv_venue']??'','address'=>$a['iv_address']??'','map'=>$a['iv_map']??'','phone'=>$a['iv_phone']??'','contact'=>$a['iv_contact']??'','notes'=>$a['iv_notes']??''] : null),ENT_QUOTES,'UTF-8')?>)"><i class="fas <?=$a['has_interview']?'fa-edit':'fa-calendar-plus'?>"></i> <?=$a['has_interview']?'Edit Interview':'Schedule'?></button>
           <?php if($a['resume_url']):?><a href="<?=htmlspecialchars($a['resume_url'])?>" target="_blank" class="btn"><i class="fas fa-file-alt"></i> Resume</a><?php endif;?>
@@ -616,7 +691,16 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
 
 <div class="toast" id="toast"></div>
 
+<!-- APPLICANT DETAIL MODAL -->
+<div class="modal-bd" id="dModal">
+  <div class="modal-box" style="max-width:640px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">
+    <button class="modal-close" onclick="document.getElementById('dModal').classList.remove('open')"><i class="fas fa-times"></i></button>
+    <div id="dContent" style="overflow-y:auto;flex:1;min-height:0;padding-right:6px;"><div style="text-align:center;padding:30px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading…</div></div>
+  </div>
+</div>
+
 <script>
+  function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
   function toggleExp(id){var p=document.getElementById('exp-'+id),c=document.getElementById('chev-'+id),o=p.classList.toggle('open');c.style.transform=o?'rotate(180deg)':'';}
   function saveStatus(id){var s=document.getElementById('sel-'+id).value;doPost({action:'update_status',application_id:id,status:s},function(d){if(d.ok){var b=document.getElementById('badge-'+id),m={Pending:{c:'amber',i:'fa-clock'},Reviewed:{c:'blue',i:'fa-eye'},Shortlisted:{c:'green',i:'fa-star'},Interviewed:{c:'blue',i:'fa-video'},Rejected:{c:'red',i:'fa-times-circle'},Offered:{c:'purple',i:'fa-check-circle'}}[d.status]||{c:'muted',i:'fa-circle'};b.className='sbadge '+m.c;b.innerHTML='<i class="fas '+m.i+'"></i> '+d.status;toast('Status: '+d.status,'ok');if(d.status==='Offered'&&d.credentials){alert('Recruiter account created!\\n\\nEmail: '+d.credentials.email+'\\nTemp Password: '+d.credentials.temp_password+'\\n\\nThese credentials were also sent to the seeker via message and notification.');}}else{toast(d.msg||'Error','err');}});}
 
@@ -727,6 +811,68 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   function toast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');clearTimeout(t._t);t._t=setTimeout(function(){t.className='toast';},3000);}
   // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
   const _guard_iModal = document.getElementById('iModal'); if (_guard_iModal) _guard_iModal.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+  const _guard_dModal = document.getElementById('dModal'); if (_guard_dModal) _guard_dModal.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+
+  var _avatarGrads=['linear-gradient(135deg,#D13D2C,#7A1515)','linear-gradient(135deg,#D4943A,#8a5010)','linear-gradient(135deg,#4CAF70,#2E7D4C)','linear-gradient(135deg,#4A90D9,#1E5FAA)','linear-gradient(135deg,#9C27B0,#6A1B7A)','linear-gradient(135deg,#E85540,#B83525)'];
+  function viewApplicant(id) {
+    document.getElementById('dContent').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+    document.getElementById('dModal').classList.add('open');
+    doPost({action:'get_applicant',application_id:id}, function(d){
+      if (!d.ok) { document.getElementById('dContent').innerHTML = '<p style="color:#ff8080">'+esc(d.msg||'Error loading details')+'</p>'; return; }
+      var a = d.data;
+      var ini = (a.full_name||'?').split(' ').map(function(w){return w[0]}).join('').substring(0,2).toUpperCase();
+      var grad = _avatarGrads[id % _avatarGrads.length];
+      var avatarHtml = a.avatar_url ? '<img src="../'+esc(a.avatar_url)+'" alt="">' : esc(ini);
+
+      var html = '<div class="detail-header">'
+        +'<div class="detail-avatar" style="background:'+grad+'">'+avatarHtml+'</div>'
+        +'<div><div class="detail-name">'+esc(a.full_name)+'</div>'
+        +'<div class="detail-meta">'+esc(a.email)+'</div>'
+        +(a.headline ? '<div class="detail-meta" style="color:var(--text-mid)">'+esc(a.headline)+'</div>' : '')
+        +(a.phone ? '<div class="pm-detail-row"><i class="fas fa-phone"></i> '+esc(a.phone)+'</div>' : '')
+        +'</div></div>';
+
+      var statusMap = {Pending:'neutral',Reviewed:'neutral',Shortlisted:'hired',Interviewed:'hired',Offered:'hired',Rejected:'seeking'};
+      html += '<div class="pm-status-badge '+(statusMap[a.status]||'neutral')+'">'+esc(a.status)+'</div>';
+
+      var aboutText = a.professional_summary || a.bio || '';
+      if (aboutText) {
+        html += '<div class="detail-section"><div class="etitle"><i class="fas fa-user-circle"></i> About</div><div class="pm-about">'+esc(aboutText)+'</div></div>';
+      }
+
+      var infoCards = '';
+      if (a.experience_level) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Experience</div><div class="pm-info-value">'+esc(a.experience_level)+'</div></div>';
+      if (a.nr_availability) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Availability</div><div class="pm-info-value">'+esc(a.nr_availability)+'</div></div>';
+      if (a.nr_work_types) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Work Type</div><div class="pm-info-value">'+esc(a.nr_work_types)+'</div></div>';
+      if (a.nr_right_to_work) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Right to Work</div><div class="pm-info-value">'+esc(a.nr_right_to_work)+'</div></div>';
+      if (a.nr_classification) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Classification</div><div class="pm-info-value">'+esc(a.nr_classification)+'</div></div>';
+      if (a.seeker_location) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Location</div><div class="pm-info-value">'+esc(a.seeker_location)+'</div></div>';
+      if (a.nr_salary) {
+        var salaryDisplay = a.nr_salary + (a.nr_salary_period ? ' ' + a.nr_salary_period : '');
+        infoCards += '<div class="pm-info-card"><div class="pm-info-label">Salary Expectation</div><div class="pm-info-value">'+esc(salaryDisplay)+'</div></div>';
+      }
+      infoCards += '<div class="pm-info-card"><div class="pm-info-label">Applied</div><div class="pm-info-value">'+esc(a.applied_at ? new Date(a.applied_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—')+'</div></div>';
+      if (infoCards) html += '<div class="detail-section"><div class="etitle"><i class="fas fa-info-circle"></i> Details</div><div class="pm-section-grid">'+infoCards+'</div></div>';
+
+      var skills = (a.skills||'').split(',').filter(Boolean);
+      if (skills.length) {
+        html += '<div class="detail-section"><div class="etitle"><i class="fas fa-tags"></i> Skills</div><div class="person-skill-row">'+skills.map(function(s){return '<span class="person-skill-chip">'+esc(s.trim())+'</span>';}).join('')+'</div></div>';
+      }
+
+      if (a.cover_letter) {
+        html += '<div class="detail-section"><div class="etitle"><i class="fas fa-envelope-open-text"></i> Cover Letter</div><div class="pm-about">'+esc(a.cover_letter).replace(/\n/g,'<br>')+'</div></div>';
+      }
+
+      var resumeUrl = a.resume_path || a.resume_url || '';
+      var resumeName = a.resume_name || 'Download Resume';
+      if (resumeUrl) {
+        var href = resumeUrl.startsWith('http')||resumeUrl.startsWith('../') ? resumeUrl : '../'+resumeUrl;
+        html += '<div class="detail-section"><a class="pm-resume-btn" href="'+esc(href)+'" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> '+esc(resumeName)+'</a></div>';
+      }
+
+      document.getElementById('dContent').innerHTML = html;
+    });
+  }
 </script>
 <?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>

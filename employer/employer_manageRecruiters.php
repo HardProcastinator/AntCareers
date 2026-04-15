@@ -31,7 +31,7 @@ $navActive   = 'manage-jobs';
       --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
     }
     html { overflow-x:hidden; }
-    body { font-family:var(--font-body); background:var(--soil-dark); color:var(--text-light); overflow-x:hidden; min-height:100vh; -webkit-font-smoothing:antialiased; }
+    body { font-family:var(--font-body); background:var(--soil-dark); color:var(--text-light); overflow-x:hidden; min-height:100vh; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; }
     .tunnel-bg { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
     .tunnel-bg svg { width:100%; height:100%; opacity:0.05; }
     .glow-orb { position:fixed; border-radius:50%; filter:blur(90px); pointer-events:none; z-index:0; }
@@ -90,14 +90,15 @@ $navActive   = 'manage-jobs';
     .mobile-divider { height:1px; background:var(--soil-line); margin:6px 0; }
 
     /* PAGE */
-    .page-shell { max-width:960px; margin:0 auto; padding:36px 24px 80px; }
+    .page-shell { width:100%; max-width:1380px; margin:0 auto; padding:28px 24px 60px; position:relative; z-index:1; flex:1; }
     .breadcrumb { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); margin-bottom:24px; }
     .breadcrumb a { color:var(--text-muted); text-decoration:none; transition:0.15s; }
     .breadcrumb a:hover { color:var(--red-pale); }
     .breadcrumb i { font-size:9px; }
-    .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
-    .page-title { font-family:var(--font-display); font-size:26px; font-weight:700; color:#F5F0EE; }
-    .page-sub { font-size:13px; color:var(--text-muted); margin-top:2px; }
+    .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px; }
+    .page-title { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
+    .page-title span { color:var(--red-bright); font-style:italic; }
+    .page-sub { font-size:14px; color:var(--text-muted); }
 
     /* Stats row */
     .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
@@ -258,8 +259,8 @@ $navActive   = 'manage-jobs';
 <div class="page-shell">
   <div class="page-header">
     <div>
-      <div class="page-title">Manage Recruiters</div>
-      <div class="page-sub">Control who can post jobs and review applicants on behalf of your company.</div>
+      <h1 class="page-title">Manage <span>Recruiters</span></h1>
+      <p class="page-sub">Control who can post jobs and review applicants on behalf of your company.</p>
     </div>
     <button class="btn-invite" onclick="openInviteModal()"><i class="fas fa-user-plus"></i> Invite Recruiter</button>
   </div>

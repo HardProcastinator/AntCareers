@@ -210,7 +210,7 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
     .search-sub { font-size:13px; color:var(--text-muted); }
 
     /* ── CONTENT LAYOUT ── */
-    .content-layout { display:block; max-width:1100px; margin:0 auto; }
+    .content-layout { display:block; }
 
     /* ── SECTION HEADERS ── */
     .sec-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }

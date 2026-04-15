@@ -218,7 +218,7 @@ $savedJobIdsJson = json_encode($savedJobIds);
     @keyframes orb1{to{transform:translate(60px,80px) scale(1.1);}}@keyframes orb2{to{transform:translate(-40px,-50px) scale(1.1);}}
     .page-shell{max-width:1380px;margin:0 auto;padding:0 24px 40px;position:relative;z-index:2;}
     .search-header{padding:20px 0 18px;}.search-greeting{font-family:var(--font-display);font-size:26px;font-weight:700;color:#F5F0EE;margin-bottom:4px;}.search-greeting em{color:var(--red-bright);font-style:italic;}.search-sub{font-size:13px;color:var(--text-muted);}
-    .content-layout{display:block;max-width:1100px;margin:0 auto;}
+    .content-layout{display:block;}
     .sidebar-card{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0;}
     .sidebar-profile{padding:14px 14px 12px;border-bottom:1px solid var(--soil-line);}
     .sp-inner{display:flex;align-items:center;gap:10px;margin-bottom:10px;}

@@ -40,7 +40,7 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
       <button class="msg-sb-expand" onclick="toggleSbNewChat()" title="New Conversation" style="background:var(--red-vivid);color:#fff;border-color:var(--red-vivid);">
         <i class="fas fa-pen-to-square"></i>
       </button>
-      <button class="msg-sb-expand" onclick="openFullscreenChat()" title="Open Fullscreen">
+      <button class="msg-sb-expand" onclick="window.location.href='employer_messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')" title="Open Fullscreen">
         <i class="fas fa-expand"></i>
       </button>
       <button class="msg-sb-close" onclick="closeMsgSidebar()"><i class="fas fa-times"></i></button>
@@ -183,8 +183,8 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
 
 <style>
 /* ── OVERLAY BG ─────────────────────────────────────────────────────── */
-.chat-overlay-bg { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:490; opacity:0; pointer-events:none; transition:opacity 0.3s; }
-.chat-overlay-bg.show { opacity:1; pointer-events:auto; }
+.chat-overlay-bg { display:none; }
+
 
 /* ── MESSAGE SIDEBAR ────────────────────────────────────────────────── */
 .msg-sidebar { position:fixed; top:0; right:0; bottom:0; width:380px; max-width:100vw; background:var(--soil-card); border-left:1px solid var(--soil-line); z-index:500; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.4); }
@@ -421,25 +421,21 @@ let _msgPollTimer = null;
 function openMsgSidebar() {
     closeSidebars();
     document.getElementById('msgSidebar').classList.add('open');
-    document.getElementById('chatOverlayBg').classList.add('show');
     sbBackToThreads();
     loadThreads();
 }
 function closeMsgSidebar() {
     document.getElementById('msgSidebar').classList.remove('open');
-    document.getElementById('chatOverlayBg').classList.remove('show');
     _sbActivePartner = null;
     stopMsgPoll();
 }
 function openNotifSidebar() {
     closeSidebars();
     document.getElementById('notifSidebar').classList.add('open');
-    document.getElementById('chatOverlayBg').classList.add('show');
     loadNotifications();
 }
 function closeNotifSidebar() {
     document.getElementById('notifSidebar').classList.remove('open');
-    document.getElementById('chatOverlayBg').classList.remove('show');
 }
 function closeSidebars() {
     closeMsgSidebar();
@@ -918,6 +914,21 @@ function fsStartNewChat(userId) {
 document.addEventListener('DOMContentLoaded', function() {
     updateBadges();
     startPolling();
+
+    // Click-outside-to-close for sidebars (matches seeker/recruiter behavior)
+    document.addEventListener('click', function(e) {
+        var msgSb = document.getElementById('msgSidebar');
+        var notifSb = document.getElementById('notifSidebar');
+        var navMsgBtn = document.getElementById('navMsgBtn');
+        var navNotifBtn = document.getElementById('navNotifBtn');
+        if (msgSb && msgSb.classList.contains('open') && !msgSb.contains(e.target) && (!navMsgBtn || !navMsgBtn.contains(e.target))) {
+            closeMsgSidebar();
+        }
+        if (notifSb && notifSb.classList.contains('open') && !notifSb.contains(e.target) && (!navNotifBtn || !navNotifBtn.contains(e.target))) {
+            closeNotifSidebar();
+        }
+    });
+
     // DEBUG: Listen for clicks on thread list
     var tl = document.getElementById('sbThreadList');
     if (tl) {

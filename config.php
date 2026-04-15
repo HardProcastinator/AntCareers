@@ -28,7 +28,7 @@ declare(strict_types=1);
 // DB_USER : root (XAMPP default user)
 // DB_PASS : '' (XAMPP default has no password)
 define('DB_HOST',    '127.0.0.1');
-define('DB_PORT', '3307');
+define('DB_PORT', '3306');
 define('DB_NAME',    'antcareers');
 define('DB_USER',    'root');
 define('DB_PASS',    '');

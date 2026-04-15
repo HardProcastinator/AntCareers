@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
+require_once dirname(__DIR__) . '/includes/job_titles.php';
 requireLogin('seeker');
 $user = getUser();
 $fullName  = $user['fullName'];
@@ -1341,40 +1342,16 @@ try {
       <label class="form-label">Classification</label>
       <select class="form-input" id="nrClassSelect">
         <option value="">Select classification...</option>
-        <option>Accounting</option>
-        <option>Administration & Support</option>
-        <option>Advertising, Arts & Media</option>
-        <option>Banking & Financial Services</option>
-        <option>Call Centre & Customer Service</option>
-        <option>CEO & General Management</option>
-        <option>Community Services & Development</option>
-        <option>Constructions</option>
-        <option>Consulting & Strategy</option>
-        <option>Design & Architecture</option>
-        <option>Education & Training</option>
-        <option>Engineering</option>
-        <option>Farming, Animals & Conservation</option>
-        <option>Government & Defence</option>
-        <option>Healthcare & Medical</option>
-        <option>Hospitality & Tourism</option>
-        <option>Human Resources & Recruitment</option>
-        <option>Information & Communication Technology</option>
-        <option>Insurance & Superannuation</option>
-        <option>Legal</option>
-        <option>Manufacturing & Communications</option>
-        <option>Mining, Resources & Energy</option>
-        <option>Real Estate & Property</option>
-        <option>Retail & Consumer Products</option>
-        <option>Sales</option>
-        <option>Science & Technology</option>
-        <option>Self Employment</option>
-        <option>Sports & Recreation</option>
-        <option>Trades & Services</option>
+        <?php foreach (getJobCategoryOptions() as $cat): ?>
+        <option value="<?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Sub-classification</label>
-      <input class="form-input" type="text" id="nrSubClassInput" placeholder="e.g. Developer, Project Manager">
+      <label class="form-label">Job Title</label>
+      <select class="form-input" id="nrSubClassInput">
+        <option value="">Select a classification first...</option>
+      </select>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('nrClassModal')">Cancel</button>
@@ -2072,6 +2049,28 @@ try {
   }
 
   // ── Classification ──
+  const _jobTitlesTree = <?= json_encode(
+    array_map(function($cat) {
+      $titles = [];
+      foreach ($cat['subcategories'] as $titles_list) {
+        foreach ($titles_list as $t) $titles[] = $t;
+      }
+      return $titles;
+    }, getJobCategories()),
+    JSON_HEX_TAG | JSON_HEX_AMP
+  ) ?>;
+
+  document.getElementById('nrClassSelect').addEventListener('change', function() {
+    const sel = document.getElementById('nrSubClassInput');
+    sel.innerHTML = '<option value="">Any job title</option>';
+    const titles = _jobTitlesTree[this.value] || [];
+    titles.forEach(function(t) {
+      const o = document.createElement('option');
+      o.value = t; o.textContent = t;
+      sel.appendChild(o);
+    });
+  });
+
   async function saveNrClass() {
     const cls = document.getElementById('nrClassSelect').value;
     const sub = document.getElementById('nrSubClassInput').value;

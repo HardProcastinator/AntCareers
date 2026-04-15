@@ -304,7 +304,7 @@ try {
     body.light .browse-banner { background:#FFFFFF; border-color:#E0CECA; }
 
     /* ── CONTENT LAYOUT ── */
-    .content-layout { display:block; max-width:1100px; margin:0 auto; }
+    .content-layout { display:block; }
 
     /* ── SIDEBAR ── */
     .sidebar { position:sticky; top:72px; max-height:calc(100vh - 88px); overflow-y:auto; scrollbar-width:none; }
@@ -495,7 +495,7 @@ try {
     body.light .mobile-link { color:#4A2828; }
     body.light .mobile-link:hover { background:#FEF0EE; color:#1A0A09; }
 
-    @media(max-width:1060px) { .content-layout{max-width:100%}  .cards-row{grid-template-columns:repeat(3,1fr);} }
+    @media(max-width:1060px) { .cards-row{grid-template-columns:repeat(3,1fr);} }
     @media(max-width:760px) {
       .nav-links{display:none} .hamburger{display:flex}
       .page-shell{padding:0 16px 40px} .nav-inner{padding:0 16px}
@@ -689,7 +689,7 @@ try {
   // ── RENDER INTERVIEWS ──
   function renderInterviews() {
     const el = document.getElementById('interviewsContainer');
-    if (!interviewsData.length) { el.innerHTML = `<div class="empty-state" style="padding:30px 20px;"><i class="fas fa-calendar-alt"></i><p>No upcoming interviews.</p></div>`; return; }
+    if (!interviewsData.length) { el.innerHTML = `<div class="empty-state" style="padding:30px 20px;text-align:center;width:100%;"><i class="fas fa-calendar-alt"></i><p>No upcoming interviews.</p></div>`; return; }
     el.innerHTML = interviewsData.map(iv => {
       // Build type-specific detail chip
       let detailChip = '';
