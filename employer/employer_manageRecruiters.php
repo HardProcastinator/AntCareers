@@ -204,15 +204,17 @@ $navActive   = 'manage-jobs';
     body.light .mobile-menu { background:rgba(255,253,252,0.97); border-color:#E0CECA; }
     body.light .mobile-link { color:#4A2828; }
     body.light .page-title { color:#1A0A09; }
+    body.light .page-sub { color:#7A5555; }
     body.light .stat-card { background:#FFFFFF; border-color:#E0CECA; }
     body.light .stat-num { color:#1A0A09; }
+    body.light .stat-label { color:#7A5555; }
     body.light .section-title { color:#1A0A09; }
     body.light .recruiter-row { background:#FFFFFF; border-color:#E0CECA; }
     body.light .recruiter-row:hover { background:#FEF0EE; }
     body.light .rec-name { color:#1A0A09; }
     body.light .search-box { background:#FFFFFF; border-color:#E0CECA; }
-    body.light .search-box input { color:#1A0A09; }
-    body.light .filter-select { background:#FFFFFF; border-color:#E0CECA; color:#4A2828; }
+    body.light .search-box input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
+    body.light .filter-select { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .rec-action-btn { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
     body.light .invite-row { background:#FFFFFF; border-color:#E0CECA; }
     body.light .modal-box { background:#FFFFFF; border-color:#E0CECA; }
@@ -254,12 +256,6 @@ $navActive   = 'manage-jobs';
 
 <!-- PAGE -->
 <div class="page-shell">
-  <div class="breadcrumb">
-    <a href="employer_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
-    <i class="fas fa-chevron-right"></i>
-    <span>Manage Recruiters</span>
-  </div>
-
   <div class="page-header">
     <div>
       <div class="page-title">Manage Recruiters</div>
@@ -568,50 +564,12 @@ $navActive   = 'manage-jobs';
     setTimeout(() => t.remove(), 2400);
   }
 
-  // -------- Theme --------
-  function setTheme(t) {
-    document.body.classList.toggle('light', t==='light'); document.body.classList.toggle('dark', t!=='light');
-    localStorage.setItem('ac-theme', t);
-    const el = document.getElementById('themeToggle');
-    if (el) el.querySelector('i').className = t==='light' ? 'fas fa-sun' : 'fas fa-moon';
-  }
-  const _guard_themeToggle = document.getElementById('themeToggle');
-  if (_guard_themeToggle) _guard_themeToggle.addEventListener('click', () =>
-    setTheme(document.body.classList.contains('light') ? 'dark' : 'light'));
+  // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
 
-  const hamburger = document.getElementById('hamburger');
-  const mobileMenu = document.getElementById('mobileMenu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', e => {
-      e.stopPropagation();
-      const open = mobileMenu.classList.toggle('open');
-      hamburger.querySelector('i').className = open ? 'fas fa-times' : 'fas fa-bars';
-    });
-  }
-
-  const _guard_profileToggle = document.getElementById('profileToggle');
-  if (_guard_profileToggle) _guard_profileToggle.addEventListener('click', e => {
-    e.stopPropagation();
-    document.getElementById('profileDropdown').classList.toggle('open');
-  });
   document.addEventListener('click', e => {
-    const pw = document.getElementById('profileWrap');
-    if (pw && !pw.contains(e.target)) document.getElementById('profileDropdown').classList.remove('open');
-    if (mobileMenu && hamburger && !mobileMenu.contains(e.target) && e.target !== hamburger) {
-      mobileMenu.classList.remove('open');
-      hamburger.querySelector('i').className = 'fas fa-bars';
-    }
     if (e.target === document.getElementById('inviteModal')) closeInviteModal();
     if (e.target === document.getElementById('credentialsModal')) closeCredentialsModal();
   });
-
-  (function() {
-    const p = new URLSearchParams(window.location.search).get('theme');
-    const s = localStorage.getItem('ac-theme');
-    const t = p || s || 'light';
-    if (p) localStorage.setItem('ac-theme', p);
-    setTheme(t);
-  })();
 
   // Load on page ready
   loadRecruiters();

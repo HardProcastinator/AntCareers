@@ -217,14 +217,17 @@ $navActive   = 'profile';
     body.light .mobile-menu { background:rgba(255,253,252,0.97); border-color:#E0CECA; }
     body.light .mobile-link { color:#4A2828; }
     body.light .page-title { color:#1A0A09; }
+    body.light .page-sub { color:#7A5555; }
     body.light .s-card { background:#FFFFFF; border-color:#E0CECA; }
     body.light .s-card-title { color:#1A0A09; }
+    body.light .s-card-sub { color:#7A5555; }
+    body.light .form-label { color:#7A5555; }
     body.light .toggle-label { color:#1A0A09; }
     body.light .form-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .appear-opt { background:#F5EEEC; border-color:#E0CECA; }
     body.light .appear-opt-name { color:#1A0A09; }
     body.light .privacy-select { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
-    body.light .tab { color:#7A5555; } body.light .tab.active { color:var(--red-mid); }
+    body.light .tab { color:#7A5555; } body.light .tab:hover, body.light .tab.active { color:#1A0A09; }
     body.light .tabs { border-color:#E0CECA; }
     body.light .modal-box { background:#FFFFFF; border-color:#E0CECA; }
     body.light .modal-title { color:#1A0A09; }
@@ -262,11 +265,6 @@ $navActive   = 'profile';
 
 <!-- PAGE -->
 <div class="page-shell">
-  <div class="breadcrumb">
-    <a href="employer_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
-    <i class="sep fas fa-chevron-right"></i>
-    <span>Settings</span>
-  </div>
   <div class="page-title">Settings</div>
   <div class="page-sub">Manage your account, preferences, and security.</div>
 
@@ -774,48 +772,7 @@ $navActive   = 'profile';
     setTimeout(() => t.remove(), 2500);
   }
 
-  function setTheme(t) {
-    document.body.classList.toggle('light', t==='light'); document.body.classList.toggle('dark', t!=='light');
-    localStorage.setItem('ac-theme', t);
-    document.getElementById('themeToggle').querySelector('i').className = t==='light' ? 'fas fa-sun' : 'fas fa-moon';
-    // sync appearance tab selection
-    document.querySelectorAll('.appear-opt').forEach(o => o.classList.remove('selected'));
-    const match = t === 'light' ? 'opt-light' : 'opt-dark';
-    const el = document.getElementById(match);
-    if (el) el.classList.add('selected');
-  }
-
-  const _guard_themeToggle = document.getElementById('themeToggle'); if (_guard_themeToggle) _guard_themeToggle.addEventListener('click', () =>
-    setTheme(document.body.classList.contains('light') ? 'dark' : 'light'));
-
-  const hamburger = document.getElementById('hamburger');
-  const mobileMenu = document.getElementById('mobileMenu');
-  hamburger.addEventListener('click', e => {
-    e.stopPropagation();
-    const open = mobileMenu.classList.toggle('open');
-    hamburger.querySelector('i').className = open ? 'fas fa-times' : 'fas fa-bars';
-  });
-  const _guard_profileToggle = document.getElementById('profileToggle'); if (_guard_profileToggle) _guard_profileToggle.addEventListener('click', e => {
-    e.stopPropagation();
-    document.getElementById('profileDropdown').classList.toggle('open');
-  });
-  document.addEventListener('click', e => {
-    if (!document.getElementById('profileWrap').contains(e.target))
-      document.getElementById('profileDropdown').classList.remove('open');
-    if (!mobileMenu.contains(e.target) && e.target !== hamburger) {
-      mobileMenu.classList.remove('open');
-      hamburger.querySelector('i').className = 'fas fa-bars';
-    }
-    if (e.target === document.getElementById('confirmModal')) closeConfirm();
-  });
-
-  (function() {
-    const p = new URLSearchParams(window.location.search).get('theme');
-    const s = localStorage.getItem('ac-theme');
-    const t = p || s || 'light';
-    if (p) localStorage.setItem('ac-theme', p);
-    setTheme(t);
-  })();
+  // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
 
   renderSessions();
 </script>
