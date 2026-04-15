@@ -1,0 +1,999 @@
+<?php
+declare(strict_types=1);
+require_once dirname(__DIR__) . '/config.php';
+require_once dirname(__DIR__) . '/includes/auth.php';
+requireLogin('recruiter');
+$user        = getUser();
+$fullName    = $user['fullName'];
+$firstName   = $user['firstName'];
+$initials    = $user['initials'];
+$avatarUrl   = $user['avatarUrl'];
+$companyName = $user['companyName'] ?: 'Your Company';
+$navActive   = 'applicants';
+
+$db  = getDB();
+$uid = (int)$_SESSION['user_id'];
+
+/* ── Helper: generate temp password ── */
+function generateTempPassword(): string {
+    $chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    $password = '';
+    for ($i = 0; $i < 10; $i++) $password .= $chars[random_int(0, strlen($chars) - 1)];
+    return $password . '!';
+}
+
+/* ── AJAX HANDLERS ── */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $action = (string)($_POST['action'] ?? '');
+
+    /* ── update_status ── */
+    if ($action === 'update_status') {
+        $allowed = ['Pending','Reviewed','Shortlisted','Interviewed','Rejected','Hired'];
+        $appId   = (int)($_POST['application_id'] ?? 0);
+        $newS    = trim((string)($_POST['status'] ?? ''));
+        if (!$appId || !in_array($newS, $allowed, true)) {
+            echo json_encode(['ok'=>false,'msg'=>'Invalid input']); exit;
+        }
+        try {
+            $chk = $db->prepare("SELECT a.id, a.seeker_id, j.id AS job_id, j.title AS job_title, j.employer_id FROM applications a JOIN jobs j ON j.id=a.job_id WHERE a.id=? AND j.recruiter_id=?");
+            $chk->execute([$appId, $uid]);
+            $row = $chk->fetch(PDO::FETCH_ASSOC);
+            if (!$row) { echo json_encode(['ok'=>false,'msg'=>'Unauthorized']); exit; }
+
+            /* ── Hired trigger logic ── */
+            if ($newS === 'Hired') {
+                $db->beginTransaction();
+                try {
+                    $db->prepare("UPDATE applications SET status='Hired',reviewed_at=NOW() WHERE id=?")->execute([$appId]);
+
+                    // Get seeker info
+                    $su = $db->prepare("SELECT full_name, email FROM users WHERE id=?");
+                    $su->execute([$row['seeker_id']]);
+                    $seeker = $su->fetch(PDO::FETCH_ASSOC);
+                    if (!$seeker) { $db->rollBack(); echo json_encode(['ok'=>false,'msg'=>'Seeker not found']); exit; }
+
+                    // Get recruiter's company info
+                    $rc = $db->prepare("SELECT company_id FROM recruiters WHERE user_id=? AND is_active=1 LIMIT 1");
+                    $rc->execute([$uid]);
+                    $recInfo = $rc->fetch(PDO::FETCH_ASSOC);
+                    $companyId = $recInfo ? (int)$recInfo['company_id'] : 0;
+
+                    // Get company name for platform email
+                    $cpn = $db->prepare("SELECT company_name FROM company_profiles WHERE id=?");
+                    $cpn->execute([$companyId]);
+                    $cpRow = $cpn->fetch(PDO::FETCH_ASSOC);
+                    if (!$cpRow) {
+                        // Fallback: look up employer's users.company_name
+                        $empQ = $db->prepare("SELECT company_name FROM users WHERE id=?");
+                        $empQ->execute([$row['employer_id']]);
+                        $empRow = $empQ->fetch(PDO::FETCH_ASSOC);
+                        $cpRow = ['company_name' => $empRow && $empRow['company_name'] ? $empRow['company_name'] : 'Company'];
+                    }
+                    $companySlug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $cpRow['company_name'] ?? 'company'));
+                    if ($companySlug === '') $companySlug = 'company';
+
+                    // Generate platform email: f.lastname@company.work
+                    $nameParts = preg_split('/\s+/', trim($seeker['full_name']));
+                    $fChar = strtolower(substr($nameParts[0] ?? 'u', 0, 1));
+                    $lName = strtolower(preg_replace('/[^a-zA-Z]/', '', end($nameParts) ?: 'user'));
+                    $platformEmail = $fChar . '.' . $lName . '@' . $companySlug . '.work';
+
+                    // Ensure uniqueness
+                    $chkEmail = $db->prepare("SELECT id FROM users WHERE email=?");
+                    $chkEmail->execute([$platformEmail]);
+                    if ($chkEmail->fetch()) {
+                        $sfx = 1;
+                        do {
+                            $tryEmail = $fChar . '.' . $lName . $sfx . '@' . $companySlug . '.work';
+                            $chkEmail->execute([$tryEmail]);
+                            $sfx++;
+                        } while ($chkEmail->fetch());
+                        $platformEmail = $tryEmail;
+                    }
+
+                    $tempPass = generateTempPassword();
+                    $hashedPass = password_hash($tempPass, PASSWORD_BCRYPT);
+
+                    // Create recruiter user account
+                    $db->prepare("INSERT INTO users (email, password_hash, full_name, account_type, is_active, must_change_password) VALUES (?,?,?,'recruiter',1,1)")
+                       ->execute([$platformEmail, $hashedPass, $seeker['full_name']]);
+                    $newUserId = (int)$db->lastInsertId();
+
+                    // Create recruiters record (link to company)
+                    $db->prepare("INSERT INTO recruiters (user_id, company_id, employer_id, role, is_active, accepted_at) VALUES (?,?,?,'recruiter',1,NOW())")
+                       ->execute([$newUserId, $companyId, $row['employer_id']]);
+
+                    // Store personal email in recruiter_profiles
+                    $db->prepare("INSERT INTO recruiter_profiles (user_id, personal_email) VALUES (?,?)")
+                       ->execute([$newUserId, $seeker['email']]);
+
+                    // Store in hired_credentials
+                    $tempUser = $fChar . '.' . $lName;
+                    $db->prepare("INSERT INTO hired_credentials (application_id, seeker_id, recruiter_user_id, company_id, temp_username, temp_password_hash) VALUES (?,?,?,?,?,?)")
+                       ->execute([$appId, $row['seeker_id'], $newUserId, $companyId, $tempUser, $hashedPass]);
+
+                    // Send credentials to seeker via in-platform message
+                    $convKey = 'direct:' . min($uid, $row['seeker_id']) . ':' . max($uid, $row['seeker_id']);
+                    $cs = $db->prepare("SELECT id FROM conversations WHERE conversation_key=?");
+                    $cs->execute([$convKey]);
+                    $conv = $cs->fetch();
+                    if ($conv) {
+                        $convId = (int)$conv['id'];
+                    } else {
+                        $db->prepare("INSERT INTO conversations (conversation_key, participant_a_id, participant_b_id) VALUES (?,?,?)")
+                           ->execute([$convKey, min($uid, $row['seeker_id']), max($uid, $row['seeker_id'])]);
+                        $convId = (int)$db->lastInsertId();
+                    }
+                    $msgBody = "Hi {$seeker['full_name']},\n\nGreat news — you've been hired for the position \"{$row['job_title']}\"!\n\nHere are your recruiter portal credentials:\n• Platform Email: {$platformEmail}\n• Temporary Password: {$tempPass}\n\nPlease log in and change your password immediately.\n\nWelcome to the team!";
+                    $db->prepare("INSERT INTO messages (sender_id, receiver_id, conversation_id, subject, body, is_read) VALUES (?,?,?,?,?,0)")
+                       ->execute([$uid, $row['seeker_id'], $convId, 'Congratulations — You\'re Hired!', $msgBody]);
+                    $msgId = (int)$db->lastInsertId();
+                    $db->prepare("UPDATE conversations SET latest_message_id=?, latest_message_at=NOW() WHERE id=?")
+                       ->execute([$msgId, $convId]);
+
+                    // Notification for seeker
+                    $notifContent = "Congratulations! You've been hired for \"{$row['job_title']}\". Check your messages for your recruiter portal credentials.";
+                    $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'hired_credential',?,?)")
+                       ->execute([$row['seeker_id'], $notifContent, $appId]);
+
+                    $db->commit();
+                    echo json_encode(['ok'=>true,'status'=>'Hired']); exit;
+                } catch (Exception $e) {
+                    $db->rollBack();
+                    error_log('[AntCareers] recruiter hire error: ' . $e->getMessage());
+                    echo json_encode(['ok'=>false,'msg'=>'Failed to process hire: '.$e->getMessage()]); exit;
+                }
+            }
+
+            $db->prepare("UPDATE applications SET status=?,reviewed_at=NOW() WHERE id=?")->execute([$newS,$appId]);
+            echo json_encode(['ok'=>true,'status'=>$newS]);
+        } catch (Exception $e) {
+            error_log('[AntCareers] recruiter update_status: ' . $e->getMessage());
+            echo json_encode(['ok'=>false,'msg'=>'DB error']);
+        }
+        exit;
+    }
+
+    /* ── schedule_interview ── */
+    if ($action === 'schedule_interview') {
+        $appId         = (int)($_POST['application_id'] ?? 0);
+        $dt            = trim((string)($_POST['scheduled_at'] ?? ''));
+        $type          = trim((string)($_POST['interview_type'] ?? 'Online'));
+        $link          = trim((string)($_POST['meeting_link'] ?? ''));
+        $notes         = trim((string)($_POST['notes'] ?? ''));
+        $venueName     = trim((string)($_POST['venue_name'] ?? ''));
+        $fullAddress   = trim((string)($_POST['full_address'] ?? ''));
+        $mapLink       = trim((string)($_POST['map_link'] ?? ''));
+        $phoneNumber   = trim((string)($_POST['phone_number'] ?? ''));
+        $contactPerson = trim((string)($_POST['contact_person'] ?? ''));
+        $location      = trim((string)($_POST['location'] ?? ''));
+
+        if (!$appId || !$dt) { echo json_encode(['ok'=>false,'msg'=>'Missing fields']); exit; }
+        if (!in_array($type, ['Online','Phone','On-site'], true)) { echo json_encode(['ok'=>false,'msg'=>'Invalid interview type']); exit; }
+
+        if ($type === 'Online' && $link === '') { echo json_encode(['ok'=>false,'msg'=>'Meeting link is required for online interviews']); exit; }
+        if ($type === 'On-site') {
+            if ($venueName === '') { echo json_encode(['ok'=>false,'msg'=>'Venue name is required for on-site interviews']); exit; }
+            if ($fullAddress === '') { echo json_encode(['ok'=>false,'msg'=>'Full address is required for on-site interviews']); exit; }
+            if ($mapLink === '') { echo json_encode(['ok'=>false,'msg'=>'Google Maps link is required for on-site interviews']); exit; }
+            $location = $venueName;
+        }
+        if ($type === 'Phone' && $phoneNumber === '') { echo json_encode(['ok'=>false,'msg'=>'Phone number is required for phone call interviews']); exit; }
+
+        try {
+            // Auto-add columns if they don't exist
+            try { $db->query("SELECT venue_name FROM interview_schedules LIMIT 0"); }
+            catch (PDOException $e) {
+                $db->exec("ALTER TABLE interview_schedules ADD COLUMN venue_name VARCHAR(300) DEFAULT NULL AFTER location, ADD COLUMN full_address VARCHAR(500) DEFAULT NULL AFTER venue_name, ADD COLUMN map_link VARCHAR(500) DEFAULT NULL AFTER full_address, ADD COLUMN phone_number VARCHAR(50) DEFAULT NULL AFTER map_link, ADD COLUMN contact_person VARCHAR(150) DEFAULT NULL AFTER phone_number");
+            }
+
+            $chk = $db->prepare("SELECT a.seeker_id, j.employer_id FROM applications a JOIN jobs j ON j.id=a.job_id WHERE a.id=? AND j.recruiter_id=?");
+            $chk->execute([$appId, $uid]);
+            $row = $chk->fetch(PDO::FETCH_ASSOC);
+            if (!$row) { echo json_encode(['ok'=>false,'msg'=>'Unauthorized']); exit; }
+
+            $existing = $db->prepare("SELECT id FROM interview_schedules WHERE application_id=? AND status='Scheduled' ORDER BY id DESC LIMIT 1");
+            $existing->execute([$appId]);
+            $existingId = $existing->fetchColumn();
+
+            $ivData = [
+                $dt, $type,
+                $type === 'Online' ? $link : null,
+                $type === 'On-site' ? $venueName : null,
+                $type === 'On-site' ? $venueName : null,
+                $type === 'On-site' ? $fullAddress : null,
+                $type === 'On-site' ? $mapLink : null,
+                $type === 'Phone' ? $phoneNumber : null,
+                $type === 'Phone' ? ($contactPerson ?: null) : null,
+                $notes ?: null,
+            ];
+
+            if ($existingId) {
+                $db->prepare("UPDATE interview_schedules SET scheduled_at=?,interview_type=?,meeting_link=?,location=?,venue_name=?,full_address=?,map_link=?,phone_number=?,contact_person=?,notes=?,updated_at=NOW() WHERE id=?")
+                   ->execute(array_merge($ivData, [$existingId]));
+            } else {
+                $db->prepare("INSERT INTO interview_schedules (application_id,employer_id,seeker_id,scheduled_at,interview_type,meeting_link,location,venue_name,full_address,map_link,phone_number,contact_person,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+                   ->execute(array_merge([$appId, (int)$row['employer_id'], (int)$row['seeker_id']], $ivData));
+            }
+
+            $db->prepare("UPDATE applications SET status='Shortlisted',reviewed_at=NOW() WHERE id=? AND status IN ('Pending','Reviewed')")->execute([$appId]);
+            echo json_encode(['ok'=>true,'updated'=>(bool)$existingId]);
+        } catch (Exception $e) {
+            error_log('[AntCareers] recruiter schedule_interview: ' . $e->getMessage());
+            echo json_encode(['ok'=>false,'msg'=>'DB error']);
+        }
+        exit;
+    }
+
+    /* ── get_applicant ── */
+    if ($action === 'get_applicant') {
+        $appId = (int)($_POST['application_id'] ?? 0);
+        if (!$appId) { echo json_encode(['ok'=>false,'msg'=>'Invalid ID']); exit; }
+        try {
+            $st = $db->prepare("
+                SELECT a.id, a.status, a.cover_letter, a.resume_url, a.applied_at,
+                       u.full_name, u.email, u.avatar_url,
+                       sp.headline, CONCAT_WS(', ', sp.city_name, sp.province_name) AS seeker_location, sp.experience_level, sp.bio, sp.phone
+                FROM applications a
+                JOIN jobs j ON j.id=a.job_id
+                JOIN users u ON u.id=a.seeker_id
+                LEFT JOIN seeker_profiles sp ON sp.user_id=u.id
+                WHERE a.id=? AND j.recruiter_id=?
+            ");
+            $st->execute([$appId, $uid]);
+            $r = $st->fetch(PDO::FETCH_ASSOC);
+            if (!$r) { echo json_encode(['ok'=>false,'msg'=>'Not found']); exit; }
+            echo json_encode(['ok'=>true,'data'=>$r]);
+        } catch (Exception $e) {
+            error_log('[AntCareers] recruiter get_applicant: ' . $e->getMessage());
+            echo json_encode(['ok'=>false,'msg'=>'DB error']);
+        }
+        exit;
+    }
+
+    echo json_encode(['ok'=>false,'msg'=>'Unknown action']); exit;
+}
+
+/* ── FETCH DATA ── */
+$applicants  = [];
+$sCounts     = ['Pending'=>0,'Reviewed'=>0,'Shortlisted'=>0,'Interviewed'=>0,'Hired'=>0,'Rejected'=>0];
+$total       = 0;
+$jobsList    = [];
+$dbErr       = false;
+
+try {
+    // Status counts
+    $sc = $db->prepare("SELECT a.status, COUNT(*) AS c FROM applications a JOIN jobs j ON j.id=a.job_id WHERE j.recruiter_id=? GROUP BY a.status");
+    $sc->execute([$uid]);
+    foreach ($sc->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        if (isset($sCounts[$r['status']])) $sCounts[$r['status']] = (int)$r['c'];
+    }
+    $total = array_sum($sCounts);
+
+    // Applicants query
+    $st = $db->prepare("
+        SELECT a.id, a.status, a.applied_at, a.cover_letter, a.resume_url,
+               u.id AS seeker_id, u.full_name, u.email, u.avatar_url,
+               j.id AS job_id, j.title AS job_title, j.job_type, j.setup,
+               sp.headline, CONCAT_WS(', ', sp.city_name, sp.province_name) AS seeker_location, sp.experience_level,
+               iv.scheduled_at AS interview_date, iv.interview_type, iv.status AS iv_status,
+               iv.meeting_link AS iv_link, iv.location AS iv_location,
+               iv.venue_name AS iv_venue, iv.full_address AS iv_address, iv.map_link AS iv_map,
+               iv.phone_number AS iv_phone, iv.contact_person AS iv_contact, iv.notes AS iv_notes
+        FROM applications a
+        JOIN jobs j ON j.id = a.job_id
+        JOIN users u ON u.id = a.seeker_id
+        LEFT JOIN seeker_profiles sp ON sp.user_id = u.id
+        LEFT JOIN interview_schedules iv ON iv.application_id = a.id AND iv.status = 'Scheduled'
+        WHERE j.recruiter_id = ?
+        GROUP BY a.id
+        ORDER BY a.applied_at DESC
+    ");
+    $st->execute([$uid]);
+    $applicants = $st->fetchAll(PDO::FETCH_ASSOC);
+
+    // Jobs list for filter
+    $js = $db->prepare("SELECT id, title FROM jobs WHERE recruiter_id = ? ORDER BY title");
+    $js->execute([$uid]);
+    $jobsList = $js->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $dbErr = true;
+    error_log('[AntCareers] recruiter applicants fetch: ' . $e->getMessage());
+}
+
+$applicantsJson = json_encode($applicants ?: []);
+$jobsListJson   = json_encode($jobsList ?: []);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+  <title>AntCareers — Recruiter Applicants</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --red-deep:#7A1515; --red-mid:#B83525; --red-vivid:#D13D2C; --red-bright:#E85540; --red-pale:#F07060;
+      --soil-dark:#0A0909; --soil-med:#131010; --soil-card:#1C1818; --soil-hover:#252020; --soil-line:#352E2E;
+      --text-light:#F5F0EE; --text-mid:#D0BCBA; --text-muted:#927C7A;
+      --amber:#D4943A; --amber-dim:#251C0E;
+      --green:#4CAF70; --blue:#4A90D9;
+      --font-display:'Playfair Display',Georgia,serif; --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+    }
+    *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+    html { overflow-x:hidden; }
+    body { font-family:var(--font-body); background:var(--soil-dark); color:var(--text-light); overflow-x:hidden; min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+    /* ── BACKGROUND ── */
+    .glow-orb { position:fixed; border-radius:50%; filter:blur(90px); pointer-events:none; z-index:0; }
+    .glow-1 { width:600px; height:600px; background:radial-gradient(circle,rgba(209,61,44,0.13) 0%,transparent 70%); top:-100px; left:-150px; animation:orb1 18s ease-in-out infinite alternate; }
+    .glow-2 { width:400px; height:400px; background:radial-gradient(circle,rgba(209,61,44,0.06) 0%,transparent 70%); bottom:0; right:-80px; animation:orb2 24s ease-in-out infinite alternate; }
+    @keyframes orb1 { to { transform:translate(60px,80px) scale(1.1); } }
+    @keyframes orb2 { to { transform:translate(-40px,-50px) scale(1.1); } }
+
+    /* ── PAGE SHELL ── */
+    .page-shell { max-width:1380px; margin:0 auto; padding:28px 24px 60px; position:relative; z-index:1; }
+    .page-title { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; margin-bottom:5px; }
+    .page-title span { color:var(--red-bright); font-style:italic; }
+    .page-sub { font-size:14px; color:var(--text-muted); margin-bottom:20px; }
+    .db-warn { background:rgba(212,148,58,.1); border:1px solid rgba(212,148,58,.3); border-radius:8px; padding:10px 16px; font-size:13px; color:var(--amber); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+
+    /* ── STATS ROW ── */
+    .stats-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+    .stat-pill { display:flex; align-items:center; gap:8px; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:10px 15px; cursor:pointer; transition:all 0.18s; text-decoration:none; }
+    .stat-pill:hover,.stat-pill.active { border-color:rgba(209,61,44,.45); background:rgba(209,61,44,.07); }
+    .sp-icon { font-size:13px; width:17px; text-align:center; }
+    .sp-label { font-size:12px; font-weight:600; color:var(--text-muted); }
+    .sp-count { font-size:17px; font-weight:800; color:#F5F0EE; font-family:var(--font-display); }
+
+    /* ── TOOLBAR ── */
+    .toolbar { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+    .search-bar { display:flex; align-items:center; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; flex:1; min-width:200px; transition:0.25s; }
+    .search-bar:focus-within { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.1); }
+    .search-bar .si { padding:0 14px; color:var(--text-muted); font-size:14px; }
+    .search-bar input { flex:1; padding:13px 0; background:none; border:none; outline:none; font-family:var(--font-body); font-size:14px; color:#F5F0EE; }
+    .search-bar input::placeholder { color:var(--text-muted); }
+    select.fsel { padding:13px 13px; border-radius:8px; background:var(--soil-card); border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; cursor:pointer; outline:none; }
+    select.fsel:focus { border-color:var(--red-vivid); }
+
+    /* ── APPLICANT CARDS ── */
+    .app-list { display:flex; flex-direction:column; gap:10px; }
+    .app-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; overflow:hidden; transition:border-color 0.2s,box-shadow 0.2s; }
+    .app-card:hover { border-color:rgba(209,61,44,.4); box-shadow:0 6px 24px rgba(0,0,0,.3); }
+    .app-main { display:grid; grid-template-columns:44px 1fr auto; gap:14px; padding:16px 18px; align-items:start; }
+    .app-avatar { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+    .app-avatar img { width:100%; height:100%; object-fit:cover; }
+    .app-info { min-width:0; }
+    .app-name { font-family:var(--font-display); font-size:15px; font-weight:700; color:#F5F0EE; margin-bottom:2px; text-decoration:none; transition:color 0.2s; display:block; }
+    .app-name:hover { color:var(--red-bright); }
+    .app-email { font-size:12px; color:var(--text-muted); margin-bottom:4px; }
+    .app-headline { font-size:12px; color:var(--text-mid); margin-bottom:7px; }
+    .app-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--text-muted); }
+    .app-meta i { color:var(--red-bright); font-size:10px; }
+    .app-job { font-weight:700; color:var(--red-pale); }
+    .app-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0; }
+    .app-date { font-size:11px; color:var(--text-muted); }
+    .app-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+
+    /* ── BADGES ── */
+    .sbadge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.04em; }
+    .sbadge.amber { color:#D4943A; background:rgba(212,148,58,.1); border:1px solid rgba(212,148,58,.25); }
+    .sbadge.blue { color:#4A90D9; background:rgba(74,144,217,.1); border:1px solid rgba(74,144,217,.2); }
+    .sbadge.sblue { color:#7ab8f0; background:rgba(122,184,240,.1); border:1px solid rgba(122,184,240,.2); }
+    .sbadge.purple { color:#cf8ae0; background:rgba(156,39,176,.1); border:1px solid rgba(156,39,176,.2); }
+    .sbadge.green { color:#6ccf8a; background:rgba(76,175,112,.1); border:1px solid rgba(76,175,112,.2); }
+    .sbadge.red { color:#ff8080; background:rgba(220,53,69,.1); border:1px solid rgba(220,53,69,.2); }
+    .sbadge.muted { color:var(--text-muted); background:var(--soil-hover); border:1px solid var(--soil-line); }
+    .chip { font-size:11px; font-weight:500; padding:3px 8px; border-radius:4px; background:var(--soil-hover); color:#A09090; border:1px solid var(--soil-line); }
+
+    /* ── BUTTONS ── */
+    .btn { padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; font-family:var(--font-body); transition:.18s; border:1px solid var(--soil-line); background:transparent; color:var(--text-muted); white-space:nowrap; }
+    .btn:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .btn.primary { background:var(--red-vivid); border-color:var(--red-vivid); color:#fff; }
+    .btn.primary:hover { background:var(--red-bright); }
+    .btn.amb { border-color:rgba(212,148,58,.4); color:var(--amber); }
+    .btn.amb:hover { background:rgba(212,148,58,.1); }
+    .btn.green { border-color:rgba(76,175,112,.4); color:var(--green); }
+    .btn.green:hover { background:rgba(76,175,112,.1); }
+    .btn.danger { border-color:rgba(220,53,69,.4); color:#ff8080; }
+    .btn.danger:hover { background:rgba(220,53,69,.1); }
+
+    /* ── EXPAND PANEL ── */
+    .app-expand { border-top:1px solid var(--soil-line); padding:16px 18px; display:none; background:var(--soil-hover); }
+    .app-expand.open { display:block; }
+    .exp-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .etitle { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.07em; margin-bottom:7px; }
+    .etitle i { color:var(--red-bright); margin-right:4px; }
+    .cover-text { font-size:13px; color:var(--text-mid); line-height:1.6; white-space:pre-wrap; }
+    .status-row { display:flex; align-items:center; gap:8px; margin-top:4px; }
+    .status-sel { padding:7px 11px; border-radius:7px; background:var(--soil-card); border:1px solid var(--soil-line); color:#F5F0EE; font-family:var(--font-body); font-size:13px; cursor:pointer; outline:none; }
+    .status-sel:focus { border-color:var(--red-vivid); }
+    .save-btn { padding:7px 15px; border-radius:6px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; transition:.2s; }
+    .save-btn:hover { background:var(--red-bright); }
+
+    /* ── MODALS ── */
+    .modal-bd { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:600; display:none; align-items:flex-start; justify-content:center; padding:40px 20px; overflow-y:auto; }
+    .modal-bd.open { display:flex; }
+    .modal-box { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:16px; padding:26px; width:100%; max-width:520px; position:relative; margin:auto; }
+    .modal-title { font-family:var(--font-display); font-size:20px; font-weight:700; color:#F5F0EE; margin-bottom:18px; display:flex; align-items:center; gap:9px; }
+    .modal-close { position:absolute; top:14px; right:14px; width:28px; height:28px; border-radius:6px; border:1px solid var(--soil-line); background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; }
+    .modal-close:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .fg { margin-bottom:13px; }
+    .fl { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px; display:block; }
+    .fi { width:100%; padding:9px 13px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:#F5F0EE; font-family:var(--font-body); font-size:13px; outline:none; transition:.2s; }
+    .fi:focus { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,.1); }
+    textarea.fi { resize:vertical; min-height:72px; }
+    .frow { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+    .mfoot { display:flex; justify-content:flex-end; gap:9px; margin-top:18px; }
+
+    /* ── DETAIL MODAL ── */
+    .detail-section { margin-bottom:16px; }
+    .detail-section:last-child { margin-bottom:0; }
+    .detail-header { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .detail-avatar { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; color:#fff; overflow:hidden; }
+    .detail-avatar img { width:100%; height:100%; object-fit:cover; }
+    .detail-name { font-family:var(--font-display); font-size:18px; font-weight:700; color:#F5F0EE; }
+    .detail-meta { font-size:12px; color:var(--text-muted); margin-top:2px; }
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .detail-item { font-size:13px; color:var(--text-mid); }
+    .detail-item strong { color:var(--text-light); font-weight:600; display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); margin-bottom:2px; }
+
+    /* ── EMPTY STATE ── */
+    .empty { text-align:center; padding:55px 20px; color:var(--text-muted); }
+    .empty i { font-size:42px; margin-bottom:12px; color:var(--soil-line); display:block; }
+    .empty p { font-size:14px; }
+
+    /* ── TOAST ── */
+    .toast { position:fixed; bottom:22px; right:22px; background:var(--soil-card); border:1px solid var(--soil-line); border-left:4px solid var(--red-vivid); border-radius:8px; padding:11px 16px; font-size:13px; font-weight:600; color:#F5F0EE; z-index:900; transform:translateY(80px); opacity:0; transition:all .35s ease; max-width:320px; box-shadow:0 8px 32px rgba(0,0,0,.4); pointer-events:none; }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .toast.ok { border-left-color:#4CAF70; }
+    .toast.err { border-left-color:#E05555; }
+
+    /* ── FOOTER ── */
+    .footer { border-top:1px solid var(--soil-line); padding:20px 24px; max-width:1380px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; color:var(--text-muted); font-size:12px; position:relative; z-index:2; flex-wrap:wrap; gap:10px; }
+    .footer-logo { font-family:var(--font-display); font-weight:700; color:var(--red-pale); font-size:15px; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .anim { animation:fadeUp 0.4s ease both; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:var(--soil-dark); }
+    ::-webkit-scrollbar-thumb { background:var(--soil-line); border-radius:3px; }
+
+    /* ── LIGHT THEME ── */
+    body.light {
+      --soil-dark:#F9F5F4; --soil-card:#FFFFFF; --soil-hover:#FEF0EE; --soil-line:#E0CECA;
+      --text-light:#1A0A09; --text-mid:#4A2828; --text-muted:#7A5555;
+      --amber-dim:#FFF4E0; --amber:#B8620A;
+    }
+    body.light .glow-orb { opacity:0.04; }
+    body.light .page-title { color:#1A0A09; }
+    body.light .stat-pill { background:#fff; border-color:#E0CECA; }
+    body.light .sp-count { color:#1A0A09; }
+    body.light .search-bar { background:#fff; border-color:#E0CECA; }
+    body.light .search-bar input { color:#1A0A09; }
+    body.light select.fsel { background:#fff; border-color:#E0CECA; color:#3A2020; }
+    body.light .app-card { background:#fff; border-color:#E0CECA; }
+    body.light .app-name { color:#1A0A09; }
+    body.light .app-expand { background:#FAF7F5; border-color:#E0CECA; }
+    body.light .status-sel { background:#fff; border-color:#D4B0AB; color:#1A0A09; }
+    body.light .chip { background:#F5EEEC; border-color:#E0CECA; color:#5A3838; }
+    body.light .btn { border-color:#D4B0AB; color:#5A4040; }
+    body.light .btn.primary { color:#fff; }
+    body.light .modal-box { background:#fff; border-color:#E0CECA; }
+    body.light .modal-title { color:#1A0A09; }
+    body.light .fi { background:#F5EDEB; border-color:#D4B0AB; color:#1A0A09; }
+    body.light .detail-name { color:#1A0A09; }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:880px) { .nav-links { display:none; } .hamburger { display:flex; } }
+    @media(max-width:760px) {
+      .page-shell { padding:20px 16px 40px; }
+      .nav-inner { padding:0 16px; }
+      .profile-name,.profile-role { display:none; }
+      .profile-btn { padding:6px 8px; }
+      .exp-grid { grid-template-columns:1fr; }
+      .app-right { display:none; }
+      .footer { flex-direction:column; text-align:center; padding:16px; }
+      .frow { grid-template-columns:1fr; }
+      .detail-grid { grid-template-columns:1fr; }
+    }
+    @media(max-width:480px) {
+      .stats-row { gap:6px; }
+      .stat-pill { padding:8px 10px; }
+      .toolbar { flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="glow-orb glow-1"></div>
+<div class="glow-orb glow-2"></div>
+
+<?php require_once dirname(__DIR__) . '/includes/navbar_recruiter.php'; ?>
+
+<div class="page-shell">
+  <h1 class="page-title anim">Applicant <span>Pipeline</span></h1>
+  <p class="page-sub anim">Review, shortlist and manage all job applicants assigned to your postings.</p>
+
+  <?php if($dbErr): ?>
+  <div class="db-warn"><i class="fas fa-exclamation-triangle"></i> Could not fetch applicant data — run <strong>sql/migration_recruiter.sql</strong> to set up tables.</div>
+  <?php endif; ?>
+
+  <!-- STATS PILLS -->
+  <div class="stats-row anim" id="statsRow">
+    <div class="stat-pill active" data-filter="">
+      <i class="fas fa-users sp-icon" style="color:var(--red-pale)"></i>
+      <span class="sp-label">All</span>
+      <span class="sp-count" id="cnt-all"><?= $total ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Pending">
+      <i class="fas fa-clock sp-icon" style="color:#D4943A"></i>
+      <span class="sp-label">Pending</span>
+      <span class="sp-count" id="cnt-Pending"><?= $sCounts['Pending'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Shortlisted">
+      <i class="fas fa-star sp-icon" style="color:#7ab8f0"></i>
+      <span class="sp-label">Shortlisted</span>
+      <span class="sp-count" id="cnt-Shortlisted"><?= $sCounts['Shortlisted'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Interviewed">
+      <i class="fas fa-comments sp-icon" style="color:#cf8ae0"></i>
+      <span class="sp-label">Interviewed</span>
+      <span class="sp-count" id="cnt-Interviewed"><?= $sCounts['Interviewed'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Hired">
+      <i class="fas fa-check-circle sp-icon" style="color:#6ccf8a"></i>
+      <span class="sp-label">Hired</span>
+      <span class="sp-count" id="cnt-Hired"><?= $sCounts['Hired'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Rejected">
+      <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
+      <span class="sp-label">Rejected</span>
+      <span class="sp-count" id="cnt-Rejected"><?= $sCounts['Rejected'] ?></span>
+    </div>
+  </div>
+
+  <!-- FILTER TOOLBAR -->
+  <div class="toolbar anim">
+    <div class="search-bar">
+      <i class="fas fa-search si"></i>
+      <input type="text" id="searchInput" placeholder="Search name, email or job title…">
+    </div>
+    <select class="fsel" id="filterJob">
+      <option value="">All Jobs</option>
+      <?php foreach($jobsList as $j): ?>
+      <option value="<?= (int)$j['id'] ?>"><?= htmlspecialchars($j['title'], ENT_QUOTES, 'UTF-8') ?></option>
+      <?php endforeach; ?>
+    </select>
+    <select class="fsel" id="filterStatus">
+      <option value="">All Statuses</option>
+      <option value="Pending">Pending</option>
+      <option value="Reviewed">Reviewed</option>
+      <option value="Shortlisted">Shortlisted</option>
+      <option value="Interviewed">Interviewed</option>
+      <option value="Hired">Hired</option>
+      <option value="Rejected">Rejected</option>
+    </select>
+  </div>
+
+  <!-- APPLICANT CARDS -->
+  <div class="app-list" id="appList"></div>
+</div>
+
+<!-- INTERVIEW SCHEDULE MODAL -->
+<div class="modal-bd" id="iModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('iModal')"><i class="fas fa-times"></i></button>
+    <div class="modal-title" id="iModalTitle"><i class="fas fa-calendar-check" style="color:var(--red-bright)"></i> Schedule Interview</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:15px;" id="iName"></p>
+    <input type="hidden" id="iAppId">
+    <div class="frow">
+      <div class="fg"><label class="fl">Date &amp; Time <span style="color:var(--red-pale)">*</span></label><input type="datetime-local" class="fi" id="iDate"></div>
+      <div class="fg"><label class="fl">Type <span style="color:var(--red-pale)">*</span></label><select class="fi" id="iType" onchange="onIvTypeChange()"><option value="Online">Online (Video)</option><option value="Phone">Phone Call</option><option value="On-site">On-site</option></select></div>
+    </div>
+    <div id="fieldsOnline">
+      <div class="fg"><label class="fl">Meeting Link <span style="color:var(--red-pale)">*</span></label><input type="url" class="fi" id="iLink" placeholder="https://meet.google.com/… or https://zoom.us/…"></div>
+    </div>
+    <div id="fieldsOnsite" style="display:none;">
+      <div class="fg"><label class="fl">Venue / Location Name <span style="color:var(--red-pale)">*</span></label><input type="text" class="fi" id="iVenue" placeholder="e.g. Main Office, 5th Floor"></div>
+      <div class="fg"><label class="fl">Full Address <span style="color:var(--red-pale)">*</span></label><input type="text" class="fi" id="iAddress" placeholder="e.g. 123 Ayala Ave., Makati City"></div>
+      <div class="fg"><label class="fl">Google Maps Link <span style="color:var(--red-pale)">*</span></label><input type="url" class="fi" id="iMapLink" placeholder="https://maps.google.com/…"></div>
+    </div>
+    <div id="fieldsPhone" style="display:none;">
+      <div class="fg"><label class="fl">Contact Phone Number <span style="color:var(--red-pale)">*</span></label><input type="tel" class="fi" id="iPhone" placeholder="e.g. +63 917 123 4567"></div>
+      <div class="fg"><label class="fl">Contact Person <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label><input type="text" class="fi" id="iContactPerson" placeholder="e.g. Maria Santos, HR Manager"></div>
+    </div>
+    <div class="fg"><label class="fl">Notes / Instructions <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label><textarea class="fi" id="iNotes" rows="3" placeholder="What should they prepare?"></textarea></div>
+    <div id="iError" style="display:none;color:#ff8080;font-size:12px;font-weight:600;margin-bottom:10px;padding:8px 12px;background:rgba(220,53,69,.1);border:1px solid rgba(220,53,69,.2);border-radius:6px;"></div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeModal('iModal')">Cancel</button>
+      <button class="btn primary" id="iSubmitBtn" onclick="submitInterview()"><i class="fas fa-paper-plane"></i> Send Invite</button>
+    </div>
+  </div>
+</div>
+
+<!-- APPLICANT DETAIL MODAL -->
+<div class="modal-bd" id="dModal">
+  <div class="modal-box" style="max-width:560px;">
+    <button class="modal-close" onclick="closeModal('dModal')"><i class="fas fa-times"></i></button>
+    <div class="modal-title"><i class="fas fa-user" style="color:var(--red-bright)"></i> Applicant Details</div>
+    <div id="dContent"><div style="text-align:center;padding:30px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading…</div></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-logo">AntCareers</div>
+  <div>Applicant Tracking — Recruiter Portal</div>
+</footer>
+
+<script>
+(function(){
+  /* ── Data from PHP ── */
+  const allApplicants = <?= $applicantsJson ?>;
+  let currentFilter = { search:'', job:'', status:'' };
+
+  const statusMeta = {
+    Pending:     { cls:'amber',  icon:'fa-clock' },
+    Reviewed:    { cls:'blue',   icon:'fa-eye' },
+    Shortlisted: { cls:'sblue',  icon:'fa-star' },
+    Interviewed: { cls:'purple', icon:'fa-comments' },
+    Hired:       { cls:'green',  icon:'fa-check-circle' },
+    Rejected:    { cls:'red',    icon:'fa-times-circle' }
+  };
+
+  const avatarGradients = [
+    'linear-gradient(135deg,#D13D2C,#7A1515)',
+    'linear-gradient(135deg,#4A90D9,#2A6090)',
+    'linear-gradient(135deg,#4CAF70,#2A7040)',
+    'linear-gradient(135deg,#9C27B0,#5A1070)',
+    'linear-gradient(135deg,#D4943A,#8a5010)'
+  ];
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.appendChild(document.createTextNode(s || ''));
+    return d.innerHTML;
+  }
+
+  function getInitials(name) {
+    var parts = (name || '?').trim().split(/\s+/);
+    return parts.length >= 2
+      ? (parts[0][0] + parts[1][0]).toUpperCase()
+      : (parts[0].substring(0,2)).toUpperCase();
+  }
+
+  /* ── Render applicant cards ── */
+  function render() {
+    var q = currentFilter.search.toLowerCase();
+    var fj = currentFilter.job;
+    var fs = currentFilter.status;
+
+    var filtered = allApplicants.filter(function(a) {
+      if (fs && a.status !== fs) return false;
+      if (fj && String(a.job_id) !== fj) return false;
+      if (q) {
+        var hay = ((a.full_name||'')+(a.email||'')+(a.job_title||'')).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+
+    var container = document.getElementById('appList');
+    if (!filtered.length) {
+      container.innerHTML = '<div class="empty"><i class="fas fa-user-slash"></i><p>No applicants match your filters.</p></div>';
+      return;
+    }
+
+    container.innerHTML = filtered.map(function(a, idx) {
+      var sm = statusMeta[a.status] || { cls:'muted', icon:'fa-circle' };
+      var ini = getInitials(a.full_name);
+      var grad = avatarGradients[a.id % avatarGradients.length];
+      var dA = formatDate(a.applied_at);
+      var hasIv = a.interview_date && a.iv_status === 'Scheduled';
+      var ivJson = hasIv ? JSON.stringify({type:a.interview_type||'',date:a.interview_date||'',link:a.iv_link||'',venue:a.iv_venue||'',address:a.iv_address||'',map:a.iv_map||'',phone:a.iv_phone||'',contact:a.iv_contact||'',notes:a.iv_notes||''}) : 'null';
+
+      var avatarHtml = a.avatar_url
+        ? '<img src="../'+esc(a.avatar_url)+'" alt="">'
+        : esc(ini);
+
+      var headline = a.headline ? '<div class="app-headline">'+esc(a.headline)+'</div>' : '';
+      var locChip = a.seeker_location ? ' <span><i class="fas fa-map-marker-alt"></i> '+esc(a.seeker_location)+'</span>' : '';
+      var expChip = a.experience_level ? ' <span><i class="fas fa-briefcase"></i> '+esc(a.experience_level)+'</span>' : '';
+      var ivChip = hasIv ? ' <span class="chip"><i class="fas fa-video" style="color:#6ccf8a;margin-right:3px"></i> Interview Scheduled</span>' : '';
+      var resumeUrl = a.resume_url || '';
+      var resumeBtn = resumeUrl ? ' <a href="'+esc(resumeUrl)+'" target="_blank" class="btn"><i class="fas fa-file-alt"></i> Resume</a>' : '';
+
+      var nextStatus = {Pending:'Shortlisted',Reviewed:'Shortlisted',Shortlisted:'Interviewed',Interviewed:'Hired'};
+      var next = nextStatus[a.status];
+      var advanceBtn = next ? '<button class="btn green" onclick="updateStatus('+a.id+',\''+next+'\')"><i class="fas fa-arrow-right"></i> '+next+'</button>' : '';
+      var rejectBtn = a.status !== 'Rejected' && a.status !== 'Hired' ? '<button class="btn danger" onclick="updateStatus('+a.id+',\'Rejected\')"><i class="fas fa-times"></i> Reject</button>' : '';
+
+      return '<div class="app-card" id="card-'+a.id+'" data-status="'+esc(a.status)+'" data-job="'+a.job_id+'" data-name="'+esc((a.full_name||'').toLowerCase())+'" data-email="'+esc((a.email||'').toLowerCase())+'" data-jobtitle="'+esc((a.job_title||'').toLowerCase())+'" style="animation:fadeUp 0.3s '+((idx*0.03))+'s both ease;">'
+        +'<div class="app-main">'
+        +'<div class="app-avatar" style="background:'+grad+'">'+avatarHtml+'</div>'
+        +'<div class="app-info">'
+        +'<a class="app-name" href="javascript:void(0)" onclick="viewApplicant('+a.id+')">'+esc(a.full_name)+'</a>'
+        +'<div class="app-email">'+esc(a.email)+'</div>'
+        +headline
+        +'<div class="app-meta">'
+        +'<span><i class="fas fa-briefcase"></i> <span class="app-job">'+esc(a.job_title)+'</span></span>'
+        +'<span><i class="fas fa-calendar-alt"></i> Applied '+dA+'</span>'
+        +locChip+expChip+ivChip
+        +' <span class="sbadge '+sm.cls+'" id="badge-'+a.id+'"><i class="fas '+sm.icon+'"></i> '+esc(a.status)+'</span>'
+        +'</div></div>'
+        +'<div class="app-right">'
+        +'<span class="app-date">'+dA+'</span>'
+        +'<div class="app-actions">'
+        +'<button class="btn" onclick="viewApplicant('+a.id+')"><i class="fas fa-eye"></i> View</button>'
+        +'<button class="btn amb" onclick="openInterview('+a.id+',\''+esc(a.full_name).replace(/'/g,"\\'")+'\','+esc(ivJson)+')"><i class="fas '+(hasIv?'fa-edit':'fa-calendar-plus')+'"></i> '+(hasIv?'Edit Interview':'Schedule')+'</button>'
+        +resumeBtn+advanceBtn+rejectBtn
+        +'</div></div></div>'
+        +'<div class="app-expand" id="exp-'+a.id+'">'
+        +'<div class="exp-grid"><div>'
+        +'<div class="etitle"><i class="fas fa-envelope-open-text"></i> Cover Letter</div>'
+        +(a.cover_letter ? '<p class="cover-text">'+esc(a.cover_letter).replace(/\n/g,'<br>')+'</p>' : '<p class="cover-text" style="color:var(--text-muted);font-style:italic">No cover letter provided.</p>')
+        +'</div><div>'
+        +'<div class="etitle"><i class="fas fa-tasks"></i> Update Status</div>'
+        +'<div class="status-row">'
+        +'<select class="status-sel" id="sel-'+a.id+'">'
+        +['Pending','Reviewed','Shortlisted','Interviewed','Rejected','Hired'].map(function(s){return '<option value="'+s+'"'+(s===a.status?' selected':'')+'>'+s+'</option>';}).join('')
+        +'</select>'
+        +'<button class="save-btn" onclick="saveStatus('+a.id+')">Save</button>'
+        +'</div></div></div></div>'
+        +'</div>';
+    }).join('');
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    var dt = new Date(d.replace(' ','T'));
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[dt.getMonth()]+' '+dt.getDate()+', '+dt.getFullYear();
+  }
+
+  /* ── Filter handlers ── */
+  document.getElementById('searchInput').addEventListener('input', function(){ currentFilter.search = this.value; render(); });
+  document.getElementById('filterJob').addEventListener('change', function(){ currentFilter.job = this.value; render(); });
+  document.getElementById('filterStatus').addEventListener('change', function(){
+    currentFilter.status = this.value;
+    updateStatPills(this.value);
+    render();
+  });
+
+  // Stats pills click filtering
+  document.querySelectorAll('.stat-pill').forEach(function(pill){
+    pill.addEventListener('click', function(){
+      var f = this.getAttribute('data-filter');
+      currentFilter.status = f;
+      document.getElementById('filterStatus').value = f;
+      updateStatPills(f);
+      render();
+    });
+  });
+
+  function updateStatPills(active) {
+    document.querySelectorAll('.stat-pill').forEach(function(p){
+      p.classList.toggle('active', p.getAttribute('data-filter') === active);
+    });
+  }
+
+  /* ── AJAX helper ── */
+  function doPost(data, cb) {
+    var body = Object.keys(data).map(function(k){ return encodeURIComponent(k)+'='+encodeURIComponent(data[k]); }).join('&');
+    fetch('recruiter_applicants.php', {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:body
+    }).then(function(r){ return r.json(); }).then(cb).catch(function(){ toast('Network error','err'); });
+  }
+
+  /* ── Status update ── */
+  window.updateStatus = function(id, status) {
+    if (status === 'Hired') {
+      if (!confirm('Mark this applicant as Hired? This will generate recruiter credentials and send them to the applicant.')) return;
+    }
+    if (status === 'Rejected') {
+      if (!confirm('Reject this applicant?')) return;
+    }
+    doPost({action:'update_status', application_id:id, status:status}, function(d){
+      if (d.ok) {
+        // Update local data
+        for (var i=0;i<allApplicants.length;i++) {
+          if (allApplicants[i].id == id) { allApplicants[i].status = d.status; break; }
+        }
+        recountStats();
+        render();
+        toast('Status updated to '+d.status,'ok');
+      } else { toast(d.msg||'Error','err'); }
+    });
+  };
+
+  window.saveStatus = function(id) {
+    var s = document.getElementById('sel-'+id).value;
+    window.updateStatus(id, s);
+  };
+
+  function recountStats() {
+    var counts = {Pending:0,Reviewed:0,Shortlisted:0,Interviewed:0,Hired:0,Rejected:0};
+    allApplicants.forEach(function(a){ if(counts.hasOwnProperty(a.status)) counts[a.status]++; });
+    var total = 0; for(var k in counts) total += counts[k];
+    var el = document.getElementById('cnt-all'); if(el) el.textContent = total;
+    for(var k in counts) { el = document.getElementById('cnt-'+k); if(el) el.textContent = counts[k]; }
+  }
+
+  /* ── Interview modal ── */
+  window.openInterview = function(id, name, existingData) {
+    document.getElementById('iAppId').value = id;
+    document.getElementById('iName').textContent = 'Applicant: '+name;
+    var errEl = document.getElementById('iError'); errEl.style.display='none';
+
+    var isEdit = existingData && existingData.type;
+    document.getElementById('iModalTitle').innerHTML = '<i class="fas fa-calendar-check" style="color:var(--red-bright)"></i> '+(isEdit?'Edit Interview':'Schedule Interview');
+    var btn = document.getElementById('iSubmitBtn');
+    btn.innerHTML = isEdit ? '<i class="fas fa-save"></i> Update Interview' : '<i class="fas fa-paper-plane"></i> Send Invite';
+
+    if (isEdit) {
+      var d = existingData.date ? existingData.date.replace(' ','T') : '';
+      if (d && d.length > 16) d = d.slice(0,16);
+      document.getElementById('iDate').value = d||'';
+      document.getElementById('iType').value = existingData.type||'Online';
+      document.getElementById('iLink').value = existingData.link||'';
+      document.getElementById('iVenue').value = existingData.venue||'';
+      document.getElementById('iAddress').value = existingData.address||'';
+      document.getElementById('iMapLink').value = existingData.map||'';
+      document.getElementById('iPhone').value = existingData.phone||'';
+      document.getElementById('iContactPerson').value = existingData.contact||'';
+      document.getElementById('iNotes').value = existingData.notes||'';
+    } else {
+      var nd = new Date(); nd.setDate(nd.getDate()+1); nd.setHours(10,0,0,0);
+      document.getElementById('iDate').value = nd.toISOString().slice(0,16);
+      document.getElementById('iType').value = 'Online';
+      document.getElementById('iLink').value = '';
+      document.getElementById('iVenue').value = '';
+      document.getElementById('iAddress').value = '';
+      document.getElementById('iMapLink').value = '';
+      document.getElementById('iPhone').value = '';
+      document.getElementById('iContactPerson').value = '';
+      document.getElementById('iNotes').value = '';
+    }
+    onIvTypeChange();
+    document.getElementById('iModal').classList.add('open');
+  };
+
+  window.onIvTypeChange = function() {
+    var type = document.getElementById('iType').value;
+    document.getElementById('fieldsOnline').style.display = type==='Online' ? 'block':'none';
+    document.getElementById('fieldsOnsite').style.display = type==='On-site' ? 'block':'none';
+    document.getElementById('fieldsPhone').style.display  = type==='Phone' ? 'block':'none';
+    document.getElementById('iError').style.display = 'none';
+  };
+
+  function showIvError(msg) {
+    var el = document.getElementById('iError');
+    el.textContent = msg; el.style.display = 'block';
+  }
+
+  window.submitInterview = function() {
+    var dt = document.getElementById('iDate').value;
+    var type = document.getElementById('iType').value;
+    document.getElementById('iError').style.display = 'none';
+
+    if (!dt) { showIvError('Please select a date and time.'); return; }
+
+    var post = { action:'schedule_interview', application_id:document.getElementById('iAppId').value, scheduled_at:dt, interview_type:type, notes:document.getElementById('iNotes').value };
+
+    if (type === 'Online') {
+      var link = document.getElementById('iLink').value.trim();
+      if (!link) { showIvError('Meeting link is required for online interviews.'); return; }
+      if (!/^https?:\/\/.+/i.test(link)) { showIvError('Please enter a valid meeting link.'); return; }
+      post.meeting_link = link;
+    } else if (type === 'On-site') {
+      var venue = document.getElementById('iVenue').value.trim();
+      var addr = document.getElementById('iAddress').value.trim();
+      var mapLink = document.getElementById('iMapLink').value.trim();
+      if (!venue) { showIvError('Venue name is required for on-site interviews.'); return; }
+      if (!addr) { showIvError('Full address is required for on-site interviews.'); return; }
+      if (!mapLink) { showIvError('Google Maps link is required for on-site interviews.'); return; }
+      if (!/^https?:\/\/.+/i.test(mapLink)) { showIvError('Please enter a valid Google Maps link.'); return; }
+      post.venue_name = venue; post.full_address = addr; post.map_link = mapLink;
+    } else if (type === 'Phone') {
+      var phone = document.getElementById('iPhone').value.trim();
+      if (!phone) { showIvError('Phone number is required for phone call interviews.'); return; }
+      post.phone_number = phone;
+      post.contact_person = document.getElementById('iContactPerson').value.trim();
+    }
+
+    var btn = document.getElementById('iSubmitBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scheduling…';
+
+    doPost(post, function(d){
+      btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Invite';
+      if (d.ok) {
+        closeModal('iModal');
+        toast(d.updated ? 'Interview updated!' : 'Interview scheduled!', 'ok');
+        setTimeout(function(){ location.reload(); }, 1200);
+      } else { showIvError(d.msg || 'Error scheduling interview'); }
+    });
+  };
+
+  /* ── View applicant detail ── */
+  window.viewApplicant = function(id) {
+    document.getElementById('dContent').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+    document.getElementById('dModal').classList.add('open');
+
+    doPost({action:'get_applicant', application_id:id}, function(d){
+      if (!d.ok) { document.getElementById('dContent').innerHTML = '<p style="color:#ff8080">'+esc(d.msg||'Error loading details')+'</p>'; return; }
+      var a = d.data;
+      var ini = getInitials(a.full_name);
+      var grad = avatarGradients[id % avatarGradients.length];
+      var avatarHtml = a.avatar_url
+        ? '<img src="../'+esc(a.avatar_url)+'" alt="">'
+        : esc(ini);
+      var resumeUrl = a.resume_url || '';
+
+      var html = '<div class="detail-header">'
+        +'<div class="detail-avatar" style="background:'+grad+'">'+avatarHtml+'</div>'
+        +'<div><div class="detail-name">'+esc(a.full_name)+'</div>'
+        +'<div class="detail-meta">'+esc(a.email)+'</div>'
+        +(a.headline ? '<div class="detail-meta" style="color:var(--text-mid)">'+esc(a.headline)+'</div>' : '')
+        +'</div></div>';
+
+      html += '<div class="detail-section"><div class="detail-grid">';
+      if (a.seeker_location) html += '<div class="detail-item"><strong>Location</strong>'+esc(a.seeker_location)+'</div>';
+      if (a.experience_level) html += '<div class="detail-item"><strong>Experience</strong>'+esc(a.experience_level)+'</div>';
+      if (a.phone) html += '<div class="detail-item"><strong>Phone</strong>'+esc(a.phone)+'</div>';
+      html += '<div class="detail-item"><strong>Status</strong>'+esc(a.status)+'</div>';
+      html += '<div class="detail-item"><strong>Applied</strong>'+formatDate(a.applied_at)+'</div>';
+      html += '</div></div>';
+
+      if (a.bio) {
+        html += '<div class="detail-section"><div class="etitle"><i class="fas fa-user-circle"></i> Bio</div><p class="cover-text">'+esc(a.bio)+'</p></div>';
+      }
+      if (a.cover_letter) {
+        html += '<div class="detail-section"><div class="etitle"><i class="fas fa-envelope-open-text"></i> Cover Letter</div><p class="cover-text">'+esc(a.cover_letter).replace(/\n/g,'<br>')+'</p></div>';
+      }
+      if (resumeUrl) {
+        html += '<div class="detail-section"><a href="'+esc(resumeUrl)+'" target="_blank" class="btn primary"><i class="fas fa-download"></i> Download Resume</a></div>';
+      }
+
+      document.getElementById('dContent').innerHTML = html;
+    });
+  };
+
+  /* ── Modal helpers ── */
+  window.closeModal = function(id) { document.getElementById(id).classList.remove('open'); };
+  document.querySelectorAll('.modal-bd').forEach(function(m){
+    m.addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
+  });
+
+  /* ── Toast ── */
+  function toast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' '+type : '');
+    clearTimeout(t._t);
+    t._t = setTimeout(function(){ t.className = 'toast'; }, 3000);
+  }
+  window.toast = toast;
+
+  /* ── Greeting ── */
+  var h = new Date().getHours();
+  var greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  var greetEl = document.getElementById('greetingText');
+  if (greetEl) greetEl.textContent = greet;
+
+  /* ── Initial render ── */
+  render();
+})();
+</script>
+</body>
+</html>

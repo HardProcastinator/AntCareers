@@ -41,30 +41,55 @@ switch ($action) {
     // ─── ADD RECRUITER ───
     case 'add_recruiter':
         requireEmployerRole($role);
-        $name  = trim((string)($_POST['name'] ?? ''));
-        $email = trim((string)($_POST['email'] ?? ''));
+        $firstName = trim((string)($_POST['first_name'] ?? ''));
+        $lastName  = trim((string)($_POST['last_name'] ?? ''));
+        $position  = trim((string)($_POST['position'] ?? ''));
+        $personalEmail = trim((string)($_POST['personal_email'] ?? ''));
 
-        if (!$name || !$email) {
-            jsonResponse(['success' => false, 'message' => 'Name and email are required.']);
+        if (!$firstName || !$lastName || !$personalEmail) {
+            jsonResponse(['success' => false, 'message' => 'First name, last name, and personal email are required.']);
         }
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (!filter_var($personalEmail, FILTER_VALIDATE_EMAIL)) {
             jsonResponse(['success' => false, 'message' => 'Invalid email address.']);
         }
 
-        // Check if email already exists
-        $check = $db->prepare('SELECT id FROM users WHERE email = :email');
-        $check->execute([':email' => $email]);
-        if ($check->fetch()) {
-            jsonResponse(['success' => false, 'message' => 'An account with this email already exists.']);
-        }
-
-        // Get company profile
-        $cp = $db->prepare('SELECT id FROM company_profiles WHERE user_id = :uid');
+        // Get company profile + company name for platform email
+        $cp = $db->prepare('SELECT id, company_name FROM company_profiles WHERE user_id = :uid');
         $cp->execute([':uid' => $userId]);
         $company = $cp->fetch();
         if (!$company) {
-            jsonResponse(['success' => false, 'message' => 'Company profile not found.']);
+            // Auto-create company_profiles from users.company_name
+            $uq = $db->prepare('SELECT company_name FROM users WHERE id = :uid');
+            $uq->execute([':uid' => $userId]);
+            $uRow = $uq->fetch();
+            $fallbackName = $uRow && $uRow['company_name'] ? $uRow['company_name'] : '';
+            if (!$fallbackName) {
+                jsonResponse(['success' => false, 'message' => 'No company name found. Please set up your company profile first.']);
+            }
+            $db->prepare('INSERT INTO company_profiles (user_id, company_name) VALUES (:uid, :cn)')
+               ->execute([':uid' => $userId, ':cn' => $fallbackName]);
+            $company = ['id' => (int)$db->lastInsertId(), 'company_name' => $fallbackName];
         }
+
+        // Generate platform email: f.lastname@company.work
+        $companySlug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $company['company_name']));
+        if ($companySlug === '') $companySlug = 'company';
+        $platformEmail = strtolower(substr($firstName, 0, 1)) . '.' . strtolower(preg_replace('/[^a-zA-Z]/', '', $lastName)) . '@' . $companySlug . '.work';
+
+        // Check if platform email already exists → add number suffix
+        $check = $db->prepare('SELECT id FROM users WHERE email = :email');
+        $check->execute([':email' => $platformEmail]);
+        if ($check->fetch()) {
+            $suffix = 1;
+            do {
+                $try = strtolower(substr($firstName, 0, 1)) . '.' . strtolower(preg_replace('/[^a-zA-Z]/', '', $lastName)) . $suffix . '@' . $companySlug . '.work';
+                $check->execute([':email' => $try]);
+                $suffix++;
+            } while ($check->fetch());
+            $platformEmail = $try;
+        }
+
+        $name = $firstName . ' ' . $lastName;
 
         // Generate temp password
         $tempPassword = generateTempPassword();
@@ -72,18 +97,18 @@ switch ($action) {
 
         $db->beginTransaction();
         try {
-            // Create user account
+            // Create user account with the platform email
             $stmt = $db->prepare(
                 'INSERT INTO users (email, password_hash, full_name, account_type, is_active, must_change_password)
                  VALUES (:email, :hash, :name, :type, 1, 1)'
             );
             $stmt->execute([
-                ':email' => $email,
+                ':email' => $platformEmail,
                 ':hash'  => $passwordHash,
                 ':name'  => $name,
                 ':type'  => 'recruiter',
             ]);
-            $recruiterId = (int)$db->lastInsertId();
+            $newUserId = (int)$db->lastInsertId();
 
             // Link to company
             $stmt = $db->prepare(
@@ -91,46 +116,107 @@ switch ($action) {
                  VALUES (:uid, :cid, :eid, :role, 1, NOW())'
             );
             $stmt->execute([
-                ':uid'  => $recruiterId,
+                ':uid'  => $newUserId,
                 ':cid'  => (int)$company['id'],
                 ':eid'  => $userId,
                 ':role' => 'recruiter',
+            ]);
+            $recruitersRowId = (int)$db->lastInsertId();
+
+            // Create recruiter profile with position and personal email
+            $stmt = $db->prepare(
+                'INSERT INTO recruiter_profiles (user_id, personal_email, position)
+                 VALUES (:uid, :pemail, :pos)'
+            );
+            $stmt->execute([
+                ':uid'    => $newUserId,
+                ':pemail' => $personalEmail,
+                ':pos'    => $position,
             ]);
 
             // Create stats record
             $stmt = $db->prepare(
                 'INSERT INTO recruiter_stats (recruiter_id) VALUES (:rid)'
             );
-            $stmt->execute([':rid' => (int)$db->lastInsertId()]);
+            $stmt->execute([':rid' => $recruitersRowId]);
 
-            // Create notification for admin
-            $stmt = $db->prepare(
-                'INSERT INTO notifications (user_id, type, content, reference_id)
-                 VALUES (:uid, :type, :content, :ref)'
-            );
-            $stmt->execute([
-                ':uid'     => $userId,
-                ':type'    => 'recruiter_added',
-                ':content' => "Recruiter {$name} ({$email}) has been added. Temporary password: {$tempPassword}",
-                ':ref'     => $recruiterId,
-            ]);
+            // ── Deliver credentials via in-platform messaging to personal email account ──
+            // Find user account with the personal email (seeker/employer account)
+            $recipientStmt = $db->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
+            $recipientStmt->execute([':email' => $personalEmail]);
+            $recipient = $recipientStmt->fetch();
+
+            if ($recipient) {
+                $recipientId = (int)$recipient['id'];
+                // Create conversation using the existing direct:MIN:MAX format
+                $convKey = 'direct:' . min($userId, $recipientId) . ':' . max($userId, $recipientId);
+                $cs = $db->prepare('SELECT id FROM conversations WHERE conversation_key = :key LIMIT 1');
+                $cs->execute([':key' => $convKey]);
+                $conv = $cs->fetch();
+                if ($conv) {
+                    $convId = (int)$conv['id'];
+                } else {
+                    $db->prepare('INSERT INTO conversations (conversation_key, participant_a_id, participant_b_id) VALUES (:key, :a, :b)')
+                       ->execute([':key' => $convKey, ':a' => min($userId, $recipientId), ':b' => max($userId, $recipientId)]);
+                    $convId = (int)$db->lastInsertId();
+                }
+
+                $msgBody = "Hello {$firstName},\n\n"
+                         . "You have been added as a Recruiter for {$company['company_name']}.\n\n"
+                         . "Here are your login credentials:\n"
+                         . "• Platform Email: {$platformEmail}\n"
+                         . "• Temporary Password: {$tempPassword}\n\n"
+                         . "Please log in at " . APP_URL . " and change your password immediately.\n\n"
+                         . "— {$company['company_name']} Admin";
+
+                $db->prepare('INSERT INTO messages (sender_id, receiver_id, conversation_id, subject, body, is_read) VALUES (:sid, :rid, :cid, :subj, :body, 0)')
+                   ->execute([
+                       ':sid'  => $userId,
+                       ':rid'  => $recipientId,
+                       ':cid'  => $convId,
+                       ':subj' => 'Your Recruiter Account Credentials',
+                       ':body' => $msgBody,
+                   ]);
+                $msgId = (int)$db->lastInsertId();
+                $db->prepare('UPDATE conversations SET latest_message_id = :mid, latest_message_at = NOW() WHERE id = :cid')
+                   ->execute([':mid' => $msgId, ':cid' => $convId]);
+
+                // Also send a notification
+                $db->prepare('INSERT INTO notifications (user_id, type, content, reference_id) VALUES (:uid, :type, :content, :ref)')
+                   ->execute([
+                       ':uid'     => $recipientId,
+                       ':type'    => 'recruiter_credentials',
+                       ':content' => "You've been added as a recruiter for {$company['company_name']}. Check your messages for login credentials.",
+                       ':ref'     => $newUserId,
+                   ]);
+            }
+
+            // Notification for admin (self)
+            $db->prepare('INSERT INTO notifications (user_id, type, content, reference_id) VALUES (:uid, :type, :content, :ref)')
+               ->execute([
+                   ':uid'     => $userId,
+                   ':type'    => 'recruiter_added',
+                   ':content' => "Recruiter {$name} ({$platformEmail}) has been added.",
+                   ':ref'     => $newUserId,
+               ]);
 
             $db->commit();
 
-            // TODO: Send email with temp password (mail() or PHPMailer)
-            // For now, return temp password in response for local dev
             jsonResponse([
-                'success'       => true,
-                'message'       => 'Recruiter created successfully.',
-                'recruiter_id'  => $recruiterId,
-                'temp_password' => $tempPassword, // Remove in production
-                'email'         => $email,
-                'name'          => $name,
+                'success'        => true,
+                'message'        => 'Recruiter created successfully. Credentials sent via message.',
+                'recruiter'      => [
+                    'name'           => $name,
+                    'platform_email' => $platformEmail,
+                    'temp_password'  => $tempPassword,
+                    'personal_email' => $personalEmail,
+                    'position'       => $position,
+                ],
             ]);
         } catch (\Exception $e) {
             $db->rollBack();
             error_log('[AntCareers] add_recruiter error: ' . $e->getMessage());
-            jsonResponse(['success' => false, 'message' => 'Failed to create recruiter.'], 500);
+            jsonResponse(['success' => false, 'message' => 'Failed to create recruiter: ' . $e->getMessage()], 500);
         }
         break;
 
@@ -147,15 +233,38 @@ switch ($action) {
                    u.full_name, u.email, u.last_login_at, u.avatar_url,
                    COALESCE(rs.jobs_posted, 0) AS jobs_posted,
                    COALESCE(rs.applicants_reviewed, 0) AS applicants_reviewed,
-                   COALESCE(rs.hires_made, 0) AS hires_made
+                   COALESCE(rs.hires_made, 0) AS hires_made,
+                   rp.position, rp.personal_email
             FROM recruiters r
             JOIN users u ON u.id = r.user_id
             LEFT JOIN recruiter_stats rs ON rs.recruiter_id = r.id
+            LEFT JOIN recruiter_profiles rp ON rp.user_id = r.user_id
             WHERE r.company_id = :cid
             ORDER BY r.is_active DESC, u.full_name ASC
         ");
         $stmt->execute([':cid' => (int)$company['id']]);
-        $recruiters = $stmt->fetchAll();
+        $rawRecruiters = $stmt->fetchAll();
+
+        // Map to frontend-expected field names
+        $recruiters = array_map(function ($r) {
+            return [
+                'id'                 => (int)$r['recruiter_id'],
+                'user_id'            => (int)$r['user_id'],
+                'name'               => $r['full_name'],
+                'email'              => $r['email'],
+                'personal_email'     => $r['personal_email'] ?? '',
+                'position'           => $r['position'] ?? '',
+                'role_label'         => ucfirst($r['role']),
+                'status'             => $r['is_active'] ? 'active' : 'inactive',
+                'avatar_url'         => $r['avatar_url'],
+                'jobs_posted'        => (int)$r['jobs_posted'],
+                'applicants_reviewed'=> (int)$r['applicants_reviewed'],
+                'hired_count'        => (int)$r['hires_made'],
+                'joined_at'          => $r['accepted_at'] ?? $r['invited_at'],
+                'last_login_at'      => $r['last_login_at'],
+                'deactivated_at'     => $r['deactivated_at'],
+            ];
+        }, $rawRecruiters);
 
         jsonResponse(['success' => true, 'recruiters' => $recruiters]);
         break;
@@ -431,7 +540,7 @@ switch ($action) {
 
         unset($_SESSION['must_change_password']);
 
-        jsonResponse(['success' => true, 'message' => 'Password changed successfully.']);
+        jsonResponse(['success' => true, 'message' => 'Password changed successfully.', 'redirect' => '../recruiter/recruiter_profile.php?setup=1']);
         break;
 
     // ─── RECRUITER STATS ───
@@ -486,7 +595,7 @@ function generateRecruiterUsername(string $fullName): string
 
 function conversation_key_for(int $a, int $b): string
 {
-    return 'conv_' . min($a, $b) . '_' . max($a, $b);
+    return 'direct:' . min($a, $b) . ':' . max($a, $b);
 }
 
 function getOrCreateConversation(PDO $db, int $senderId, int $receiverId, string $key): int

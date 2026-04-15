@@ -153,7 +153,7 @@ if (!empty($_SESSION['must_change_password'])) {
     $redirect = match ($accountType) {
         'seeker'    => url('seeker/antcareers_seekerDashboard.php'),
         'employer'  => url('employer/employer_dashboard.php'),
-        'recruiter' => url('employer/employer_dashboard.php'),
+        'recruiter' => url('recruiter/recruiter_dashboard.php'),
         'admin'     => url('admin/admin_dashboard.php'),
         default     => url('index.php'),
     };

@@ -20,7 +20,7 @@ if (empty($_SESSION['must_change_password'])) {
     $redirect = match ($role) {
         'seeker'    => url('seeker/antcareers_seekerDashboard.php'),
         'employer'  => url('employer/employer_dashboard.php'),
-        'recruiter' => url('employer/employer_dashboard.php'),
+        'recruiter' => url('recruiter/recruiter_dashboard.php'),
         'admin'     => url('admin/admin_dashboard.php'),
         default     => url('index.php'),
     };
@@ -168,7 +168,7 @@ $fullName = trim((string)($_SESSION['user_name'] ?? 'User'));
           document.getElementById('formSection').style.display = 'none';
           document.getElementById('successMsg').style.display = 'block';
           setTimeout(() => {
-            window.location.href = '../employer/employer_dashboard.php';
+            window.location.href = data.redirect || '../recruiter/recruiter_profile.php?setup=1';
           }, 1500);
         } else {
           errMsg.textContent = data.message || 'Failed to change password.';

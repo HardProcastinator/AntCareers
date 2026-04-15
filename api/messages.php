@@ -13,8 +13,8 @@ if (!isset($_SESSION['user_id'])) {
 
 $db = getDB();
 $uid = (int) $_SESSION['user_id'];
-$role = strtolower((string)($_SESSION['account_type'] ?? ''));
-if ($role === 'recruiter') $role = 'employer';
+$originalRole = strtolower((string)($_SESSION['account_type'] ?? ''));
+$role = ($originalRole === 'recruiter') ? 'employer' : $originalRole;
 $action = (string)($_GET['action'] ?? $_POST['action'] ?? 'threads');
 
 function api_json(array $payload, int $status = 200): void
@@ -236,15 +236,27 @@ function fetch_partner_context(PDO $db, int $currentUserId, string $role, int $p
 {
     $jobTitle = '';
     $appStatus = '';
+    $actualRole = strtolower((string)($_SESSION['account_type'] ?? ''));
 
     try {
         if ($role === 'employer') {
-            $stmt = $db->prepare("SELECT j.title, a.status
-                FROM applications a
-                JOIN jobs j ON j.id = a.job_id
-                WHERE a.seeker_id = ? AND j.employer_id = ?
-                ORDER BY a.applied_at DESC, a.id DESC LIMIT 1");
-            $stmt->execute([$partnerId, $currentUserId]);
+            if ($actualRole === 'recruiter') {
+                // Recruiter: match applications to any job in their company or posted by them
+                $stmt = $db->prepare("SELECT j.title, a.status
+                    FROM applications a
+                    JOIN jobs j ON j.id = a.job_id
+                    LEFT JOIN recruiters r ON r.user_id = ? AND r.is_active = 1
+                    WHERE a.seeker_id = ? AND (j.recruiter_id = ? OR j.employer_id = r.employer_id)
+                    ORDER BY a.applied_at DESC, a.id DESC LIMIT 1");
+                $stmt->execute([$currentUserId, $partnerId, $currentUserId]);
+            } else {
+                $stmt = $db->prepare("SELECT j.title, a.status
+                    FROM applications a
+                    JOIN jobs j ON j.id = a.job_id
+                    WHERE a.seeker_id = ? AND j.employer_id = ?
+                    ORDER BY a.applied_at DESC, a.id DESC LIMIT 1");
+                $stmt->execute([$partnerId, $currentUserId]);
+            }
         } else {
             $stmt = $db->prepare("SELECT j.title, a.status
                 FROM applications a
@@ -362,6 +374,7 @@ switch ($action) {
                     'unread_count'    => (int) $row['unread_count'],
                     'job_title'       => $jobTitle,
                     'app_status'      => $appStatus,
+                    'account_type'    => (string) $row['account_type'],
                     'is_sent'         => (int) $row['sender_id'] === $uid,
                 ];
             }
