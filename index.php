@@ -61,7 +61,10 @@ try {
 try {
     $s = $db->prepare("
         SELECT COALESCE(cp.company_name, u.company_name, u.full_name) AS name,
-               COUNT(j.id) AS open_roles
+               j.employer_id,
+               COUNT(j.id) AS open_roles,
+               cp.logo_path, cp.tagline, cp.about, cp.industry,
+               cp.company_size, cp.location AS company_location
         FROM jobs j
         JOIN users u ON u.id = j.employer_id
         LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
@@ -69,11 +72,22 @@ try {
           AND (j.approval_status IS NULL OR j.approval_status = 'approved')
           AND (j.deadline IS NULL OR j.deadline >= CURDATE())
         GROUP BY j.employer_id
-        ORDER BY open_roles DESC LIMIT 5
+        ORDER BY open_roles DESC LIMIT 6
     ");
     $s->execute();
     foreach ($s->fetchAll() as $c) {
-        $indexCompanies[] = ['name' => $c['name'], 'openRoles' => (int)$c['open_roles'], 'icon' => 'fa-building'];
+        $bio = $c['tagline'] ?: ($c['about'] ? mb_substr(strip_tags($c['about']), 0, 90) : '');
+        $indexCompanies[] = [
+            'name'       => $c['name'],
+            'openRoles'  => (int)$c['open_roles'],
+            'employerId' => (int)$c['employer_id'],
+            'logo'       => $c['logo_path'] ? 'uploads/logos/' . basename($c['logo_path']) : '',
+            'bio'        => $bio,
+            'industry'   => $c['industry'] ?? '',
+            'size'       => $c['company_size'] ?? '',
+            'location'   => $c['company_location'] ?? '',
+            'about'      => $c['about'] ?? '',
+        ];
     }
 } catch (PDOException $e) { /* ignore */ }
 
@@ -565,20 +579,30 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     }
 
     /* Companies */
-    .companies-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 40px; }
+    .companies-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-bottom: 40px; }
     .company-pill {
-      display: flex; align-items: center; gap: 10px;
+      display: flex; flex-direction: column; gap: 0;
       background: var(--soil-card); border: 1px solid var(--soil-line);
-      border-radius: 8px; padding: 10px 14px;
-      transition: 0.2s; flex: 1; min-width: 120px;
+      border-radius: 14px; overflow: hidden;
+      transition: all 0.22s; cursor: pointer;
     }
-    .cp-icon {
-      width: 32px; height: 32px; border-radius: 7px; background: var(--soil-hover);
+    .company-pill:hover {
+      border-color: rgba(209,61,44,0.45); background: var(--soil-hover);
+      transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+    }
+    .cp-top { display: flex; align-items: center; gap: 14px; padding: 18px 20px 14px; }
+    .cp-logo {
+      width: 48px; height: 48px; border-radius: 10px; background: var(--soil-hover);
       border: 1px solid var(--soil-line); display: flex; align-items: center; justify-content: center;
-      color: var(--red-vivid); font-size: 13px; flex-shrink: 0;
+      color: var(--red-vivid); font-size: 18px; flex-shrink: 0; overflow: hidden;
     }
-    .cp-name { font-size: 13px; font-weight: 600; color: var(--text-light); }
-    .cp-roles { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .cp-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .cp-name { font-size: 14px; font-weight: 700; color: var(--text-light); line-height: 1.25; }
+    .cp-industry { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .cp-bio { font-size: 12px; color: var(--text-mid); line-height: 1.5; padding: 0 20px 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .cp-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-top: 1px solid var(--soil-line); }
+    .cp-roles { font-size: 12px; color: var(--amber); font-weight: 600; }
+    .cp-view { font-size: 11px; color: var(--red-pale); font-weight: 600; display: flex; align-items: center; gap: 4px; }
 
     /* Job list */
     .job-list { display: flex; flex-direction: column; gap: 8px; }
@@ -654,6 +678,36 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.15s;
     }
     .modal-close:hover { color: var(--text-light); border-color: var(--red-mid); }
+
+    /* === COMPANY PREVIEW === */
+    .cp-modal-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+    .cp-modal-logo {
+      width: 60px; height: 60px; border-radius: 12px; background: var(--soil-hover);
+      border: 1px solid var(--soil-line); display: flex; align-items: center; justify-content: center;
+      color: var(--red-vivid); font-size: 22px; flex-shrink: 0; overflow: hidden;
+    }
+    .cp-modal-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .cp-modal-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--text-light); line-height: 1.2; }
+    .cp-modal-industry { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .cp-modal-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+    .cp-modal-meta .chip { font-size: 12px; }
+    .cp-modal-about { font-size: 14px; color: var(--text-mid); line-height: 1.7; margin-bottom: 20px; }
+    .cp-modal-jobs-label { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+    .cp-modal-job { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 8px; background: var(--soil-hover); border: 1px solid var(--soil-line); margin-bottom: 6px; cursor: pointer; transition: 0.15s; }
+    .cp-modal-job:hover { border-color: rgba(209,61,44,0.4); }
+    .cp-modal-job-title { font-size: 13px; font-weight: 600; color: var(--text-light); }
+    .cp-modal-job-info { font-size: 11px; color: var(--text-muted); }
+    .cp-modal-cta { margin-top: 18px; display: flex; gap: 8px; }
+    .cp-modal-cta button { flex: 1; padding: 10px; border-radius: 8px; font-family: var(--font-body); font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.15s; }
+    .cp-modal-cta .btn-primary { background: var(--red-vivid); border: none; color: #fff; }
+    .cp-modal-cta .btn-primary:hover { background: var(--red-bright); }
+    .cp-modal-cta .btn-secondary { background: transparent; border: 1px solid var(--soil-line); color: var(--text-muted); }
+    .cp-modal-cta .btn-secondary:hover { border-color: var(--red-mid); color: var(--text-light); }
+
+    /* Light mode for company preview */
+    body.light .cp-modal-logo { background: #F5E8E6; border-color: #DFC0BB; }
+    body.light .cp-modal-job { background: #F9F5F4; border-color: #E0CECA; }
+    body.light .cp-modal-job:hover { border-color: rgba(209,61,44,0.4); }
 
     /* === TOAST === */
     .toast {
@@ -739,7 +793,14 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     body.light .fc-icon { background: #F5E8E6; border-color: #DFC0BB; }
 
     /* Company pill */
-    body.light .cp-icon { background: #F5E8E6; border-color: #DFC0BB; }
+    body.light .company-pill { background: #FFFFFF; border-color: #E0CECA; }
+    body.light .company-pill:hover { background: #FEF0EE; border-color: rgba(209,61,44,0.4); }
+    body.light .cp-logo { background: #F5E8E6; border-color: #DFC0BB; }
+    body.light .cp-industry { color: #7A5555; }
+    body.light .cp-bio { color: #4A2828; }
+    body.light .cp-footer { border-color: #E0CECA; }
+    body.light .cp-roles { color: #B06820; }
+    body.light .cp-view { color: var(--red-mid); }
 
     /* Search bar */
     body.light .search-bar { background: #FFFFFF; border-color: #DFC0BB; }
@@ -833,8 +894,10 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       .hero-stats { gap: 16px; }
       .stat-sep { display: none; }
 
-      .companies-row { gap: 8px; }
-      .company-pill { min-width: 100px; }
+      .companies-row { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+      .cp-top { padding: 14px 16px 10px; }
+      .cp-bio { padding: 0 16px 10px; }
+      .cp-footer { padding: 8px 16px; }
 
       .job-row {
         grid-template-columns: 1fr;
@@ -1190,6 +1253,15 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   </div>
 </div>
 
+<!-- Company Preview Modal -->
+<div class="modal-overlay" id="companyPreviewModal">
+  <div class="modal-box" style="max-width:520px;">
+    <button class="modal-close" onclick="document.getElementById('companyPreviewModal').classList.remove('open')"><i class="fas fa-times"></i></button>
+    <div id="companyPreviewBody"></div>
+  </div>
+</div>
+
+
 <script>
   const jobsData = <?= $indexJobsJson ?>;
 
@@ -1226,6 +1298,13 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   const savedTheme = urlTheme || localStorage.getItem('ac-theme');
   if (urlTheme) localStorage.setItem('ac-theme', urlTheme); // sync if came from login/signup
   if (savedTheme) { setTheme(savedTheme); } else { setTheme('light'); }
+
+  // ── HELPERS ──
+  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function getThemeParam() {
+    return '?theme=' + (document.body.classList.contains('light') ? 'light' : 'dark');
+  }
 
   // ── HAMBURGER ──
   const hamburger = document.getElementById('hamburger');
@@ -1447,14 +1526,27 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   }
 
   function renderCompanies() {
-    companiesGrid.innerHTML = companies.map(c => `
-      <div class="company-pill">
-        <div class="cp-icon"><i class="fas ${c.icon}"></i></div>
-        <div>
-          <div class="cp-name">${c.name}</div>
-          <div class="cp-roles">${c.openRoles} open roles</div>
+    companiesGrid.innerHTML = companies.map(c => {
+      const logoHtml = c.logo
+        ? `<img src="${c.logo}" alt="${esc(c.name)}" onerror="this.parentNode.innerHTML='<i class=\\'fas fa-building\\'></i>'">`
+        : `<i class="fas fa-building"></i>`;
+      const bioText = c.bio ? esc(c.bio) : (c.about ? esc(c.about).substring(0, 90) : 'Company on AntCareers');
+      return `
+      <div class="company-pill" onclick="showCompanyPreview(${companies.indexOf(c)})">
+        <div class="cp-top">
+          <div class="cp-logo">${logoHtml}</div>
+          <div>
+            <div class="cp-name">${esc(c.name)}</div>
+            ${c.industry ? `<div class="cp-industry">${esc(c.industry)}</div>` : ''}
+          </div>
         </div>
-      </div>`).join('');
+        ${bioText ? `<div class="cp-bio">${bioText}</div>` : ''}
+        <div class="cp-footer">
+          <span class="cp-roles">${c.openRoles} open role${c.openRoles !== 1 ? 's' : ''}</span>
+          <span class="cp-view">View <i class="fas fa-arrow-right"></i></span>
+        </div>
+      </div>`;
+    }).join('');
   }
 
   /* New / Expiring badge helpers */
@@ -1524,6 +1616,54 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     }
   }
 
+  function filterByCompany(name) {
+    if (keywordInput) { keywordInput.value = name; }
+    renderAllJobs();
+  }
+
+  function showCompanyPreview(idx) {
+    const c = companies[idx]; if (!c) return;
+    const logoHtml = c.logo
+      ? `<img src="${c.logo}" alt="${esc(c.name)}" onerror="this.parentNode.innerHTML='<i class=\\'fas fa-building\\'></i>'">`
+      : `<i class="fas fa-building"></i>`;
+    const aboutText = c.about ? esc(c.about) : (c.bio ? esc(c.bio) : '');
+    const companyJobs = jobsData.filter(j => j.company === c.name).slice(0, 5);
+    const jobsHtml = companyJobs.length ? companyJobs.map(j => `
+      <div class="cp-modal-job" onclick="document.getElementById('companyPreviewModal').classList.remove('open'); showModal(${j.id})">
+        <div>
+          <div class="cp-modal-job-title">${esc(j.title)}</div>
+          <div class="cp-modal-job-info">${esc(j.jobType)} · ${esc(j.location)}</div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--amber);white-space:nowrap;">${esc(j.salary)}</div>
+      </div>`).join('') : '<div style="text-align:center;padding:20px 0;color:var(--text-muted);font-size:13px;">No open positions right now</div>';
+
+    document.getElementById('companyPreviewBody').innerHTML = `
+      <div class="cp-modal-header">
+        <div class="cp-modal-logo">${logoHtml}</div>
+        <div>
+          <div class="cp-modal-name">${esc(c.name)}</div>
+          ${c.industry ? `<div class="cp-modal-industry">${esc(c.industry)}</div>` : ''}
+        </div>
+      </div>
+      <div class="cp-modal-meta">
+        ${c.size ? `<span class="chip"><i class="fas fa-users" style="color:var(--red-mid);margin-right:3px;"></i>${esc(c.size)}</span>` : ''}
+        ${c.location ? `<span class="chip"><i class="fas fa-map-marker-alt" style="color:var(--red-mid);margin-right:3px;"></i>${esc(c.location)}</span>` : ''}
+        <span class="chip"><i class="fas fa-briefcase" style="color:var(--red-mid);margin-right:3px;"></i>${c.openRoles} open role${c.openRoles !== 1 ? 's' : ''}</span>
+      </div>
+      ${aboutText ? `<div class="cp-modal-about">${aboutText}</div>` : ''}
+      <div class="cp-modal-jobs-label">Open positions</div>
+      ${jobsHtml}
+      <div class="cp-modal-cta">
+        <button class="btn-primary" onclick="window.location.href='auth/antcareers_signup.php'+getThemeParam()"><i class="fas fa-user-plus"></i> Sign up to connect</button>
+      </div>`;
+    document.getElementById('companyPreviewModal').classList.add('open');
+  }
+
+  // Close company preview modal
+  document.getElementById('companyPreviewModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+
   function showModal(id) {
     const j = jobsData.find(x => x.id === id); if (!j) return;
     modalBody.innerHTML = `
@@ -1580,27 +1720,21 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   });
 
   // Auth / misc
-  document.getElementById('seeMoreFeatured').addEventListener('click', () => {
-    const strip = document.getElementById('featuredJobsContainer');
-    strip?.scrollBy({ left: Math.max(strip.clientWidth * 0.8, 320), behavior: 'smooth' });
-  });
-  document.getElementById('seeMoreCompanies').addEventListener('click', () => {
-    document.getElementById('companies')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-  document.getElementById('seeMoreJobs').addEventListener('click', () => {
-    document.getElementById('jobs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-
-  function getThemeParam() {
-    return '?theme=' + (document.body.classList.contains('light') ? 'light' : 'dark');
+  function goToSignup() {
+    window.location.href = 'auth/antcareers_signup.php' + getThemeParam();
   }
+
+  document.getElementById('seeMoreFeatured').addEventListener('click', goToSignup);
+  document.getElementById('seeMoreCompanies').addEventListener('click', goToSignup);
+  document.getElementById('seeMoreJobs').addEventListener('click', goToSignup);
+
   function startApplication(jobId) {
-    window.location.href = 'auth/antcareers_signup.php' + getThemeParam() + '&job=' + encodeURIComponent(jobId);
+    goToSignup();
   }
   document.getElementById('loginBtn').addEventListener('click', () => window.location.href = 'auth/antcareers_login.php' + getThemeParam());
-  document.getElementById('signupBtn').addEventListener('click', () => window.location.href = 'auth/antcareers_signup.php' + getThemeParam());
+  document.getElementById('signupBtn').addEventListener('click', goToSignup);
   document.getElementById('loginBtnMob').addEventListener('click', () => window.location.href = 'auth/antcareers_login.php' + getThemeParam());
-  document.getElementById('signupBtnMob').addEventListener('click', () => window.location.href = 'auth/antcareers_signup.php' + getThemeParam());
+  document.getElementById('signupBtnMob').addEventListener('click', goToSignup);
 
   // Filter events
   document.getElementById('searchBtn').addEventListener('click', renderAllJobs);

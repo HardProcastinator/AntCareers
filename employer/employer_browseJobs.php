@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
+require_once dirname(__DIR__) . '/includes/countries.php';
 requireLogin('employer');
 $user        = getUser();
 $fullName    = $user['fullName'];
@@ -96,6 +97,14 @@ foreach ($dbJobs as $r) {
 }
 
 // Companies data removed from authenticated browse view (kept only on public index)
+
+$countrySidebarOptionsHtml = '<option value="">All countries</option>';
+foreach (getCountries() as $country) {
+  $name = (string)$country['name'];
+  $escName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+  $countrySidebarOptionsHtml .= '<option value="' . $escName . '">' . $escName . '</option>';
+}
+$countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
 
 $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
 ?>
@@ -260,7 +269,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
 
     /* Job list */
     .job-list{display:flex;flex-direction:column;gap:10px;}
-    .job-row{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:22px 24px;cursor:pointer;transition:border-color 0.18s,transform 0.18s,box-shadow 0.18s;display:flex;gap:14px;align-items:flex-start;position:relative;}
+    .job-row{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:22px 24px;cursor:pointer;transition:border-color 0.18s,transform 0.18s,box-shadow 0.18s;display:flex;gap:16px;align-items:flex-start;position:relative;}
     .job-row:hover{border-color:rgba(209,61,44,0.45);transform:translateX(2px);box-shadow:0 4px 16px rgba(0,0,0,0.12);}
     .jr-icon{width:40px;height:40px;border-radius:10px;flex-shrink:0;margin-top:1px;background:rgba(209,61,44,0.1);border:1px solid rgba(209,61,44,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--red-pale);}
     .jr-left{flex:1;min-width:0;}
@@ -427,10 +436,16 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
           <button class="ms-trigger" type="button"><span class="ms-text">All Industries</span><i class="fas fa-chevron-down ms-arrow"></i></button>
           <div class="ms-panel">
             <label class="ms-item"><input type="checkbox" value="Accounting"><span>Accounting</span></label>
-            <label class="ms-item"><input type="checkbox" value="Administration & Support"><span>Administration &amp; Support</span></label>
-            <label class="ms-item"><input type="checkbox" value="Banking & Financial Services"><span>Banking &amp; Financial Services</span></label>
-            <label class="ms-item"><input type="checkbox" value="Design & Architecture"><span>Design &amp; Architecture</span></label>
-            <label class="ms-item"><input type="checkbox" value="Education & Training"><span>Education &amp; Training</span></label>
+            <label class="ms-item"><input type="checkbox" value="Administration &amp; Office Support"><span>Administration &amp; Office Support</span></label>
+            <label class="ms-item"><input type="checkbox" value="Advertising, Arts &amp; Media"><span>Advertising, Arts &amp; Media</span></label>
+            <label class="ms-item"><input type="checkbox" value="Banking &amp; Financial Services"><span>Banking &amp; Financial Services</span></label>
+            <label class="ms-item"><input type="checkbox" value="Call Centre &amp; Customer Service"><span>Call Centre &amp; Customer Service</span></label>
+            <label class="ms-item"><input type="checkbox" value="CEO &amp; General Management"><span>CEO &amp; General Management</span></label>
+            <label class="ms-item"><input type="checkbox" value="Community Services &amp; Development"><span>Community Services &amp; Development</span></label>
+            <label class="ms-item"><input type="checkbox" value="Construction"><span>Construction</span></label>
+            <label class="ms-item"><input type="checkbox" value="Consulting &amp; Strategy"><span>Consulting &amp; Strategy</span></label>
+            <label class="ms-item"><input type="checkbox" value="Design &amp; Architecture"><span>Design &amp; Architecture</span></label>
+            <label class="ms-item"><input type="checkbox" value="Education &amp; Training"><span>Education &amp; Training</span></label>
             <label class="ms-item"><input type="checkbox" value="Engineering"><span>Engineering</span></label>
             <label class="ms-item"><input type="checkbox" value="Farming, Animals &amp; Conservation"><span>Farming, Animals &amp; Conservation</span></label>
             <label class="ms-item"><input type="checkbox" value="Government &amp; Defence"><span>Government &amp; Defence</span></label>
@@ -466,13 +481,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
       <div class="fs-section">
         <div class="fs-section-label">Location</div>
         <select class="fs-select" id="sidebarLocationFilter">
-          <option value="">All countries</option>
-          <option value="Philippines">Philippines</option>
-          <option value="United States">United States</option>
-          <option value="Singapore">Singapore</option>
-          <option value="Australia">Australia</option>
-          <option value="Japan">Japan</option>
-          <option value="Remote">Remote</option>
+          <?= $countrySidebarOptionsHtml ?>
         </select>
         <input type="text" id="locationKeyword" class="fs-text-input" placeholder="Enter region, province or city" style="margin-top:6px;">
       </div>
@@ -489,6 +498,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
             <label class="ms-item"><input type="checkbox" value="Contract"><span>Contract</span></label>
             <label class="ms-item"><input type="checkbox" value="Freelance"><span>Freelance</span></label>
             <label class="ms-item"><input type="checkbox" value="Internship"><span>Internship</span></label>
+            <label class="ms-item"><input type="checkbox" value="Casual"><span>Casual</span></label>
           </div>
         </div>
       </div>
@@ -682,8 +692,6 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
       locationKeyword:(document.getElementById('locationKeyword')?.value || '').toLowerCase().trim(),
       salaryKeyword:  (document.getElementById('salaryKeyword')?.value || '').trim(),
       salaryPeriod:   document.getElementById('salaryPeriodFilter')?.value || '',
-      searchIndustries: getMsValues('msSearchIndustry'),
-      searchCountry:  document.getElementById('searchCountryFilter')?.value || '',
       industries:     getMsValues('msIndustry'),
       jobRoles:       getMsValues('msJobRole'),
       sidebarLocation: document.getElementById('sidebarLocationFilter')?.value || '',
@@ -697,12 +705,10 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
   function matchesFilters(j, f) {
     if (f.keyword && !`${j.title} ${j.company} ${j.description} ${(j.tags||[]).join(' ')}`.toLowerCase().includes(f.keyword)) return false;
     if (f.jobTypes.length && !f.jobTypes.includes(j.jobType)) return false;
-    if (f.sidebarLocation) { if (!j.location.toLowerCase().includes(f.sidebarLocation.toLowerCase())) return false; }
-    else if (f.searchCountry && !j.location.toLowerCase().includes(f.searchCountry.toLowerCase())) return false;
+    if (f.sidebarLocation && !j.location.toLowerCase().includes(f.sidebarLocation.toLowerCase())) return false;
     if (f.locationKeyword && !j.location.toLowerCase().includes(f.locationKeyword)) return false;
     if (f.experiences.length && !f.experiences.includes(j.experience)) return false;
-    if (f.industries.length) { if (!f.industries.includes(j.industry)) return false; }
-    else if (f.searchIndustries.length && !f.searchIndustries.includes(j.industry)) return false;
+    if (f.industries.length && !f.industries.includes(j.industry)) return false;
     if (f.jobRoles && f.jobRoles.length) {
       const tl = j.title.toLowerCase();
       const matched = f.jobRoles.some(role => {
@@ -713,6 +719,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
       if (!matched) return false;
     }
     if (f.setups.length && !f.setups.includes(j.workSetup)) return false;
+    if (f.salaryPeriod && j.salaryPeriod && j.salaryPeriod !== f.salaryPeriod) return false;
     if (f.salaryKeyword) {
       const sk = f.salaryKeyword.toLowerCase().replace(/[₱,\s]/g, '');
       const nums = sk.match(/\d+/g);
@@ -883,7 +890,9 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
       });
     });
   });
-  document.addEventListener('click', () => document.querySelectorAll('.ms-wrap.open').forEach(w => w.classList.remove('open')));
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.ms-wrap')) document.querySelectorAll('.ms-wrap.open').forEach(w => w.classList.remove('open'));
+  });
 
   /* ── FILTER EVENT LISTENERS ── */
   document.getElementById('searchBtn').addEventListener('click', renderAllJobs);

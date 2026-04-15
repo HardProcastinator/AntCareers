@@ -327,8 +327,8 @@ foreach ($industryFilterValues as $industryValue) {
     .featured-scroll { display:flex; gap:16px; overflow-x:auto; padding:4px 2px 28px 2px; margin:0 0 36px 0; scrollbar-width:none; }
     .featured-scroll::-webkit-scrollbar { display:none; }
     .featured-card {
-      background:var(--soil-card); border:1px solid var(--soil-line); border-radius:16px;
-      padding:20px 20px 18px; min-width:272px; max-width:272px;
+      background:var(--soil-card); border:1px solid var(--soil-line); border-radius:14px;
+      padding:22px; min-width:258px; max-width:258px;
       cursor:pointer; transition:border-color 0.22s, transform 0.22s, box-shadow 0.22s;
       position:relative; overflow:hidden; flex-shrink:0;
       display:flex; flex-direction:column;
@@ -351,11 +351,11 @@ foreach ($industryFilterValues as $industryValue) {
       display:flex; align-items:center; justify-content:center;
       font-size:17px; color:var(--red-pale); flex-shrink:0;
     }
-    .fc-title { font-family:var(--font-display); font-size:14px; font-weight:700; color:#F5F0EE; line-height:1.35; }
-    .fc-company { font-size:11px; color:var(--red-pale); font-weight:600; margin-top:2px; }
+    .fc-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:#F5F0EE; line-height:1.35; }
+    .fc-company { font-size:12px; color:var(--red-pale); font-weight:600; margin-top:2px; }
     .fc-chips { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px; align-content:flex-start; min-height:0; }
     .chip {
-      font-size:11px; font-weight:500; padding:3px 9px; border-radius:4px;
+      font-size:11px; font-weight:500; padding:3px 8px; border-radius:4px;
       background:var(--soil-hover); color:var(--text-muted); border:1px solid var(--soil-line);
       letter-spacing:0.01em; white-space:nowrap;
     }
@@ -399,7 +399,7 @@ foreach ($industryFilterValues as $industryValue) {
     .job-row {
       background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px;
       padding:22px 24px; cursor:pointer; transition:border-color 0.18s, transform 0.18s, box-shadow 0.18s;
-      display:flex; gap:14px; align-items:flex-start; position:relative;
+      display:flex; gap:16px; align-items:flex-start; position:relative;
     }
     .job-row:hover { border-color:rgba(209,61,44,0.45); transform:translateX(2px); box-shadow:0 4px 16px rgba(0,0,0,0.12); }
     .jr-icon {
@@ -428,7 +428,7 @@ foreach ($industryFilterValues as $industryValue) {
     }
     .jr-meta {
       display:flex; align-items:center; flex-wrap:wrap;
-      gap:8px 14px; font-size:12px; color:var(--text-muted); margin-bottom:8px;
+      gap:10px; font-size:12px; color:var(--text-muted); margin-bottom:8px;
     }
     .jr-meta span { display:flex; align-items:center; gap:4px; white-space:nowrap; }
     .jr-meta i { font-size:10px; color:var(--red-bright); }
@@ -452,7 +452,7 @@ foreach ($industryFilterValues as $industryValue) {
     .jr-btn.saved { border-color:var(--red-vivid); color:var(--red-pale); background:rgba(209,61,44,0.12); }
     /* Apply button */
     .jr-apply {
-      padding:8px 18px; border-radius:8px; background:var(--red-vivid);
+      padding:7px 16px; border-radius:8px; background:var(--red-vivid);
       border:none; color:#fff; font-size:12px; font-weight:700;
       cursor:pointer; font-family:var(--font-body); transition:background 0.18s, transform 0.14s;
       white-space:nowrap; letter-spacing:0.02em;
@@ -808,8 +808,11 @@ foreach ($industryFilterValues as $industryValue) {
           <button class="ms-trigger" type="button"><span class="ms-text">Any level</span><i class="fas fa-chevron-down ms-arrow"></i></button>
           <div class="ms-panel">
             <label class="ms-item"><input type="checkbox" value="Entry"><span>Entry level</span></label>
+            <label class="ms-item"><input type="checkbox" value="Junior"><span>Junior</span></label>
             <label class="ms-item"><input type="checkbox" value="Mid"><span>Mid level</span></label>
             <label class="ms-item"><input type="checkbox" value="Senior"><span>Senior level</span></label>
+            <label class="ms-item"><input type="checkbox" value="Lead"><span>Lead</span></label>
+            <label class="ms-item"><input type="checkbox" value="Executive"><span>Executive</span></label>
           </div>
         </div>
       </div>

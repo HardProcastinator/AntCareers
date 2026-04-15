@@ -510,7 +510,7 @@ switch ($action) {
             $notifStmt->execute([
                 $receiverId,
                 $senderName . ' sent you a new message.',
-                $messageId,
+                $uid,
             ]);
 
             $db->commit();

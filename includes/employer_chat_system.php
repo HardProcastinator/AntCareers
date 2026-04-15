@@ -703,6 +703,16 @@ function sendMsg(receiverId, text, mode) {
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────
+function getEmployerNotifUrl(type, refId) {
+    switch (type) {
+        case 'message': return 'employer_messages.php' + (refId ? '?user_id=' + refId : '');
+        case 'application': return 'employer_applicants.php';
+        case 'recruiter_added': case 'recruiter_credentials': return 'employer_manageRecruiters.php';
+        case 'hired_credential': return 'employer_applicants.php';
+        default: return 'employer_dashboard.php';
+    }
+}
+
 function loadNotifications() {
     fetch(API_URL + '?action=notifications')
         .then(r => r.json())
@@ -712,20 +722,21 @@ function loadNotifications() {
                 el.innerHTML = '<div class="sb-empty"><i class="fas fa-bell-slash"></i>No notifications yet</div>';
                 return;
             }
-            el.innerHTML = data.notifications.map(n => `
-                <div class="notif-sb-item${n.is_read ? '' : ' unread'}" onclick="markNotifRead(${n.id}, this)">
+            el.innerHTML = data.notifications.map(n => {
+                var href = getEmployerNotifUrl(n.type, n.reference_id);
+                return `<div class="notif-sb-item${n.is_read ? '' : ' unread'}" data-href="${href}" onclick="markNotifRead(${n.id}, this, '${href}')">
                     <div class="nsb-dot ${n.is_read ? 'read' : n.type}"></div>
                     <div>
                         <div class="nsb-text">${n.content}</div>
                         <div class="nsb-time">${n.time}</div>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         })
         .catch(e => console.error('Notifications error:', e));
 }
 
-function markNotifRead(id, el) {
+function markNotifRead(id, el, href) {
     fetch(API_URL + '?action=mark_notif_read', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -737,6 +748,7 @@ function markNotifRead(id, el) {
             if (dot) dot.className = 'nsb-dot read';
         }
         updateBadges();
+        if (href) window.location.href = href;
     });
 }
 

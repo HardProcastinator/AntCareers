@@ -568,6 +568,16 @@ function _navHref(string $file): string {
 
   function _esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 
+  function getNotifUrl(type, refId) {
+    switch (type) {
+      case 'message': return 'antcareers_seekerMessages.php' + (refId ? '?user_id=' + refId : '');
+      case 'application': return 'antcareers_seekerApplications.php';
+      case 'offer_credential': case 'hired_credential': return 'antcareers_seekerApplications.php';
+      case 'interview': return 'antcareers_seekerApplications.php';
+      default: return 'antcareers_seekerDashboard.php';
+    }
+  }
+
   // ── Load threads from API ──
   function loadSeekerThreads() {
     var container = document.getElementById('msgThreadList');
@@ -738,7 +748,8 @@ function _navHref(string $file): string {
         var html = '';
         data.notifications.forEach(function (n) {
           var dotClass = n.is_read ? 'read' : (n.type === 'message' ? 'red' : (n.type === 'application' ? 'green' : 'amber'));
-          html += '<div class="notif-item" data-notif-id="' + n.id + '" style="cursor:pointer;">'
+          var href = getNotifUrl(n.type, n.reference_id);
+          html += '<div class="notif-item" data-notif-id="' + n.id + '" data-href="' + href + '" style="cursor:pointer;">'
             + '<div class="n-dot ' + dotClass + '"></div>'
             + '<div><div class="n-text">' + n.content + '</div><div class="n-time">' + _esc(n.time) + '</div></div>'
             + '</div>';
@@ -747,8 +758,13 @@ function _navHref(string $file): string {
         container.querySelectorAll('.notif-item').forEach(function (el) {
           el.addEventListener('click', function () {
             var nid = el.getAttribute('data-notif-id');
+            var href = el.getAttribute('data-href');
             fetch('../api/messages.php?action=mark_notif_read&id=' + nid, { method: 'POST' })
-              .then(function () { el.querySelector('.n-dot').className = 'n-dot read'; updateSeekerBadges(); });
+              .then(function () {
+                el.querySelector('.n-dot').className = 'n-dot read';
+                updateSeekerBadges();
+                if (href) window.location.href = href;
+              });
           });
         });
       })
@@ -878,3 +894,4 @@ function _navHref(string $file): string {
 
 })();
 </script>
+
