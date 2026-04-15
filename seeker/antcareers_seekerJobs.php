@@ -26,13 +26,14 @@ try {
         SELECT
             j.id, j.employer_id, j.title, j.location, j.job_type, j.setup AS work_setup,
             j.experience_level, j.industry, j.salary_min, j.salary_max,
-            j.salary_currency, j.description, j.skills_required, j.created_at,
+            j.salary_currency, j.description, j.skills_required, j.created_at, j.deadline,
             COALESCE(cp.company_name, u.company_name, u.full_name, 'Unknown Company') AS company,
             cp.logo_path AS logo_url
         FROM jobs j
         JOIN users u ON u.id = j.employer_id
         LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
         WHERE j.status = 'Active'
+          AND (j.approval_status IS NULL OR j.approval_status = 'approved')
           AND (j.deadline IS NULL OR j.deadline >= CURDATE())
         ORDER BY j.created_at DESC
         LIMIT 100
@@ -90,52 +91,12 @@ foreach ($dbJobs as $r) {
         'featured'    => false,
         'tags'        => array_values(array_slice($tags, 0, 5)),
         'postedDate'  => date('M j, Y', strtotime($r['created_at'])),
+        'createdRaw'  => $r['created_at'],
+        'deadlineRaw' => $r['deadline'] ?? null,
     ];
 }
 
-// ── Companies hiring now ──────────────────────────────────────────────────────
-try {
-    $cStmt = $db->prepare("
-        SELECT
-            j.employer_id,
-            COALESCE(cp.company_name, u.company_name, u.full_name) AS name,
-            COUNT(j.id) AS open_roles,
-            cp.logo_path AS logo_url
-        FROM jobs j
-        JOIN users u ON u.id = j.employer_id
-        LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
-        WHERE j.status = 'Active' AND (j.deadline IS NULL OR j.deadline >= CURDATE())
-        GROUP BY j.employer_id
-        ORDER BY open_roles DESC
-        LIMIT 6
-    ");
-    $cStmt->execute();
-    foreach ($cStmt->fetchAll() as $c) {
-        $companies[] = ['name' => $c['name'], 'openRoles' => (int)$c['open_roles'], 'logo' => ($c['logo_url'] ?? '') ? '../' . $c['logo_url'] : '', 'employerId' => (int)$c['employer_id']];
-    }
-} catch (PDOException $e) {
-    // Fallback without deadline column
-    try {
-        $cStmt = $db->prepare("
-            SELECT
-                j.employer_id,
-                COALESCE(cp.company_name, u.company_name, u.full_name) AS name,
-                COUNT(j.id) AS open_roles,
-                cp.logo_path AS logo_url
-            FROM jobs j
-            JOIN users u ON u.id = j.employer_id
-            LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
-            WHERE j.status = 'Active'
-            GROUP BY j.employer_id
-            ORDER BY open_roles DESC
-            LIMIT 6
-        ");
-        $cStmt->execute();
-        foreach ($cStmt->fetchAll() as $c) {
-            $companies[] = ['name' => $c['name'], 'openRoles' => (int)$c['open_roles'], 'logo' => ($c['logo_url'] ?? '') ? '../' . $c['logo_url'] : '', 'employerId' => (int)$c['employer_id']];
-        }
-    } catch (PDOException $e2) { /* ignore */ }
-}
+// Companies data removed from authenticated browse view (kept only on public index)
 
 // ── Already-applied job IDs (to disable apply button) ────────────────────────
 $appliedJobIds = [];
@@ -161,19 +122,15 @@ try {
 } catch (PDOException $e) { /* industry column may not exist yet */ }
 
 $jobsJson     = json_encode($jobs,        JSON_HEX_TAG | JSON_HEX_AMP);
-$companiesJson= json_encode($companies,   JSON_HEX_TAG | JSON_HEX_AMP);
 $appliedJson  = json_encode($appliedJobIds);
 $savedJson    = json_encode($savedJobIds);
 
-$countrySearchOptionsHtml = '<option value="">All Countries</option>';
 $countrySidebarOptionsHtml = '<option value="">All countries</option>';
 foreach (getCountries() as $country) {
   $name = (string)$country['name'];
   $escName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-  $countrySearchOptionsHtml .= '<option value="' . $escName . '">' . $escName . '</option>';
   $countrySidebarOptionsHtml .= '<option value="' . $escName . '">' . $escName . '</option>';
 }
-$countrySearchOptionsHtml .= '<option value="Remote">Remote</option>';
 $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
 
 $sharedIndustryValues = array_column(getIndustryFilterOptions(), 'value');
@@ -441,10 +398,10 @@ foreach ($industryFilterValues as $industryValue) {
     .job-list { display:flex; flex-direction:column; gap:10px; }
     .job-row {
       background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px;
-      padding:18px 20px; cursor:pointer; transition:border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+      padding:22px 24px; cursor:pointer; transition:border-color 0.18s, transform 0.18s, box-shadow 0.18s;
       display:flex; gap:14px; align-items:flex-start; position:relative;
     }
-    .job-row:hover { border-color:rgba(209,61,44,0.45); transform:translateX(2px); box-shadow:0 4px 20px rgba(0,0,0,0.22); }
+    .job-row:hover { border-color:rgba(209,61,44,0.45); transform:translateX(2px); box-shadow:0 4px 16px rgba(0,0,0,0.12); }
     .jr-icon {
       width:40px; height:40px; border-radius:10px; flex-shrink:0; margin-top:1px;
       background:rgba(209,61,44,0.1); border:1px solid rgba(209,61,44,0.15);
@@ -457,6 +414,16 @@ foreach ($industryFilterValues as $industryValue) {
     .jr-new {
       font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase;
       color:var(--red-pale); background:rgba(209,61,44,0.1); border:1px solid rgba(209,61,44,0.2);
+      padding:2px 7px; border-radius:4px;
+    }
+    .jr-badge-new {
+      font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+      color:#6ccf8a; background:rgba(76,175,112,0.1); border:1px solid rgba(76,175,112,0.25);
+      padding:2px 7px; border-radius:4px;
+    }
+    .jr-badge-expiring {
+      font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+      color:#D4943A; background:rgba(212,148,58,0.1); border:1px solid rgba(212,148,58,0.25);
       padding:2px 7px; border-radius:4px;
     }
     .jr-meta {
@@ -733,47 +700,9 @@ foreach ($industryFilterValues as $industryValue) {
 
   <!-- SEARCH ROW -->
   <div class="search-row anim anim-d1">
-    <div class="search-box">
+    <div class="search-box" style="flex:1;">
       <span class="si"><i class="fas fa-search"></i></span>
       <input type="text" id="keywordInput" placeholder="Search by name, skill, or job title…">
-    </div>
-    <select class="filter-select" id="searchCountryFilter">
-      <?= $countrySearchOptionsHtml ?>
-    </select>
-    <div class="ms-wrap" id="msSearchIndustry" data-default="All Industries">
-      <button class="ms-trigger" type="button"><span class="ms-text">All Industries</span><i class="fas fa-chevron-down ms-arrow"></i></button>
-      <div class="ms-panel">
-        <label class="ms-item"><input type="checkbox" value="Accounting"><span>Accounting</span></label>
-        <label class="ms-item"><input type="checkbox" value="Administration &amp; Office Support"><span>Administration &amp; Office Support</span></label>
-        <label class="ms-item"><input type="checkbox" value="Advertising, Arts &amp; Media"><span>Advertising, Arts &amp; Media</span></label>
-        <label class="ms-item"><input type="checkbox" value="Banking &amp; Financial Services"><span>Banking &amp; Financial Services</span></label>
-        <label class="ms-item"><input type="checkbox" value="Call Centre &amp; Customer Service"><span>Call Centre &amp; Customer Service</span></label>
-        <label class="ms-item"><input type="checkbox" value="CEO &amp; General Management"><span>CEO &amp; General Management</span></label>
-        <label class="ms-item"><input type="checkbox" value="Community Services &amp; Development"><span>Community Services &amp; Development</span></label>
-        <label class="ms-item"><input type="checkbox" value="Construction"><span>Construction</span></label>
-        <label class="ms-item"><input type="checkbox" value="Consulting &amp; Strategy"><span>Consulting &amp; Strategy</span></label>
-        <label class="ms-item"><input type="checkbox" value="Design &amp; Architecture"><span>Design &amp; Architecture</span></label>
-        <label class="ms-item"><input type="checkbox" value="Education &amp; Training"><span>Education &amp; Training</span></label>
-        <label class="ms-item"><input type="checkbox" value="Engineering"><span>Engineering</span></label>
-        <label class="ms-item"><input type="checkbox" value="Farming, Animals &amp; Conservation"><span>Farming, Animals &amp; Conservation</span></label>
-        <label class="ms-item"><input type="checkbox" value="Government &amp; Defence"><span>Government &amp; Defence</span></label>
-        <label class="ms-item"><input type="checkbox" value="Healthcare &amp; Medical"><span>Healthcare &amp; Medical</span></label>
-        <label class="ms-item"><input type="checkbox" value="Hospitality &amp; Tourism"><span>Hospitality &amp; Tourism</span></label>
-        <label class="ms-item"><input type="checkbox" value="Human Resources &amp; Recruitment"><span>Human Resources &amp; Recruitment</span></label>
-        <label class="ms-item"><input type="checkbox" value="Information &amp; Communication Technology"><span>Information &amp; Communication Technology</span></label>
-        <label class="ms-item"><input type="checkbox" value="Insurance &amp; Superannuation"><span>Insurance &amp; Superannuation</span></label>
-        <label class="ms-item"><input type="checkbox" value="Legal"><span>Legal</span></label>
-        <label class="ms-item"><input type="checkbox" value="Manufacturing, Transport &amp; Logistics"><span>Manufacturing, Transport &amp; Logistics</span></label>
-        <label class="ms-item"><input type="checkbox" value="Marketing &amp; Communications"><span>Marketing &amp; Communications</span></label>
-        <label class="ms-item"><input type="checkbox" value="Mining, Resources &amp; Energy"><span>Mining, Resources &amp; Energy</span></label>
-        <label class="ms-item"><input type="checkbox" value="Real Estate &amp; Property"><span>Real Estate &amp; Property</span></label>
-        <label class="ms-item"><input type="checkbox" value="Retail &amp; Consumer Products"><span>Retail &amp; Consumer Products</span></label>
-        <label class="ms-item"><input type="checkbox" value="Sales"><span>Sales</span></label>
-        <label class="ms-item"><input type="checkbox" value="Science &amp; Technology"><span>Science &amp; Technology</span></label>
-        <label class="ms-item"><input type="checkbox" value="Self Employment"><span>Self Employment</span></label>
-        <label class="ms-item"><input type="checkbox" value="Sports &amp; Recreation"><span>Sports &amp; Recreation</span></label>
-        <label class="ms-item"><input type="checkbox" value="Trades &amp; Services"><span>Trades &amp; Services</span></label>
-      </div>
     </div>
     <button class="search-btn" id="searchBtn"><i class="fas fa-search"></i> Search</button>
   </div>
@@ -921,22 +850,6 @@ foreach ($industryFilterValues as $industryValue) {
     <!-- MAIN -->
     <main class="main-content">
 
-      <div id="featured" class="anim">
-        <div class="sec-header">
-          <div class="sec-title"><i class="fas fa-star"></i> Featured</div>
-          <button class="see-more" id="seeMoreFeatured">See all <i class="fas fa-arrow-right"></i></button>
-        </div>
-        <div class="featured-scroll" id="featuredJobsContainer"></div>
-      </div>
-
-      <div id="companies" class="companies-section anim anim-d2">
-        <div class="sec-header">
-          <div class="sec-title"><i class="fas fa-building"></i> Companies Hiring</div>
-          <button class="see-more" onclick="window.location.href='antcareers_seekerCompany.php'">See all <i class="fas fa-arrow-right"></i></button>
-        </div>
-        <div class="companies-grid" id="companiesContainer"></div>
-      </div>
-
       <div id="jobs" class="anim anim-d2">
         <div class="sec-header">
           <div class="sec-title">
@@ -974,7 +887,6 @@ foreach ($industryFilterValues as $industryValue) {
 <script>
   // ── REAL DATA FROM PHP ───────────────────────────────────────────────────
   const jobsData    = <?= $jobsJson ?>;
-  const companies   = <?= $companiesJson ?>;
   const appliedIds  = new Set(<?= $appliedJson ?>);
   let   savedJobs   = new Set(<?= $savedJson ?>);
 
@@ -989,70 +901,6 @@ foreach ($industryFilterValues as $industryValue) {
                 Engineering:'fa-cogs', Sales:'fa-handshake' };
     return m[industry] || 'fa-briefcase';
   }
-
-  // ── RENDER COMPANIES ──────────────────────────────────────────────────────
-  function renderCompanies() {
-    const el = document.getElementById('companiesContainer');
-    const sec = document.getElementById('companies');
-    if (!el) return;
-    if (!companies || companies.length === 0) { if (sec) sec.style.display = 'none'; return; }
-    if (sec) sec.style.display = '';
-    el.innerHTML = companies.map(c => {
-      const initials = (c.name || 'C').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-      const logoHtml = c.logo
-        ? `<img src="${esc(c.logo)}" alt="${esc(c.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`
-          + `<span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--red-pale);">${initials}</span>`
-        : `<span style="font-size:14px;font-weight:800;">${initials}</span>`;
-      return `
-        <div class="company-card" onclick="window.location.href='public_company_profile.php?employer_id=${c.employerId}'">
-          <div class="cc-logo">${logoHtml}</div>
-          <div>
-            <div class="cc-name">${esc(c.name)}</div>
-            <div class="cc-roles"><i class="fas fa-briefcase"></i>${c.openRoles} open role${c.openRoles !== 1 ? 's' : ''}</div>
-          </div>
-        </div>`;
-    }).join('');
-  }
-
-  // ── RENDER FEATURED ───────────────────────────────────────────────────────
-  function renderFeatured() {
-    const el = document.getElementById('featuredJobsContainer');
-    if (!el) return;
-    const featured = jobsData.filter(j => j.featured).slice(0, 6);
-    const list = featured.length > 0 ? featured : jobsData.slice(0, 4);
-    if (list.length === 0) {
-      el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:20px 4px;">No featured jobs right now.</div>';
-      return;
-    }
-    el.innerHTML = list.map(j => featuredCard(j)).join('');
-  }
-
-  function featuredCard(j) {
-    const applied = appliedIds.has(j.id);
-    const tags    = (j.tags || []).slice(0, 3).map(t => `<span class="chip">${esc(t)}</span>`).join('');
-    return `
-      <div class="featured-card" onclick="openJobModal(${j.id})">
-        <div class="fc-badge"><i class="fas fa-star"></i> Featured</div>
-        <div class="fc-header">
-          <div class="fc-icon"><i class="fas ${jobIcon(j.industry)}"></i></div>
-          <div style="min-width:0;">
-            <div class="fc-title">${esc(j.title)}</div>
-            <div class="fc-company">${esc(j.company)}</div>
-          </div>
-        </div>
-        <div class="fc-chips">${tags || '<span style="color:var(--text-muted);font-size:12px;">' + esc(j.location) + '</span>'}</div>
-        <div class="fc-footer">
-          <div class="fc-salary">${esc(j.salary)}</div>
-          <button class="fc-action ${applied ? 'applied' : ''}"
-            onclick="event.stopPropagation(); ${applied ? '' : 'openApplyModal(' + j.id + ')'}"
-            ${applied ? 'disabled' : ''}>
-            ${applied ? '<i class="fas fa-check"></i> Applied' : '<i class="fas fa-paper-plane"></i> Apply'}
-          </button>
-        </div>
-      </div>`;
-  }
-
-
 
   // ── MULTI-SELECT HELPERS ─────────────────────────────────────────────────
   /* ── JOB ROLES DATA ── */
@@ -1211,6 +1059,23 @@ foreach ($industryFilterValues as $industryValue) {
     return true;
   }
 
+  /* New / Expiring badge helpers */
+  function jobBadge(j) {
+    const now = Date.now();
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    const threeDays = 3 * 24 * 60 * 60 * 1000;
+    let badges = '';
+    if (j.createdRaw) {
+      const created = new Date(j.createdRaw).getTime();
+      if (now - created <= sevenDays) badges += '<span class="jr-badge-new">New</span>';
+    }
+    if (j.deadlineRaw) {
+      const dl = new Date(j.deadlineRaw).getTime();
+      if (dl > now && dl - now <= threeDays) badges += '<span class="jr-badge-expiring">Expiring</span>';
+    }
+    return badges;
+  }
+
   function renderAllJobs() {
     const el = document.getElementById('jobsContainer');
     const countEl = document.getElementById('jobCount');
@@ -1242,6 +1107,7 @@ foreach ($industryFilterValues as $industryValue) {
             <div class="jr-top">
               <div class="jr-title">${esc(j.title)}</div>
               ${j.featured ? '<span class="jr-new">Featured</span>' : ''}
+              ${jobBadge(j)}
             </div>
             <div class="jr-meta">
               <span class="jr-company"><i class="fas fa-building"></i>${esc(j.company)}</span>
@@ -1434,10 +1300,6 @@ foreach ($industryFilterValues as $industryValue) {
   document.getElementById('keywordInput')?.addEventListener('keyup', e => { if (e.key === 'Enter') renderAllJobs(); });
   document.getElementById('resetFiltersBtn')?.addEventListener('click', resetFilters);
 
-  // ── SEE MORE ──────────────────────────────────────────────────────────────
-  document.getElementById('seeMoreFeatured')?.addEventListener('click',  () => document.getElementById('jobs')?.scrollIntoView({ behavior:'smooth' }));
-  document.getElementById('seeMoreJobs')?.addEventListener('click',      () => document.getElementById('jobs')?.scrollIntoView({ behavior:'smooth' }));
-
   // ── SCROLL NAV ────────────────────────────────────────────────────────────
   document.querySelectorAll('[data-scroll]').forEach(el =>
     el.addEventListener('click', () =>
@@ -1453,8 +1315,6 @@ foreach ($industryFilterValues as $industryValue) {
 
   // ── INIT ──────────────────────────────────────────────────────────────────
   document.getElementById('locationKeyword')?.addEventListener('input', renderAllJobs);
-  renderCompanies();
-  renderFeatured();
   renderAllJobs();
 </script>
 

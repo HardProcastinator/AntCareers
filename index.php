@@ -11,12 +11,13 @@ try {
     $s = $db->prepare("
         SELECT j.id, j.title, j.location, j.job_type, j.setup AS work_setup,
                j.experience_level, j.industry, j.salary_min, j.salary_max,
-               j.salary_currency, j.description, j.skills_required, j.created_at,
+               j.salary_currency, j.description, j.skills_required, j.created_at, j.deadline,
                COALESCE(cp.company_name, u.company_name, u.full_name, 'Unknown Company') AS company
         FROM jobs j
         JOIN users u ON u.id = j.employer_id
         LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
         WHERE j.status = 'Active'
+          AND (j.approval_status IS NULL OR j.approval_status = 'approved')
           AND (j.deadline IS NULL OR j.deadline >= CURDATE())
         ORDER BY j.created_at DESC LIMIT 50
     ");
@@ -51,6 +52,8 @@ try {
             'tags'        => array_values(array_slice($tags, 0, 5)),
             'icon'        => 'fa-briefcase',
             'postedDate'  => date('M j, Y', strtotime($r['created_at'])),
+            'createdRaw'  => $r['created_at'],
+            'deadlineRaw' => $r['deadline'] ?? null,
         ];
     }
 } catch (PDOException $e) { error_log('[AntCareers] index jobs: '.$e->getMessage()); }
@@ -62,7 +65,9 @@ try {
         FROM jobs j
         JOIN users u ON u.id = j.employer_id
         LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
-        WHERE j.status = 'Active' AND (j.deadline IS NULL OR j.deadline >= CURDATE())
+        WHERE j.status = 'Active'
+          AND (j.approval_status IS NULL OR j.approval_status = 'approved')
+          AND (j.deadline IS NULL OR j.deadline >= CURDATE())
         GROUP BY j.employer_id
         ORDER BY open_roles DESC LIMIT 5
     ");
@@ -580,7 +585,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     .job-row {
       background: var(--soil-card);
       border: 1px solid var(--soil-line);
-      border-radius: 10px; padding: 18px 20px;
+      border-radius: 12px; padding: 22px 24px;
       cursor: pointer; transition: all 0.18s;
       display: grid; grid-template-columns: 1fr auto;
       gap: 16px; align-items: center; position: relative;
@@ -589,7 +594,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       border-color: rgba(209,61,44,0.5);
       background: var(--soil-hover);
       transform: translateX(2px);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
     }
     .jr-top { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
     .jr-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #F5F0EE; }
@@ -597,6 +602,16 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
       color: var(--red-pale); background: rgba(200,57,42,0.1); border: 1px solid rgba(200,57,42,0.2);
       padding: 2px 7px; border-radius: 3px;
+    }
+    .jr-badge-new {
+      font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+      color:#6ccf8a; background:rgba(76,175,112,0.1); border:1px solid rgba(76,175,112,0.25);
+      padding:2px 7px; border-radius:4px;
+    }
+    .jr-badge-expiring {
+      font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+      color:#D4943A; background:rgba(212,148,58,0.1); border:1px solid rgba(212,148,58,0.25);
+      padding:2px 7px; border-radius:4px;
     }
     .jr-meta {
       display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
@@ -1442,6 +1457,23 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       </div>`).join('');
   }
 
+  /* New / Expiring badge helpers */
+  function jobBadge(j) {
+    const now = Date.now();
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    const threeDays = 3 * 24 * 60 * 60 * 1000;
+    let badges = '';
+    if (j.createdRaw) {
+      const created = new Date(j.createdRaw).getTime();
+      if (now - created <= sevenDays) badges += '<span class="jr-badge-new">New</span>';
+    }
+    if (j.deadlineRaw) {
+      const dl = new Date(j.deadlineRaw).getTime();
+      if (dl > now && dl - now <= threeDays) badges += '<span class="jr-badge-expiring">Expiring</span>';
+    }
+    return badges;
+  }
+
   function renderAllJobs() {
     const filtering = isFiltering();
     setSearchMode(filtering);
@@ -1459,6 +1491,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
           <div class="jr-top">
             <div class="jr-title">${j.title}</div>
             ${j.featured?'<span class="jr-new">Featured</span>':''}
+            ${jobBadge(j)}
           </div>
           <div class="jr-meta">
             <span class="jr-company"><i class="fas fa-building"></i> ${j.company}</span>

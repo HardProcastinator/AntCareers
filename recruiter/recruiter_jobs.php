@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
+require_once dirname(__DIR__) . '/includes/countries.php';
 requireLogin('recruiter');
 $user        = getUser();
 $fullName    = $user['fullName'];
@@ -27,6 +28,19 @@ try {
     error_log('[AntCareers] recruiter lookup: ' . $e->getMessage());
 }
 
+/* ── Country → Currency map ── */
+const COUNTRY_CURRENCIES = [
+    'PH'=>'PHP','US'=>'USD','GB'=>'GBP','AU'=>'AUD','CA'=>'CAD','JP'=>'JPY','KR'=>'KRW','SG'=>'SGD',
+    'HK'=>'HKD','MY'=>'MYR','TH'=>'THB','ID'=>'IDR','IN'=>'INR','CN'=>'CNY','NZ'=>'NZD','AE'=>'AED',
+    'SA'=>'SAR','DE'=>'EUR','FR'=>'EUR','IT'=>'EUR','ES'=>'EUR','NL'=>'EUR','IE'=>'EUR','PT'=>'EUR',
+    'AT'=>'EUR','BE'=>'EUR','FI'=>'EUR','GR'=>'EUR','LU'=>'EUR','MT'=>'EUR','CY'=>'EUR','EE'=>'EUR',
+    'LV'=>'EUR','LT'=>'EUR','SK'=>'EUR','SI'=>'EUR','HR'=>'EUR','BG'=>'BGN','RO'=>'RON','PL'=>'PLN',
+    'CZ'=>'CZK','HU'=>'HUF','SE'=>'SEK','DK'=>'DKK','NO'=>'NOK','CH'=>'CHF','BR'=>'BRL','MX'=>'MXN',
+    'ZA'=>'ZAR','NG'=>'NGN','EG'=>'EGP','KE'=>'KES','GH'=>'GHS','TW'=>'TWD','VN'=>'VND','PK'=>'PKR',
+    'BD'=>'BDT','LK'=>'LKR','NP'=>'NPR','QA'=>'QAR','KW'=>'KWD','BH'=>'BHD','OM'=>'OMR','JO'=>'JOD',
+    'IL'=>'ILS','TR'=>'TRY','RU'=>'RUB','UA'=>'UAH','CL'=>'CLP','CO'=>'COP','PE'=>'PEN','AR'=>'ARS',
+];
+
 /* ══════════════════════════════════════════════════════════════
    AJAX HANDLERS
    ══════════════════════════════════════════════════════════════ */
@@ -50,9 +64,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $exp    = (string)($_POST['experience_level'] ?? '') ?: null;
         $skills = trim((string)($_POST['skills'] ?? ''));
         $dl     = (string)($_POST['deadline'] ?? '') ?: null;
+        $country  = trim((string)($_POST['country'] ?? ''));
+        $duration = trim((string)($_POST['recruitment_duration'] ?? '')) ?: null;
+        $currency = $country ? (COUNTRY_CURRENCIES[$country] ?? 'PHP') : 'PHP';
         try {
-            $db->prepare("INSERT INTO jobs (employer_id, recruiter_id, title, description, requirements, location, job_type, setup, salary_min, salary_max, industry, experience_level, skills_required, status, approval_status, deadline) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'Active','pending',?)")
-               ->execute([$employerId, $uid, $title, $desc, $req, $loc, $type, $setup, $sMin, $sMax, $ind, $exp, $skills, $dl]);
+            $db->prepare("INSERT INTO jobs (employer_id, recruiter_id, title, description, requirements, location, job_type, setup, salary_min, salary_max, salary_currency, industry, experience_level, skills_required, status, approval_status, deadline, country, recruitment_duration) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'Active','pending',?,?,?)")
+               ->execute([$employerId, $uid, $title, $desc, $req, $loc, $type, $setup, $sMin, $sMax, $currency, $ind, $exp, $skills, $dl, $country, $duration]);
             echo json_encode(['ok' => true, 'job_id' => (int)$db->lastInsertId(), 'title' => $title]);
         } catch (Exception $e) {
             error_log('[AntCareers] post_job: ' . $e->getMessage());
@@ -77,9 +94,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $exp    = (string)($_POST['experience_level'] ?? '') ?: null;
         $skills = trim((string)($_POST['skills'] ?? ''));
         $dl     = (string)($_POST['deadline'] ?? '') ?: null;
+        $country  = trim((string)($_POST['country'] ?? ''));
+        $duration = trim((string)($_POST['recruitment_duration'] ?? '')) ?: null;
+        $currency = $country ? (COUNTRY_CURRENCIES[$country] ?? 'PHP') : 'PHP';
         try {
-            $db->prepare("INSERT INTO jobs (employer_id, recruiter_id, title, description, requirements, location, job_type, setup, salary_min, salary_max, industry, experience_level, skills_required, status, approval_status, deadline) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'Draft','pending',?)")
-               ->execute([$employerId, $uid, $title, $desc, $req, $loc, $type, $setup, $sMin, $sMax, $ind, $exp, $skills, $dl]);
+            $db->prepare("INSERT INTO jobs (employer_id, recruiter_id, title, description, requirements, location, job_type, setup, salary_min, salary_max, salary_currency, industry, experience_level, skills_required, status, approval_status, deadline, country, recruitment_duration) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'Draft','pending',?,?,?)")
+               ->execute([$employerId, $uid, $title, $desc, $req, $loc, $type, $setup, $sMin, $sMax, $currency, $ind, $exp, $skills, $dl, $country, $duration]);
             echo json_encode(['ok' => true, 'job_id' => (int)$db->lastInsertId(), 'title' => $title]);
         } catch (Exception $e) {
             error_log('[AntCareers] save_draft: ' . $e->getMessage());
@@ -104,9 +124,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $exp    = (string)($_POST['experience_level'] ?? '') ?: null;
         $skills = trim((string)($_POST['skills'] ?? ''));
         $dl     = (string)($_POST['deadline'] ?? '') ?: null;
+        $country  = trim((string)($_POST['country'] ?? ''));
+        $duration = trim((string)($_POST['recruitment_duration'] ?? '')) ?: null;
+        $currency = $country ? (COUNTRY_CURRENCIES[$country] ?? 'PHP') : 'PHP';
         try {
-            $db->prepare("UPDATE jobs SET title=?, description=?, requirements=?, location=?, job_type=?, setup=?, salary_min=?, salary_max=?, industry=?, experience_level=?, skills_required=?, deadline=?, updated_at=NOW() WHERE id=? AND recruiter_id=?")
-               ->execute([$title, $desc, $req, $loc, $type, $setup, $sMin, $sMax, $ind, $exp, $skills, $dl, $jobId, $uid]);
+            $db->prepare("UPDATE jobs SET title=?, description=?, requirements=?, location=?, job_type=?, setup=?, salary_min=?, salary_max=?, salary_currency=?, industry=?, experience_level=?, skills_required=?, deadline=?, country=?, recruitment_duration=?, updated_at=NOW() WHERE id=? AND recruiter_id=?")
+               ->execute([$title, $desc, $req, $loc, $type, $setup, $sMin, $sMax, $currency, $ind, $exp, $skills, $dl, $country, $duration, $jobId, $uid]);
             echo json_encode(['ok' => true, 'title' => $title]);
         } catch (Exception $e) {
             error_log('[AntCareers] update_job: ' . $e->getMessage());
@@ -128,6 +151,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         } catch (Exception $e) {
             error_log('[AntCareers] delete_job: ' . $e->getMessage());
+            echo json_encode(['ok' => false, 'msg' => 'DB error']);
+        }
+        exit;
+    }
+
+    /* ── post_draft (publish a draft → Active + pending approval) ── */
+    if ($action === 'post_draft') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        try {
+            $st = $db->prepare("UPDATE jobs SET status='Active', approval_status='pending', updated_at=NOW() WHERE id=? AND recruiter_id=? AND status='Draft'");
+            $st->execute([$jobId, $uid]);
+            if ($st->rowCount() === 0) {
+                echo json_encode(['ok' => false, 'msg' => 'Only draft jobs can be posted']);
+            } else {
+                echo json_encode(['ok' => true]);
+            }
+        } catch (Exception $e) {
+            error_log('[AntCareers] post_draft: ' . $e->getMessage());
             echo json_encode(['ok' => false, 'msg' => 'DB error']);
         }
         exit;
@@ -318,6 +359,8 @@ $jobsJson = json_encode($jobs ?: []);
     .btn.amber{border-color:rgba(212,148,58,.4);color:var(--amber);}
     .btn.amber:hover{background:rgba(212,148,58,.1);}
     body.light .btn{border-color:#D4B0AB;color:#5A4040;}
+    body.light .btn.primary{background:var(--red-vivid);border-color:var(--red-vivid);color:#fff;}
+    body.light .btn.primary:hover{background:var(--red-bright);}
 
     /* ── Empty state ── */
     .empty{text-align:center;padding:55px 20px;color:var(--text-muted);}
@@ -341,7 +384,7 @@ $jobsJson = json_encode($jobs ?: []);
     body.light .fl{color:#7A5555;}
     textarea.fi{resize:vertical;min-height:80px;}
     .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-    @media(max-width:480px){.frow{grid-template-columns:1fr;}}
+    @media(max-width:480px){.frow{grid-template-columns:1fr!important;}}
     .mfoot{display:flex;justify-content:flex-end;gap:9px;margin-top:20px;flex-wrap:wrap;}
 
     /* ── Confirm modal ── */
@@ -472,6 +515,7 @@ $jobsJson = json_encode($jobs ?: []);
         </button>
         <?php endif; ?>
         <?php if ($sc === 'draft'): ?>
+        <button class="btn grn" onclick="postDraft(<?= $j['id'] ?>,'<?= htmlspecialchars($j['title'], ENT_QUOTES) ?>')"><i class="fas fa-paper-plane"></i> Post</button>
         <button class="btn red" onclick="confirmDel(<?= $j['id'] ?>,'<?= htmlspecialchars($j['title'], ENT_QUOTES) ?>')"><i class="fas fa-trash"></i></button>
         <?php endif; ?>
       </div>
@@ -524,10 +568,19 @@ $jobsJson = json_encode($jobs ?: []);
       </div>
     </div>
 
-    <div class="frow">
+    <div class="frow" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="fg">
+        <label class="fl">Country</label>
+        <select class="fi" id="fCountry" onchange="onCountryChange()">
+          <option value="">— Select Country —</option>
+          <?php foreach (getCountries() as $c): ?>
+          <option value="<?= htmlspecialchars($c['code']) ?>"><?= htmlspecialchars($c['name']) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
       <div class="fg">
         <label class="fl">Location</label>
-        <input type="text" class="fi" id="fLoc" placeholder="City, Province, PH">
+        <input type="text" class="fi" id="fLoc" placeholder="City, Province…">
       </div>
       <div class="fg">
         <label class="fl">Experience Level</label>
@@ -547,18 +600,33 @@ $jobsJson = json_encode($jobs ?: []);
 
     <div class="frow">
       <div class="fg">
-        <label class="fl">Min Salary (PHP)</label>
+        <label class="fl" id="lblSMin">Min Salary (PHP)</label>
         <input type="number" class="fi" id="fSMin" placeholder="e.g. 50000">
       </div>
       <div class="fg">
-        <label class="fl">Max Salary (PHP)</label>
+        <label class="fl" id="lblSMax">Max Salary (PHP)</label>
         <input type="number" class="fi" id="fSMax" placeholder="e.g. 90000">
       </div>
     </div>
 
-    <div class="fg">
-      <label class="fl">Application Deadline</label>
-      <input type="date" class="fi" id="fDl">
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">Application Deadline</label>
+        <input type="date" class="fi" id="fDl">
+      </div>
+      <div class="fg">
+        <label class="fl">Recruitment Duration</label>
+        <select class="fi" id="fDuration">
+          <option value="">— Not specified —</option>
+          <option value="1 week">1 Week</option>
+          <option value="2 weeks">2 Weeks</option>
+          <option value="1 month">1 Month</option>
+          <option value="2 months">2 Months</option>
+          <option value="3 months">3 Months</option>
+          <option value="6 months">6 Months</option>
+          <option value="Ongoing">Ongoing</option>
+        </select>
+      </div>
     </div>
 
     <div class="fg">
@@ -610,6 +678,25 @@ $jobsJson = json_encode($jobs ?: []);
 /* ══════════════════════════════════════════════════════════════
    Client-Side Filtering
    ══════════════════════════════════════════════════════════════ */
+/* Country → Currency map */
+const COUNTRY_CURRENCY = {
+  'PH':'PHP','US':'USD','GB':'GBP','AU':'AUD','CA':'CAD','JP':'JPY','KR':'KRW','SG':'SGD',
+  'HK':'HKD','MY':'MYR','TH':'THB','ID':'IDR','IN':'INR','CN':'CNY','NZ':'NZD','AE':'AED',
+  'SA':'SAR','DE':'EUR','FR':'EUR','IT':'EUR','ES':'EUR','NL':'EUR','IE':'EUR','PT':'EUR',
+  'AT':'EUR','BE':'EUR','FI':'EUR','GR':'EUR','LU':'EUR','MT':'EUR','CY':'EUR','EE':'EUR',
+  'LV':'EUR','LT':'EUR','SK':'EUR','SI':'EUR','HR':'EUR','BG':'BGN','RO':'RON','PL':'PLN',
+  'CZ':'CZK','HU':'HUF','SE':'SEK','DK':'DKK','NO':'NOK','CH':'CHF','BR':'BRL','MX':'MXN',
+  'ZA':'ZAR','NG':'NGN','EG':'EGP','KE':'KES','GH':'GHS','TW':'TWD','VN':'VND','PK':'PKR',
+  'BD':'BDT','LK':'LKR','NP':'NPR','QA':'QAR','KW':'KWD','BH':'BHD','OM':'OMR','JO':'JOD',
+  'IL':'ILS','TR':'TRY','RU':'RUB','UA':'UAH','CL':'CLP','CO':'COP','PE':'PEN','AR':'ARS'
+};
+function onCountryChange() {
+  var code = document.getElementById('fCountry').value;
+  var cur = COUNTRY_CURRENCY[code] || 'PHP';
+  document.getElementById('lblSMin').textContent = 'Min Salary (' + cur + ')';
+  document.getElementById('lblSMax').textContent = 'Max Salary (' + cur + ')';
+}
+
 var currentFilter = 'all';
 
 function filterJobs(type, el) {
@@ -693,9 +780,11 @@ function closeJobModal() {
 }
 
 function clearForm() {
-  ['fLoc','fSMin','fSMax','fSkills','fDesc','fReq','fDl'].forEach(function(id){
+  ['fLoc','fSMin','fSMax','fSkills','fDesc','fReq','fDl','fDuration'].forEach(function(id){
     document.getElementById(id).value = '';
   });
+  document.getElementById('fCountry').value = '';
+  onCountryChange();
   document.getElementById('fInd').value   = '';
   document.getElementById('fTitle').innerHTML = '<option value="">\u2014 Select industry first \u2014</option>';
   document.getElementById('fTitleCustom').style.display = 'none';
@@ -713,6 +802,7 @@ function getFormData() {
     description:      document.getElementById('fDesc').value,
     requirements:     document.getElementById('fReq').value,
     location:         document.getElementById('fLoc').value.trim(),
+    country:          document.getElementById('fCountry').value,
     job_type:         document.getElementById('fType').value,
     setup:            document.getElementById('fSetup').value,
     salary_min:       document.getElementById('fSMin').value,
@@ -720,7 +810,8 @@ function getFormData() {
     industry:         document.getElementById('fInd').value.trim(),
     experience_level: document.getElementById('fExp').value,
     skills:           document.getElementById('fSkills').value,
-    deadline:         document.getElementById('fDl').value
+    deadline:         document.getElementById('fDl').value,
+    recruitment_duration: document.getElementById('fDuration').value
   };
 }
 
@@ -761,6 +852,9 @@ function editJob(id) {
     document.getElementById('fDesc').value          = j.description || '';
     document.getElementById('fReq').value           = j.requirements || '';
     document.getElementById('fLoc').value           = j.location || '';
+    document.getElementById('fCountry').value        = j.country || '';
+    onCountryChange();
+    document.getElementById('fDuration').value       = j.recruitment_duration || '';
     document.getElementById('fType').value          = j.job_type || 'Full-time';
     document.getElementById('fSetup').value         = j.setup || 'On-site';
     document.getElementById('fSMin').value          = j.salary_min || '';
@@ -822,6 +916,19 @@ function toggleStatus(id, cur) {
         if (badge) { badge.className = 'sbadge ' + d.status.toLowerCase(); badge.textContent = d.status; }
       }
       toast('Job ' + d.status.toLowerCase() + '!', 'ok');
+    } else { toast(d.msg || 'Error', 'err'); }
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Post Draft (submit for approval)
+   ══════════════════════════════════════════════════════════════ */
+function postDraft(id, title) {
+  if (!confirm('Submit "' + title + '" for approval? It will become active once approved.')) return;
+  doPost({ action: 'post_draft', job_id: id }, function(d) {
+    if (d.ok) {
+      toast('Draft submitted for approval!', 'ok');
+      setTimeout(function(){ location.reload(); }, 1200);
     } else { toast(d.msg || 'Error', 'err'); }
   });
 }

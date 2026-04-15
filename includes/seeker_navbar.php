@@ -178,9 +178,11 @@ function _navHref(string $file): string {
   .n-time { font-size:11px; color:var(--text-muted); margin-top:3px; font-weight:600; }
 
   /* Toast */
-  .toast { position:fixed; bottom:24px; right:24px; z-index:999; background:var(--soil-card); border:1px solid var(--soil-line); border-left:2px solid var(--red-vivid); border-radius:8px; padding:11px 18px; font-size:13px; font-weight:500; color:#F5F0EE; box-shadow:0 10px 30px rgba(0,0,0,0.4); display:flex; align-items:center; gap:9px; animation:toastIn 0.25s ease; }
+  .toast { position:fixed; bottom:24px; right:24px; z-index:999; background:var(--soil-card); border:1px solid var(--soil-line); border-left:2px solid var(--red-vivid); border-radius:8px; padding:11px 18px; font-size:13px; font-weight:500; color:#F5F0EE; box-shadow:0 10px 30px rgba(0,0,0,0.4); display:flex; align-items:center; gap:9px; animation:toastIn 0.25s ease; pointer-events:none; }
   @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
   .toast i { color:var(--red-pale); }
+  body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; box-shadow:0 10px 30px rgba(0,0,0,0.1); }
+  body.light .toast i { color:var(--red-vivid); }
 
   /* Light theme overrides for navbar elements */
   body.light .navbar { background:rgba(255,253,252,0.98); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }

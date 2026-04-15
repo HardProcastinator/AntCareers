@@ -30,8 +30,7 @@ $recNavRoutes = [
 ];
 
 function _recNavHref(string $file): string {
-    $theme = htmlspecialchars($_GET['theme'] ?? '', ENT_QUOTES, 'UTF-8');
-    return htmlspecialchars($file . ($theme !== '' ? '?theme=' . $theme : ''), ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars($file, ENT_QUOTES, 'UTF-8');
 }
 function _recActive(string $key, string $active): string {
     return $key === $active ? ' active' : '';
@@ -200,9 +199,11 @@ function _recActive(string $key, string $active): string {
   body.light .sb-bubble-recv{background:#F5EEEC;color:#1A0A09}
 
   /* Toast */
-  .toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--soil-card);border:1px solid var(--soil-line);border-left:2px solid var(--red-vivid);border-radius:8px;padding:11px 18px;font-size:13px;font-weight:500;color:#F5F0EE;box-shadow:0 10px 30px rgba(0,0,0,0.4);display:flex;align-items:center;gap:9px;animation:toastIn .25s ease}
+  .toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--soil-card);border:1px solid var(--soil-line);border-left:2px solid var(--red-vivid);border-radius:8px;padding:11px 18px;font-size:13px;font-weight:500;color:#F5F0EE;box-shadow:0 10px 30px rgba(0,0,0,0.4);display:flex;align-items:center;gap:9px;animation:toastIn .25s ease;pointer-events:none}
   @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
   .toast i{color:var(--red-pale)}
+  body.light .toast{background:#FFFFFF;border-color:#E0CECA;color:#1A0A09;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
+  body.light .toast i{color:var(--red-vivid)}
 
   /* Light overrides */
   body.light .navbar{background:rgba(249,245,244,0.97);border-bottom-color:#D4B0AB;box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08)}
@@ -412,11 +413,8 @@ function _recActive(string $key, string $active): string {
     if(icon) icon.className = isLight ? 'fas fa-sun' : 'fas fa-moon';
     localStorage.setItem('ac-theme',t);
   }
-  var paramTheme = new URLSearchParams(window.location.search).get('theme');
   var storedTheme = localStorage.getItem('ac-theme') || 'light';
-  var initialTheme = paramTheme || storedTheme;
-  if(paramTheme) localStorage.setItem('ac-theme',paramTheme);
-  applyTheme(initialTheme);
+  applyTheme(storedTheme);
   window.applyTheme = applyTheme;
   window.setTheme = applyTheme;
 

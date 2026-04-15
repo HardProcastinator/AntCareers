@@ -166,6 +166,9 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   body.light .mobile-divider { background:#E0CECA; }
   body.light .btn-nav-red { box-shadow:0 2px 8px rgba(209,61,44,0.2); }
   body.light .glow-orb { display:none; }
+  /* Toast light-mode contrast fix */
+  body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; box-shadow:0 10px 30px rgba(0,0,0,0.1); }
+  body.light .toast i { color:var(--red-vivid); }
 </style>
 
 <!-- Employer shared theme + interactions script -->
