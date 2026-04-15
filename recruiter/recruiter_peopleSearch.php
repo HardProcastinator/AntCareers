@@ -3,7 +3,6 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
 require_once dirname(__DIR__) . '/includes/countries.php';
-require_once dirname(__DIR__) . '/includes/job_titles.php';
 requireLogin('recruiter');
 $user        = getUser();
 $fullName    = $user['fullName'];
@@ -28,11 +27,15 @@ try {
             u.id, u.full_name, u.avatar_url, u.account_type,
             sp.headline, sp.industry, sp.experience_level,
             sp.city_name, sp.province_name, sp.country_name,
-            sp.nr_availability,
-            GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.sort_order SEPARATOR ',') AS skills
+            sp.nr_availability, sp.nr_work_types, sp.nr_right_to_work,
+            sp.nr_salary, sp.nr_salary_period, sp.nr_classification,
+            sp.professional_summary, sp.bio, sp.phone,
+            GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.sort_order SEPARATOR ',') AS skills,
+            sr.file_path AS resume_path, sr.original_filename AS resume_name
         FROM users u
         LEFT JOIN seeker_profiles sp ON sp.user_id = u.id
         LEFT JOIN seeker_skills sk ON sk.user_id = u.id
+        LEFT JOIN seeker_resumes sr ON sr.user_id = u.id AND sr.is_active = 1
         WHERE u.id != ? AND u.is_active = 1
           AND u.account_type IN ('seeker','employer')
           AND (u.account_type <> 'seeker' OR COALESCE(sp.show_in_people_search, 1) = 1)
@@ -74,6 +77,18 @@ try {
             'connected' => false,
           'accountType' => $r['account_type'] ?? 'seeker',
           'profileUrl'  => ($r['account_type'] === 'employer') ? ('public_company_profile.php?employer_id=' . (int)$r['id']) : null,
+          'availability' => $r['nr_availability'] ?? '',
+          'workTypes'   => $r['nr_work_types'] ?? '',
+          'rightToWork' => $r['nr_right_to_work'] ?? '',
+          'salary'      => $r['nr_salary'] ?? '',
+          'salaryPeriod'=> $r['nr_salary_period'] ?? '',
+          'classification' => $r['nr_classification'] ?? '',
+          'summary'     => $r['professional_summary'] ?? '',
+          'bio'         => $r['bio'] ?? '',
+          'phone'       => $r['phone'] ?? '',
+          'country'     => $r['country_name'] ?? '',
+          'resumePath'  => !empty($r['resume_path']) ? '../' . $r['resume_path'] : '',
+          'resumeName'  => $r['resume_name'] ?? '',
         ];
         $ci++;
     }
@@ -82,23 +97,13 @@ try {
 }
 $peopleJson = json_encode($peopleList, JSON_HEX_TAG | JSON_HEX_AMP);
 
-$countrySearchOptionsHtml = '<option value="">All Countries</option>';
 $countrySidebarOptionsHtml = '<option value="">All countries</option>';
 foreach (getCountries() as $country) {
   $name = (string)$country['name'];
   $escName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-  $countrySearchOptionsHtml .= '<option value="' . $escName . '">' . $escName . '</option>';
   $countrySidebarOptionsHtml .= '<option value="' . $escName . '">' . $escName . '</option>';
 }
-$countrySearchOptionsHtml .= '<option value="Remote">Remote</option>';
 $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
-
-$industryCheckboxesHtml = '';
-foreach (getIndustryFilterOptions() as $industryOption) {
-  $value = htmlspecialchars((string)$industryOption['value'], ENT_QUOTES, 'UTF-8');
-  $label = htmlspecialchars((string)$industryOption['label'], ENT_QUOTES, 'UTF-8');
-  $industryCheckboxesHtml .= '<label class="ms-item"><input type="checkbox" value="' . $value . '"><span>' . $label . '</span></label>';
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -108,9 +113,7 @@ foreach (getIndustryFilterOptions() as $industryOption) {
   <title>People Search — AntCareers</title>
   <script>
     (function(){
-      const p=new URLSearchParams(window.location.search).get('theme');
-      const t=p||localStorage.getItem('ac-theme')||'light';
-      if(p) localStorage.setItem('ac-theme',t);
+      const t=localStorage.getItem('ac-theme')||'light';
       if(t==='light') document.documentElement.classList.add('theme-light');
     })();
   </script>
@@ -303,6 +306,33 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     .anim-d1 { animation-delay:0.05s; } .anim-d2 { animation-delay:0.1s; } .anim-d3 { animation-delay:0.15s; }
     @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
 
+    /* Toggle switch */
+    .fs-toggle-row { display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; }
+    .fs-toggle-row input { display:none; }
+    .fs-toggle-switch { width:36px; height:20px; border-radius:10px; background:var(--soil-line); position:relative; transition:background 0.2s; flex-shrink:0; }
+    .fs-toggle-switch::after { content:''; position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:#fff; transition:transform 0.2s; }
+    .fs-toggle-row input:checked ~ .fs-toggle-switch { background:var(--red-vivid); }
+    .fs-toggle-row input:checked ~ .fs-toggle-switch::after { transform:translateX(16px); }
+    .fs-toggle-text { font-size:12px; color:var(--text-mid); font-weight:500; }
+
+    /* Expanded person modal */
+    .person-modal-box { width:min(640px,100%); max-height:85vh; overflow-y:auto; scrollbar-width:thin; }
+    .pm-detail-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted); margin-top:4px; }
+    .pm-detail-row i { width:14px; text-align:center; color:var(--red-mid); font-size:11px; }
+    .pm-section-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+    .pm-info-card { background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:10px 12px; }
+    .pm-info-label { font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; }
+    .pm-info-value { font-size:13px; font-weight:600; color:var(--text-light); }
+    .pm-about { font-size:13px; color:var(--text-mid); line-height:1.6; margin-top:6px; white-space:pre-wrap; }
+    .pm-resume-btn { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:8px; border:1px solid rgba(76,175,112,0.3); background:rgba(76,175,112,0.08); color:#6ccf8a; font-size:12px; font-weight:700; font-family:var(--font-body); cursor:pointer; text-decoration:none; transition:0.18s; margin-top:8px; }
+    .pm-resume-btn:hover { background:rgba(76,175,112,0.15); border-color:rgba(76,175,112,0.5); }
+    .pm-resume-btn i { font-size:13px; }
+    body.light .pm-info-card { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .pm-info-value { color:#1A0A09; }
+    body.light .pm-about { color:#4A2828; }
+    body.light .pm-resume-btn { background:rgba(76,175,112,0.06); border-color:rgba(76,175,112,0.25); color:#2E7D4C; }
+    @media(max-width:500px) { .pm-section-grid { grid-template-columns:1fr; } }
+
     /* ── LIGHT THEME ── */
     html.theme-light body, body.light {
       --soil-dark:#F9F5F4; --soil-card:#FFFFFF; --soil-hover:#FEF0EE; --soil-line:#E0CECA;
@@ -377,15 +407,6 @@ foreach (getIndustryFilterOptions() as $industryOption) {
       <span class="si"><i class="fas fa-search"></i></span>
       <input type="text" id="peopleSearch" placeholder="Search by name, skill, or job title…">
     </div>
-    <select class="filter-select" id="locationFilter" onchange="syncLocationFromSearch(); filterPeople()">
-      <?= $countrySearchOptionsHtml ?>
-    </select>
-    <div class="ms-wrap" id="msSearchIndustry" data-default="All Industries">
-      <button class="ms-trigger" type="button"><span class="ms-text">All Industries</span><i class="fas fa-chevron-down ms-arrow"></i></button>
-      <div class="ms-panel">
-        <?= $industryCheckboxesHtml ?>
-      </div>
-    </div>
     <button class="search-btn" onclick="filterPeople()"><i class="fas fa-search"></i> Search</button>
   </div>
 
@@ -395,22 +416,109 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     <aside class="filter-sidebar anim anim-d2">
       <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
 
+      <!-- Open to Work Toggle -->
       <div class="fs-section">
-        <div class="fs-section-label">Industry</div>
-        <div class="ms-wrap" id="msSidebarIndustry" data-default="All Industries">
-          <button class="ms-trigger" type="button"><span class="ms-text">All Industries</span><i class="fas fa-chevron-down ms-arrow"></i></button>
-          <div class="ms-panel">
-            <?= $industryCheckboxesHtml ?>
-          </div>
-        </div>
-        <input type="text" id="sidebarPositionKeyword" class="fs-text-input" placeholder="Enter job title or position" oninput="filterPeople()" style="margin-top:6px;">
+        <div class="fs-section-label">Open to Work</div>
+        <label class="fs-toggle-row">
+          <input type="checkbox" id="filterOpenToWork" onchange="filterPeople()">
+          <span class="fs-toggle-switch"></span>
+          <span class="fs-toggle-text">Show only open to work</span>
+        </label>
       </div>
 
       <div class="fs-divider"></div>
 
+      <!-- Availability -->
       <div class="fs-section">
-        <div class="fs-section-label">Location</div>
-        <select class="fs-select" id="sidebarLocationFilter" onchange="syncLocationFromSidebar(); filterPeople()">
+        <div class="fs-section-label">Availability</div>
+        <select class="fs-select" id="filterAvailability" onchange="filterPeople()">
+          <option value="">Any availability</option>
+          <option value="Now">Available Now</option>
+          <option value="Open">Open to Opportunities</option>
+          <option value="Not Looking">Not Looking</option>
+        </select>
+      </div>
+
+      <div class="fs-divider"></div>
+
+      <!-- Classification of Interest -->
+      <div class="fs-section">
+        <div class="fs-section-label">Classification of Interest</div>
+        <select class="fs-select" id="filterClassification" onchange="filterPeople()">
+          <option value="">Any classification</option>
+          <option>Accounting</option>
+          <option>Administration &amp; Office Support</option>
+          <option>Advertising, Arts &amp; Media</option>
+          <option>Banking &amp; Financial Services</option>
+          <option>Call Centre &amp; Customer Service</option>
+          <option>CEO &amp; General Management</option>
+          <option>Community Services &amp; Development</option>
+          <option>Construction</option>
+          <option>Consulting &amp; Strategy</option>
+          <option>Design &amp; Architecture</option>
+          <option>Education &amp; Training</option>
+          <option>Engineering</option>
+          <option>Farming, Animals &amp; Conservation</option>
+          <option>Government &amp; Defence</option>
+          <option>Healthcare &amp; Medical</option>
+          <option>Hospitality &amp; Tourism</option>
+          <option>Human Resources &amp; Recruitment</option>
+          <option>Information &amp; Communication Technology</option>
+          <option>Insurance &amp; Superannuation</option>
+          <option>Legal</option>
+          <option>Manufacturing, Transport &amp; Logistics</option>
+          <option>Marketing &amp; Communications</option>
+          <option>Mining, Resources &amp; Energy</option>
+          <option>Real Estate &amp; Property</option>
+          <option>Retail &amp; Consumer Products</option>
+          <option>Sales</option>
+          <option>Science &amp; Technology</option>
+          <option>Self Employment</option>
+          <option>Sports &amp; Recreation</option>
+          <option>Trades &amp; Services</option>
+        </select>
+      </div>
+
+      <div class="fs-divider"></div>
+
+      <!-- Experience Level -->
+      <div class="fs-section">
+        <div class="fs-section-label">Experience Level</div>
+        <select class="fs-select" id="filterExperience" onchange="filterPeople()">
+          <option value="">Any level</option>
+          <option value="Entry Level">Entry Level</option>
+          <option value="Entry-Level (0–1 year)">Entry-Level (0–1 year)</option>
+          <option value="Junior (1–3 years)">Junior (1–3 years)</option>
+          <option value="Mid-Level (3–5 years)">Mid-Level (3–5 years)</option>
+          <option value="Senior (5–10 years)">Senior (5–10 years)</option>
+          <option value="Lead / Manager">Lead / Manager</option>
+          <option value="Executive (10+ years)">Executive (10+ years)</option>
+        </select>
+      </div>
+
+      <div class="fs-divider"></div>
+
+      <!-- Work Type -->
+      <div class="fs-section">
+        <div class="fs-section-label">Work Type</div>
+        <div class="ms-wrap" id="msWorkType" data-default="Any work type">
+          <button class="ms-trigger" type="button"><span class="ms-text">Any work type</span><i class="fas fa-chevron-down ms-arrow"></i></button>
+          <div class="ms-panel">
+            <label class="ms-item"><input type="checkbox" value="Full-time"><span>Full-time</span></label>
+            <label class="ms-item"><input type="checkbox" value="Part-time"><span>Part-time</span></label>
+            <label class="ms-item"><input type="checkbox" value="Contract"><span>Contract</span></label>
+            <label class="ms-item"><input type="checkbox" value="Freelance"><span>Freelance</span></label>
+            <label class="ms-item"><input type="checkbox" value="Internship"><span>Internship</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="fs-divider"></div>
+
+      <!-- Preferred Location -->
+      <div class="fs-section">
+        <div class="fs-section-label">Preferred Location</div>
+        <select class="fs-select" id="sidebarLocationFilter" onchange="filterPeople()">
           <?= $countrySidebarOptionsHtml ?>
         </select>
         <input type="text" id="sidebarLocationKeyword" class="fs-text-input" placeholder="Enter region, province or city" oninput="filterPeople()" style="margin-top:6px;">
@@ -418,36 +526,28 @@ foreach (getIndustryFilterOptions() as $industryOption) {
 
       <div class="fs-divider"></div>
 
+      <!-- Right to Work -->
       <div class="fs-section">
-        <div class="fs-section-label">Company</div>
-        <input type="text" id="sidebarCompanyFilter" class="fs-text-input" placeholder="Search company name" oninput="filterPeople()">
+        <div class="fs-section-label">Right to Work</div>
+        <select class="fs-select" id="filterRightToWork" onchange="filterPeople()">
+          <option value="">Any</option>
+          <option value="Citizen">Citizen</option>
+          <option value="Permanent Resident">Permanent Resident</option>
+          <option value="Work Visa">Work Visa</option>
+          <option value="Student Visa">Student Visa</option>
+          <option value="Require Sponsorship">Require Sponsorship</option>
+        </select>
       </div>
 
       <div class="fs-divider"></div>
 
+      <!-- Salary Budget -->
       <div class="fs-section">
-        <div class="fs-section-label">Experience Level</div>
-        <div class="ms-wrap" id="msExperience" data-default="Any level">
-          <button class="ms-trigger" type="button"><span class="ms-text">Any level</span><i class="fas fa-chevron-down ms-arrow"></i></button>
-          <div class="ms-panel">
-            <label class="ms-item"><input type="checkbox" value="Entry Level"><span>Entry Level</span></label>
-            <label class="ms-item"><input type="checkbox" value="Mid Level"><span>Mid Level</span></label>
-            <label class="ms-item"><input type="checkbox" value="Senior"><span>Senior</span></label>
-            <label class="ms-item"><input type="checkbox" value="Lead / Manager"><span>Lead / Manager</span></label>
-          </div>
-        </div>
-      </div>
-
-      <div class="fs-divider"></div>
-
-      <div class="fs-section">
-        <div class="fs-section-label">Status</div>
-        <div class="ms-wrap" id="msStatus" data-default="Any status">
-          <button class="ms-trigger" type="button"><span class="ms-text">Any status</span><i class="fas fa-chevron-down ms-arrow"></i></button>
-          <div class="ms-panel">
-            <label class="ms-item"><input type="checkbox" value="seeking"><span>Open to Work</span></label>
-            <label class="ms-item"><input type="checkbox" value="hiring"><span>Actively Hiring</span></label>
-          </div>
+        <div class="fs-section-label">Salary Budget</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="number" id="filterSalaryMin" class="fs-text-input" placeholder="Min" oninput="filterPeople()" style="flex:1;">
+          <span style="color:var(--text-muted);font-size:11px;">–</span>
+          <input type="number" id="filterSalaryMax" class="fs-text-input" placeholder="Max" oninput="filterPeople()" style="flex:1;">
         </div>
       </div>
 
@@ -484,6 +584,8 @@ foreach (getIndustryFilterOptions() as $industryOption) {
 
   let connections = new Set();
 
+  function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
   function openPersonView(personId) {
     const person = peopleById[String(personId)];
     if (!person) return;
@@ -492,24 +594,48 @@ foreach (getIndustryFilterOptions() as $industryOption) {
       return;
     }
 
-    const skills = (person.skills || []).slice(0, 6).map(s => `<span class="person-skill-chip">${s}</span>`).join('');
+    const skills = (person.skills || []).slice(0, 8).map(s => `<span class="person-skill-chip">${esc(s)}</span>`).join('');
     const statusLabel = person.status === 'seeking' ? 'Open to work' : person.status === 'hiring' ? 'Actively hiring' : 'Available';
     const statusClass = person.status === 'seeking' ? 'seeking' : person.status === 'hiring' ? 'hiring' : 'neutral';
 
+    let infoCards = '';
+    if (person.exp) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Experience</div><div class="pm-info-value">${esc(person.exp)}</div></div>`;
+    if (person.availability) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Availability</div><div class="pm-info-value">${esc(person.availability)}</div></div>`;
+    if (person.workTypes) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Work Type</div><div class="pm-info-value">${esc(person.workTypes)}</div></div>`;
+    if (person.rightToWork) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Right to Work</div><div class="pm-info-value">${esc(person.rightToWork)}</div></div>`;
+    if (person.classification) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Classification</div><div class="pm-info-value">${esc(person.classification)}</div></div>`;
+    if (person.salary) {
+      const salaryDisplay = person.salary + (person.salaryPeriod ? ' ' + person.salaryPeriod : '');
+      infoCards += `<div class="pm-info-card"><div class="pm-info-label">Salary Expectation</div><div class="pm-info-value">${esc(salaryDisplay)}</div></div>`;
+    }
+
+    const aboutText = person.summary || person.bio || '';
+    const aboutSection = aboutText
+      ? `<div class="person-modal-section"><div class="person-modal-section-label">About</div><div class="pm-about">${esc(aboutText)}</div></div>`
+      : '';
+
+    const resumeSection = person.resumePath
+      ? `<div class="person-modal-section"><div class="person-modal-section-label">Resume</div><a class="pm-resume-btn" href="${esc(person.resumePath)}" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> ${esc(person.resumeName || 'View Resume')}</a></div>`
+      : '';
+
     document.getElementById('personModalBody').innerHTML = `
       <div class="person-modal-head">
-        <div class="person-modal-avatar" style="background:${person.color};">${person.avatarUrl ? `<img src="${person.avatarUrl}" alt="">` : person.avatar}</div>
+        <div class="person-modal-avatar" style="background:${person.color};">${person.avatarUrl ? `<img src="${esc(person.avatarUrl)}" alt="">` : esc(person.avatar)}</div>
         <div class="person-modal-meta">
-          <div class="person-modal-name">${person.name}</div>
-          <div class="person-modal-title">${person.title}</div>
-          <div class="person-modal-location"><i class="fas fa-map-marker-alt"></i> ${person.location}</div>
+          <div class="person-modal-name">${esc(person.name)}</div>
+          <div class="person-modal-title">${esc(person.title)}</div>
+          <div class="person-modal-location"><i class="fas fa-map-marker-alt"></i> ${esc(person.location)}</div>
+          ${person.phone ? `<div class="pm-detail-row"><i class="fas fa-phone"></i> ${esc(person.phone)}</div>` : ''}
         </div>
       </div>
       <div class="person-modal-status ${statusClass}">${statusLabel}</div>
+      ${aboutSection}
+      ${infoCards ? `<div class="person-modal-section"><div class="person-modal-section-label">Details</div><div class="pm-section-grid">${infoCards}</div></div>` : ''}
       <div class="person-modal-section">
         <div class="person-modal-section-label">Skills</div>
         <div class="person-skill-row">${skills || '<span class="person-skill-empty">No skills listed</span>'}</div>
       </div>
+      ${resumeSection}
       <div class="person-modal-actions">
         <button class="person-modal-btn secondary" type="button" onclick="openPersonMessage(${person.id})"><i class="fas fa-comment-dots"></i> Message</button>
         <button class="person-modal-btn primary" type="button" onclick="closePersonView()">Close</button>
@@ -586,69 +712,52 @@ foreach (getIndustryFilterOptions() as $industryOption) {
     else label.textContent = checked.length + ' selected';
   }
 
-  // ── SYNC: sidebar ↔ search bar ───────────────────────────────────────────
-  function syncLocationFromSidebar() {
-    const v = document.getElementById('sidebarLocationFilter').value;
-    const el = document.getElementById('locationFilter');
-    if (el) el.value = v;
-  }
-  function syncLocationFromSearch() {
-    const v = document.getElementById('locationFilter').value;
-    const el = document.getElementById('sidebarLocationFilter');
-    if (el) el.value = v;
-  }
-  function syncIndustryFromSidebar() {
-    const vals = getMsValues('msSidebarIndustry');
-    const wrap = document.getElementById('msSearchIndustry');
-    if (!wrap) return;
-    wrap.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = vals.includes(cb.value); });
-    updateMsLabel(wrap);
-  }
-  function syncIndustryFromSearch() {
-    const vals = getMsValues('msSearchIndustry');
-    const wrap = document.getElementById('msSidebarIndustry');
-    if (!wrap) return;
-    wrap.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = vals.includes(cb.value); });
-    updateMsLabel(wrap);
-  }
-
   function filterPeople() {
     const q = document.getElementById('peopleSearch').value.toLowerCase();
-    const loc = document.getElementById('locationFilter').value;
-    const searchIndustries = getMsValues('msSearchIndustry');
-    const sidebarIndustries = getMsValues('msSidebarIndustry');
-    const expLevels = getMsValues('msExperience');
-    const statuses = getMsValues('msStatus');
-    const sidebarLoc = document.getElementById('sidebarLocationFilter')?.value || '';
+    const openToWork = document.getElementById('filterOpenToWork').checked;
+    const availability = document.getElementById('filterAvailability').value;
+    const classification = document.getElementById('filterClassification').value;
+    const experience = document.getElementById('filterExperience').value;
+    const workTypes = getMsValues('msWorkType');
+    const locCountry = document.getElementById('sidebarLocationFilter')?.value || '';
     const locKeyword = (document.getElementById('sidebarLocationKeyword')?.value || '').toLowerCase();
-    const posKeyword = (document.getElementById('sidebarPositionKeyword')?.value || '').toLowerCase();
-    const companyQ = (document.getElementById('sidebarCompanyFilter')?.value || '').toLowerCase();
+    const rightToWork = document.getElementById('filterRightToWork').value;
+    const salaryMin = parseFloat(document.getElementById('filterSalaryMin').value) || 0;
+    const salaryMax = parseFloat(document.getElementById('filterSalaryMax').value) || 0;
+
     let filtered = peopleData.filter(p => {
       const matchQ = !q || p.name.toLowerCase().includes(q) || p.title.toLowerCase().includes(q) || p.skills.some(s=>s.toLowerCase().includes(q));
-      const matchL = !loc || p.location === loc;
-      const matchI = sidebarIndustries.length ? sidebarIndustries.includes(p.industry) : (!searchIndustries.length || searchIndustries.includes(p.industry));
-      const matchExp = !expLevels.length || expLevels.includes(p.exp);
-      const matchStatus = !statuses.length || statuses.includes(p.status);
-      const matchSidebarLoc = !sidebarLoc || p.location.includes(sidebarLoc);
+      const matchOtw = !openToWork || p.status === 'seeking';
+      const matchAvail = !availability || p.availability === availability;
+      const matchClass = !classification || (p.classification && p.classification.toLowerCase().includes(classification.toLowerCase()));
+      const matchExp = !experience || p.exp === experience;
+      const matchWork = !workTypes.length || workTypes.some(wt => (p.workTypes || '').includes(wt));
+      const matchCountry = !locCountry || p.location.includes(locCountry) || (p.country || '').includes(locCountry);
       const matchLocKw = !locKeyword || p.location.toLowerCase().includes(locKeyword);
-      const matchPosKw = !posKeyword || p.title.toLowerCase().includes(posKeyword);
-      const matchCompany = !companyQ || (p.company && p.company.toLowerCase().includes(companyQ)) || p.title.toLowerCase().includes(companyQ);
-      return matchQ && matchL && matchI && matchExp && matchStatus && matchSidebarLoc && matchLocKw && matchPosKw && matchCompany;
+      const matchRtw = !rightToWork || (p.rightToWork && p.rightToWork.includes(rightToWork));
+      const pSalary = parseFloat(p.salary) || 0;
+      const matchSalMin = !salaryMin || pSalary >= salaryMin;
+      const matchSalMax = !salaryMax || pSalary <= salaryMax;
+      return matchQ && matchOtw && matchAvail && matchClass && matchExp && matchWork && matchCountry && matchLocKw && matchRtw && matchSalMin && matchSalMax;
     });
     renderPeople(filtered);
   }
 
   function resetFilters() {
-    document.getElementById('locationFilter').value='';
-    document.getElementById('sidebarLocationFilter') && (document.getElementById('sidebarLocationFilter').value='');
+    document.getElementById('peopleSearch').value = '';
+    document.getElementById('filterOpenToWork').checked = false;
+    document.getElementById('filterAvailability').value = '';
+    document.getElementById('filterClassification').value = '';
+    document.getElementById('filterExperience').value = '';
+    document.getElementById('sidebarLocationFilter').value = '';
+    document.getElementById('sidebarLocationKeyword').value = '';
+    document.getElementById('filterRightToWork').value = '';
+    document.getElementById('filterSalaryMin').value = '';
+    document.getElementById('filterSalaryMax').value = '';
     document.querySelectorAll('.ms-wrap').forEach(wrap => {
       wrap.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
       updateMsLabel(wrap);
     });
-    document.getElementById('sidebarLocationKeyword') && (document.getElementById('sidebarLocationKeyword').value='');
-    document.getElementById('sidebarPositionKeyword') && (document.getElementById('sidebarPositionKeyword').value='');
-    document.getElementById('sidebarCompanyFilter') && (document.getElementById('sidebarCompanyFilter').value='');
-    document.getElementById('peopleSearch').value='';
     filterPeople();
   }
 
@@ -668,8 +777,6 @@ foreach (getIndustryFilterOptions() as $industryOption) {
   document.querySelectorAll('.ms-wrap input[type="checkbox"]').forEach(cb => {
     cb.addEventListener('change', () => {
       updateMsLabel(cb.closest('.ms-wrap'));
-      if (cb.closest('#msSearchIndustry')) syncIndustryFromSearch();
-      if (cb.closest('#msSidebarIndustry')) syncIndustryFromSidebar();
       filterPeople();
     });
   });

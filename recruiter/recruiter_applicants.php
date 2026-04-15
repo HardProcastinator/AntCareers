@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     /* ── update_status ── */
     if ($action === 'update_status') {
-        $allowed = ['Pending','Reviewed','Shortlisted','Interviewed','Rejected','Hired'];
+        $allowed = ['Pending','Reviewed','Shortlisted','Interviewed','Rejected','Offered'];
         $appId   = (int)($_POST['application_id'] ?? 0);
         $newS    = trim((string)($_POST['status'] ?? ''));
         if (!$appId || !in_array($newS, $allowed, true)) {
@@ -41,11 +41,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $row = $chk->fetch(PDO::FETCH_ASSOC);
             if (!$row) { echo json_encode(['ok'=>false,'msg'=>'Unauthorized']); exit; }
 
-            /* ── Hired trigger logic ── */
-            if ($newS === 'Hired') {
+            /* ── Offered trigger logic ── */
+            if ($newS === 'Offered') {
                 $db->beginTransaction();
                 try {
-                    $db->prepare("UPDATE applications SET status='Hired',reviewed_at=NOW() WHERE id=?")->execute([$appId]);
+                    $db->prepare("UPDATE applications SET status='Offered',reviewed_at=NOW() WHERE id=?")->execute([$appId]);
 
                     // Get seeker info
                     $su = $db->prepare("SELECT full_name, email FROM users WHERE id=?");
@@ -125,20 +125,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                            ->execute([$convKey, min($uid, $row['seeker_id']), max($uid, $row['seeker_id'])]);
                         $convId = (int)$db->lastInsertId();
                     }
-                    $msgBody = "Hi {$seeker['full_name']},\n\nGreat news — you've been hired for the position \"{$row['job_title']}\"!\n\nHere are your recruiter portal credentials:\n• Platform Email: {$platformEmail}\n• Temporary Password: {$tempPass}\n\nPlease log in and change your password immediately.\n\nWelcome to the team!";
+                    $msgBody = "Hi {$seeker['full_name']},\n\nGreat news — you've been offered the position \"{$row['job_title']}\"!\n\nHere are your recruiter portal credentials:\n• Platform Email: {$platformEmail}\n• Temporary Password: {$tempPass}\n\nPlease log in and change your password immediately.\n\nWelcome to the team!";
                     $db->prepare("INSERT INTO messages (sender_id, receiver_id, conversation_id, subject, body, is_read) VALUES (?,?,?,?,?,0)")
-                       ->execute([$uid, $row['seeker_id'], $convId, 'Congratulations — You\'re Hired!', $msgBody]);
+                       ->execute([$uid, $row['seeker_id'], $convId, 'Congratulations — You\'ve Been Offered!', $msgBody]);
                     $msgId = (int)$db->lastInsertId();
                     $db->prepare("UPDATE conversations SET latest_message_id=?, latest_message_at=NOW() WHERE id=?")
                        ->execute([$msgId, $convId]);
 
                     // Notification for seeker
-                    $notifContent = "Congratulations! You've been hired for \"{$row['job_title']}\". Check your messages for your recruiter portal credentials.";
-                    $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'hired_credential',?,?)")
+                    $notifContent = "Congratulations! You've been offered the position \"{$row['job_title']}\". Check your messages for your recruiter portal credentials.";
+                    $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'offer_credential',?,?)")
                        ->execute([$row['seeker_id'], $notifContent, $appId]);
 
                     $db->commit();
-                    echo json_encode(['ok'=>true,'status'=>'Hired']); exit;
+                    echo json_encode(['ok'=>true,'status'=>'Offered']); exit;
                 } catch (Exception $e) {
                     $db->rollBack();
                     error_log('[AntCareers] recruiter hire error: ' . $e->getMessage());
@@ -257,7 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 /* ── FETCH DATA ── */
 $applicants  = [];
-$sCounts     = ['Pending'=>0,'Reviewed'=>0,'Shortlisted'=>0,'Interviewed'=>0,'Hired'=>0,'Rejected'=>0];
+$sCounts     = ['Pending'=>0,'Reviewed'=>0,'Shortlisted'=>0,'Interviewed'=>0,'Offered'=>0,'Rejected'=>0];
 $total       = 0;
 $jobsList    = [];
 $dbErr       = false;
@@ -546,10 +546,10 @@ $jobsListJson   = json_encode($jobsList ?: []);
       <span class="sp-label">Interviewed</span>
       <span class="sp-count" id="cnt-Interviewed"><?= $sCounts['Interviewed'] ?></span>
     </div>
-    <div class="stat-pill" data-filter="Hired">
+    <div class="stat-pill" data-filter="Offered">
       <i class="fas fa-check-circle sp-icon" style="color:#6ccf8a"></i>
-      <span class="sp-label">Hired</span>
-      <span class="sp-count" id="cnt-Hired"><?= $sCounts['Hired'] ?></span>
+      <span class="sp-label">Offered</span>
+      <span class="sp-count" id="cnt-Offered"><?= $sCounts['Offered'] ?></span>
     </div>
     <div class="stat-pill" data-filter="Rejected">
       <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
@@ -576,7 +576,7 @@ $jobsListJson   = json_encode($jobsList ?: []);
       <option value="Reviewed">Reviewed</option>
       <option value="Shortlisted">Shortlisted</option>
       <option value="Interviewed">Interviewed</option>
-      <option value="Hired">Hired</option>
+      <option value="Offered">Offered</option>
       <option value="Rejected">Rejected</option>
     </select>
   </div>
@@ -646,7 +646,7 @@ $jobsListJson   = json_encode($jobsList ?: []);
     Reviewed:    { cls:'blue',   icon:'fa-eye' },
     Shortlisted: { cls:'sblue',  icon:'fa-star' },
     Interviewed: { cls:'purple', icon:'fa-comments' },
-    Hired:       { cls:'green',  icon:'fa-check-circle' },
+    Offered:     { cls:'green',  icon:'fa-check-circle' },
     Rejected:    { cls:'red',    icon:'fa-times-circle' }
   };
 
@@ -712,10 +712,10 @@ $jobsListJson   = json_encode($jobsList ?: []);
       var resumeUrl = a.resume_url || '';
       var resumeBtn = resumeUrl ? ' <a href="'+esc(resumeUrl)+'" target="_blank" class="btn"><i class="fas fa-file-alt"></i> Resume</a>' : '';
 
-      var nextStatus = {Pending:'Shortlisted',Reviewed:'Shortlisted',Shortlisted:'Interviewed',Interviewed:'Hired'};
+      var nextStatus = {Pending:'Shortlisted',Reviewed:'Shortlisted',Shortlisted:'Interviewed',Interviewed:'Offered'};
       var next = nextStatus[a.status];
       var advanceBtn = next ? '<button class="btn green" onclick="updateStatus('+a.id+',\''+next+'\')"><i class="fas fa-arrow-right"></i> '+next+'</button>' : '';
-      var rejectBtn = a.status !== 'Rejected' && a.status !== 'Hired' ? '<button class="btn danger" onclick="updateStatus('+a.id+',\'Rejected\')"><i class="fas fa-times"></i> Reject</button>' : '';
+      var rejectBtn = a.status !== 'Rejected' && a.status !== 'Offered' ? '<button class="btn danger" onclick="updateStatus('+a.id+',\'Rejected\')"><i class="fas fa-times"></i> Reject</button>' : '';
 
       return '<div class="app-card" id="card-'+a.id+'" data-status="'+esc(a.status)+'" data-job="'+a.job_id+'" data-name="'+esc((a.full_name||'').toLowerCase())+'" data-email="'+esc((a.email||'').toLowerCase())+'" data-jobtitle="'+esc((a.job_title||'').toLowerCase())+'" style="animation:fadeUp 0.3s '+((idx*0.03))+'s both ease;">'
         +'<div class="app-main">'
@@ -745,7 +745,7 @@ $jobsListJson   = json_encode($jobsList ?: []);
         +'<div class="etitle"><i class="fas fa-tasks"></i> Update Status</div>'
         +'<div class="status-row">'
         +'<select class="status-sel" id="sel-'+a.id+'">'
-        +['Pending','Reviewed','Shortlisted','Interviewed','Rejected','Hired'].map(function(s){return '<option value="'+s+'"'+(s===a.status?' selected':'')+'>'+s+'</option>';}).join('')
+        +['Pending','Reviewed','Shortlisted','Interviewed','Rejected','Offered'].map(function(s){return '<option value="'+s+'"'+(s===a.status?' selected':'')+'>'+s+'</option>';}).join('')
         +'</select>'
         +'<button class="save-btn" onclick="saveStatus('+a.id+')">Save</button>'
         +'</div></div></div></div>'
@@ -798,8 +798,8 @@ $jobsListJson   = json_encode($jobsList ?: []);
 
   /* ── Status update ── */
   window.updateStatus = function(id, status) {
-    if (status === 'Hired') {
-      if (!confirm('Mark this applicant as Hired? This will generate recruiter credentials and send them to the applicant.')) return;
+    if (status === 'Offered') {
+      if (!confirm('Mark this applicant as Offered? This will generate recruiter credentials and send them to the applicant.')) return;
     }
     if (status === 'Rejected') {
       if (!confirm('Reject this applicant?')) return;
@@ -823,7 +823,7 @@ $jobsListJson   = json_encode($jobsList ?: []);
   };
 
   function recountStats() {
-    var counts = {Pending:0,Reviewed:0,Shortlisted:0,Interviewed:0,Hired:0,Rejected:0};
+    var counts = {Pending:0,Reviewed:0,Shortlisted:0,Interviewed:0,Offered:0,Rejected:0};
     allApplicants.forEach(function(a){ if(counts.hasOwnProperty(a.status)) counts[a.status]++; });
     var total = 0; for(var k in counts) total += counts[k];
     var el = document.getElementById('cnt-all'); if(el) el.textContent = total;
