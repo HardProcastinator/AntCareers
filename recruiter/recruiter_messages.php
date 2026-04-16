@@ -208,9 +208,9 @@ try {
       .profile-name,.profile-role { display:none; }
       .profile-btn { padding:6px 8px; }
     }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .anim{animation:fadeUp 0.4s ease both;}.anim-d1{animation-delay:0.05s;}.anim-d2{animation-delay:0.1s;}
   </style>
-</head>
-<body>
 
 <div class="glow-orb glow-1"></div>
 <div class="glow-orb glow-2"></div>

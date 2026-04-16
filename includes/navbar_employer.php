@@ -57,13 +57,13 @@ function navHref(string $page): string {
          onclick="<?= navHref('../employer/employer_applicants.php') ?>">
         <i class="fas fa-users"></i> Applicants
       </a>
-      <a class="nav-link <?= $navActive==='analytics'?'active':'' ?>"
-         href="employer_analytics.php">
-        <i class="fas fa-chart-bar"></i> Analytics
-      </a>
       <a class="nav-link <?= $navActive==='recruiters'?'active':'' ?>"
          onclick="<?= navHref('../employer/employer_manageRecruiters.php') ?>">
         <i class="fas fa-user-tie"></i> Recruiters
+      </a>
+      <a class="nav-link <?= $navActive==='analytics'?'active':'' ?>"
+         href="employer_analytics.php">
+        <i class="fas fa-chart-bar"></i> Analytics
       </a>
     </div><!-- /nav-links -->
 
@@ -86,11 +86,7 @@ function navHref(string $page): string {
       </button>
       <?php endif; ?>
 
-      <?php if ($navbarShowPostJob): ?>
-      <a class="btn-nav-red" style="cursor:pointer;" href="employer_manageJobs.php?postjob=1">
-        <i class="fas fa-plus-circle"></i> Post Job
-      </a>
-      <?php endif; ?>
+
 
       <div class="profile-wrap" id="profileWrap">
         <button class="profile-btn" id="profileToggle">
@@ -246,6 +242,9 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   <a class="mobile-link" onclick="<?= navHref('../employer/employer_applicants.php') ?>">
     <i class="fas fa-users"></i> Applicants
   </a>
+  <a class="mobile-link" href="employer_manageRecruiters.php">
+    <i class="fas fa-user-tie"></i> Manage Recruiters
+  </a>
   <a class="mobile-link" href="employer_analytics.php">
     <i class="fas fa-chart-bar"></i> Analytics
   </a>
@@ -255,9 +254,6 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   <div class="mobile-divider"></div>
   <a class="mobile-link" href="employer_companyProfile.php">
     <i class="fas fa-building"></i> Company Profile
-  </a>
-  <a class="mobile-link" href="employer_manageRecruiters.php">
-    <i class="fas fa-user-tie"></i> Manage Recruiters
   </a>
   <a class="mobile-link" href="employer_settings.php">
     <i class="fas fa-cog"></i> Settings

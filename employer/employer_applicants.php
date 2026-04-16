@@ -238,10 +238,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             // Notify seeker of interview scheduling + shortlist
             if (in_array($row['current_status'] ?? '', ['Pending', 'Reviewed'], true)) {
-                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'application',?,?)")
+                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'interview_invite',?,?)")
                    ->execute([$row['seeker_id'], "Great news! Your application for \"{$row['job_title']}\" has been shortlisted and an interview has been scheduled.", $appId]);
             } else {
-                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'application',?,?)")
+                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'interview_invite',?,?)")
                    ->execute([$row['seeker_id'], "An interview has been scheduled for your application to \"{$row['job_title']}\".", $appId]);
             }
 
@@ -594,23 +594,46 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   <?php endforeach;?>
   </div>
 
-  <form method="get" action="employer_applicants.php">
-    <div class="toolbar">
-      <div class="search-bar"><i class="fas fa-search si"></i><input type="text" name="q" placeholder="Search name, email or job…" value="<?=htmlspecialchars($search)?>"></div>
-      <select name="job_id" class="fsel" onchange="this.form.submit()">
-        <option value="">All Jobs</option>
-        <?php foreach($jobsList as $j):?><option value="<?=$j['id']?>"<?=$filterJob===$j['id']?' selected':''?>><?=htmlspecialchars($j['title'])?></option><?php endforeach;?>
-      </select>
-      <select name="status" class="fsel" onchange="this.form.submit()">
-        <option value="">All Statuses</option>
-        <?php foreach(['Pending','Reviewed','Shortlisted','Interviewed','Offered','Rejected'] as $st):?>
-        <option value="<?=$st?>"<?=$filterStatus===$st?' selected':''?>><?=$st?></option>
-        <?php endforeach;?>
-      </select>
-      <button type="submit" class="btn primary"><i class="fas fa-search"></i> Search</button>
-      <?php if($search||$filterJob||$filterStatus):?><a href="employer_applicants.php" class="btn"><i class="fas fa-times"></i> Clear</a><?php endif;?>
-    </div>
-  </form>
+  <div class="content-layout">
+    <!-- SIDEBAR FILTERS -->
+    <aside class="filter-sidebar anim anim-d1">
+      <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
+      <form method="get" action="employer_applicants.php">
+        <div class="fs-section">
+          <div class="fs-section-label">Search</div>
+          <div class="search-bar"><i class="fas fa-search si"></i><input type="text" name="q" placeholder="Search name, email or job…" value="<?=htmlspecialchars($search)?>"></div>
+        </div>
+        <div class="fs-section">
+          <div class="fs-section-label">Job</div>
+          <div class="ms-wrap" id="msJobFilter" data-default="All Jobs">
+            <button class="ms-trigger" type="button"><span class="ms-text">All Jobs</span><i class="fas fa-chevron-down ms-arrow"></i></button>
+            <div class="ms-panel">
+              <label class="ms-item"><input type="checkbox" name="job_id[]" value=""<?=empty($filterJob)?' checked':''?>><span>All Jobs</span></label>
+              <?php foreach($jobsList as $j):?>
+                <label class="ms-item"><input type="checkbox" name="job_id[]" value="<?=$j['id']?>"<?=$filterJob===$j['id']?' checked':''?>><span><?=htmlspecialchars($j['title'])?></span></label>
+              <?php endforeach;?>
+            </div>
+          </div>
+        </div>
+        <div class="fs-section">
+          <div class="fs-section-label">Status</div>
+          <div class="ms-wrap" id="msStatusFilter" data-default="All Statuses">
+            <button class="ms-trigger" type="button"><span class="ms-text">All Statuses</span><i class="fas fa-chevron-down ms-arrow"></i></button>
+            <div class="ms-panel">
+              <label class="ms-item"><input type="checkbox" name="status[]" value=""<?=empty($filterStatus)?' checked':''?>><span>All Statuses</span></label>
+              <?php foreach(['Pending','Reviewed','Shortlisted','Interviewed','Offered','Rejected'] as $st):?>
+                <label class="ms-item"><input type="checkbox" name="status[]" value="<?=$st?>"<?=$filterStatus===$st?' checked':''?>><span><?=$st?></span></label>
+              <?php endforeach;?>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn primary" style="margin-top:12px;"><i class="fas fa-search"></i> Search</button>
+        <?php if($search||$filterJob||$filterStatus):?><a href="employer_applicants.php" class="btn" style="margin-top:8px;"><i class="fas fa-times"></i> Clear</a><?php endif;?>
+      </form>
+    </aside>
+    <!-- MAIN CONTENT (app-list, etc.) remains unchanged -->
+    ...existing code...
+  </div>
 
   <div class="app-list">
   <?php if(empty($applicants)):?>

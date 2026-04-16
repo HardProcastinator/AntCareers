@@ -185,7 +185,7 @@ function _navHref(string $file): string {
   body.light .toast i { color:var(--red-vivid); }
 
   /* Light theme overrides for navbar elements */
-  body.light .navbar { background:rgba(255,253,252,0.98); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }
+  body.light .navbar { background:rgba(249,245,244,0.97); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }
   body.light .logo-text { color:#1A0A09; }
   body.light .logo-text span { color:var(--red-vivid); }
   body.light .nav-link { color:#5A4040; }
@@ -198,7 +198,7 @@ function _navHref(string $file): string {
   body.light .pd-item { color:#4A2828; }
   body.light .pd-item:hover { background:#FEF0EE; color:#1A0A09; }
   body.light .pdh-name { color:#1A0A09; }
-  body.light .mobile-menu { background:rgba(255,253,252,0.97); border-color:#E0CECA; }
+  body.light .mobile-menu { background:rgba(249,245,244,0.97); border-color:#E0CECA; }
   body.light .mobile-link { color:#4A2828; }
   body.light .mobile-link:hover { background:#FEF0EE; color:#1A0A09; }
   body.light .notif-panel { background:#FFFFFF; border-color:#E0CECA; box-shadow:-8px 0 32px rgba(0,0,0,0.1); }
@@ -573,7 +573,9 @@ function _navHref(string $file): string {
       case 'message': return 'antcareers_seekerMessages.php' + (refId ? '?user_id=' + refId : '');
       case 'application': return 'antcareers_seekerApplications.php';
       case 'offer_credential': case 'hired_credential': return 'antcareers_seekerApplications.php';
-      case 'interview': return 'antcareers_seekerApplications.php';
+      case 'interview': case 'interview_invite': case 'interview_accepted': return 'antcareers_seekerApplications.php';
+      case 'new_application': return 'antcareers_seekerApplications.php';
+      case 'follow': case 'unfollow': return 'antcareers_seekerDashboard.php';
       default: return 'antcareers_seekerDashboard.php';
     }
   }

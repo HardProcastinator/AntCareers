@@ -245,6 +245,8 @@ $navActive   = 'profile';
       .danger-row { flex-direction:column; align-items:flex-start; }
       .page-shell{padding:24px 16px 60px}
     }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .anim{animation:fadeUp 0.4s ease both;}.anim-d1{animation-delay:0.05s;}.anim-d2{animation-delay:0.1s;}
   </style>
 </head>
 <body>
@@ -264,7 +266,7 @@ $navActive   = 'profile';
 <?php require_once dirname(__DIR__) . '/includes/navbar_employer.php'; ?>
 
 <!-- PAGE -->
-<div class="page-shell">
+<div class="page-shell anim">
   <div class="page-title">Settings</div>
   <div class="page-sub">Manage your account, preferences, and security.</div>
 

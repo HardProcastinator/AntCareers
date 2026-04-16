@@ -298,9 +298,9 @@ $cpScore = min($cpScore, 100);
       .cover-bottom { flex-direction:column; align-items:flex-start; }
       .page-shell{padding:24px 16px 60px}
     }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .anim{animation:fadeUp 0.4s ease both;}.anim-d1{animation-delay:0.05s;}.anim-d2{animation-delay:0.1s;}
   </style>
-</head>
-<body>
 
 
 <div class="tunnel-bg">
@@ -321,9 +321,7 @@ $cpScore = min($cpScore, 100);
 <?php require_once dirname(__DIR__) . '/includes/navbar_employer.php'; ?>
 
 <!-- PAGE CONTENT -->
-<div class="page-shell">
-
-  <div class="page-sub">Manage your company's public-facing information seen by job seekers.</div>
+<div class="page-shell anim">
 
   <!-- Cover + Logo -->
   <div class="cover-section">

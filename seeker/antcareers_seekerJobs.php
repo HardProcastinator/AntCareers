@@ -426,6 +426,11 @@ foreach ($industryFilterValues as $industryValue) {
       color:#D4943A; background:rgba(212,148,58,0.1); border:1px solid rgba(212,148,58,0.25);
       padding:2px 7px; border-radius:4px;
     }
+    .jr-badge-days {
+      font-size:10px; font-weight:700; letter-spacing:0.06em;
+      color:var(--text-muted); background:rgba(146,124,122,0.1); border:1px solid rgba(146,124,122,0.2);
+      padding:2px 7px; border-radius:4px;
+    }
     .jr-meta {
       display:flex; align-items:center; flex-wrap:wrap;
       gap:10px; font-size:12px; color:var(--text-muted); margin-bottom:8px;
@@ -781,7 +786,6 @@ foreach ($industryFilterValues as $industryValue) {
             <label class="ms-item"><input type="checkbox" value="Contract"><span>Contract</span></label>
             <label class="ms-item"><input type="checkbox" value="Freelance"><span>Freelance</span></label>
             <label class="ms-item"><input type="checkbox" value="Internship"><span>Internship</span></label>
-            <label class="ms-item"><input type="checkbox" value="Casual"><span>Casual</span></label>
           </div>
         </div>
       </div>
@@ -827,7 +831,11 @@ foreach ($industryFilterValues as $industryValue) {
           <option value="Monthly">Monthly</option>
           <option value="Hourly">Hourly</option>
         </select>
-        <input type="text" id="salaryKeyword" class="fs-text-input" placeholder="Enter salary range" style="margin-top:6px;">
+        <div style="display:flex;gap:6px;align-items:center;margin-top:6px;">
+          <input type="number" id="salaryMinFilter" class="fs-text-input" placeholder="Min" style="flex:1;">
+          <span style="color:var(--text-muted);font-size:11px;">–</span>
+          <input type="number" id="salaryMaxFilter" class="fs-text-input" placeholder="Max" style="flex:1;">
+        </div>
       </div>
 
       <div class="fs-divider"></div>
@@ -998,7 +1006,8 @@ foreach ($industryFilterValues as $industryValue) {
     return {
       keyword:        (document.getElementById('keywordInput')?.value || '').toLowerCase().trim(),
       locationKeyword:(document.getElementById('locationKeyword')?.value || '').toLowerCase().trim(),
-      salaryKeyword:  (document.getElementById('salaryKeyword')?.value || '').trim(),
+      salaryMin:      parseFloat(document.getElementById('salaryMinFilter')?.value) || 0,
+      salaryMax:      parseFloat(document.getElementById('salaryMaxFilter')?.value) || 0,
       searchIndustries: getMsValues('msSearchIndustry'),
       searchCountry:  document.getElementById('searchCountryFilter')?.value || '',
       industries:     getMsValues('msIndustry'),
@@ -1035,21 +1044,13 @@ foreach ($industryFilterValues as $industryValue) {
     if (f.setups.length && !f.setups.includes(j.workSetup)) return false;
     // Salary period (single-select)
     if (f.salaryPeriod && j.salaryPeriod && j.salaryPeriod !== f.salaryPeriod) return false;
-    // Salary keyword (e.g. "30000" or "30k-50k")
-    if (f.salaryKeyword) {
-      const sk = f.salaryKeyword.toLowerCase().replace(/[₱,\s]/g, '');
-      const nums = sk.match(/\d+/g);
-      if (nums && nums.length >= 1) {
-        let lo = parseInt(nums[0]);
-        let hi = nums.length >= 2 ? parseInt(nums[1]) : 0;
-        if (sk.includes('k') || lo < 1000) lo *= 1000;
-        if (hi && (sk.includes('k') || hi < 1000)) hi *= 1000;
-        lo = lo / 1000;
-        hi = hi ? hi / 1000 : 0;
-        if (hi && j.salaryMax && j.salaryMax < lo) return false;
-        if (hi && j.salaryMin && j.salaryMin > hi) return false;
-        if (!hi && j.salaryMax && j.salaryMax < lo) return false;
-      }
+    // Salary min/max filter
+    if (f.salaryMin) {
+      if (j.salaryMax && j.salaryMax < f.salaryMin / 1000) return false;
+      if (!j.salaryMax && j.salaryMin && j.salaryMin < f.salaryMin / 1000) return false;
+    }
+    if (f.salaryMax) {
+      if (j.salaryMin && j.salaryMin > f.salaryMax / 1000) return false;
     }
     // Date listed (use the maximum days span from selected options)
     if (f.dateDays.length) {
@@ -1075,6 +1076,10 @@ foreach ($industryFilterValues as $industryValue) {
     if (j.deadlineRaw) {
       const dl = new Date(j.deadlineRaw).getTime();
       if (dl > now && dl - now <= threeDays) badges += '<span class="jr-badge-expiring">Expiring</span>';
+      if (dl > now) {
+        const daysLeft = Math.ceil((dl - now) / (24 * 60 * 60 * 1000));
+        badges += '<span class="jr-badge-days">' + daysLeft + 'd left</span>';
+      }
     }
     return badges;
   }
@@ -1253,7 +1258,8 @@ foreach ($industryFilterValues as $industryValue) {
   function resetFilters() {
     document.getElementById('keywordInput').value = '';
     document.getElementById('locationKeyword') && (document.getElementById('locationKeyword').value = '');
-    document.getElementById('salaryKeyword') && (document.getElementById('salaryKeyword').value = '');
+    document.getElementById('salaryMinFilter') && (document.getElementById('salaryMinFilter').value = '');
+    document.getElementById('salaryMaxFilter') && (document.getElementById('salaryMaxFilter').value = '');
     updateRolePicker([]);
     ['searchCountryFilter','sidebarLocationFilter','salaryPeriodFilter'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
     document.querySelectorAll('.ms-wrap').forEach(wrap => {
@@ -1298,7 +1304,8 @@ foreach ($industryFilterValues as $industryValue) {
     const el = document.getElementById(id);
     if (el) { el.addEventListener('change', renderAllJobs); }
   });
-  document.getElementById('salaryKeyword')?.addEventListener('input', renderAllJobs);
+  document.getElementById('salaryMinFilter')?.addEventListener('input', renderAllJobs);
+  document.getElementById('salaryMaxFilter')?.addEventListener('input', renderAllJobs);
   document.getElementById('searchBtn')?.addEventListener('click', renderAllJobs);
   document.getElementById('keywordInput')?.addEventListener('keyup', e => { if (e.key === 'Enter') renderAllJobs(); });
   document.getElementById('resetFiltersBtn')?.addEventListener('click', resetFilters);

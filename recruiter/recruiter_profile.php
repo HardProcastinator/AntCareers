@@ -269,6 +269,8 @@ $isSetup     = isset($_GET['setup']) && $_GET['setup'] === '1';
       .stats-grid{grid-template-columns:1fr}
       .page-shell{padding:0 14px 30px}
     }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .anim{animation:fadeUp 0.4s ease both;}.anim-d1{animation-delay:0.05s;}.anim-d2{animation-delay:0.1s;}
   </style>
 </head>
 <body>
@@ -283,7 +285,7 @@ $isSetup     = isset($_GET['setup']) && $_GET['setup'] === '1';
 </div>
 <?php endif; ?>
 
-<div class="page-shell">
+<div class="page-shell anim">
   <div class="breadcrumb">
     <a href="recruiter_dashboard.php">Dashboard</a>
     <span class="sep"><i class="fas fa-chevron-right" style="font-size:9px"></i></span>

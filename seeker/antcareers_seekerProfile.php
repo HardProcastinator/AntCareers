@@ -927,11 +927,12 @@ try {
       <label class="form-label">Experience Level</label>
       <select class="form-input" id="editExpLevel">
         <option value="">Select level...</option>
-        <option>Entry Level (0–1 years)</option>
-        <option>Junior (1–3 years)</option>
-        <option>Mid-Level (3–5 years)</option>
-        <option>Senior (5+ years)</option>
-        <option>Fresh Graduate</option>
+        <option>Entry</option>
+        <option>Junior</option>
+        <option>Mid</option>
+        <option>Senior</option>
+        <option>Lead</option>
+        <option>Executive</option>
       </select>
     </div>
     <div class="form-group" style="margin-bottom:0;">

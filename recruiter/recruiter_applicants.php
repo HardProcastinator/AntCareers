@@ -234,10 +234,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             // Notify seeker of interview scheduling + shortlist
             if (in_array($row['current_status'] ?? '', ['Pending', 'Reviewed'], true)) {
-                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'application',?,?)")
+                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'interview_invite',?,?)")
                    ->execute([$row['seeker_id'], "Great news! Your application for \"{$row['job_title']}\" has been shortlisted and an interview has been scheduled.", $appId]);
             } else {
-                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'application',?,?)")
+                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'interview_invite',?,?)")
                    ->execute([$row['seeker_id'], "An interview has been scheduled for your application to \"{$row['job_title']}\".", $appId]);
             }
 

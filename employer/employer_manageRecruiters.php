@@ -235,6 +235,8 @@ $navActive   = 'manage-jobs';
       .role-options { grid-template-columns:1fr; }
       .page-shell{padding:24px 16px 60px}
     }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .anim{animation:fadeUp 0.4s ease both;}.anim-d1{animation-delay:0.05s;}.anim-d2{animation-delay:0.1s;}
   </style>
 </head>
 <body>
@@ -256,7 +258,7 @@ $navActive   = 'manage-jobs';
 <?php require_once dirname(__DIR__) . '/includes/navbar_employer.php'; ?>
 
 <!-- PAGE -->
-<div class="page-shell">
+<div class="page-shell anim">
   <div class="page-header">
     <div>
       <h1 class="page-title">Manage <span>Recruiters</span></h1>

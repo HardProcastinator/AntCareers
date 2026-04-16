@@ -50,6 +50,18 @@ try {
         $following = true;
     }
 
+    // Notify employer about follow/unfollow
+    try {
+        $nameStmt = $db->prepare("SELECT first_name, last_name FROM users WHERE id = :uid LIMIT 1");
+        $nameStmt->execute([':uid' => $userId]);
+        $u = $nameStmt->fetch();
+        $followerName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')) ?: 'Someone';
+        $notifType = $following ? 'follow' : 'unfollow';
+        $notifContent = htmlspecialchars($followerName) . ($following ? ' started following your company' : ' unfollowed your company');
+        $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (:uid, :type, :content, :ref)")
+           ->execute([':uid' => $employerId, ':type' => $notifType, ':content' => $notifContent, ':ref' => $userId]);
+    } catch (\Throwable $_) { /* notification failure should not block follow */ }
+
     $cnt = $db->prepare("SELECT COUNT(*) FROM company_follows WHERE employer_user_id = :eid");
     $cnt->execute([':eid' => $employerId]);
     $count = (int)$cnt->fetchColumn();
