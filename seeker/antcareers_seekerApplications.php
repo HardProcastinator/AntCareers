@@ -13,6 +13,54 @@ $navActive = 'applications';
 $db       = getDB();
 $seekerId = (int)$_SESSION['user_id'];
 
+// ── AJAX: Accept / Decline Offer ──────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $action = (string)($_POST['action'] ?? '');
+
+    if ($action === 'accept_offer' || $action === 'decline_offer') {
+        $appId = (int)($_POST['application_id'] ?? 0);
+        if (!$appId) { echo json_encode(['ok'=>false,'msg'=>'Invalid ID']); exit; }
+        try {
+            $chk = $db->prepare("SELECT a.id, a.status, j.title AS job_title, j.employer_id, j.recruiter_id FROM applications a JOIN jobs j ON j.id=a.job_id WHERE a.id=? AND a.seeker_id=?");
+            $chk->execute([$appId, $seekerId]);
+            $row = $chk->fetch(PDO::FETCH_ASSOC);
+            if (!$row) { echo json_encode(['ok'=>false,'msg'=>'Application not found']); exit; }
+            if ($row['status'] !== 'Offered') { echo json_encode(['ok'=>false,'msg'=>'This application is not in Offered status']); exit; }
+
+            $newStatus = $action === 'accept_offer' ? 'Accepted' : 'Declined';
+            $db->beginTransaction();
+            try {
+                $db->prepare("UPDATE applications SET status=?,reviewed_at=NOW() WHERE id=?")->execute([$newStatus, $appId]);
+
+                // Notify employer
+                $notifMsg = $action === 'accept_offer'
+                    ? "Great news! The applicant has accepted the offer for \"{$row['job_title']}\"."
+                    : "The applicant has declined the offer for \"{$row['job_title']}\".";
+                $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (?,?,'offer_response',?,?,'application')")
+                   ->execute([$row['employer_id'], $seekerId, $notifMsg, $appId]);
+
+                // Also notify recruiter if assigned
+                if (!empty($row['recruiter_id'])) {
+                    $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (?,?,'offer_response',?,?,'application')")
+                       ->execute([$row['recruiter_id'], $seekerId, $notifMsg, $appId]);
+                }
+
+                $db->commit();
+                echo json_encode(['ok'=>true,'status'=>strtolower($newStatus)]); exit;
+            } catch (Exception $e) {
+                $db->rollBack();
+                error_log('[AntCareers] seeker offer response error: ' . $e->getMessage());
+                echo json_encode(['ok'=>false,'msg'=>'Failed to process response']); exit;
+            }
+        } catch (Exception $e) {
+            error_log('[AntCareers] seeker offer response: ' . $e->getMessage());
+            echo json_encode(['ok'=>false,'msg'=>'DB error']); exit;
+        }
+    }
+    echo json_encode(['ok'=>false,'msg'=>'Unknown action']); exit;
+}
+
 // ── Fetch all applications for this seeker ────────────────────────────────────
 // Uses try/catch so the page never 500s if a table doesn't exist yet.
 $rows       = [];
@@ -104,6 +152,9 @@ foreach ($rows as $r) {
         'shortlisted'=> 'shortlist',
         'rejected'   => 'rejected',
         'hired'      => 'hired',
+        'offered'    => 'offered',
+        'accepted'   => 'accepted',
+        'declined'   => 'declined',
     ];
     $status   = strtolower((string)$r['status']);
     $jsStatus = $statusMap[$status] ?? 'pending';
@@ -159,9 +210,10 @@ foreach ($rows as $r) {
 
 // ── Counts ────────────────────────────────────────────────────────────────────
 $totalApps      = count($applications);
-$activeApps     = count(array_filter($applications, fn($a) => $a['status'] !== 'rejected'));
+$activeApps     = count(array_filter($applications, fn($a) => !in_array($a['status'], ['rejected','declined'])));
 $interviewCount = count(array_filter($applications, fn($a) => $a['status'] === 'interview'));
 $rejectedCount  = count(array_filter($applications, fn($a) => $a['status'] === 'rejected'));
+$offeredCount   = count(array_filter($applications, fn($a) => $a['status'] === 'offered'));
 
 $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
 ?>
@@ -277,7 +329,16 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
     .status-rejected  { background:rgba(224,80,80,0.12);   color:#E05050; border:1px solid rgba(224,80,80,0.25); }
     .status-interview { background:rgba(150,80,224,0.12);  color:#B07AFF; border:1px solid rgba(150,80,224,0.25); }
     .status-hired     { background:rgba(76,175,112,0.18);  color:#4CAF70; border:1px solid rgba(76,175,112,0.4); }
+    .status-offered   { background:rgba(156,39,176,0.12);  color:#cf8ae0; border:1px solid rgba(156,39,176,0.25); }
+    .status-accepted  { background:rgba(76,175,112,0.18);  color:#4CAF70; border:1px solid rgba(76,175,112,0.4); }
+    .status-declined  { background:rgba(224,80,80,0.12);   color:#E05050; border:1px solid rgba(224,80,80,0.25); }
     .app-date { font-size:11px; color:var(--text-muted); }
+
+    /* OFFER ACTION BUTTONS */
+    .btn-app.accept { border-color:rgba(76,175,112,0.4); color:#4CAF70; background:rgba(76,175,112,0.08); }
+    .btn-app.accept:hover { background:rgba(76,175,112,0.18); border-color:#4CAF70; }
+    .btn-app.decline { border-color:rgba(224,80,80,0.3); color:#E05050; }
+    .btn-app.decline:hover { background:rgba(224,80,80,0.08); border-color:#E05050; }
 
     /* ACTION BUTTONS */
     .app-actions { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
@@ -326,11 +387,6 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
     .btn-danger { padding:9px 18px; border-radius:7px; background:#C0392B; border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; }
     .btn-danger:hover { background:#E05050; }
 
-    /* TOAST */
-    @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-    .toast { position:fixed; bottom:24px; right:24px; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:13px 18px; font-size:13px; font-weight:600; color:var(--text-light); display:flex; align-items:center; gap:10px; z-index:900; animation:toastIn 0.25s ease; box-shadow:0 8px 32px rgba(0,0,0,0.4); }
-    .toast i { color:var(--red-bright); }
-
     /* LIGHT THEME */
     body.light {
       background:#F5EDEC; color:#1A0A09;
@@ -350,7 +406,6 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
     body.light .app-card:hover { background:#FFF5F4; border-color:#D4B0AB; }
     body.light .app-icon { background:rgba(184,53,37,0.08); }
     body.light .ts-dot { background:#F5EDEC; }
-    body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
     body.light .page-sub { color:#7A5555; }
     body.light .app-company { color:#4A2828; }
     body.light .app-meta-item { color:#7A5555; }
@@ -397,6 +452,7 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
       <div class="tabs">
         <button class="tab active" id="tabAll"       onclick="filterApps('all')"><i class="fas fa-list"></i> All <span class="tab-count" id="countAll"><?= $totalApps ?></span></button>
         <button class="tab"        id="tabActive"    onclick="filterApps('active')"><i class="fas fa-clock"></i> Active <span class="tab-count" id="countActive"><?= $activeApps ?></span></button>
+        <button class="tab"        id="tabOffered"   onclick="filterApps('offered')"><i class="fas fa-gift"></i> Offered <span class="tab-count" id="countOffered"><?= $offeredCount ?></span></button>
         <button class="tab"        id="tabInterview" onclick="filterApps('interview')"><i class="fas fa-calendar-check"></i> Interview <span class="tab-count" id="countInterview"><?= $interviewCount ?></span></button>
         <button class="tab"        id="tabRejected"  onclick="filterApps('rejected')"><i class="fas fa-times-circle"></i> Rejected <span class="tab-count" id="countRejected"><?= $rejectedCount ?></span></button>
       </div>
@@ -452,6 +508,9 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
     interview: { label:'Interview Scheduled',  cls:'status-interview', step:3, steps:['Applied','Reviewed','Shortlisted','Interview','Offer'] },
     rejected:  { label:'Not Selected',         cls:'status-rejected',  step:null, steps:['Applied','Reviewed','Rejected'] },
     hired:     { label:'Hired 🎉',             cls:'status-hired',     step:4, steps:['Applied','Reviewed','Shortlisted','Interview','Offer'] },
+    offered:   { label:'Offer Received 🎉',    cls:'status-offered',   step:4, steps:['Applied','Reviewed','Shortlisted','Interview','Offer'] },
+    accepted:  { label:'Offer Accepted ✅',     cls:'status-accepted',  step:4, steps:['Applied','Reviewed','Shortlisted','Interview','Offer'] },
+    declined:  { label:'Offer Declined',       cls:'status-declined',  step:null, steps:['Applied','Reviewed','Declined'] },
   };
 
   function getStepClass(appStatus, stepIndex, steps) {
@@ -480,9 +539,10 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
     const list = document.getElementById('appList');
 
     const filtered = currentFilter === 'all'       ? applications
-                   : currentFilter === 'active'    ? applications.filter(a => a.status !== 'rejected')
+                   : currentFilter === 'active'    ? applications.filter(a => !['rejected','declined'].includes(a.status))
                    : currentFilter === 'interview' ? applications.filter(a => a.status === 'interview')
                    : currentFilter === 'rejected'  ? applications.filter(a => a.status === 'rejected')
+                   : currentFilter === 'offered'   ? applications.filter(a => a.status === 'offered')
                    : applications;
 
     if (filtered.length === 0) {
@@ -491,6 +551,7 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
         active:    { icon:'fa-clock',       title:'No active applications',        sub:'All your current applications will appear here.' },
         interview: { icon:'fa-calendar',    title:'No interviews scheduled',       sub:'When an employer schedules an interview, it will appear here.' },
         rejected:  { icon:'fa-times-circle',title:'No rejected applications',      sub:'Good news — nothing has been rejected.' },
+        offered:   { icon:'fa-gift',        title:'No offers yet',                 sub:'When you receive a job offer, it will appear here.' },
       };
       const m = msgs[currentFilter] || msgs.all;
       list.innerHTML = `
@@ -543,12 +604,17 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
           </div>`;
       }
 
-      const withdrawBtn = app.status !== 'rejected' && app.status !== 'hired'
+      const withdrawBtn = app.status !== 'rejected' && app.status !== 'hired' && app.status !== 'offered' && app.status !== 'accepted' && app.status !== 'declined'
         ? `<button class="btn-app danger" onclick="openWithdraw(${app.id}, '${app.title.replace(/'/g,"\\'")}')"><i class="fas fa-times"></i> Withdraw</button>`
         : '';
 
       const ivBtn = app.interview
         ? `<button class="btn-app interview-btn" onclick="showInterviewDetails(${app.id})"><i class="fas fa-calendar-check"></i> Interview Details</button>`
+        : '';
+
+      const offerBtns = app.status === 'offered'
+        ? `<button class="btn-app accept" onclick="respondOffer(${app.id},'accept')"><i class="fas fa-check"></i> Accept Offer</button>
+           <button class="btn-app decline" onclick="respondOffer(${app.id},'decline')"><i class="fas fa-times"></i> Decline Offer</button>`
         : '';
 
       return `
@@ -565,6 +631,7 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
             <div class="timeline-strip">${stepHtml}</div>
             ${ivBanner}
             <div class="app-actions">
+              ${offerBtns}
               ${ivBtn}
               ${withdrawBtn}
             </div>
@@ -628,6 +695,32 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
   document.getElementById('withdrawModal').addEventListener('click', e => {
     if (e.target === document.getElementById('withdrawModal')) closeWithdraw();
   });
+
+  // ── ACCEPT / DECLINE OFFER ─────────────────────────────────────────────────
+  async function respondOffer(appId, action) {
+    const verb = action === 'accept' ? 'accept' : 'decline';
+    const past = action === 'accept' ? 'accepted' : 'declined';
+    if (!confirm(`Are you sure you want to ${verb} this offer?`)) return;
+
+    try {
+      const fd = new FormData();
+      fd.append('action', verb + '_offer');
+      fd.append('application_id', appId);
+      const res = await fetch('antcareers_seekerApplications.php', { method:'POST', body:fd });
+      const data = await res.json();
+      if (data.ok) {
+        const idx = applications.findIndex(a => a.id === appId);
+        if (idx !== -1) applications[idx].status = data.status;
+        updateCounts();
+        renderApps();
+        showToast(`Offer ${past}!`, action === 'accept' ? 'fa-check' : 'fa-times');
+      } else {
+        showToast(data.msg || `Could not ${verb} offer.`, 'fa-exclamation');
+      }
+    } catch {
+      showToast('Network error. Please try again.', 'fa-exclamation');
+    }
+  }
 
   // ── INTERVIEW MODAL ───────────────────────────────────────────────────────
   function showInterviewDetails(appId) {
@@ -696,25 +789,20 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
   // ── COUNTS ────────────────────────────────────────────────────────────────
   function updateCounts() {
     const all   = applications.length;
-    const active    = applications.filter(a => a.status !== 'rejected').length;
+    const active    = applications.filter(a => !['rejected','declined'].includes(a.status)).length;
     const interview = applications.filter(a => a.status === 'interview').length;
     const rejected  = applications.filter(a => a.status === 'rejected').length;
+    const offered   = applications.filter(a => a.status === 'offered').length;
     document.getElementById('countAll').textContent       = all;
     document.getElementById('countActive').textContent    = active;
     document.getElementById('countInterview').textContent = interview;
     document.getElementById('countRejected').textContent  = rejected;
+    document.getElementById('countOffered').textContent   = offered;
   }
 
   // ── HELPERS ───────────────────────────────────────────────────────────────
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
-  function showToast(msg, icon = 'fa-check') {
-    const d = document.createElement('div');
-    d.className = 'toast';
-    d.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
-    document.body.appendChild(d);
-    setTimeout(() => d.remove(), 3200);
   }
 
 
@@ -723,7 +811,7 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
   setTimeout(() => {
     updateCounts();
     const tabParam = new URLSearchParams(window.location.search).get('tab');
-    if (tabParam && ['all','active','interview','rejected'].includes(tabParam)) {
+    if (tabParam && ['all','active','interview','rejected','offered'].includes(tabParam)) {
       filterApps(tabParam);
     } else {
       renderApps();

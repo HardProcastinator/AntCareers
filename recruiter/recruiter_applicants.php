@@ -14,14 +14,6 @@ $navActive   = 'applicants';
 $db  = getDB();
 $uid = (int)$_SESSION['user_id'];
 
-/* ── Helper: generate temp password ── */
-function generateTempPassword(): string {
-    $chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    $password = '';
-    for ($i = 0; $i < 10; $i++) $password .= $chars[random_int(0, strlen($chars) - 1)];
-    return $password . '!';
-}
-
 /* ── AJAX HANDLERS ── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json; charset=utf-8');
@@ -41,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $row = $chk->fetch(PDO::FETCH_ASSOC);
             if (!$row) { echo json_encode(['ok'=>false,'msg'=>'Unauthorized']); exit; }
 
-            /* ── Offered trigger logic ── */
+            /* ── Offered trigger — update status, notify seeker, send offer message ── */
             if ($newS === 'Offered') {
                 $db->beginTransaction();
                 try {
@@ -53,67 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $seeker = $su->fetch(PDO::FETCH_ASSOC);
                     if (!$seeker) { $db->rollBack(); echo json_encode(['ok'=>false,'msg'=>'Seeker not found']); exit; }
 
-                    // Get recruiter's company info
-                    $rc = $db->prepare("SELECT company_id FROM recruiters WHERE user_id=? AND is_active=1 LIMIT 1");
-                    $rc->execute([$uid]);
-                    $recInfo = $rc->fetch(PDO::FETCH_ASSOC);
-                    $companyId = $recInfo ? (int)$recInfo['company_id'] : 0;
-
-                    // Get company name for platform email
-                    $cpn = $db->prepare("SELECT company_name FROM company_profiles WHERE id=?");
-                    $cpn->execute([$companyId]);
-                    $cpRow = $cpn->fetch(PDO::FETCH_ASSOC);
-                    if (!$cpRow) {
-                        // Fallback: look up employer's users.company_name
-                        $empQ = $db->prepare("SELECT company_name FROM users WHERE id=?");
-                        $empQ->execute([$row['employer_id']]);
-                        $empRow = $empQ->fetch(PDO::FETCH_ASSOC);
-                        $cpRow = ['company_name' => $empRow && $empRow['company_name'] ? $empRow['company_name'] : 'Company'];
-                    }
-                    $companySlug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $cpRow['company_name'] ?? 'company'));
-                    if ($companySlug === '') $companySlug = 'company';
-
-                    // Generate platform email: f.lastname@company.work
-                    $nameParts = preg_split('/\s+/', trim($seeker['full_name']));
-                    $fChar = strtolower(substr($nameParts[0] ?? 'u', 0, 1));
-                    $lName = strtolower(preg_replace('/[^a-zA-Z]/', '', end($nameParts) ?: 'user'));
-                    $platformEmail = $fChar . '.' . $lName . '@' . $companySlug . '.work';
-
-                    // Ensure uniqueness
-                    $chkEmail = $db->prepare("SELECT id FROM users WHERE email=?");
-                    $chkEmail->execute([$platformEmail]);
-                    if ($chkEmail->fetch()) {
-                        $sfx = 1;
-                        do {
-                            $tryEmail = $fChar . '.' . $lName . $sfx . '@' . $companySlug . '.work';
-                            $chkEmail->execute([$tryEmail]);
-                            $sfx++;
-                        } while ($chkEmail->fetch());
-                        $platformEmail = $tryEmail;
-                    }
-
-                    $tempPass = generateTempPassword();
-                    $hashedPass = password_hash($tempPass, PASSWORD_BCRYPT);
-
-                    // Create recruiter user account
-                    $db->prepare("INSERT INTO users (email, password_hash, full_name, account_type, is_active, must_change_password) VALUES (?,?,?,'recruiter',1,1)")
-                       ->execute([$platformEmail, $hashedPass, $seeker['full_name']]);
-                    $newUserId = (int)$db->lastInsertId();
-
-                    // Create recruiters record (link to company)
-                    $db->prepare("INSERT INTO recruiters (user_id, company_id, employer_id, role, is_active, accepted_at) VALUES (?,?,?,'recruiter',1,NOW())")
-                       ->execute([$newUserId, $companyId, $row['employer_id']]);
-
-                    // Store personal email in recruiter_profiles
-                    $db->prepare("INSERT INTO recruiter_profiles (user_id, personal_email) VALUES (?,?)")
-                       ->execute([$newUserId, $seeker['email']]);
-
-                    // Store in hired_credentials
-                    $tempUser = $fChar . '.' . $lName;
-                    $db->prepare("INSERT INTO hired_credentials (application_id, seeker_id, recruiter_user_id, company_id, temp_username, temp_password_hash) VALUES (?,?,?,?,?,?)")
-                       ->execute([$appId, $row['seeker_id'], $newUserId, $companyId, $tempUser, $hashedPass]);
-
-                    // Send credentials to seeker via in-platform message
+                    // Send offer message to seeker via in-platform message
                     $convKey = 'direct:' . min($uid, $row['seeker_id']) . ':' . max($uid, $row['seeker_id']);
                     $cs = $db->prepare("SELECT id FROM conversations WHERE conversation_key=?");
                     $cs->execute([$convKey]);
@@ -125,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                            ->execute([$convKey, min($uid, $row['seeker_id']), max($uid, $row['seeker_id'])]);
                         $convId = (int)$db->lastInsertId();
                     }
-                    $msgBody = "Hi {$seeker['full_name']},\n\nGreat news — you've been offered the position \"{$row['job_title']}\"!\n\nHere are your recruiter portal credentials:\n• Platform Email: {$platformEmail}\n• Temporary Password: {$tempPass}\n\nPlease log in and change your password immediately.\n\nWelcome to the team!";
+                    $msgBody = "Hi {$seeker['full_name']},\n\nGreat news — you've been offered the position \"{$row['job_title']}\"!\n\nPlease review the offer details and respond at your earliest convenience. You can accept or decline this offer from your applications page.\n\nWe look forward to hearing from you!";
                     $db->prepare("INSERT INTO messages (sender_id, receiver_id, conversation_id, subject, body, is_read) VALUES (?,?,?,?,?,0)")
                        ->execute([$uid, $row['seeker_id'], $convId, 'Congratulations — You\'ve Been Offered!', $msgBody]);
                     $msgId = (int)$db->lastInsertId();
@@ -133,16 +65,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                        ->execute([$msgId, $convId]);
 
                     // Notification for seeker
-                    $notifContent = "Congratulations! You've been offered the position \"{$row['job_title']}\". Check your messages for your recruiter portal credentials.";
-                    $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'offer_credential',?,?)")
-                       ->execute([$row['seeker_id'], $notifContent, $appId]);
+                    $notifContent = "Congratulations! You've been offered the position \"{$row['job_title']}\". Check your messages for details.";
+                    $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (?,?,'offer',?,?,'application')")
+                       ->execute([$row['seeker_id'], $uid, $notifContent, $appId]);
 
                     $db->commit();
                     echo json_encode(['ok'=>true,'status'=>'Offered']); exit;
                 } catch (Exception $e) {
                     $db->rollBack();
-                    error_log('[AntCareers] recruiter hire error: ' . $e->getMessage());
-                    echo json_encode(['ok'=>false,'msg'=>'Failed to process hire: '.$e->getMessage()]); exit;
+                    error_log('[AntCareers] recruiter offer error: ' . $e->getMessage());
+                    echo json_encode(['ok'=>false,'msg'=>'Failed to process offer: '.$e->getMessage()]); exit;
                 }
             }
 
@@ -156,8 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 'Rejected'     => "Your application for \"{$row['job_title']}\" was not successful this time.",
             ];
             if (isset($statusMessages[$newS])) {
-                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'application',?,?)")
-                   ->execute([$row['seeker_id'], $statusMessages[$newS], $appId]);
+                $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (?,?,'application',?,?,'application')")
+                   ->execute([$row['seeker_id'], $uid, $statusMessages[$newS], $appId]);
             }
 
             echo json_encode(['ok'=>true,'status'=>$newS]);
@@ -234,11 +166,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             // Notify seeker of interview scheduling + shortlist
             if (in_array($row['current_status'] ?? '', ['Pending', 'Reviewed'], true)) {
-                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'interview_invite',?,?)")
-                   ->execute([$row['seeker_id'], "Great news! Your application for \"{$row['job_title']}\" has been shortlisted and an interview has been scheduled.", $appId]);
+                $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (?,?,'interview_invite',?,?,'application')")
+                   ->execute([$row['seeker_id'], $uid, "Great news! Your application for \"{$row['job_title']}\" has been shortlisted and an interview has been scheduled.", $appId]);
             } else {
-                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'interview_invite',?,?)")
-                   ->execute([$row['seeker_id'], "An interview has been scheduled for your application to \"{$row['job_title']}\".", $appId]);
+                $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (?,?,'interview_invite',?,?,'application')")
+                   ->execute([$row['seeker_id'], $uid, "An interview has been scheduled for your application to \"{$row['job_title']}\".", $appId]);
             }
 
             echo json_encode(['ok'=>true,'updated'=>(bool)$existingId]);
@@ -289,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 /* ── FETCH DATA ── */
 $applicants  = [];
-$sCounts     = ['Pending'=>0,'Reviewed'=>0,'Shortlisted'=>0,'Interviewed'=>0,'Offered'=>0,'Rejected'=>0];
+$sCounts     = ['Pending'=>0,'Reviewed'=>0,'Shortlisted'=>0,'Interviewed'=>0,'Offered'=>0,'Rejected'=>0,'Accepted'=>0,'Declined'=>0];
 $total       = 0;
 $jobsList    = [];
 $dbErr       = false;
@@ -309,6 +241,7 @@ try {
                u.id AS seeker_id, u.full_name, u.email, u.avatar_url,
                j.id AS job_id, j.title AS job_title, j.job_type, j.setup,
                sp.headline, CONCAT_WS(', ', sp.city_name, sp.province_name) AS seeker_location, sp.experience_level,
+               sr.file_path AS resume_path,
                iv.scheduled_at AS interview_date, iv.interview_type, iv.status AS iv_status,
                iv.meeting_link AS iv_link, iv.location AS iv_location,
                iv.venue_name AS iv_venue, iv.full_address AS iv_address, iv.map_link AS iv_map,
@@ -317,6 +250,7 @@ try {
         JOIN jobs j ON j.id = a.job_id
         JOIN users u ON u.id = a.seeker_id
         LEFT JOIN seeker_profiles sp ON sp.user_id = u.id
+        LEFT JOIN seeker_resumes sr ON sr.user_id = u.id AND sr.is_active = 1
         LEFT JOIN interview_schedules iv ON iv.application_id = a.id AND iv.status = 'Scheduled'
         WHERE j.recruiter_id = ?
         GROUP BY a.id
@@ -496,12 +430,6 @@ $jobsListJson   = json_encode($jobsList ?: []);
     .empty i { font-size:42px; margin-bottom:12px; color:var(--soil-line); display:block; }
     .empty p { font-size:14px; }
 
-    /* ── TOAST ── */
-    .toast { position:fixed; bottom:22px; right:22px; background:var(--soil-card); border:1px solid var(--soil-line); border-left:4px solid var(--red-vivid); border-radius:8px; padding:11px 16px; font-size:13px; font-weight:600; color:#F5F0EE; z-index:900; transform:translateY(80px); opacity:0; transition:all .35s ease; max-width:320px; box-shadow:0 8px 32px rgba(0,0,0,.4); pointer-events:none; }
-    .toast.show { transform:translateY(0); opacity:1; }
-    .toast.ok { border-left-color:#4CAF70; }
-    .toast.err { border-left-color:#E05555; }
-
     /* ── FOOTER ── */
     .footer { border-top:1px solid var(--soil-line); padding:20px 24px; max-width:1380px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; color:var(--text-muted); font-size:12px; position:relative; z-index:2; flex-wrap:wrap; gap:10px; }
     .footer-logo { font-family:var(--font-display); font-weight:700; color:var(--red-pale); font-size:15px; }
@@ -604,6 +532,16 @@ $jobsListJson   = json_encode($jobsList ?: []);
       <span class="sp-label">Offered</span>
       <span class="sp-count" id="cnt-Offered"><?= $sCounts['Offered'] ?></span>
     </div>
+    <div class="stat-pill" data-filter="Accepted">
+      <i class="fas fa-handshake sp-icon" style="color:#6ccf8a"></i>
+      <span class="sp-label">Accepted</span>
+      <span class="sp-count" id="cnt-Accepted"><?= $sCounts['Accepted'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Declined">
+      <i class="fas fa-times sp-icon" style="color:#ff8080"></i>
+      <span class="sp-label">Declined</span>
+      <span class="sp-count" id="cnt-Declined"><?= $sCounts['Declined'] ?></span>
+    </div>
     <div class="stat-pill" data-filter="Rejected">
       <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
       <span class="sp-label">Rejected</span>
@@ -630,6 +568,8 @@ $jobsListJson   = json_encode($jobsList ?: []);
       <option value="Shortlisted">Shortlisted</option>
       <option value="Interviewed">Interviewed</option>
       <option value="Offered">Offered</option>
+      <option value="Accepted">Accepted</option>
+      <option value="Declined">Declined</option>
       <option value="Rejected">Rejected</option>
     </select>
   </div>
@@ -679,9 +619,6 @@ $jobsListJson   = json_encode($jobsList ?: []);
   </div>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
-
 <!-- FOOTER -->
 <footer class="footer">
   <div class="footer-logo">AntCareers</div>
@@ -693,6 +630,8 @@ $jobsListJson   = json_encode($jobsList ?: []);
   /* ── Data from PHP ── */
   const allApplicants = <?= $applicantsJson ?>;
   let currentFilter = { search:'', job:'', status:'' };
+  window.interviewData = {};
+  var interviewData = window.interviewData;
 
   const statusMeta = {
     Pending:     { cls:'amber',  icon:'fa-clock' },
@@ -700,7 +639,9 @@ $jobsListJson   = json_encode($jobsList ?: []);
     Shortlisted: { cls:'sblue',  icon:'fa-star' },
     Interviewed: { cls:'purple', icon:'fa-comments' },
     Offered:     { cls:'green',  icon:'fa-check-circle' },
-    Rejected:    { cls:'red',    icon:'fa-times-circle' }
+    Rejected:    { cls:'red',    icon:'fa-times-circle' },
+    Accepted:    { cls:'green',  icon:'fa-handshake' },
+    Declined:    { cls:'red',    icon:'fa-times' }
   };
 
   const avatarGradients = [
@@ -752,7 +693,7 @@ $jobsListJson   = json_encode($jobsList ?: []);
       var grad = avatarGradients[a.id % avatarGradients.length];
       var dA = formatDate(a.applied_at);
       var hasIv = a.interview_date && a.iv_status === 'Scheduled';
-      var ivJson = hasIv ? JSON.stringify({type:a.interview_type||'',date:a.interview_date||'',link:a.iv_link||'',venue:a.iv_venue||'',address:a.iv_address||'',map:a.iv_map||'',phone:a.iv_phone||'',contact:a.iv_contact||'',notes:a.iv_notes||''}) : 'null';
+      if (hasIv) { interviewData[a.id] = {type:a.interview_type||'',date:a.interview_date||'',link:a.iv_link||'',venue:a.iv_venue||'',address:a.iv_address||'',map:a.iv_map||'',phone:a.iv_phone||'',contact:a.iv_contact||'',notes:a.iv_notes||''}; }
 
       var avatarHtml = a.avatar_url
         ? '<img src="../'+esc(a.avatar_url)+'" alt="">'
@@ -762,8 +703,9 @@ $jobsListJson   = json_encode($jobsList ?: []);
       var locChip = a.seeker_location ? ' <span><i class="fas fa-map-marker-alt"></i> '+esc(a.seeker_location)+'</span>' : '';
       var expChip = a.experience_level ? ' <span><i class="fas fa-briefcase"></i> '+esc(a.experience_level)+'</span>' : '';
       var ivChip = hasIv ? ' <span class="chip"><i class="fas fa-video" style="color:#6ccf8a;margin-right:3px"></i> Interview Scheduled</span>' : '';
-      var resumeUrl = a.resume_url || '';
-      var resumeBtn = resumeUrl ? ' <a href="'+esc(resumeUrl)+'" target="_blank" class="btn"><i class="fas fa-file-alt"></i> Resume</a>' : '';
+      var resumeUrl = a.resume_path || a.resume_url || '';
+      var resumeHref = resumeUrl ? (resumeUrl.indexOf('http')===0 || resumeUrl.indexOf('../')===0 ? resumeUrl : '../'+resumeUrl) : '';
+      var resumeBtn = resumeHref ? ' <a href="'+esc(resumeHref)+'" target="_blank" class="btn"><i class="fas fa-file-alt"></i> Resume</a>' : '';
 
       var nextStatus = {Pending:'Shortlisted',Reviewed:'Shortlisted',Shortlisted:'Interviewed',Interviewed:'Offered'};
       var next = nextStatus[a.status];
@@ -787,8 +729,9 @@ $jobsListJson   = json_encode($jobsList ?: []);
         +'<span class="app-date">'+dA+'</span>'
         +'<div class="app-actions">'
         +'<button class="btn" onclick="viewApplicant('+a.id+')"><i class="fas fa-eye"></i> View</button>'
-        +'<button class="btn amb" onclick="openInterview('+a.id+',\''+esc(a.full_name).replace(/'/g,"\\'")+'\','+esc(ivJson)+')"><i class="fas '+(hasIv?'fa-edit':'fa-calendar-plus')+'"></i> '+(hasIv?'Edit Interview':'Schedule')+'</button>'
-        +resumeBtn+advanceBtn+rejectBtn
+        +'<button class="btn" onclick="toggleExp('+a.id+')"><i class="fas fa-chevron-down" id="chev-'+a.id+'"></i> Review</button>'
+        +'<button class="btn amb" onclick="openInterview('+a.id+',\''+esc(a.full_name).replace(/'/g,"\\'")+'\','+(hasIv?'interviewData['+a.id+']':'null')+')"><i class="fas '+(hasIv?'fa-edit':'fa-calendar-plus')+'"></i> '+(hasIv?'Edit Interview':'Schedule')+'</button>'
+        +resumeBtn
         +'</div></div></div>'
         +'<div class="app-expand" id="exp-'+a.id+'">'
         +'<div class="exp-grid"><div>'
@@ -852,7 +795,7 @@ $jobsListJson   = json_encode($jobsList ?: []);
   /* ── Status update ── */
   window.updateStatus = function(id, status) {
     if (status === 'Offered') {
-      if (!confirm('Mark this applicant as Offered? This will generate recruiter credentials and send them to the applicant.')) return;
+      if (!confirm('Send an offer to this applicant? They will be notified via message and can accept or decline from their applications page.')) return;
     }
     if (status === 'Rejected') {
       if (!confirm('Reject this applicant?')) return;
@@ -876,7 +819,7 @@ $jobsListJson   = json_encode($jobsList ?: []);
   };
 
   function recountStats() {
-    var counts = {Pending:0,Reviewed:0,Shortlisted:0,Interviewed:0,Offered:0,Rejected:0};
+    var counts = {Pending:0,Reviewed:0,Shortlisted:0,Interviewed:0,Offered:0,Accepted:0,Declined:0,Rejected:0};
     allApplicants.forEach(function(a){ if(counts.hasOwnProperty(a.status)) counts[a.status]++; });
     var total = 0; for(var k in counts) total += counts[k];
     var el = document.getElementById('cnt-all'); if(el) el.textContent = total;
@@ -978,6 +921,14 @@ $jobsListJson   = json_encode($jobsList ?: []);
     });
   };
 
+  /* ── Toggle expand panel ── */
+  window.toggleExp = function(id) {
+    var p = document.getElementById('exp-'+id);
+    var c = document.getElementById('chev-'+id);
+    var o = p.classList.toggle('open');
+    if (c) c.style.transform = o ? 'rotate(180deg)' : '';
+  };
+
   /* ── View applicant detail ── */
   window.viewApplicant = function(id) {
     document.getElementById('dContent').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
@@ -1048,16 +999,6 @@ $jobsListJson   = json_encode($jobsList ?: []);
     m.addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
   });
 
-  /* ── Toast ── */
-  function toast(msg, type) {
-    var t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast show' + (type ? ' '+type : '');
-    clearTimeout(t._t);
-    t._t = setTimeout(function(){ t.className = 'toast'; }, 3000);
-  }
-  window.toast = toast;
-
   /* ── Greeting ── */
   var h = new Date().getHours();
   var greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
@@ -1066,6 +1007,10 @@ $jobsListJson   = json_encode($jobsList ?: []);
 
   /* ── Initial render ── */
   render();
+
+  /* ── Auto-open applicant detail if ?view=<appId> ── */
+  var _autoView = new URLSearchParams(window.location.search).get('view');
+  if (_autoView) { setTimeout(function(){ viewApplicant(parseInt(_autoView,10)); }, 350); }
 })();
 </script>
 </body>

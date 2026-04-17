@@ -189,13 +189,6 @@ input:checked+.slider::before{transform:translateX(21px)}
 .pw-strength-bar{height:100%;width:0;border-radius:4px;transition:width .3s,background .3s}
 .pw-hint{font-size:.72rem;color:var(--text-muted);margin-top:4px}
 
-/* ── Toast ── */
-.toast-container{position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
-.toast{padding:12px 20px;border-radius:10px;font-size:.85rem;font-weight:600;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.3);display:flex;align-items:center;gap:10px;animation:toastIn .3s ease;min-width:260px}
-.toast.success{background:var(--green)}
-.toast.error{background:var(--red-vivid)}
-@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
-
 /* ── Footer ── */
 .footer{text-align:center;padding:40px 20px 28px;color:var(--text-muted);font-size:.78rem;position:relative;z-index:1}
 .footer-logo{font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--text-mid);margin-bottom:4px}
@@ -225,8 +218,6 @@ body.light .card{background:#fff;border-color:#E0CECA}
 <div class="glow-orbs"><span class="orb1"></span><span class="orb2"></span></div>
 
 <?php require_once dirname(__DIR__) . '/includes/navbar_recruiter.php'; ?>
-
-<div class="toast-container" id="toastBox"></div>
 
 <div class="page-shell">
   <div class="breadcrumb">
@@ -362,15 +353,6 @@ body.light .card{background:#fff;border-color:#E0CECA}
 
 <script>
 (function(){
-  /* ── Toast ── */
-  function toast(msg, type='success'){
-    const box = document.getElementById('toastBox');
-    const el = document.createElement('div');
-    el.className = 'toast '+type;
-    el.innerHTML = '<i class="fas fa-'+(type==='success'?'check-circle':'times-circle')+'"></i> '+msg;
-    box.appendChild(el);
-    setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300)},3500);
-  }
 
   /* ── Password strength ── */
   const newPw = document.getElementById('newPw');

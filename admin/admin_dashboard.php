@@ -298,10 +298,7 @@ $adminStats = [
     .modal-close { position:absolute; top:18px; right:18px; width:30px; height:30px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.15s; }
     .modal-close:hover { color:#F5F0EE; border-color:var(--red-mid); }
 
-    /* Toast */
-    .toast { position:fixed; bottom:24px; right:24px; z-index:999; background:var(--soil-card); border:1px solid var(--soil-line); border-left:2px solid var(--red-vivid); border-radius:8px; padding:11px 18px; font-size:13px; font-weight:500; color:#F5F0EE; box-shadow:0 10px 30px rgba(0,0,0,0.4); display:flex; align-items:center; gap:9px; animation:toastIn 0.25s ease; }
-    @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-    .toast i { color:var(--red-pale); }
+    /* Toast — handled by includes/toast.php */
 
     /* Footer */
     .footer { border-top:1px solid var(--soil-line); padding:28px 24px; max-width:1380px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; color:var(--text-muted); font-size:12px; position:relative; z-index:2; flex-wrap:wrap; gap:12px; }
@@ -833,17 +830,10 @@ $adminStats = [
   document.getElementById('closeModal').addEventListener('click', () => document.getElementById('jobModal').classList.remove('open'));
   document.getElementById('jobModal').addEventListener('click', e => { if(e.target===document.getElementById('jobModal')) document.getElementById('jobModal').classList.remove('open'); });
 
-  // ── TOAST ──
-  function showToast(msg, icon) {
-    const t = document.createElement('div'); t.className = 'toast';
-    t.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2400);
-  }
-
   // ── INIT ──
   renderUsers(usersData);
   renderJobs(jobPostsData);
 </script>
+<?php require_once dirname(__DIR__) . '/includes/toast.php'; ?>
 </body>
 </html>

@@ -233,8 +233,6 @@ $companiesJson = json_encode($companiesList, JSON_HEX_TAG | JSON_HEX_AMP);
     .follow-btn:hover { background:rgba(209,61,44,0.5); border-color:rgba(209,61,44,0.5); color:#fff; }
     .follow-btn.following { background:rgba(209,61,44,0.6); border-color:rgba(209,61,44,0.6); color:#fff; }
 
-    /* ── TOAST ── */
-    @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
     /* Anim */
     .anim { animation:fadeUp 0.4s ease both; }
     .anim-d1 { animation-delay:0.05s; } .anim-d2 { animation-delay:0.1s; } .anim-d3 { animation-delay:0.15s; }

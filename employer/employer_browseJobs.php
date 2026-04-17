@@ -297,11 +297,6 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
     .modal-close{position:absolute;top:18px;right:18px;width:30px;height:30px;border-radius:6px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.15s;}
     .modal-close:hover{color:#F5F0EE;border-color:var(--red-mid);}
 
-    /* Toast */
-    .toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--soil-card);border:1px solid var(--soil-line);border-left:2px solid var(--red-vivid);border-radius:8px;padding:11px 18px;font-size:13px;font-weight:500;color:#F5F0EE;box-shadow:0 10px 30px rgba(0,0,0,0.4);display:flex;align-items:center;gap:9px;animation:toastIn 0.25s ease;pointer-events:none;}
-    @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-    .toast i{color:var(--red-pale);}
-
     /* Footer */
     .footer{border-top:1px solid var(--soil-line);padding:28px 24px;max-width:1380px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;color:var(--text-muted);font-size:12px;position:relative;z-index:2;flex-wrap:wrap;gap:12px;}
     .footer-logo{font-family:var(--font-display);font-weight:700;color:var(--red-pale);font-size:16px;}
@@ -368,7 +363,6 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
     body.light .company-pill{background:#FFFFFF;border-color:#E0CECA;}
     body.light .cp-name{color:#1A0A09;}
     body.light .modal-box{background:#FFFFFF;border-color:#E0CECA;}
-    body.light .toast{background:#FFFFFF;border-color:#E0CECA;color:#1A0A09;}
     body.light .hamburger{background:#F5EEEC;border-color:#E0CECA;}
     body.light .mobile-link{color:#4A2828;}
     body.light .mobile-link:hover{background:#FEF0EE;color:#1A0A09;}
@@ -862,17 +856,6 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
       updateMsLabel(wrap);
     });
     renderAllJobs();
-  }
-
-  /* ── TOAST ── */
-  function showToast(msg, icon) {
-    const existing = document.querySelector('.toast');
-    if (existing) existing.remove();
-    const t = document.createElement('div');
-    t.className = 'toast';
-    t.innerHTML = `<i class="fas ${icon||'fa-info-circle'}"></i> ${esc(msg)}`;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
   }
 
   // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script

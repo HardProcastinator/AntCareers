@@ -11,13 +11,6 @@ $avatarUrl   = $user['avatarUrl'];
 $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'applicants';
 
-function generateTempPassword(): string {
-    $chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$';
-    $pass = '';
-    for ($i = 0; $i < 12; $i++) $pass .= $chars[random_int(0, strlen($chars) - 1)];
-    return $pass;
-}
-
 /* ── AJAX ── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json; charset=utf-8');
@@ -38,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $row = $chk->fetch(PDO::FETCH_ASSOC);
             if (!$row) { echo json_encode(['ok'=>false,'msg'=>'Unauthorized']); exit; }
 
-            /* ── Offered trigger — auto-create recruiter account ── */
+            /* ── Offered trigger — update status, notify seeker, send offer message ── */
             if ($newS === 'Offered') {
                 $db->beginTransaction();
                 try {
@@ -50,66 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $seeker = $su->fetch(PDO::FETCH_ASSOC);
                     if (!$seeker) { $db->rollBack(); echo json_encode(['ok'=>false,'msg'=>'Seeker not found']); exit; }
 
-                    // Get employer's company
-                    $cp = $db->prepare("SELECT id, company_name FROM company_profiles WHERE user_id=?");
-                    $cp->execute([$uid]);
-                    $company = $cp->fetch(PDO::FETCH_ASSOC);
-                    if (!$company) {
-                        // Auto-create from users.company_name
-                        $uq = $db->prepare("SELECT company_name FROM users WHERE id=?");
-                        $uq->execute([$uid]);
-                        $uRow = $uq->fetch(PDO::FETCH_ASSOC);
-                        $fbName = $uRow && $uRow['company_name'] ? $uRow['company_name'] : 'Company';
-                        $db->prepare("INSERT INTO company_profiles (user_id, company_name) VALUES (?,?)")
-                           ->execute([$uid, $fbName]);
-                        $company = ['id' => (int)$db->lastInsertId(), 'company_name' => $fbName];
-                    }
-                    $companyId = (int)$company['id'];
-
-                    // Generate platform email: f.lastname@company.work
-                    $nameParts = preg_split('/\s+/', trim($seeker['full_name']));
-                    $fChar = strtolower(substr($nameParts[0] ?? 'u', 0, 1));
-                    $lName = strtolower(preg_replace('/[^a-zA-Z]/', '', end($nameParts) ?: 'user'));
-                    $companySlug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $company['company_name'] ?? 'company'));
-                    if ($companySlug === '') $companySlug = 'company';
-                    $platformEmail = $fChar . '.' . $lName . '@' . $companySlug . '.work';
-
-                    // Ensure uniqueness
-                    $chkEmail = $db->prepare("SELECT id FROM users WHERE email=?");
-                    $chkEmail->execute([$platformEmail]);
-                    if ($chkEmail->fetch()) {
-                        $sfx = 1;
-                        do {
-                            $tryEmail = $fChar . '.' . $lName . $sfx . '@' . $companySlug . '.work';
-                            $chkEmail->execute([$tryEmail]);
-                            $sfx++;
-                        } while ($chkEmail->fetch());
-                        $platformEmail = $tryEmail;
-                    }
-
-                    // Generate temp credentials
-                    $tempPass = generateTempPassword();
-                    $hashedPass = password_hash($tempPass, PASSWORD_BCRYPT);
-
-                    // Create recruiter user account
-                    $db->prepare("INSERT INTO users (email, password_hash, full_name, account_type, is_active, must_change_password) VALUES (?,?,?,'recruiter',1,1)")
-                       ->execute([$platformEmail, $hashedPass, $seeker['full_name']]);
-                    $newUserId = (int)$db->lastInsertId();
-
-                    // Create recruiters record
-                    $db->prepare("INSERT INTO recruiters (user_id, company_id, employer_id, role, is_active, accepted_at) VALUES (?,?,?,'recruiter',1,NOW())")
-                       ->execute([$newUserId, $companyId, $uid]);
-
-                    // Store personal email in recruiter_profiles
-                    $db->prepare("INSERT INTO recruiter_profiles (user_id, personal_email) VALUES (?,?)")
-                       ->execute([$newUserId, $seeker['email']]);
-
-                    // Store in hired_credentials
-                    $tempUser = $fChar . '.' . $lName;
-                    $db->prepare("INSERT INTO hired_credentials (application_id, seeker_id, recruiter_user_id, company_id, temp_username, temp_password_hash) VALUES (?,?,?,?,?,?)")
-                       ->execute([$appId, $row['seeker_id'], $newUserId, $companyId, $tempUser, $hashedPass]);
-
-                    // Send credentials to seeker via in-platform message
+                    // Send offer message to seeker via in-platform message
                     $convKey = 'direct:' . min($uid, $row['seeker_id']) . ':' . max($uid, $row['seeker_id']);
                     $cs = $db->prepare("SELECT id FROM conversations WHERE conversation_key=?");
                     $cs->execute([$convKey]);
@@ -121,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                            ->execute([$convKey, min($uid, $row['seeker_id']), max($uid, $row['seeker_id'])]);
                         $convId = (int)$db->lastInsertId();
                     }
-                    $msgBody = "Hi {$seeker['full_name']},\n\nGreat news — you've been offered the position \"{$row['job_title']}\"!\n\nHere are your recruiter portal credentials:\n• Platform Email: {$platformEmail}\n• Temporary Password: {$tempPass}\n\nPlease log in and change your password immediately.\n\nWelcome to the team!";
+                    $msgBody = "Hi {$seeker['full_name']},\n\nGreat news — you've been offered the position \"{$row['job_title']}\"!\n\nPlease review the offer details and respond at your earliest convenience. You can accept or decline this offer from your applications page.\n\nWe look forward to hearing from you!";
                     $db->prepare("INSERT INTO messages (sender_id, receiver_id, conversation_id, subject, body, is_read) VALUES (?,?,?,?,?,0)")
                        ->execute([$uid, $row['seeker_id'], $convId, 'Congratulations — You\'ve Been Offered!', $msgBody]);
                     $msgId = (int)$db->lastInsertId();
@@ -129,16 +63,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                        ->execute([$msgId, $convId]);
 
                     // Notification for seeker
-                    $notifContent = "Congratulations! You've been offered the position \"{$row['job_title']}\". Check your messages for your recruiter portal credentials.";
-                    $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'hired_credential',?,?)")
-                       ->execute([$row['seeker_id'], $notifContent, $appId]);
+                    $notifContent = "Congratulations! You've been offered the position \"{$row['job_title']}\". Check your messages for details.";
+                    $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (?,?,'offer',?,?,'application')")
+                       ->execute([$row['seeker_id'], $uid, $notifContent, $appId]);
 
                     $db->commit();
-                    echo json_encode(['ok'=>true,'status'=>'Offered','credentials'=>['email'=>$platformEmail,'temp_password'=>$tempPass]]); exit;
+                    echo json_encode(['ok'=>true,'status'=>'Offered']); exit;
                 } catch (Exception $e) {
                     $db->rollBack();
-                    error_log('[AntCareers] employer hire error: ' . $e->getMessage());
-                    echo json_encode(['ok'=>false,'msg'=>'Failed to process hire: '.$e->getMessage()]); exit;
+                    error_log('[AntCareers] employer offer error: ' . $e->getMessage());
+                    echo json_encode(['ok'=>false,'msg'=>'Failed to process offer: '.$e->getMessage()]); exit;
                 }
             }
 
@@ -152,8 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 'Rejected'     => "Your application for \"{$row['job_title']}\" was not successful this time.",
             ];
             if (isset($statusMessages[$newS])) {
-                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'application',?,?)")
-                   ->execute([$row['seeker_id'], $statusMessages[$newS], $appId]);
+                $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (?,?,'application',?,?,'application')")
+                   ->execute([$row['seeker_id'], $uid, $statusMessages[$newS], $appId]);
             }
 
             echo json_encode(['ok'=>true,'status'=>$newS]);
@@ -238,11 +172,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             // Notify seeker of interview scheduling + shortlist
             if (in_array($row['current_status'] ?? '', ['Pending', 'Reviewed'], true)) {
-                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'interview_invite',?,?)")
-                   ->execute([$row['seeker_id'], "Great news! Your application for \"{$row['job_title']}\" has been shortlisted and an interview has been scheduled.", $appId]);
+                $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (?,?,'interview_invite',?,?,'application')")
+                   ->execute([$row['seeker_id'], (int)$_SESSION['user_id'], "Great news! Your application for \"{$row['job_title']}\" has been shortlisted and an interview has been scheduled.", $appId]);
             } else {
-                $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (?,'interview_invite',?,?)")
-                   ->execute([$row['seeker_id'], "An interview has been scheduled for your application to \"{$row['job_title']}\".", $appId]);
+                $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (?,?,'interview_invite',?,?,'application')")
+                   ->execute([$row['seeker_id'], (int)$_SESSION['user_id'], "An interview has been scheduled for your application to \"{$row['job_title']}\".", $appId]);
             }
 
             echo json_encode(['ok'=>true,'updated'=>(bool)$existingId]);
@@ -296,7 +230,7 @@ $filterJob    = (int)($_GET['job_id'] ?? 0);
 $search       = trim((string)($_GET['q'] ?? ''));
 $uid          = (int)$_SESSION['user_id'];
 $applicants   = [];
-$sCounts      = ['Pending'=>0,'Reviewed'=>0,'Shortlisted'=>0,'Interviewed'=>0,'Rejected'=>0,'Offered'=>0];
+$sCounts      = ['Pending'=>0,'Reviewed'=>0,'Shortlisted'=>0,'Interviewed'=>0,'Rejected'=>0,'Offered'=>0,'Accepted'=>0,'Declined'=>0];
 $total        = 0;
 $jobsList     = [];
 $dbErr        = false;
@@ -327,16 +261,8 @@ try {
     }
     $total = array_sum($sCounts);
 
-    $w = ['j.employer_id=?']; $p = [$uid];
-    if ($filterStatus && in_array($filterStatus,array_keys($sCounts),true)){ $w[]='a.status=?'; $p[]=$filterStatus; }
-    if ($filterJob>0){ $w[]='j.id=?'; $p[]=$filterJob; }
-    if ($search!==''){
-        $w[]='(u.full_name LIKE ? OR j.title LIKE ? OR u.email LIKE ?)';
-        $lk="%{$search}%"; $p[]=$lk; $p[]=$lk; $p[]=$lk;
-    }
-    $wc='WHERE '.implode(' AND ',$w);
-    $st=$db->prepare("SELECT a.id AS app_id,a.status,a.cover_letter,a.resume_url,a.applied_at,a.reviewed_at,a.employer_notes,u.id AS seeker_id,u.full_name AS seeker_name,u.email AS seeker_email,u.avatar_url AS seeker_avatar,j.id AS job_id,j.title AS job_title,j.job_type,j.setup,j.location AS job_location,(SELECT COUNT(*) FROM interview_schedules i WHERE i.application_id=a.id AND i.status='Scheduled') AS has_interview,iv_cur.interview_type AS iv_type,iv_cur.scheduled_at AS iv_date,iv_cur.meeting_link AS iv_link,iv_cur.location AS iv_location,iv_cur.venue_name AS iv_venue,iv_cur.full_address AS iv_address,iv_cur.map_link AS iv_map,iv_cur.phone_number AS iv_phone,iv_cur.contact_person AS iv_contact,iv_cur.notes AS iv_notes FROM applications a JOIN jobs j ON j.id=a.job_id JOIN users u ON u.id=a.seeker_id LEFT JOIN interview_schedules iv_cur ON iv_cur.application_id=a.id AND iv_cur.status='Scheduled' {$wc} GROUP BY a.id ORDER BY FIELD(a.status,'Pending','Reviewed','Shortlisted','Offered','Rejected'),a.applied_at DESC");
-    $st->execute($p);
+    $st=$db->prepare("SELECT a.id AS app_id,a.status,a.cover_letter,a.resume_url,a.applied_at,a.reviewed_at,a.employer_notes,u.id AS seeker_id,u.full_name AS seeker_name,u.email AS seeker_email,u.avatar_url AS seeker_avatar,j.id AS job_id,j.title AS job_title,j.job_type,j.setup,j.location AS job_location,sr.file_path AS resume_path,(SELECT COUNT(*) FROM interview_schedules i WHERE i.application_id=a.id AND i.status='Scheduled') AS has_interview,iv_cur.interview_type AS iv_type,iv_cur.scheduled_at AS iv_date,iv_cur.meeting_link AS iv_link,iv_cur.location AS iv_location,iv_cur.venue_name AS iv_venue,iv_cur.full_address AS iv_address,iv_cur.map_link AS iv_map,iv_cur.phone_number AS iv_phone,iv_cur.contact_person AS iv_contact,iv_cur.notes AS iv_notes FROM applications a JOIN jobs j ON j.id=a.job_id JOIN users u ON u.id=a.seeker_id LEFT JOIN seeker_resumes sr ON sr.user_id=u.id AND sr.is_active=1 LEFT JOIN interview_schedules iv_cur ON iv_cur.application_id=a.id AND iv_cur.status='Scheduled' WHERE j.employer_id=? GROUP BY a.id ORDER BY FIELD(a.status,'Pending','Reviewed','Shortlisted','Offered','Rejected'),a.applied_at DESC");
+    $st->execute([$uid]);
     $applicants=$st->fetchAll(PDO::FETCH_ASSOC);
     $js=$db->prepare("SELECT id,title FROM jobs WHERE employer_id=? AND status='Active' ORDER BY created_at DESC");
     $js->execute([$uid]);
@@ -346,7 +272,7 @@ try {
     error_log('[AntCareers] applicants fetch: '.$e->getMessage());
 }
 
-$smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>'fa-eye'],'Shortlisted'=>['c'=>'green','i'=>'fa-star'],'Interviewed'=>['c'=>'blue','i'=>'fa-video'],'Rejected'=>['c'=>'red','i'=>'fa-times-circle'],'Offered'=>['c'=>'purple','i'=>'fa-check-circle']];
+$smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>'fa-eye'],'Shortlisted'=>['c'=>'green','i'=>'fa-star'],'Interviewed'=>['c'=>'blue','i'=>'fa-video'],'Rejected'=>['c'=>'red','i'=>'fa-times-circle'],'Offered'=>['c'=>'purple','i'=>'fa-check-circle'],'Accepted'=>['c'=>'green','i'=>'fa-handshake'],'Declined'=>['c'=>'red','i'=>'fa-times']];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -451,6 +377,23 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     select.fsel:focus{border-color:var(--red-vivid);}
     body.light select.fsel{background:#fff;border-color:#E0CECA;color:#3A2020;}
     .app-list{display:flex;flex-direction:column;gap:10px;}
+    /* ── Content layout (sidebar + main) ── */
+    .content-layout{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start;}
+    @media(max-width:900px){.content-layout{grid-template-columns:1fr;}}
+    /* ── Filter sidebar ── */
+    .filter-sidebar{position:sticky;top:72px;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:18px;}
+    body.light .filter-sidebar{background:#fff;border-color:#E0CECA;}
+    .fs-title{font-size:12px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+    .fs-title i{color:var(--red-bright);font-size:12px;}
+    .fs-section{margin-bottom:14px;}
+    .fs-section-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+    .filter-sidebar .search-bar{margin-bottom:0;}
+    .filter-sidebar .search-bar input{padding:10px 0;font-size:13px;}
+    /* ── Sidebar select dropdowns ── */
+    .fs-select{width:100%;padding:9px 13px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-mid);font-family:var(--font-body);font-size:13px;cursor:pointer;outline:none;transition:.2s;}
+    .fs-select:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
+    body.light .fs-select{background:#F5EDEB;border-color:#D4B0AB;color:#3A2020;}
+    body.light .fs-select option{background:#F5EDEB;color:#1A0A09;}
     .app-card{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;overflow:hidden;transition:border-color 0.2s,box-shadow 0.2s;}
     .app-card:hover{border-color:rgba(209,61,44,.4);box-shadow:0 6px 24px rgba(0,0,0,.3);}
     body.light .app-card{background:#fff;border-color:#E0CECA;}
@@ -551,10 +494,6 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     .empty{text-align:center;padding:55px 20px;color:var(--text-muted);}
     .empty i{font-size:42px;margin-bottom:12px;color:var(--soil-line);display:block;}
     .empty p{font-size:14px;}
-    .toast{position:fixed;bottom:22px;right:22px;background:var(--soil-card);border:1px solid var(--soil-line);border-left:4px solid var(--red-vivid);border-radius:8px;padding:11px 16px;font-size:13px;font-weight:600;color:#F5F0EE;z-index:900;transform:translateY(80px);opacity:0;transition:all .35s ease;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.4);pointer-events:none;}
-    .toast.show{transform:translateY(0);opacity:1;}
-    .toast.ok{border-left-color:#4CAF70;}
-    .toast.err{border-left-color:#E05555;}
   </style>
 </head>
 <body>
@@ -571,80 +510,85 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   <div class="db-warn"><i class="fas fa-exclamation-triangle"></i> Demo data shown — run <strong>sql/migration_employer.sql</strong> to connect live data.</div>
   <?php endif;?>
 
-  <div class="stats-row">
-  <?php
-  $statDefs=[
-    ''=>['i'=>'fa-users','l'=>'All','c'=>'var(--red-pale)','n'=>$total],
-    'Pending'=>['i'=>'fa-clock','l'=>'Pending','c'=>'var(--amber)','n'=>$sCounts['Pending']],
-    'Reviewed'=>['i'=>'fa-eye','l'=>'Reviewed','c'=>'#7ab8f0','n'=>$sCounts['Reviewed']],
-    'Shortlisted'=>['i'=>'fa-star','l'=>'Shortlisted','c'=>'#6ccf8a','n'=>$sCounts['Shortlisted']],
-    'Interviewed'=>['i'=>'fa-video','l'=>'Interviewed','c'=>'#7ab8f0','n'=>$sCounts['Interviewed']],
-    'Offered'=>['i'=>'fa-check-circle','l'=>'Offered','c'=>'#cf8ae0','n'=>$sCounts['Offered']],
-    'Rejected'=>['i'=>'fa-times-circle','l'=>'Rejected','c'=>'#ff8080','n'=>$sCounts['Rejected']],
-  ];
-  foreach($statDefs as $k=>$d):
-    $act=($filterStatus===$k);
-    $hr=$k?"employer_applicants.php?status={$k}":'employer_applicants.php';
-  ?>
-  <a class="stat-pill <?=$act?'active':''?>" href="<?=htmlspecialchars($hr)?>">
-    <i class="fas <?=$d['i']?> sp-icon" style="color:<?=$d['c']?>"></i>
-    <span class="sp-label"><?=$d['l']?></span>
-    <span class="sp-count"><?=$d['n']?></span>
-  </a>
-  <?php endforeach;?>
+  <!-- STATS PILLS -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-pill active" data-filter="">
+      <i class="fas fa-users sp-icon" style="color:var(--red-pale)"></i>
+      <span class="sp-label">All</span>
+      <span class="sp-count" id="cnt-all"><?= $total ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Pending">
+      <i class="fas fa-clock sp-icon" style="color:#D4943A"></i>
+      <span class="sp-label">Pending</span>
+      <span class="sp-count" id="cnt-Pending"><?= $sCounts['Pending'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Shortlisted">
+      <i class="fas fa-star sp-icon" style="color:#7ab8f0"></i>
+      <span class="sp-label">Shortlisted</span>
+      <span class="sp-count" id="cnt-Shortlisted"><?= $sCounts['Shortlisted'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Interviewed">
+      <i class="fas fa-comments sp-icon" style="color:#cf8ae0"></i>
+      <span class="sp-label">Interviewed</span>
+      <span class="sp-count" id="cnt-Interviewed"><?= $sCounts['Interviewed'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Offered">
+      <i class="fas fa-check-circle sp-icon" style="color:#6ccf8a"></i>
+      <span class="sp-label">Offered</span>
+      <span class="sp-count" id="cnt-Offered"><?= $sCounts['Offered'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Accepted">
+      <i class="fas fa-handshake sp-icon" style="color:#6ccf8a"></i>
+      <span class="sp-label">Accepted</span>
+      <span class="sp-count" id="cnt-Accepted"><?= $sCounts['Accepted'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Declined">
+      <i class="fas fa-times sp-icon" style="color:#ff8080"></i>
+      <span class="sp-label">Declined</span>
+      <span class="sp-count" id="cnt-Declined"><?= $sCounts['Declined'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Rejected">
+      <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
+      <span class="sp-label">Rejected</span>
+      <span class="sp-count" id="cnt-Rejected"><?= $sCounts['Rejected'] ?></span>
+    </div>
   </div>
 
-  <div class="content-layout">
-    <!-- SIDEBAR FILTERS -->
-    <aside class="filter-sidebar anim anim-d1">
-      <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
-      <form method="get" action="employer_applicants.php">
-        <div class="fs-section">
-          <div class="fs-section-label">Search</div>
-          <div class="search-bar"><i class="fas fa-search si"></i><input type="text" name="q" placeholder="Search name, email or job…" value="<?=htmlspecialchars($search)?>"></div>
-        </div>
-        <div class="fs-section">
-          <div class="fs-section-label">Job</div>
-          <div class="ms-wrap" id="msJobFilter" data-default="All Jobs">
-            <button class="ms-trigger" type="button"><span class="ms-text">All Jobs</span><i class="fas fa-chevron-down ms-arrow"></i></button>
-            <div class="ms-panel">
-              <label class="ms-item"><input type="checkbox" name="job_id[]" value=""<?=empty($filterJob)?' checked':''?>><span>All Jobs</span></label>
-              <?php foreach($jobsList as $j):?>
-                <label class="ms-item"><input type="checkbox" name="job_id[]" value="<?=$j['id']?>"<?=$filterJob===$j['id']?' checked':''?>><span><?=htmlspecialchars($j['title'])?></span></label>
-              <?php endforeach;?>
-            </div>
-          </div>
-        </div>
-        <div class="fs-section">
-          <div class="fs-section-label">Status</div>
-          <div class="ms-wrap" id="msStatusFilter" data-default="All Statuses">
-            <button class="ms-trigger" type="button"><span class="ms-text">All Statuses</span><i class="fas fa-chevron-down ms-arrow"></i></button>
-            <div class="ms-panel">
-              <label class="ms-item"><input type="checkbox" name="status[]" value=""<?=empty($filterStatus)?' checked':''?>><span>All Statuses</span></label>
-              <?php foreach(['Pending','Reviewed','Shortlisted','Interviewed','Offered','Rejected'] as $st):?>
-                <label class="ms-item"><input type="checkbox" name="status[]" value="<?=$st?>"<?=$filterStatus===$st?' checked':''?>><span><?=$st?></span></label>
-              <?php endforeach;?>
-            </div>
-          </div>
-        </div>
-        <button type="submit" class="btn primary" style="margin-top:12px;"><i class="fas fa-search"></i> Search</button>
-        <?php if($search||$filterJob||$filterStatus):?><a href="employer_applicants.php" class="btn" style="margin-top:8px;"><i class="fas fa-times"></i> Clear</a><?php endif;?>
-      </form>
-    </aside>
-    <!-- MAIN CONTENT (app-list, etc.) remains unchanged -->
-    ...existing code...
+  <!-- FILTER TOOLBAR -->
+  <div class="toolbar">
+    <div class="search-bar">
+      <i class="fas fa-search si"></i>
+      <input type="text" id="searchInput" placeholder="Search name, email or job title…">
+    </div>
+    <select class="fsel" id="filterJob">
+      <option value="">All Jobs</option>
+      <?php foreach($jobsList as $j): ?>
+      <option value="<?= (int)$j['id'] ?>"><?= htmlspecialchars($j['title'], ENT_QUOTES, 'UTF-8') ?></option>
+      <?php endforeach; ?>
+    </select>
+    <select class="fsel" id="filterStatus">
+      <option value="">All Statuses</option>
+      <option value="Pending">Pending</option>
+      <option value="Reviewed">Reviewed</option>
+      <option value="Shortlisted">Shortlisted</option>
+      <option value="Interviewed">Interviewed</option>
+      <option value="Offered">Offered</option>
+      <option value="Accepted">Accepted</option>
+      <option value="Declined">Declined</option>
+      <option value="Rejected">Rejected</option>
+    </select>
   </div>
 
-  <div class="app-list">
-  <?php if(empty($applicants)):?>
-  <div class="empty"><i class="fas fa-user-slash"></i><p>No applicants found<?=$filterStatus?" with status <strong>{$filterStatus}</strong>":''?>.</p></div>
-  <?php else: foreach($applicants as $a):
+  <!-- APPLICANT CARDS -->
+  <div class="app-list" id="appList">
+  <div class="empty" id="emptyMsg" style="<?=empty($applicants)?'':'display:none'?>"><i class="fas fa-user-slash"></i><p>No applicants match your filters.</p></div>
+  <?php foreach($applicants as $a):
     $ini=strtoupper(substr($a['seeker_name'],0,1));
     $sm=$smeta[$a['status']]??['c'=>'muted','i'=>'fa-circle'];
     $dA=date('M j, Y',strtotime($a['applied_at']));
     $dR=$a['reviewed_at']?date('M j, Y',strtotime($a['reviewed_at'])):'—';
   ?>
-  <div class="app-card" id="card-<?=$a['app_id']?>">
+  <div class="app-card" id="card-<?=$a['app_id']?>" data-status="<?=htmlspecialchars($a['status'])?>" data-job="<?=$a['job_id']?>" data-name="<?=htmlspecialchars(strtolower($a['seeker_name']))?>" data-email="<?=htmlspecialchars(strtolower($a['seeker_email']))?>" data-jobtitle="<?=htmlspecialchars(strtolower($a['job_title']))?>">
     <div class="app-main">
       <a href="employer_view_applicant.php?id=<?=$a['seeker_id']?>" class="app-avatar" style="text-decoration:none;color:#fff;"><?php if(!empty($a['seeker_avatar'])):?><img src="../<?=htmlspecialchars($a['seeker_avatar'])?>" alt=""><?php else:?><?=htmlspecialchars($ini)?><?php endif;?></a>
       <div class="app-info">
@@ -663,7 +607,7 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
           <button class="btn" onclick="viewApplicant(<?=$a['app_id']?>)"><i class="fas fa-eye"></i> View</button>
           <button class="btn" onclick="toggleExp(<?=$a['app_id']?>)"><i class="fas fa-chevron-down" id="chev-<?=$a['app_id']?>"></i> Review</button>
           <button class="btn amb" onclick="openInterview(<?=$a['app_id']?>,'<?=htmlspecialchars($a['seeker_name'],ENT_QUOTES)?>',<?=htmlspecialchars(json_encode($a['has_interview'] ? ['type'=>$a['iv_type']??'','date'=>$a['iv_date']??'','link'=>$a['iv_link']??'','venue'=>$a['iv_venue']??'','address'=>$a['iv_address']??'','map'=>$a['iv_map']??'','phone'=>$a['iv_phone']??'','contact'=>$a['iv_contact']??'','notes'=>$a['iv_notes']??''] : null),ENT_QUOTES,'UTF-8')?>)"><i class="fas <?=$a['has_interview']?'fa-edit':'fa-calendar-plus'?>"></i> <?=$a['has_interview']?'Edit Interview':'Schedule'?></button>
-          <?php if($a['resume_url']):?><a href="<?=htmlspecialchars($a['resume_url'])?>" target="_blank" class="btn"><i class="fas fa-file-alt"></i> Resume</a><?php endif;?>
+          <?php $resumeHref=$a['resume_path']?:$a['resume_url']?:''; if($resumeHref):$resumeHref=(strpos($resumeHref,'http')===0||strpos($resumeHref,'../')===0)?$resumeHref:'../'.$resumeHref;?><a href="<?=htmlspecialchars($resumeHref)?>" target="_blank" class="btn"><i class="fas fa-file-alt"></i> Resume</a><?php endif;?>
         </div>
       </div>
     </div>
@@ -693,7 +637,7 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
       </div>
     </div>
   </div>
-  <?php endforeach; endif;?>
+  <?php endforeach;?>
   </div>
 </div>
 
@@ -735,7 +679,6 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
 
 <!-- APPLICANT DETAIL MODAL -->
 <div class="modal-bd" id="dModal">
@@ -748,7 +691,40 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
 <script>
   function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
   function toggleExp(id){var p=document.getElementById('exp-'+id),c=document.getElementById('chev-'+id),o=p.classList.toggle('open');c.style.transform=o?'rotate(180deg)':'';}
-  function saveStatus(id){var s=document.getElementById('sel-'+id).value;doPost({action:'update_status',application_id:id,status:s},function(d){if(d.ok){var b=document.getElementById('badge-'+id),m={Pending:{c:'amber',i:'fa-clock'},Reviewed:{c:'blue',i:'fa-eye'},Shortlisted:{c:'green',i:'fa-star'},Interviewed:{c:'blue',i:'fa-video'},Rejected:{c:'red',i:'fa-times-circle'},Offered:{c:'purple',i:'fa-check-circle'}}[d.status]||{c:'muted',i:'fa-circle'};b.className='sbadge '+m.c;b.innerHTML='<i class="fas '+m.i+'"></i> '+d.status;toast('Status: '+d.status,'ok');if(d.status==='Offered'&&d.credentials){alert('Recruiter account created!\\n\\nEmail: '+d.credentials.email+'\\nTemp Password: '+d.credentials.temp_password+'\\n\\nThese credentials were also sent to the seeker via message and notification.');}}else{toast(d.msg||'Error','err');}});}
+  function saveStatus(id){var s=document.getElementById('sel-'+id).value;if(s==='Offered'&&!confirm('Send an offer to this applicant? They will be notified via message and can accept or decline.'))return;doPost({action:'update_status',application_id:id,status:s},function(d){if(d.ok){var b=document.getElementById('badge-'+id),m={Pending:{c:'amber',i:'fa-clock'},Reviewed:{c:'blue',i:'fa-eye'},Shortlisted:{c:'green',i:'fa-star'},Interviewed:{c:'blue',i:'fa-video'},Rejected:{c:'red',i:'fa-times-circle'},Offered:{c:'purple',i:'fa-check-circle'},Accepted:{c:'green',i:'fa-handshake'},Declined:{c:'red',i:'fa-times'}}[d.status]||{c:'muted',i:'fa-circle'};b.className='sbadge '+m.c;b.innerHTML='<i class="fas '+m.i+'"></i> '+d.status;document.getElementById('card-'+id).setAttribute('data-status',d.status);filterCards();toast('Status: '+d.status,'ok');}else{toast(d.msg||'Error','err');}});}
+
+  /* ── Client-side filtering (matches recruiter layout) ── */
+  function filterCards(){
+    var q=document.getElementById('searchInput').value.toLowerCase();
+    var fj=document.getElementById('filterJob').value;
+    var fs=document.getElementById('filterStatus').value;
+    var cards=document.querySelectorAll('.app-card');
+    var shown=0;
+    cards.forEach(function(c){
+      var matchStatus=!fs||c.getAttribute('data-status')===fs;
+      var matchJob=!fj||c.getAttribute('data-job')===fj;
+      var matchSearch=!q||(c.getAttribute('data-name')||'').indexOf(q)!==-1||(c.getAttribute('data-email')||'').indexOf(q)!==-1||(c.getAttribute('data-jobtitle')||'').indexOf(q)!==-1;
+      if(matchStatus&&matchJob&&matchSearch){c.style.display='';shown++;}else{c.style.display='none';}
+    });
+    var empty=document.getElementById('emptyMsg');
+    if(empty){empty.style.display=shown?'none':'block';}
+  }
+  document.getElementById('searchInput').addEventListener('input',filterCards);
+  document.getElementById('filterJob').addEventListener('change',filterCards);
+  document.getElementById('filterStatus').addEventListener('change',function(){
+    var v=this.value;
+    document.querySelectorAll('#statsRow .stat-pill').forEach(function(p){p.classList.toggle('active',p.getAttribute('data-filter')===v||(v===''&&p.getAttribute('data-filter')===''));});
+    filterCards();
+  });
+  document.querySelectorAll('#statsRow .stat-pill').forEach(function(pill){
+    pill.addEventListener('click',function(){
+      var f=this.getAttribute('data-filter')||'';
+      document.querySelectorAll('#statsRow .stat-pill').forEach(function(p){p.classList.remove('active');});
+      this.classList.add('active');
+      document.getElementById('filterStatus').value=f;
+      filterCards();
+    });
+  });
 
   // Dynamic interview type field switching
   function onInterviewTypeChange(){
@@ -854,7 +830,6 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   }
 
   function doPost(data,cb){var b=Object.keys(data).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(data[k]);}).join('&');fetch('employer_applicants.php',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b}).then(function(r){return r.json();}).then(cb).catch(function(){toast('Network error','err');});}
-  function toast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');clearTimeout(t._t);t._t=setTimeout(function(){t.className='toast';},3000);}
   // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
   const _guard_iModal = document.getElementById('iModal'); if (_guard_iModal) _guard_iModal.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
   const _guard_dModal = document.getElementById('dModal'); if (_guard_dModal) _guard_dModal.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
@@ -919,6 +894,11 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
       document.getElementById('dContent').innerHTML = html;
     });
   }
+
+  /* ── Auto-open applicant detail if ?view=<appId> ── */
+  var _autoView = new URLSearchParams(window.location.search).get('view');
+  if (_autoView) { setTimeout(function(){ viewApplicant(parseInt(_autoView,10)); }, 350); }
+
 </script>
 <?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>

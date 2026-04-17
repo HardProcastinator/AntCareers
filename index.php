@@ -709,19 +709,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     body.light .cp-modal-job { background: #F9F5F4; border-color: #E0CECA; }
     body.light .cp-modal-job:hover { border-color: rgba(209,61,44,0.4); }
 
-    /* === TOAST === */
-    .toast {
-      position: fixed; bottom: 24px; right: 24px; z-index: 999;
-      background: var(--soil-card); border: 1px solid var(--soil-line);
-      border-left: 2px solid var(--red-vivid);
-      border-radius: 8px; padding: 11px 18px;
-      font-size: 13px; font-weight: 500; color: var(--text-light);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-      display: flex; align-items: center; gap: 9px;
-      animation: toastIn 0.25s ease;
-    }
-    @keyframes toastIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
-    .toast i { color: var(--red-pale); }
+    /* === TOAST — handled by includes/toast.php === */
 
     /* === FOOTER === */
     .footer {
@@ -1704,13 +1692,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('open'));
   modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
 
-  function showToast(msg, icon) {
-    const t = document.createElement('div'); t.className = 'toast';
-    t.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2400);
-  }
-
   // Scroll
   document.querySelectorAll('[data-scroll]').forEach(el => {
     el.addEventListener('click', () => {
@@ -1776,5 +1757,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
   renderFeatured(); renderCompanies(); renderAllJobs();
 </script>
+<?php require_once __DIR__ . '/includes/toast.php'; ?>
 </body>
 </html>

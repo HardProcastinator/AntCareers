@@ -11,7 +11,6 @@
  *   - reset_password      (employer only)
  *   - reassign_jobs       (employer only)
  *   - recruiter_stats     (employer only)
- *   - mark_hired          (employer/recruiter)
  *   - force_password_change (recruiter first-login)
  */
 
@@ -182,22 +181,26 @@ switch ($action) {
                    ->execute([':mid' => $msgId, ':cid' => $convId]);
 
                 // Also send a notification
-                $db->prepare('INSERT INTO notifications (user_id, type, content, reference_id) VALUES (:uid, :type, :content, :ref)')
+                $db->prepare('INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (:uid, :actor, :type, :content, :ref, :reftype)')
                    ->execute([
                        ':uid'     => $recipientId,
+                       ':actor'   => $userId,
                        ':type'    => 'recruiter_credentials',
                        ':content' => "You've been added as a recruiter for {$company['company_name']}. Check your messages for login credentials.",
                        ':ref'     => $newUserId,
+                       ':reftype' => 'user',
                    ]);
             }
 
             // Notification for admin (self)
-            $db->prepare('INSERT INTO notifications (user_id, type, content, reference_id) VALUES (:uid, :type, :content, :ref)')
+            $db->prepare('INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (:uid, :actor, :type, :content, :ref, :reftype)')
                ->execute([
                    ':uid'     => $userId,
+                   ':actor'   => $userId,
                    ':type'    => 'recruiter_added',
                    ':content' => "Recruiter {$name} ({$platformEmail}) has been added.",
                    ':ref'     => $newUserId,
+                   ':reftype' => 'user',
                ]);
 
             $db->commit();
@@ -362,158 +365,6 @@ switch ($action) {
 
         $count = $stmt->rowCount();
         jsonResponse(['success' => true, 'message' => "{$count} jobs reassigned."]);
-        break;
-
-    // ─── MARK HIRED — triggers credential generation ───
-    case 'mark_hired':
-        if (!in_array($role, ['employer', 'recruiter'])) {
-            jsonResponse(['success' => false, 'message' => 'Unauthorized.'], 403);
-        }
-
-        $applicationId = (int)($_POST['application_id'] ?? 0);
-        if (!$applicationId) jsonResponse(['success' => false, 'message' => 'Missing application_id.']);
-
-        // Get application details
-        $stmt = $db->prepare("
-            SELECT a.id, a.seeker_id, a.job_id, a.status,
-                   j.employer_id, j.recruiter_id, j.title AS job_title,
-                   u.full_name AS seeker_name, u.email AS seeker_email,
-                   COALESCE(cp.company_name, eu.company_name) AS company_name,
-                   cp.id AS company_profile_id
-            FROM applications a
-            JOIN jobs j ON j.id = a.job_id
-            JOIN users u ON u.id = a.seeker_id
-            JOIN users eu ON eu.id = j.employer_id
-            LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
-            WHERE a.id = :aid
-        ");
-        $stmt->execute([':aid' => $applicationId]);
-        $app = $stmt->fetch();
-
-        if (!$app) jsonResponse(['success' => false, 'message' => 'Application not found.']);
-
-        // Check ownership
-        if ($role === 'recruiter') {
-            if ((int)$app['recruiter_id'] !== $userId) {
-                jsonResponse(['success' => false, 'message' => 'You can only manage your own job posts.'], 403);
-            }
-        } elseif ($role === 'employer') {
-            if ((int)$app['employer_id'] !== $userId) {
-                jsonResponse(['success' => false, 'message' => 'Not your job post.'], 403);
-            }
-        }
-
-        // Check not already hired
-        if ($app['status'] === 'Hired') {
-            jsonResponse(['success' => false, 'message' => 'Applicant is already hired.']);
-        }
-
-        $db->beginTransaction();
-        try {
-            // Update application status
-            $stmt = $db->prepare(
-                'UPDATE applications SET status = :status, reviewed_at = NOW() WHERE id = :id'
-            );
-            $stmt->execute([':status' => 'Hired', ':id' => $applicationId]);
-
-            // Generate recruiter credentials for the hired seeker
-            $tempUsername = generateRecruiterUsername($app['seeker_name']);
-            $tempPassword = generateTempPassword();
-            $passwordHash = password_hash($tempPassword, PASSWORD_BCRYPT);
-
-            // Create a new recruiter account for the hired seeker
-            $stmt = $db->prepare(
-                'INSERT INTO users (email, password_hash, full_name, account_type, is_active, must_change_password)
-                 VALUES (:email, :hash, :name, :type, 1, 1)'
-            );
-            // Use a variation email so it doesn't conflict
-            $recruiterEmail = 'rec_' . $app['seeker_id'] . '_' . substr(bin2hex(random_bytes(4)), 0, 8) . '@' . parse_url(APP_URL, PHP_URL_HOST);
-            $stmt->execute([
-                ':email' => $recruiterEmail,
-                ':hash'  => $passwordHash,
-                ':name'  => $app['seeker_name'],
-                ':type'  => 'recruiter',
-            ]);
-            $newRecruiterId = (int)$db->lastInsertId();
-
-            // Link to company
-            $stmt = $db->prepare(
-                'INSERT INTO recruiters (user_id, company_id, employer_id, role, is_active, accepted_at)
-                 VALUES (:uid, :cid, :eid, :role, 1, NOW())'
-            );
-            $stmt->execute([
-                ':uid'  => $newRecruiterId,
-                ':cid'  => (int)$app['company_profile_id'],
-                ':eid'  => (int)$app['employer_id'],
-                ':role' => 'recruiter',
-            ]);
-
-            // Store hired credentials record
-            $stmt = $db->prepare(
-                'INSERT INTO hired_credentials (application_id, seeker_id, recruiter_user_id, company_id, temp_username, temp_password_hash)
-                 VALUES (:aid, :sid, :ruid, :cid, :uname, :phash)'
-            );
-            $stmt->execute([
-                ':aid'   => $applicationId,
-                ':sid'   => (int)$app['seeker_id'],
-                ':ruid'  => $newRecruiterId,
-                ':cid'   => (int)$app['company_profile_id'],
-                ':uname' => $tempUsername,
-                ':phash' => $passwordHash,
-            ]);
-
-            // Send notification to the hired seeker
-            $notifContent = "Congratulations! You've been hired for \"{$app['job_title']}\" at {$app['company_name']}!\n\n"
-                          . "Your recruiter credentials:\n"
-                          . "Username: {$recruiterEmail}\n"
-                          . "Temporary Password: {$tempPassword}\n\n"
-                          . "Please log in and change your password immediately.";
-
-            $stmt = $db->prepare(
-                'INSERT INTO notifications (user_id, type, content, reference_id)
-                 VALUES (:uid, :type, :content, :ref)'
-            );
-            $stmt->execute([
-                ':uid'     => (int)$app['seeker_id'],
-                ':type'    => 'hired_credential',
-                ':content' => $notifContent,
-                ':ref'     => $applicationId,
-            ]);
-
-            // Also send as a direct message
-            $convKey = conversation_key_for($userId, (int)$app['seeker_id']);
-            $convId  = getOrCreateConversation($db, $userId, (int)$app['seeker_id'], $convKey);
-
-            $stmt = $db->prepare(
-                'INSERT INTO messages (conversation_id, sender_id, receiver_id, subject, body, is_read)
-                 VALUES (:cid, :sid, :rid, :subj, :body, 0)'
-            );
-            $stmt->execute([
-                ':cid'  => $convId,
-                ':sid'  => $userId,
-                ':rid'  => (int)$app['seeker_id'],
-                ':subj' => 'Congratulations — You\'re Hired!',
-                ':body' => $notifContent,
-            ]);
-
-            // Update conversation latest
-            $msgId = (int)$db->lastInsertId();
-            $db->prepare('UPDATE conversations SET latest_message_id = :mid, latest_message_at = NOW() WHERE id = :cid')
-               ->execute([':mid' => $msgId, ':cid' => $convId]);
-
-            $db->commit();
-
-            jsonResponse([
-                'success'        => true,
-                'message'        => 'Applicant marked as hired. Recruiter credentials generated and sent.',
-                'recruiter_email'=> $recruiterEmail,
-                'temp_password'  => $tempPassword, // Remove in production
-            ]);
-        } catch (\Exception $e) {
-            $db->rollBack();
-            error_log('[AntCareers] mark_hired error: ' . $e->getMessage());
-            jsonResponse(['success' => false, 'message' => 'Failed to process hire.'], 500);
-        }
         break;
 
     // ─── FORCE PASSWORD CHANGE (first login) ───

@@ -178,11 +178,6 @@ $navActive   = 'analytics';
     .mini-bar-wrap { width:80px; height:6px; background:var(--soil-hover); border-radius:3px; overflow:hidden; display:inline-block; vertical-align:middle; margin-left:6px; }
     .mini-bar { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--red-vivid),var(--red-bright)); }
 
-    /* ── TOAST ── */
-    .toast { position:fixed; bottom:24px; right:24px; z-index:999; background:var(--soil-card); border:1px solid var(--soil-line); border-left:2px solid var(--red-vivid); border-radius:8px; padding:11px 18px; font-size:13px; font-weight:500; color:#F5F0EE; box-shadow:0 10px 30px rgba(0,0,0,0.4); display:flex; align-items:center; gap:9px; animation:toastIn 0.25s ease; }
-    @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-    .toast i { color:var(--red-pale); }
-
     /* ── FOOTER ── */
     .footer { border-top:1px solid var(--soil-line); padding:28px 24px; max-width:1380px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; color:var(--text-muted); font-size:12px; position:relative; z-index:2; flex-wrap:wrap; gap:12px; }
     .footer-logo { font-family:var(--font-display); font-weight:700; color:var(--red-pale); font-size:16px; }
@@ -230,9 +225,6 @@ $navActive   = 'analytics';
     body.light tbody tr:hover td { background:#FEF0EE; }
     body.light .funnel-bar-wrap { background:#F5EEEC; }
     body.light .sc-sub { border-color:#E0CECA; }
-    body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
-    body.light .toast i { color:var(--red-vivid); }
-
     /* ── RESPONSIVE ── */
     @media(max-width:1060px) {
       .stat-grid { grid-template-columns:repeat(2,1fr); }
@@ -749,20 +741,6 @@ function setPeriod(el, period) {
 
 // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
 
-/* ─────────────────────────────────────────────
-   TOAST — same helper as all other pages
-───────────────────────────────────────────── */
-let toastTimer;
-function showToast(msg, icon='fa-check') {
-  clearTimeout(toastTimer);
-  const existing = document.querySelector('.toast');
-  if (existing) existing.remove();
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
-  document.body.appendChild(t);
-  toastTimer = setTimeout(() => t.remove(), 3000);
-}
 </script>
 <?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 </body>

@@ -198,12 +198,7 @@ function _recActive(string $key, string $active): string {
   .sb-bubble-sent .sb-bubble-time{text-align:right}
   body.light .sb-bubble-recv{background:#F5EEEC;color:#1A0A09}
 
-  /* Toast */
-  .toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--soil-card);border:1px solid var(--soil-line);border-left:2px solid var(--red-vivid);border-radius:8px;padding:11px 18px;font-size:13px;font-weight:500;color:#F5F0EE;box-shadow:0 10px 30px rgba(0,0,0,0.4);display:flex;align-items:center;gap:9px;animation:toastIn .25s ease;pointer-events:none}
-  @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-  .toast i{color:var(--red-pale)}
-  body.light .toast{background:#FFFFFF;border-color:#E0CECA;color:#1A0A09;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
-  body.light .toast i{color:var(--red-vivid)}
+  /* Toast — handled by includes/toast.php */
 
   /* Light overrides */
   body.light .navbar{background:rgba(249,245,244,0.97);border-bottom-color:#D4B0AB;box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08)}
@@ -387,6 +382,7 @@ function _recActive(string $key, string $active): string {
   <div class="notif-panel-head">
     <div class="notif-panel-title"><i class="fas fa-bell"></i> Notifications</div>
     <div style="display:flex;gap:6px;align-items:center;">
+      <button class="notif-close" id="notifClearAll" title="Clear all"><i class="fas fa-trash-alt"></i></button>
       <button class="notif-close" id="notifMarkAll" title="Mark all read"><i class="fas fa-check-double"></i></button>
       <button class="notif-close" id="notifClose" aria-label="Close notifications"><i class="fas fa-times"></i></button>
     </div>
@@ -454,6 +450,10 @@ function _recActive(string $key, string $active): string {
   });
   document.getElementById('notifMarkAll').addEventListener('click',function(){
     fetch('../api/messages.php?action=mark_notif_read',{method:'POST'})
+      .then(function(){ loadRecNotifications(); updateRecBadges(); });
+  });
+  document.getElementById('notifClearAll').addEventListener('click',function(){
+    fetch('../api/messages.php?action=clear_notifications',{method:'POST'})
       .then(function(){ loadRecNotifications(); updateRecBadges(); });
   });
 
@@ -613,9 +613,12 @@ function _recActive(string $key, string $active): string {
   function getRecNotifUrl(type, refId){
     switch(type){
       case 'message': return 'recruiter_messages.php' + (refId ? '?user_id=' + refId : '');
-      case 'application': case 'new_application': return 'recruiter_applicants.php';
+      case 'application': case 'new_application': case 'offer': case 'offer_response': return 'recruiter_applicants.php';
+      case 'interview_invite': return 'recruiter_applicants.php';
+      case 'invite_accepted': case 'invite_declined': return 'recruiter_jobs.php';
       case 'recruiter_credentials': case 'recruiter_added': return 'recruiter_profile.php';
       case 'offer_credential': return 'recruiter_applicants.php';
+      case 'follow': case 'unfollow': return 'recruiter_dashboard.php';
       default: return 'recruiter_dashboard.php';
     }
   }
@@ -632,9 +635,9 @@ function _recActive(string $key, string $active): string {
         data.notifications.forEach(function(n){
           var dotClass=n.is_read?'read':(n.type==='message'?'red':(n.type==='application'?'green':'amber'));
           var href=getRecNotifUrl(n.type, n.reference_id);
-          html+='<div class="notif-item" data-notif-id="'+n.id+'" data-href="'+href+'">'
+          html+='<div class="notif-item" data-notif-id="'+n.id+'" data-href="'+_esc(href)+'">'
             +'<div class="n-dot '+dotClass+'"></div>'
-            +'<div><div class="n-text">'+n.content+'</div><div class="n-time">'+_esc(n.time)+'</div></div></div>';
+            +'<div><div class="n-text">'+_esc(n.content)+'</div><div class="n-time">'+_esc(n.time)+'</div></div></div>';
         });
         container.innerHTML=html;
         container.querySelectorAll('.notif-item').forEach(function(el){
@@ -642,7 +645,16 @@ function _recActive(string $key, string $active): string {
             var nid=el.getAttribute('data-notif-id');
             var href=el.getAttribute('data-href');
             fetch('../api/messages.php?action=mark_notif_read&id='+nid,{method:'POST'})
-              .then(function(){el.querySelector('.n-dot').className='n-dot read'; updateRecBadges(); if(href) window.location.href=href;});
+              .then(function(){
+                el.querySelector('.n-dot').className='n-dot read'; updateRecBadges();
+                if(href){
+                  if(href.indexOf('recruiter_messages.php?user_id=')!==-1 && window.location.pathname.indexOf('recruiter_messages.php')!==-1){
+                    var uid=parseInt(href.split('user_id=')[1]);
+                    if(uid>0 && typeof openThread==='function'){ closeNotif(); openThread(uid); return; }
+                  }
+                  window.location.href=href;
+                }
+              });
           });
         });
       })
@@ -727,14 +739,7 @@ function _recActive(string $key, string $active): string {
     if(!msgPanel.contains(e.target)&&!clickedMsgTrigger) closeMsgPanel();
   });
 
-  /* Toast */
-  window.showToast=function(msg,icon){
-    icon=icon||'fa-info-circle';
-    var t=document.createElement('div'); t.className='toast';
-    t.innerHTML='<i class="fas '+icon+'"></i> '+msg;
-    document.body.appendChild(t);
-    setTimeout(function(){t.remove();},2600);
-  };
+  /* Toast — handled by includes/toast.php */
 
   /* Allow external event dispatch */
   window.addEventListener('recruiter:openMessageSidebar',function(evt){
@@ -747,4 +752,5 @@ function _recActive(string $key, string $active): string {
   refreshRecFullMessageLinks();
 })();
 </script>
+<?php require_once __DIR__ . '/toast.php'; ?>
 

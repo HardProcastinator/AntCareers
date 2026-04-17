@@ -96,6 +96,7 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
   <div class="notif-sb-head">
     <div class="notif-sb-title"><i class="fas fa-bell"></i> Notifications</div>
     <div style="display:flex;gap:6px;align-items:center;">
+      <button class="notif-sb-close" onclick="clearAllNotifications()" title="Clear all"><i class="fas fa-trash-can"></i></button>
       <button class="notif-sb-mark-all" onclick="markAllNotifsRead()" title="Mark all as read">
         <i class="fas fa-check-double"></i>
       </button>
@@ -706,9 +707,12 @@ function sendMsg(receiverId, text, mode) {
 function getEmployerNotifUrl(type, refId) {
     switch (type) {
         case 'message': return 'employer_messages.php' + (refId ? '?user_id=' + refId : '');
-        case 'application': return 'employer_applicants.php';
+        case 'new_application': case 'application': case 'offer': case 'offer_response':
+        case 'interview_invite': case 'hired_credential':
+            return 'employer_applicants.php';
+        case 'invite_accepted': case 'invite_declined': return 'employer_applicants.php';
         case 'recruiter_added': case 'recruiter_credentials': return 'employer_manageRecruiters.php';
-        case 'hired_credential': return 'employer_applicants.php';
+        case 'follow': case 'unfollow': return 'employer_dashboard.php';
         default: return 'employer_dashboard.php';
     }
 }
@@ -748,7 +752,18 @@ function markNotifRead(id, el, href) {
             if (dot) dot.className = 'nsb-dot read';
         }
         updateBadges();
-        if (href) window.location.href = href;
+        if (href) {
+            // If already on the messages page and clicking a message notif, open the thread directly
+            if (href.indexOf('employer_messages.php?user_id=') !== -1 && window.location.pathname.indexOf('employer_messages.php') !== -1) {
+                var uid = parseInt(href.split('user_id=')[1]);
+                if (uid > 0 && typeof openThread === 'function') {
+                    closeNotifSidebar();
+                    openThread(uid);
+                    return;
+                }
+            }
+            window.location.href = href;
+        }
     });
 }
 
@@ -761,6 +776,15 @@ function markAllNotifsRead() {
         loadNotifications();
         updateBadges();
         showChatToast('All notifications marked as read');
+    });
+}
+
+function clearAllNotifications() {
+    fetch(API_URL + '?action=clear_notifications', { method: 'POST' })
+    .then(() => {
+        loadNotifications();
+        updateBadges();
+        showChatToast('All notifications cleared');
     });
 }
 

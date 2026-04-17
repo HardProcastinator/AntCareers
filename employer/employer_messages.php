@@ -227,11 +227,6 @@ try {
     /* LOADING */
     .loading-spinner { padding:40px; text-align:center; color:var(--text-muted); font-size:13px; }
 
-    /* TOAST */
-    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:10px 18px; font-size:13px; font-weight:600; color:var(--text-light); display:flex; align-items:center; gap:8px; box-shadow:0 8px 32px rgba(0,0,0,0.4); opacity:0; transition:all 0.3s; z-index:999; pointer-events:none; }
-    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-    .toast i { color:var(--red-bright); }
-
     /* LIGHT MODE */
     body.light .navbar { background:rgba(255,253,252,0.98); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }
     body.light .logo-text { color:#1A0A09; }
@@ -378,7 +373,6 @@ try {
 <!-- Notification sidebar include -->
 <?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
 
-<div class="toast" id="toast"><i class="fas fa-check"></i> <span id="toastMsg"></span></div>
 
 <script>
 const API = '../api/messages.php';
@@ -391,7 +385,6 @@ let pollInterval = null;
 let msgPollInterval = null;
 
 // ── LOAD THREADS ──────────────────────────────────────────────────────
-function loadPageThreads() {
 function loadPageThreads(cb) {
     fetch(API + '?action=threads')
         .then(r => r.json())
@@ -603,14 +596,6 @@ function updateBadges() {
 
 // ── HELPERS ───────────────────────────────────────────────────────────
 function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
-
-function showToast(msg, icon) {
-    const t = document.getElementById('toast');
-    t.querySelector('i').className = 'fas ' + (icon || 'fa-check');
-    document.getElementById('toastMsg').textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
-}
 
 // ── NAVBAR: Sidebar triggers ──────────────────────────────────────────
 var _navMsgBtn = document.getElementById('navMsgBtn');

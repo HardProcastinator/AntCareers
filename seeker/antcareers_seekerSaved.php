@@ -224,7 +224,6 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     .form-textarea { resize:vertical; min-height:80px; line-height:1.5; }
     .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; padding-top:14px; border-top:1px solid var(--soil-line); }
     .btn-cancel { padding:9px 18px; border-radius:7px; background:transparent; border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; }
-    @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
     body.light { background:#F5EDEC; color:#1A0A09; }
     body.light .glow-orb { display:none; }
     body.light .sidebar-card { background:#FFFFFF; border-color:#E0CECA; }
@@ -249,7 +248,6 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     body.light .modal-title { color:#1A0A09; }
     body.light .modal-close-btn { background:#F0E4E2; }
     body.light .form-input { background:#F5EDEC; border-color:#D0BCBA; color:#1A0A09; }
-    body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
     body.light .card-company { color:var(--red-mid); }
     body.light .card-icon { background:rgba(184,53,37,0.08); }
     body.light .saved-date { color:#7A5555; }

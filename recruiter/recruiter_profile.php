@@ -226,12 +226,6 @@ $isSetup     = isset($_GET['setup']) && $_GET['setup'] === '1';
     .stat-num{font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--text-light);margin-bottom:2px}
     .stat-label{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em}
 
-    /* ── TOAST ── */
-    .toast{position:fixed;bottom:30px;right:30px;padding:14px 22px;border-radius:10px;font-size:13px;font-weight:600;color:#fff;z-index:9999;opacity:0;transform:translateY(20px);transition:all 0.3s ease;pointer-events:none;display:flex;align-items:center;gap:8px;font-family:var(--font-body)}
-    .toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
-    .toast.success{background:#2d7a46;box-shadow:0 8px 24px rgba(45,122,70,0.35)}
-    .toast.error{background:#a33;box-shadow:0 8px 24px rgba(170,51,51,0.35)}
-
     /* ── FOOTER ── */
     .footer{text-align:center;padding:28px 20px 22px;color:var(--text-muted);font-size:12px;border-top:1px solid var(--soil-line);margin-top:40px}
     .footer-logo{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text-mid);margin-bottom:4px}
@@ -378,20 +372,11 @@ $isSetup     = isset($_GET['setup']) && $_GET['setup'] === '1';
   <div>Profile — Recruiter Portal</div>
 </footer>
 
-<div class="toast" id="toast"></div>
-
 <script>
 (function(){
   'use strict';
 
-  /* ── Toast ── */
-  function showToast(msg, type) {
-    var t = document.getElementById('toast');
-    t.className = 'toast ' + type + ' show';
-    t.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + '"></i> ' + msg;
-    clearTimeout(t._tid);
-    t._tid = setTimeout(function(){ t.classList.remove('show'); }, 3500);
-  }
+
 
   /* ── Profile form submit ── */
   document.getElementById('profileForm').addEventListener('submit', function(e) {

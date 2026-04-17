@@ -368,9 +368,7 @@ $openJobCount      = count($companyJobs);
     .jdm-cover-ta { width:100%; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:9px; padding:11px 13px; font-family:var(--font-body); font-size:13px; color:var(--text-light); resize:vertical; min-height:90px; outline:none; line-height:1.6; }
     .jdm-cover-ta:focus { border-color:rgba(209,61,44,0.5); box-shadow:0 0 0 3px rgba(209,61,44,0.08); }
 
-    /* TOAST */
-    #cpToast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--soil-card); border:1px solid var(--soil-line); color:var(--text-light); padding:10px 18px; border-radius:8px; font-size:13px; font-weight:600; z-index:1000; pointer-events:none; opacity:0; transition:all 0.28s; white-space:nowrap; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
-    #cpToast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    /* TOAST — handled by includes/toast.php */
 
     /* LIGHT THEME */
     html.theme-light body, body.light {
@@ -400,7 +398,6 @@ $openJobCount      = count($companyJobs);
     body.light .jdm-footer { background:#FFFFFF; border-top-color:#E0CECA; }
     body.light .job-row:hover { background:#FEF0EE; }
     body.light .job-row { border-bottom-color:#E0CECA; }
-    body.light #cpToast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
 
     @media(max-width:860px) {
       .cp-layout { grid-template-columns:1fr; }
@@ -753,8 +750,6 @@ $openJobCount      = count($companyJobs);
   </div>
 </div>
 
-<div id="cpToast"></div>
-
 <script>
   // ── DATA ──
   const cpJobs        = <?= $jobsJson ?>;
@@ -771,14 +766,6 @@ $openJobCount      = count($companyJobs);
     for (const [k2,v] of Object.entries(m)) if (k.includes(k2)) return v;
     return 'fa-briefcase';
   }
-  function showToast(msg, icon) {
-    const el = document.getElementById('cpToast');
-    el.innerHTML = '<i class="fas ' + icon + '" style="margin-right:6px;color:var(--red-pale);"></i>' + msg;
-    el.classList.add('show');
-    clearTimeout(el._t);
-    el._t = setTimeout(() => el.classList.remove('show'), 2600);
-  }
-
   // ── RENDER JOBS ──
   function renderJobs() {
     const c = document.getElementById('jobsContainer');
