@@ -5,7 +5,7 @@ require_once dirname(__DIR__) . '/config.php';
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../auth/antcareers_login.php');
     exit;
-}
+} 
 if (strtolower((string)($_SESSION['account_type'] ?? '')) !== 'admin') {
     header('Location: ../index.php');
     exit;
@@ -26,7 +26,8 @@ $countValue = static function (string $sql) use ($db): int {
     return 0;
   }
 };
-
+//Sample changes
+//Add code here
 $adminStats = [
   'users' => $countValue("SELECT COUNT(*) FROM users"),
   'seekers' => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type) = 'seeker'"),
