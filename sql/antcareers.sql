@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3307
--- Generation Time: Apr 15, 2026 at 03:47 AM
+-- Generation Time: Apr 17, 2026 at 03:50 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -33,7 +33,7 @@ CREATE TABLE `applications` (
   `seeker_id` int(10) UNSIGNED NOT NULL,
   `cover_letter` text DEFAULT NULL,
   `resume_url` varchar(500) DEFAULT NULL,
-  `status` enum('Pending','Reviewed','Shortlisted','Rejected','Hired') NOT NULL DEFAULT 'Pending',
+  `status` enum('Pending','Reviewed','Shortlisted','Interviewed','Rejected','Offered','Accepted','Declined') NOT NULL DEFAULT 'Pending',
   `employer_notes` text DEFAULT NULL,
   `applied_at` datetime NOT NULL DEFAULT current_timestamp(),
   `reviewed_at` datetime DEFAULT NULL,
@@ -45,7 +45,13 @@ CREATE TABLE `applications` (
 --
 
 INSERT INTO `applications` (`id`, `job_id`, `seeker_id`, `cover_letter`, `resume_url`, `status`, `employer_notes`, `applied_at`, `reviewed_at`, `updated_at`) VALUES
-(1, 1, 23, 'i am interested at this job', 'uploads/resumes/resume_23_1775522903.pdf', 'Shortlisted', NULL, '2026-04-07 00:30:50', '2026-04-14 22:21:15', '2026-04-14 22:21:15');
+(1, 1, 23, 'i am interested at this job', 'uploads/resumes/resume_23_1775522903.pdf', 'Pending', NULL, '2026-04-07 00:30:50', '2026-04-15 18:45:30', '2026-04-16 23:22:23'),
+(3, 7, 1, 'hahahah', 'uploads/resumes/resume_1_1775318857.pdf', 'Pending', NULL, '2026-04-15 10:46:51', '2026-04-15 10:47:33', '2026-04-16 23:22:23'),
+(4, 9, 1, NULL, 'uploads/resumes/resume_1_1775318857.pdf', 'Pending', NULL, '2026-04-15 15:40:56', '2026-04-16 23:35:03', '2026-04-16 23:35:03'),
+(5, 6, 23, NULL, 'uploads/resumes/resume_23_1775522903.pdf', 'Pending', NULL, '2026-04-16 20:04:49', '2026-04-16 21:03:45', '2026-04-16 23:22:23'),
+(6, 4, 35, NULL, NULL, 'Declined', NULL, '2026-04-17 00:00:34', '2026-04-17 00:02:48', '2026-04-17 00:02:48'),
+(7, 9, 23, NULL, 'uploads/resumes/resume_23_1775522903.pdf', 'Pending', NULL, '2026-04-17 02:27:35', NULL, '2026-04-17 02:27:35'),
+(8, 4, 12, NULL, NULL, 'Offered', NULL, '2026-04-17 11:51:29', '2026-04-17 11:52:20', '2026-04-17 11:52:20');
 
 -- --------------------------------------------------------
 
@@ -65,7 +71,8 @@ CREATE TABLE `company_follows` (
 --
 
 INSERT INTO `company_follows` (`id`, `follower_user_id`, `employer_user_id`, `followed_at`) VALUES
-(1, 23, 27, '2026-04-07 02:16:15');
+(1, 23, 27, '2026-04-07 02:16:15'),
+(2, 35, 27, '2026-04-16 20:08:42');
 
 -- --------------------------------------------------------
 
@@ -111,7 +118,8 @@ CREATE TABLE `company_profiles` (
 --
 
 INSERT INTO `company_profiles` (`id`, `user_id`, `company_name`, `industry`, `company_size`, `company_type`, `founded_year`, `website`, `location`, `address_line`, `province`, `city`, `country`, `zip_code`, `about`, `tagline`, `contact_email`, `contact_phone`, `social_website`, `social_linkedin`, `social_facebook`, `social_twitter`, `social_instagram`, `social_youtube`, `perks`, `logo_path`, `cover_path`, `is_verified`, `created_at`, `updated_at`) VALUES
-(1, 27, 'ryepagodna', 'Other', '501–1,000 employees', 'Private', '2010', NULL, NULL, NULL, 'Bulacan', 'Malolos', 'Philippines', '3001', 'dito tuturuan kita matulog maghapon', 'ayko na ayoko na', NULL, NULL, 'https://www.asurion.com/', NULL, NULL, NULL, NULL, NULL, '[\"Remote Work\",\"Free Snacks / Meals\",\"International Exposure\"]', 'uploads/logos/logo_27_1775528323.jpg', 'uploads/covers/cover_27_1775528333.jpg', 0, '2026-04-06 19:18:42', '2026-04-06 19:28:03');
+(1, 27, 'ryepagodna', 'Other', '501–1,000 employees', 'Private', '2010', NULL, NULL, NULL, 'Bulacan', 'Malolos', 'Philippines', '3001', 'dito tuturuan kita matulog maghapon', 'ayko na ayoko na', NULL, NULL, 'https://www.asurion.com/', NULL, NULL, NULL, NULL, NULL, '[\"Remote Work\",\"Free Snacks / Meals\",\"International Exposure\"]', 'uploads/logos/logo_27_1775528323.jpg', 'uploads/covers/cover_27_1775528333.jpg', 0, '2026-04-06 19:18:42', '2026-04-06 19:28:03'),
+(2, 2, 'deyangcorp', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2026-04-15 11:26:26', '2026-04-15 11:26:26');
 
 -- --------------------------------------------------------
 
@@ -138,10 +146,44 @@ INSERT INTO `conversations` (`id`, `created_at`, `updated_at`, `conversation_key
 (1, '2026-04-11 07:04:49', '2026-04-11 07:04:49', 'direct:21:25', 21, 25, 3, '2026-04-10 07:56:00'),
 (2, '2026-04-11 07:04:49', '2026-04-11 07:04:49', 'direct:20:32', 20, 32, 2, '2026-04-10 04:00:17'),
 (3, '2026-04-11 07:04:49', '2026-04-11 07:29:36', 'direct:25:32', 25, 32, 6, '2026-04-11 07:29:36'),
-(31, '2026-04-11 07:09:31', '2026-04-11 07:09:31', 'direct:1:2', 1, 2, NULL, NULL),
+(31, '2026-04-11 07:09:31', '2026-04-15 11:26:26', 'direct:1:2', 1, 2, 21, '2026-04-15 11:26:26'),
 (995, '2026-04-11 19:24:48', '2026-04-14 03:58:05', 'direct:25:27', 25, 27, 13, '2026-04-14 03:58:05'),
-(2177, '2026-04-14 01:26:06', '2026-04-14 22:29:23', 'direct:23:27', 23, 27, 19, '2026-04-14 22:29:23'),
-(37156, '2026-04-14 22:29:46', '2026-04-14 22:29:51', 'direct:23:25', 23, 25, 20, '2026-04-14 22:29:51');
+(2177, '2026-04-14 01:26:06', '2026-04-16 21:03:45', 'direct:23:27', 23, 27, 24, '2026-04-16 21:03:45'),
+(37156, '2026-04-14 22:29:46', '2026-04-14 22:29:51', 'direct:23:25', 23, 25, 20, '2026-04-14 22:29:51'),
+(43240, '2026-04-15 11:30:37', '2026-04-15 11:30:39', 'direct:27:33', 27, 33, 22, '2026-04-15 11:30:39'),
+(48471, '2026-04-15 14:49:24', '2026-04-15 14:49:24', 'direct:16:33', 16, 33, NULL, NULL),
+(56016, '2026-04-15 17:21:56', '2026-04-15 17:21:56', 'direct:1:33', 1, 33, NULL, NULL),
+(56177, '2026-04-15 17:22:01', '2026-04-15 17:22:01', 'direct:5:33', 5, 33, NULL, NULL),
+(57450, '2026-04-15 17:44:26', '2026-04-15 17:44:26', 'direct:12:33', 12, 33, NULL, NULL),
+(57963, '2026-04-15 17:48:00', '2026-04-15 17:48:00', 'direct:25:33', 25, 33, NULL, NULL),
+(58948, '2026-04-15 18:49:59', '2026-04-15 18:49:59', 'direct:16:23', 16, 23, NULL, NULL),
+(71445, '2026-04-17 00:01:41', '2026-04-17 00:01:41', 'direct:27:35', 27, 35, 25, '2026-04-17 00:01:41'),
+(71842, '2026-04-17 00:05:35', '2026-04-17 11:52:20', 'direct:12:27', 12, 27, 27, '2026-04-17 11:52:20'),
+(75513, '2026-04-17 01:19:59', '2026-04-17 01:19:59', 'direct:22:27', 22, 27, NULL, NULL),
+(75704, '2026-04-17 01:20:08', '2026-04-17 01:20:08', 'direct:19:27', 19, 27, NULL, NULL),
+(78035, '2026-04-17 01:27:45', '2026-04-17 01:27:45', 'direct:16:27', 16, 27, NULL, NULL),
+(78166, '2026-04-17 01:27:50', '2026-04-17 01:27:50', 'direct:10:27', 10, 27, NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `hired_credentials`
+--
+
+CREATE TABLE `hired_credentials` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `application_id` int(10) UNSIGNED NOT NULL,
+  `seeker_id` int(10) UNSIGNED NOT NULL,
+  `recruiter_user_id` int(10) UNSIGNED NOT NULL,
+  `company_id` int(10) UNSIGNED NOT NULL,
+  `temp_username` varchar(255) NOT NULL,
+  `temp_password_hash` varchar(255) NOT NULL,
+  `is_claimed` tinyint(1) NOT NULL DEFAULT 0,
+  `claimed_at` datetime DEFAULT NULL,
+  `notification_sent` tinyint(1) NOT NULL DEFAULT 0,
+  `email_sent` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -181,7 +223,9 @@ INSERT INTO `interview_schedules` (`id`, `application_id`, `employer_id`, `seeke
 (4, 1, 27, 23, '2026-04-09 02:00:00', 60, 'Online', 'https://ph.jobstreet.com/', NULL, NULL, NULL, NULL, NULL, NULL, 'interview', 'Cancelled', '2026-04-07 22:34:04', '2026-04-09 00:30:29'),
 (5, 1, 27, 23, '2026-04-09 02:00:00', 60, 'Online', 'https://ph.jobstreet.com/', NULL, NULL, NULL, NULL, NULL, NULL, 'interview', 'Cancelled', '2026-04-07 22:34:07', '2026-04-09 00:30:29'),
 (6, 1, 27, 23, '2026-04-09 02:00:00', 60, 'On-site', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'interview f2f', 'Cancelled', '2026-04-07 22:42:27', '2026-04-09 00:30:29'),
-(7, 1, 27, 23, '2026-05-11 14:00:00', 60, 'On-site', NULL, 'BGC Asurion 4th Floor Room 402', 'BGC Asurion 4th Floor Room 402', '17th Floor Accralaw Tower 30th Street corner 2nd Avenue, Crescent Park West, Taguig, Manila', 'https://maps.app.goo.gl/64Hmrg9SBdWFp19q6', NULL, NULL, NULL, 'Scheduled', '2026-04-08 23:32:57', '2026-04-14 22:21:44');
+(7, 1, 27, 23, '2026-05-11 14:00:00', 60, 'On-site', NULL, 'BGC Asurion 4th Floor Room 402', 'BGC Asurion 4th Floor Room 402', '17th Floor Accralaw Tower 30th Street corner 2nd Avenue, Crescent Park West, Taguig, Manila', 'https://maps.app.goo.gl/64Hmrg9SBdWFp19q6', NULL, NULL, NULL, 'Scheduled', '2026-04-08 23:32:57', '2026-04-14 22:21:44'),
+(8, 5, 27, 23, '2026-04-17 14:00:00', 60, 'Online', 'https://meet.google.com/mxq-gcmn-gyw', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Scheduled', '2026-04-16 20:12:02', '2026-04-16 20:12:02'),
+(9, 4, 2, 1, '2026-04-25 16:00:00', 60, 'Online', 'https://meet.google.com/mxq-gcmn-gyw', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Scheduled', '2026-04-16 20:18:09', '2026-04-16 20:18:09');
 
 -- --------------------------------------------------------
 
@@ -192,6 +236,7 @@ INSERT INTO `interview_schedules` (`id`, `application_id`, `employer_id`, `seeke
 CREATE TABLE `jobs` (
   `id` int(10) UNSIGNED NOT NULL,
   `employer_id` int(10) UNSIGNED NOT NULL,
+  `recruiter_id` int(10) UNSIGNED DEFAULT NULL,
   `title` varchar(200) NOT NULL,
   `description` text DEFAULT NULL,
   `requirements` text DEFAULT NULL,
@@ -199,6 +244,7 @@ CREATE TABLE `jobs` (
   `job_type` enum('Full-time','Part-time','Contract','Freelance','Internship','Remote') NOT NULL DEFAULT 'Full-time',
   `setup` enum('On-site','Remote','Hybrid') NOT NULL DEFAULT 'On-site',
   `status` enum('Active','Closed','Draft') NOT NULL DEFAULT 'Active',
+  `approval_status` enum('pending','approved','rejected') NOT NULL DEFAULT 'approved',
   `deadline` date DEFAULT NULL,
   `salary_min` decimal(10,2) DEFAULT NULL,
   `salary_max` decimal(10,2) DEFAULT NULL,
@@ -214,11 +260,52 @@ CREATE TABLE `jobs` (
 -- Dumping data for table `jobs`
 --
 
-INSERT INTO `jobs` (`id`, `employer_id`, `title`, `description`, `requirements`, `location`, `job_type`, `setup`, `status`, `deadline`, `salary_min`, `salary_max`, `salary_currency`, `industry`, `experience_level`, `skills_required`, `created_at`, `updated_at`) VALUES
-(1, 27, 'IT Support', 'Responsible for providing technical support and assistance to users by diagnosing and resolving hardware, software, and network issues. Handles installation, maintenance, and monitoring of computer systems and IT equipment to ensure smooth daily operations. Also assists in user account setup, system updates, and technical documentation.', 'Bachelor’s degree in Information Technology, Computer Science, or related field\nAt least 1 year of experience in IT support, technical support, or help desk is preferred\nFresh graduates with relevant internship or OJT experience are welcome to apply', 'Quezon City', 'Full-time', 'On-site', 'Active', '2026-06-18', 20000.00, 35000.00, 'PHP', 'Technology', 'Entry', 'Technical Support & Troubleshooting, Hardware/Software Installation, Windows OS and Basic Network Support', '2026-04-06 21:10:22', '2026-04-14 08:28:41'),
-(2, 25, 'secret', 'scam', 'magaling tumakbo, magtago,', 'qc', 'Contract', 'Remote', 'Active', '2026-04-22', 100000.00, 500000.00, 'PHP', 'gambling', NULL, 'diff types of gamble', '2026-04-11 20:46:56', '2026-04-11 20:46:56'),
-(4, 27, 'Engineering - Network', 'We are looking for a skilled Network Engineer to design, implement, maintain, and support our growing network infrastructure. You will be responsible for ensuring the stability, security, and efficient operation of all network systems.', 'Bachelor’s degree in IT, Computer Science, or related field\nProven experience as a Network Engineer or similar role\nKnowledge of networking concepts (TCP/IP, DNS, DHCP, VPN)\nExperience with routers, switches, and firewalls (e.g., Cisco)\nFamiliarity with network monitoring tools\nStrong problem-solving and troubleshooting skills\n\nPreferred (but not required):\n\nCertifications like Cisco CCNA / CCNP\nExperience with cloud networking (AWS, Azure)', 'Quezon City', 'Full-time', 'Hybrid', 'Active', '2026-05-14', 70000.00, 120000.00, 'PHP', 'Information & Communication Technology', 'Senior', 'Design and install network systems (LAN, WAN, Wi-Fi), Monitor network performance and troubleshoot issues,Configure routers, switches, firewalls, and other devices', '2026-04-14 21:49:50', '2026-04-14 21:49:50'),
-(6, 27, 'Product Design', 'We are looking for a creative and user-focused Product Designer to design intuitive, engaging, and visually appealing digital products. You will work closely with product managers, developers, and stakeholders to create user-centered designs that solve real problems.', 'Bachelor’s degree in Design, IT, or related field (or equivalent experience)\nExperience in UI/UX or product design\nProficiency in design tools like Figma, Adobe XD, or Sketch\nStrong understanding of UX principles and user-centered design\nPortfolio showcasing design projects\n\nExperience with prototyping tools (Figma, InVision)\nBasic knowledge of HTML/CSS\nFamiliarity with user research methods', 'Quezon City', 'Full-time', 'On-site', 'Active', '2026-05-14', 35000.00, 70000.00, 'PHP', 'Design & Architecture', 'Mid', 'Design user interfaces for web and mobile applications, Create wireframes, prototypes, and high-fidelity designs', '2026-04-14 22:19:48', '2026-04-14 22:20:11');
+INSERT INTO `jobs` (`id`, `employer_id`, `recruiter_id`, `title`, `description`, `requirements`, `location`, `job_type`, `setup`, `status`, `approval_status`, `deadline`, `salary_min`, `salary_max`, `salary_currency`, `industry`, `experience_level`, `skills_required`, `created_at`, `updated_at`) VALUES
+(1, 27, NULL, 'IT Support', 'Responsible for providing technical support and assistance to users by diagnosing and resolving hardware, software, and network issues. Handles installation, maintenance, and monitoring of computer systems and IT equipment to ensure smooth daily operations. Also assists in user account setup, system updates, and technical documentation.', 'Bachelor’s degree in Information Technology, Computer Science, or related field\nAt least 1 year of experience in IT support, technical support, or help desk is preferred\nFresh graduates with relevant internship or OJT experience are welcome to apply', 'Quezon City', 'Full-time', 'On-site', 'Active', 'approved', '2026-06-18', 20000.00, 35000.00, 'PHP', 'Technology', 'Entry', 'Technical Support & Troubleshooting, Hardware/Software Installation, Windows OS and Basic Network Support', '2026-04-06 21:10:22', '2026-04-14 08:28:41'),
+(2, 25, NULL, 'secret', 'scam', 'magaling tumakbo, magtago,', 'qc', 'Contract', 'Remote', 'Active', 'approved', '2026-04-22', 100000.00, 500000.00, 'PHP', 'gambling', NULL, 'diff types of gamble', '2026-04-11 20:46:56', '2026-04-11 20:46:56'),
+(4, 27, NULL, 'Engineering - Network', 'We are looking for a skilled Network Engineer to design, implement, maintain, and support our growing network infrastructure. You will be responsible for ensuring the stability, security, and efficient operation of all network systems.', 'Bachelor’s degree in IT, Computer Science, or related field\nProven experience as a Network Engineer or similar role\nKnowledge of networking concepts (TCP/IP, DNS, DHCP, VPN)\nExperience with routers, switches, and firewalls (e.g., Cisco)\nFamiliarity with network monitoring tools\nStrong problem-solving and troubleshooting skills\n\nPreferred (but not required):\n\nCertifications like Cisco CCNA / CCNP\nExperience with cloud networking (AWS, Azure)', 'Quezon City', 'Full-time', 'Hybrid', 'Active', 'approved', '2026-05-14', 70000.00, 120000.00, 'PHP', 'Information & Communication Technology', 'Senior', 'Design and install network systems (LAN, WAN, Wi-Fi), Monitor network performance and troubleshoot issues,Configure routers, switches, firewalls, and other devices', '2026-04-14 21:49:50', '2026-04-14 21:49:50'),
+(6, 27, NULL, 'Product Design', 'We are looking for a creative and user-focused Product Designer to design intuitive, engaging, and visually appealing digital products. You will work closely with product managers, developers, and stakeholders to create user-centered designs that solve real problems.', 'Bachelor’s degree in Design, IT, or related field (or equivalent experience)\nExperience in UI/UX or product design\nProficiency in design tools like Figma, Adobe XD, or Sketch\nStrong understanding of UX principles and user-centered design\nPortfolio showcasing design projects\n\nExperience with prototyping tools (Figma, InVision)\nBasic knowledge of HTML/CSS\nFamiliarity with user research methods', 'Quezon City', 'Full-time', 'On-site', 'Active', 'approved', '2026-05-14', 35000.00, 70000.00, 'PHP', 'Design & Architecture', 'Mid', 'Design user interfaces for web and mobile applications, Create wireframes, prototypes, and high-fidelity designs', '2026-04-14 22:19:48', '2026-04-16 21:00:46'),
+(7, 2, NULL, 'Accounts Officers / Clerks', 'gwefewf', 'efwfwef', 'Bulacan', 'Full-time', 'On-site', 'Active', 'approved', '2026-05-07', 2313213.00, 99999999.99, 'PHP', 'Accounting', 'Entry', 'haha', '2026-04-15 10:46:22', '2026-04-15 10:46:22'),
+(8, 2, 33, 'Art Direction', 'fesfsef', 'efsfse', 'Bulacan', 'Contract', 'Hybrid', 'Active', 'pending', '2026-04-23', 3243243.00, 423432.00, 'PHP', 'Advertising, Arts & Media', 'Junior', 'hahadf', '2026-04-15 12:57:36', '2026-04-15 16:59:54'),
+(9, 2, 33, 'CEO', 'fefe', 'fefe', 'baidhaid', 'Full-time', 'On-site', 'Active', 'pending', '2026-04-22', 3432432.00, 423424.00, 'PHP', 'CEO & General Management', 'Entry', 'fsf', '2026-04-15 15:17:14', '2026-04-15 15:17:14'),
+(10, 2, NULL, 'Administrative Assistants', '', '', 'fsfe', 'Full-time', 'On-site', 'Active', 'approved', '2026-05-05', 3424.00, 34243.00, 'PHP', 'Administration & Office Support', 'Junior', 'dffefeffseffs', '2026-04-15 15:31:57', '2026-04-15 15:31:57');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `job_invitations`
+--
+
+CREATE TABLE `job_invitations` (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `job_id` int(10) UNSIGNED NOT NULL,
+  `recruiter_id` int(10) UNSIGNED NOT NULL,
+  `jobseeker_id` int(10) UNSIGNED NOT NULL,
+  `status` enum('pending','accepted','declined') NOT NULL DEFAULT 'pending',
+  `custom_note` text DEFAULT NULL,
+  `sent_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `responded_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_invite` (`job_id`, `jobseeker_id`),
+  KEY `idx_inv_job` (`job_id`),
+  KEY `idx_inv_recruiter` (`recruiter_id`),
+  KEY `idx_inv_seeker` (`jobseeker_id`),
+  KEY `idx_inv_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `job_invitations`
+--
+
+INSERT INTO `job_invitations` (`id`, `job_id`, `recruiter_id`, `jobseeker_id`, `status`, `custom_note`, `sent_at`, `responded_at`) VALUES
+(1, 8, 33, 23, 'pending', NULL, '2026-04-17 02:11:42', NULL),
+(2, 9, 33, 26, 'pending', NULL, '2026-04-17 02:24:26', NULL),
+(3, 9, 33, 23, 'accepted', NULL, '2026-04-17 02:24:47', '2026-04-17 02:27:35'),
+(4, 8, 33, 5, 'pending', NULL, '2026-04-17 02:36:24', NULL),
+(5, 8, 33, 1, 'pending', NULL, '2026-04-17 02:36:47', NULL),
+(6, 8, 33, 16, 'pending', NULL, '2026-04-17 11:46:13', NULL),
+(7, 8, 33, 35, 'pending', NULL, '2026-04-17 11:46:55', NULL),
+(8, 8, 33, 12, 'pending', NULL, '2026-04-17 11:48:18', NULL);
 
 -- --------------------------------------------------------
 
@@ -548,7 +635,162 @@ INSERT INTO `login_attempts` (`id`, `email`, `ip_address`, `user_agent`, `succes
 (305, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', 1, '2026-04-14 22:24:34'),
 (306, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', 1, '2026-04-14 22:40:49'),
 (307, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', 1, '2026-04-14 22:41:31'),
-(308, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', 1, '2026-04-14 22:43:31');
+(308, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', 1, '2026-04-14 22:43:31'),
+(309, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-15 09:51:13'),
+(310, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 09:51:17'),
+(311, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 10:43:55'),
+(312, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 10:46:36'),
+(313, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 10:47:01'),
+(314, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 10:47:56'),
+(315, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 10:48:40'),
+(316, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 10:50:42'),
+(317, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 11:26:39'),
+(318, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 11:27:38'),
+(319, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 12:02:38'),
+(320, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 12:55:25'),
+(321, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 14:51:28'),
+(322, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 14:53:28'),
+(323, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 14:54:48'),
+(324, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 15:14:42'),
+(325, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 15:16:15'),
+(326, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 15:18:34'),
+(327, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 15:21:15'),
+(328, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 15:38:21'),
+(329, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 15:39:37'),
+(330, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 15:40:35'),
+(331, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 15:49:57'),
+(332, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 16:07:34'),
+(333, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 16:10:38'),
+(334, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 16:32:51'),
+(335, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 16:53:03'),
+(336, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 16:55:53'),
+(337, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 16:56:23'),
+(338, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:11:45'),
+(339, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:12:06'),
+(340, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:14:37'),
+(341, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:16:13'),
+(342, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:16:50'),
+(343, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:17:52'),
+(344, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:20:38'),
+(345, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:21:41'),
+(346, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:26:12'),
+(347, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:27:07'),
+(348, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:27:32'),
+(349, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:28:25'),
+(350, 'dollanoda10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-15 17:53:08'),
+(351, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 17:53:13'),
+(352, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 18:42:41'),
+(353, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 18:45:03'),
+(354, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 18:47:38'),
+(355, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 18:50:58'),
+(356, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 18:51:57'),
+(357, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 18:51:58'),
+(358, 'deadae@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-15 18:52:29'),
+(359, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 19:55:00'),
+(360, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:05:13'),
+(361, 'asd@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:06:46'),
+(362, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:09:09'),
+(363, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:12:27'),
+(364, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:13:37'),
+(365, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:14:05'),
+(366, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:14:25'),
+(367, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:15:00'),
+(368, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:20:38'),
+(369, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:27:53'),
+(370, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:37:13'),
+(371, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:42:59'),
+(372, 'reycorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-16 20:45:52'),
+(373, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:46:01'),
+(374, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:52:41'),
+(375, 'reycorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-16 20:53:50'),
+(376, 'reycorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-16 20:53:57'),
+(377, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:54:03'),
+(378, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:58:35'),
+(379, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 20:59:18'),
+(380, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 21:04:22'),
+(381, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 21:08:26'),
+(382, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 21:27:20'),
+(383, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 21:51:34'),
+(384, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 22:17:53'),
+(385, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 22:19:23'),
+(386, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 22:20:00'),
+(387, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 22:21:48'),
+(388, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 22:23:43'),
+(389, 'ryecrop@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-16 22:24:10'),
+(390, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 22:24:15'),
+(391, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 22:25:28'),
+(392, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 22:35:47'),
+(393, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 22:51:10'),
+(394, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 22:55:03'),
+(395, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 22:55:42'),
+(396, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:01:57'),
+(397, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:03:47'),
+(398, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:04:33'),
+(399, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:06:54'),
+(400, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:16:36'),
+(401, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-16 23:17:25'),
+(402, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:17:29'),
+(403, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:19:34'),
+(404, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:24:58'),
+(405, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:25:42'),
+(406, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT; Windows NT 10.0; en-PH) WindowsPowerShell/5.1.26100.8115', 0, '2026-04-16 23:29:47'),
+(407, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:35:40'),
+(408, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:49:33'),
+(409, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:50:14'),
+(410, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:51:35'),
+(411, 'reyal@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-16 23:59:39'),
+(412, 'reyal@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-16 23:59:47'),
+(413, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 00:00:58'),
+(414, 'reyal@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 00:01:56'),
+(415, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 00:03:02'),
+(416, 'anne@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 00:04:33'),
+(417, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 00:04:54'),
+(418, 'anne@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 00:05:55'),
+(419, 'a.dionisio@ryepagodna.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 00:08:07'),
+(420, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 00:09:32'),
+(421, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 00:29:22'),
+(422, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 00:44:38'),
+(423, 'anne@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-17 01:07:10'),
+(424, 'anne@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 01:07:15'),
+(425, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 01:07:38'),
+(426, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 01:08:03'),
+(427, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 01:42:02'),
+(428, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:05:05'),
+(429, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:05:17'),
+(430, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:12:04'),
+(431, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:13:37'),
+(432, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:25:06'),
+(433, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:26:19'),
+(434, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-17 02:27:22'),
+(435, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:27:26'),
+(436, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:27:55'),
+(437, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:32:32'),
+(438, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:33:17'),
+(439, 'rye@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:33:43'),
+(440, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:36:06'),
+(441, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-17 02:52:14'),
+(442, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:52:18'),
+(443, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 02:58:04'),
+(444, 'reycorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-17 03:05:23'),
+(445, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 03:05:29'),
+(446, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 03:30:50'),
+(447, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 03:36:32'),
+(448, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 11:39:43'),
+(449, 'dollanodea10@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 11:43:17'),
+(450, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 11:44:23'),
+(451, 'reyalib@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-17 11:47:12'),
+(452, 'reyalib@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-17 11:47:21'),
+(453, 'reyalib@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 0, '2026-04-17 11:47:34'),
+(454, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 11:47:46'),
+(455, 'anne@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 11:48:31'),
+(456, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 11:50:05'),
+(457, 'anne@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 11:50:42'),
+(458, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 11:51:48'),
+(459, 'anne@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 11:52:37'),
+(460, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 19:11:36'),
+(461, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 19:12:38'),
+(462, 'd.dollano@deyangcorp.work', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 19:13:35'),
+(463, 'ryecorp@gmail.com', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', 1, '2026-04-17 20:58:58');
 
 -- --------------------------------------------------------
 
@@ -593,8 +835,15 @@ INSERT INTO `messages` (`id`, `sender_id`, `receiver_id`, `conversation_id`, `su
 (16, 23, 27, 2177, NULL, 'hello', 'text', 1, '2026-04-14 22:11:10', '2026-04-14 21:58:59', '2026-04-14 22:11:10'),
 (17, 27, 23, 2177, NULL, 'hi', 'text', 1, '2026-04-14 22:29:12', '2026-04-14 22:11:25', '2026-04-14 22:29:12'),
 (18, 27, 23, 2177, NULL, 'how are u', 'text', 1, '2026-04-14 22:29:12', '2026-04-14 22:22:42', '2026-04-14 22:29:12'),
-(19, 23, 27, 2177, NULL, 'im fine thank u', 'text', 0, NULL, '2026-04-14 22:29:23', '2026-04-14 22:29:23'),
-(20, 23, 25, 37156, NULL, 'hello helo', 'text', 0, NULL, '2026-04-14 22:29:51', '2026-04-14 22:29:51');
+(19, 23, 27, 2177, NULL, 'im fine thank u', 'text', 1, '2026-04-16 20:05:39', '2026-04-14 22:29:23', '2026-04-16 20:05:39'),
+(20, 23, 25, 37156, NULL, 'hello helo', 'text', 0, NULL, '2026-04-14 22:29:51', '2026-04-14 22:29:51'),
+(21, 2, 1, 31, 'Your Recruiter Account Credentials', 'Hello Dea,\n\nYou have been added as a Recruiter for deyangcorp.\n\nHere are your login credentials:\n• Platform Email: d.dollano@deyangcorp.work\n• Temporary Password: nuzWV4hCva!\n\nPlease log in at http://localhost/antcareers and change your password immediately.\n\n— deyangcorp Admin', 'text', 1, '2026-04-15 11:26:46', '2026-04-15 11:26:26', '2026-04-15 11:26:46'),
+(22, 33, 27, 43240, NULL, 'hi', 'text', 1, '2026-04-17 01:34:32', '2026-04-15 11:30:39', '2026-04-17 01:34:32'),
+(23, 27, 23, 2177, 'Congratulations — You\'ve Been Offered!', 'Hi rye del rosario,\n\nGreat news — you\'ve been offered the position \"IT Support\"!\n\nHere are your recruiter portal credentials:\n• Platform Email: r.rosario@ryepagodna.work\n• Temporary Password: FthxzE#3Vf$V\n\nPlease log in and change your password immediately.\n\nWelcome to the team!', 'text', 1, '2026-04-15 18:47:44', '2026-04-15 18:45:30', '2026-04-15 18:47:44'),
+(24, 27, 23, 2177, 'Congratulations — You\'ve Been Offered!', 'Hi rye del rosario,\n\nGreat news — you\'ve been offered the position \"Product Design\"!\n\nHere are your recruiter portal credentials:\n• Platform Email: r.rosario1@ryepagodna.work\n• Temporary Password: SfNXm#ZV9QnV\n\nPlease log in and change your password immediately.\n\nWelcome to the team!', 'text', 1, '2026-04-16 21:04:35', '2026-04-16 21:03:45', '2026-04-16 21:04:35'),
+(25, 27, 35, 71445, 'Congratulations — You\'ve Been Offered!', 'Hi reyal ib,\n\nGreat news — you\'ve been offered the position \"Engineering - Network\"!\n\nPlease review the offer details and respond at your earliest convenience. You can accept or decline this offer from your applications page.\n\nWe look forward to hearing from you!', 'text', 1, '2026-04-17 00:02:08', '2026-04-17 00:01:41', '2026-04-17 00:02:08'),
+(26, 27, 12, 71842, 'Your Recruiter Account Credentials', 'Hello Anne,\n\nYou have been added as a Recruiter for ryepagodna.\n\nHere are your login credentials:\n• Platform Email: a.dionisio@ryepagodna.work\n• Temporary Password: sigP3QaUMQ!\n\nPlease log in at http://localhost/AntCareers and change your password immediately.\n\n— ryepagodna Admin', 'text', 1, '2026-04-17 00:06:09', '2026-04-17 00:05:35', '2026-04-17 00:06:09'),
+(27, 27, 12, 71842, 'Congratulations — You\'ve Been Offered!', 'Hi anne dionisio,\n\nGreat news — you\'ve been offered the position \"Engineering - Network\"!\n\nPlease review the offer details and respond at your earliest convenience. You can accept or decline this offer from your applications page.\n\nWe look forward to hearing from you!', 'text', 1, '2026-04-17 11:52:50', '2026-04-17 11:52:20', '2026-04-17 11:52:50');
 
 -- --------------------------------------------------------
 
@@ -605,9 +854,11 @@ INSERT INTO `messages` (`id`, `sender_id`, `receiver_id`, `conversation_id`, `su
 CREATE TABLE `notifications` (
   `id` int(10) UNSIGNED NOT NULL,
   `user_id` int(10) UNSIGNED NOT NULL,
+  `actor_id` int(10) UNSIGNED DEFAULT NULL,
   `type` varchar(50) NOT NULL DEFAULT 'general',
   `content` text NOT NULL,
   `reference_id` int(10) UNSIGNED DEFAULT NULL,
+  `reference_type` varchar(50) DEFAULT NULL,
   `is_read` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -616,27 +867,38 @@ CREATE TABLE `notifications` (
 -- Dumping data for table `notifications`
 --
 
-INSERT INTO `notifications` (`id`, `user_id`, `type`, `content`, `reference_id`, `is_read`, `created_at`) VALUES
-(1, 21, 'message', 'asdasd asdasdas sent you a new message.', 1, 0, '2026-04-10 03:57:08'),
-(2, 20, 'message', 'mark admin sent you a new message.', 2, 0, '2026-04-10 04:00:17'),
-(3, 21, 'message', 'asdasd asdasdas sent you a new message.', 3, 0, '2026-04-10 07:56:00'),
-(4, 25, 'message', 'mark admin sent you a new message.', 4, 1, '2026-04-10 08:08:22'),
-(5, 32, 'message', 'asdasd asdasdas sent you a new message.', 5, 1, '2026-04-10 11:01:41'),
-(6, 25, 'message', 'adsadmar sent you a new message.', 6, 1, '2026-04-11 07:29:36'),
-(7, 25, 'message', 'ryepagodna sent you a new message.', 7, 1, '2026-04-11 19:24:51'),
-(8, 27, 'message', 'rye del rosario sent you a new message.', 8, 1, '2026-04-14 01:26:14'),
-(9, 23, 'message', 'ryepagodna sent you a new message.', 9, 1, '2026-04-14 01:26:52'),
-(10, 27, 'message', 'rye del rosario sent you a new message.', 10, 1, '2026-04-14 01:33:33'),
-(11, 27, 'message', 'rye del rosario sent you a new message.', 11, 1, '2026-04-14 01:34:28'),
-(12, 23, 'message', 'ryepagodna sent you a new message.', 12, 1, '2026-04-14 03:57:46'),
-(13, 25, 'message', 'ryepagodna sent you a new message.', 13, 0, '2026-04-14 03:58:05'),
-(14, 23, 'message', 'ryepagodna sent you a new message.', 14, 1, '2026-04-14 03:58:41'),
-(15, 23, 'message', 'ryepagodna sent you a new message.', 15, 1, '2026-04-14 21:53:25'),
-(16, 27, 'message', 'rye del rosario sent you a new message.', 16, 1, '2026-04-14 21:58:59'),
-(17, 23, 'message', 'ryepagodna sent you a new message.', 17, 1, '2026-04-14 22:11:25'),
-(18, 23, 'message', 'ryepagodna sent you a new message.', 18, 1, '2026-04-14 22:22:42'),
-(19, 27, 'message', 'rye del rosario sent you a new message.', 19, 0, '2026-04-14 22:29:23'),
-(20, 25, 'message', 'rye del rosario sent you a new message.', 20, 0, '2026-04-14 22:29:51');
+INSERT INTO `notifications` (`id`, `user_id`, `actor_id`, `type`, `content`, `reference_id`, `reference_type`, `is_read`, `created_at`) VALUES
+(1, 21, 25, 'message', 'asdasd asdasdas sent you a new message.', 25, 'user', 0, '2026-04-10 03:57:08'),
+(2, 20, 32, 'message', 'mark admin sent you a new message.', 32, 'user', 0, '2026-04-10 04:00:17'),
+(3, 21, 25, 'message', 'asdasd asdasdas sent you a new message.', 25, 'user', 0, '2026-04-10 07:56:00'),
+(4, 25, 32, 'message', 'mark admin sent you a new message.', 32, 'user', 1, '2026-04-10 08:08:22'),
+(5, 32, 25, 'message', 'asdasd asdasdas sent you a new message.', 25, 'user', 1, '2026-04-10 11:01:41'),
+(6, 25, 32, 'message', 'adsadmar sent you a new message.', 32, 'user', 1, '2026-04-11 07:29:36'),
+(7, 25, 27, 'message', 'ryepagodna sent you a new message.', 27, 'user', 1, '2026-04-11 19:24:51'),
+(9, 23, 27, 'message', 'ryepagodna sent you a new message.', 27, 'user', 1, '2026-04-14 01:26:52'),
+(12, 23, 27, 'message', 'ryepagodna sent you a new message.', 27, 'user', 1, '2026-04-14 03:57:46'),
+(13, 25, 27, 'message', 'ryepagodna sent you a new message.', 27, 'user', 0, '2026-04-14 03:58:05'),
+(14, 23, 27, 'message', 'ryepagodna sent you a new message.', 27, 'user', 1, '2026-04-14 03:58:41'),
+(15, 23, 27, 'message', 'ryepagodna sent you a new message.', 27, 'user', 1, '2026-04-14 21:53:25'),
+(17, 23, 27, 'message', 'ryepagodna sent you a new message.', 27, 'user', 1, '2026-04-14 22:11:25'),
+(18, 23, 27, 'message', 'ryepagodna sent you a new message.', 27, 'user', 1, '2026-04-14 22:22:42'),
+(20, 25, 23, 'message', 'rye del rosario sent you a new message.', 23, 'user', 0, '2026-04-14 22:29:51'),
+(22, 2, NULL, 'recruiter_added', 'Recruiter Dea Dollano (d.dollano@deyangcorp.work) has been added.', 33, NULL, 1, '2026-04-15 11:26:26'),
+(25, 23, NULL, 'interview_invite', 'Great news! Your application for \"Product Design\" has been shortlisted and an interview has been scheduled.', 5, NULL, 1, '2026-04-16 20:12:02'),
+(29, 35, NULL, 'offer', 'Congratulations! You\'ve been offered the position \"Engineering - Network\". Check your messages for details.', 6, NULL, 1, '2026-04-17 00:01:41'),
+(31, 12, NULL, 'recruiter_credentials', 'You\'ve been added as a recruiter for ryepagodna. Check your messages for login credentials.', 38, NULL, 1, '2026-04-17 00:05:35'),
+(33, 23, 33, 'job_invite', 'Dea Dollano invited you to apply for \"Art Direction\" at deyangcorp', 1, 'invitation', 1, '2026-04-17 02:11:42'),
+(34, 26, 33, 'job_invite', 'Dea Dollano invited you to apply for \"CEO\" at deyangcorp', 2, 'invitation', 0, '2026-04-17 02:24:26'),
+(35, 23, 33, 'job_invite', 'Dea Dollano invited you to apply for \"CEO\" at deyangcorp', 3, 'invitation', 1, '2026-04-17 02:24:47'),
+(36, 33, 23, 'invite_accepted', 'rye del rosario accepted your invitation and applied for \"CEO\"', 9, 'job', 1, '2026-04-17 02:27:35'),
+(37, 2, 23, 'invite_accepted', 'rye del rosario accepted your invitation and applied for \"CEO\"', 9, 'job', 0, '2026-04-17 02:27:35'),
+(38, 5, 33, 'job_invite', 'Dea Dollano invited you to apply for \"Art Direction\" at deyangcorp', 4, 'invitation', 0, '2026-04-17 02:36:24'),
+(40, 16, 33, 'job_invite', 'Dea Dollano invited you to apply for \"Art Direction\" at deyangcorp', 6, 'invitation', 0, '2026-04-17 11:46:13'),
+(41, 35, 33, 'job_invite', 'Dea Dollano invited you to apply for \"Art Direction\" at deyangcorp', 7, 'invitation', 0, '2026-04-17 11:46:55'),
+(42, 12, 33, 'job_invite', 'Dea Dollano invited you to apply for \"Art Direction\" at deyangcorp', 8, 'invitation', 1, '2026-04-17 11:48:18'),
+(43, 12, 27, 'offer', 'Congratulations! You\'ve been offered the position \"Engineering - Network\". Check your messages for details.', 8, 'application', 1, '2026-04-17 11:52:20'),
+(44, 2, 23, 'new_application', 'rye del rosario applied for Administrative Assistants', 10, 'job', 0, '2026-04-17 21:15:24'),
+(45, 33, 23, 'new_application', 'rye del rosario applied for CEO', 9, 'job', 0, '2026-04-17 21:30:23');
 
 -- --------------------------------------------------------
 
@@ -653,6 +915,85 @@ CREATE TABLE `password_reset_tokens` (
   `ip_address` varchar(45) DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `recruiters`
+--
+
+CREATE TABLE `recruiters` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `company_id` int(10) UNSIGNED NOT NULL,
+  `employer_id` int(10) UNSIGNED NOT NULL,
+  `role` enum('recruiter','co-admin','viewer') NOT NULL DEFAULT 'recruiter',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `invited_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `accepted_at` datetime DEFAULT NULL,
+  `deactivated_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `recruiters`
+--
+
+INSERT INTO `recruiters` (`id`, `user_id`, `company_id`, `employer_id`, `role`, `is_active`, `invited_at`, `accepted_at`, `deactivated_at`, `created_at`, `updated_at`) VALUES
+(1, 33, 2, 2, 'recruiter', 1, '2026-04-15 11:26:26', '2026-04-15 11:26:26', NULL, '2026-04-15 11:26:26', '2026-04-15 11:26:26'),
+(5, 38, 1, 27, 'recruiter', 1, '2026-04-17 00:05:35', '2026-04-17 00:05:35', NULL, '2026-04-17 00:05:35', '2026-04-17 00:05:35');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `recruiter_profiles`
+--
+
+CREATE TABLE `recruiter_profiles` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `personal_email` varchar(255) DEFAULT NULL,
+  `position` varchar(200) DEFAULT NULL,
+  `department` varchar(200) DEFAULT NULL,
+  `phone` varchar(30) DEFAULT NULL,
+  `bio` text DEFAULT NULL,
+  `linkedin_url` varchar(500) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `recruiter_profiles`
+--
+
+INSERT INTO `recruiter_profiles` (`id`, `user_id`, `personal_email`, `position`, `department`, `phone`, `bio`, `linkedin_url`, `created_at`, `updated_at`) VALUES
+(1, 33, 'dollanodea10@gmail.com', 'Senior Recruiter', NULL, NULL, NULL, NULL, '2026-04-15 11:26:26', '2026-04-15 11:26:26'),
+(5, 38, 'anne@gmail.com', 'Intern Recuriter', '', '', '', NULL, '2026-04-17 00:05:35', '2026-04-17 00:08:28');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `recruiter_stats`
+--
+
+CREATE TABLE `recruiter_stats` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `recruiter_id` int(10) UNSIGNED NOT NULL,
+  `jobs_posted` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `applicants_reviewed` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `interviews_scheduled` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `hires_made` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `recruiter_stats`
+--
+
+INSERT INTO `recruiter_stats` (`id`, `recruiter_id`, `jobs_posted`, `applicants_reviewed`, `interviews_scheduled`, `hires_made`, `updated_at`) VALUES
+(1, 1, 0, 0, 0, 0, '2026-04-15 11:26:26'),
+(2, 5, 0, 0, 0, 0, '2026-04-17 00:05:35');
 
 -- --------------------------------------------------------
 
@@ -679,11 +1020,11 @@ INSERT INTO `remember_tokens` (`id`, `user_id`, `token_hash`, `expires_at`, `ip_
 (41, 11, 'e16f76cfa32c82e29c1bcceaa4445b5e:cb47d95518e74faa7edf3068c82be7ee861880935aa6087b34048417517c4a48', '2026-04-21 01:35:35', '157.10.33.92', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-21 22:35:35'),
 (42, 10, '1d89d3b0e731dabe35b09ff7ee1b3a3f:7f2e1606d6d2c8feb7f600f93c9310114198c1a7fe2caef6f12ab6b46b2c2ecb', '2026-04-21 01:38:39', '157.10.33.92', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-21 22:38:39'),
 (44, 7, 'faa548aa7689cca2de98d3c6d7a3c7d8:1afbe00efb9f36eb125e03160d284e1dea0df41baeabf904a4f434f4b10b5d1a', '2026-04-22 04:22:52', '157.10.33.92', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-23 01:22:52'),
-(151, 2, '6a09006ff4a381114236e7b927c5907a:25406a45b5ecb866d9f50631a702a238522dc0ce4bb1e9ee28320daf0bdcc06c', '2026-05-04 12:45:10', '180.190.227.77', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-04 09:45:10'),
-(152, 1, '0c5d4b63234c26c57a61537d80b3d785:f0f72425af32d7048d5a555918dc5006f1f222e1072625aabb68ac8eface9446', '2026-05-04 12:53:03', '180.190.227.77', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-04 09:53:03'),
 (222, 32, '438f71236b30eed56283b81f419125c5:5e4842fa29c46b70e252775eacd08ad3e7585629cd892a377a8d751a0240fae1', '2026-05-10 20:44:34', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-04-11 02:44:35'),
-(266, 27, 'fbd5c8fa505d1989c89a2ce02425c125:7084d61f2e269411e8839f394d657e540c78751ae9aa93f7b9bc8f07d4a10557', '2026-05-14 16:41:31', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-14 22:41:31'),
-(267, 23, 'd71e89c972214afa5529e932d8c6e698:cd7d2379683cd69abc601d8dfee176c7ef0729c287365445017e1fbc302a9eed', '2026-05-14 16:43:31', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-04-14 22:43:31');
+(315, 2, 'db5f13d6e5a961acdeb2f721667d6504:492611149cc52d24df57b586c636436495c0c5f7a24af196ae77d43c1a542794', '2026-05-15 12:52:29', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', '2026-04-15 18:52:29'),
+(402, 12, '94f65784fbcdbe83ef01e2b4e4554045:11d80a5add2e41c0628e904df821ac89816bda2082730c84f1cebf8ec6dfaa0f', '2026-05-17 05:52:37', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', '2026-04-17 11:52:37'),
+(405, 33, 'f2a5c9498acc6d87b02d37b5d1161703:d7519b4e90b7cdcc29a862065f716c7a77a3c443a8d932296cb6fb40c8642031', '2026-05-17 13:13:35', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', '2026-04-17 19:13:35'),
+(406, 27, '68a26707492a6c5a07c18823a9a2cd8b:7264be238ad0c0ca8538b8938cd8d862b158c6cb6bb8f056360fdad1c3a86bf1', '2026-05-17 14:58:58', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', '2026-04-17 20:58:58');
 
 -- --------------------------------------------------------
 
@@ -703,9 +1044,9 @@ CREATE TABLE `saved_jobs` (
 --
 
 INSERT INTO `saved_jobs` (`id`, `user_id`, `job_id`, `saved_at`) VALUES
-(9, 23, 1, '2026-04-07 22:17:43'),
-(10, 23, 4, '2026-04-14 21:56:30'),
-(12, 23, 6, '2026-04-14 22:26:38');
+(12, 23, 6, '2026-04-14 22:26:38'),
+(13, 23, 10, '2026-04-15 18:43:30'),
+(14, 23, 7, '2026-04-15 18:43:39');
 
 -- --------------------------------------------------------
 
@@ -940,7 +1281,7 @@ CREATE TABLE `users` (
   `email` varchar(255) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `full_name` varchar(150) DEFAULT NULL,
-  `account_type` enum('seeker','employer','admin') NOT NULL DEFAULT 'seeker',
+  `account_type` enum('seeker','employer','admin','recruiter') NOT NULL DEFAULT 'seeker',
   `is_verified` tinyint(1) NOT NULL DEFAULT 0,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `must_change_password` tinyint(1) NOT NULL DEFAULT 0,
@@ -957,8 +1298,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `email`, `password_hash`, `full_name`, `account_type`, `is_verified`, `is_active`, `must_change_password`, `contact`, `company_name`, `avatar_url`, `last_login_at`, `created_at`, `updated_at`) VALUES
-(1, 'dollanodea10@gmail.com', '$2y$10$M24b2K93aqbsSm3pELpvLeOUTr60DlHFa/ew3C9jW.IBqeGENvjV2', 'Dea Dollano', 'seeker', 0, 1, 0, '+639619557612', NULL, 'uploads/avatars/avatar_1_1775292408.png', '2026-04-04 09:53:03', '2026-03-21 04:11:21', '2026-04-04 09:53:03'),
-(2, 'deadae@gmail.com', '$2y$10$5YzRy/WYDGjyNuBYw6Oc5u5QKWvNs4X0zjuW9SRPFOEwQpbzO2fPq', 'Dea Dollano', 'employer', 0, 1, 0, '+639619557612', 'deyangcorp', NULL, '2026-04-04 09:45:10', '2026-03-21 08:40:54', '2026-04-04 09:45:10'),
+(1, 'dollanodea10@gmail.com', '$2y$10$M24b2K93aqbsSm3pELpvLeOUTr60DlHFa/ew3C9jW.IBqeGENvjV2', 'Dea Dollano', 'seeker', 0, 1, 0, '+639619557612', NULL, 'uploads/avatars/avatar_1_1775292408.png', '2026-04-17 11:43:17', '2026-03-21 04:11:21', '2026-04-17 11:43:17'),
+(2, 'deadae@gmail.com', '$2y$10$5YzRy/WYDGjyNuBYw6Oc5u5QKWvNs4X0zjuW9SRPFOEwQpbzO2fPq', 'Dea Dollano', 'employer', 0, 1, 0, '+639619557612', 'deyangcorp', NULL, '2026-04-15 18:52:29', '2026-03-21 08:40:54', '2026-04-15 18:52:29'),
 (3, 'dryaleve11502@gmail.com', '$2y$10$fQHnJPIU6.v/W1qU8UFLHOQHQdpaqXKbz5alM3Q/6TftPFQoGX6H6', 'Rye Del Rosario', 'seeker', 0, 1, 0, '09685990044', NULL, NULL, '2026-03-21 10:40:47', '2026-03-21 08:45:24', '2026-03-21 10:40:47'),
 (4, 'dollano10@gmail.com', '$2y$10$AhHJjR/eABvN/0LQtJeY1.HNTBSr4W3Uv2H/euKxrpO/dwJ9vs8am', 'Dea Dollano', 'seeker', 0, 1, 0, '+639619557612', NULL, NULL, NULL, '2026-03-21 09:33:30', '2026-03-21 09:33:30'),
 (5, 'boaz@gmail.com', '$2y$10$b1kOg84NSEw7F/Tg0.iVn.AVfqu0hy3ShGmQv.7pmE7xnBuxlY8Z.', 'boaz del rosario', 'seeker', 1, 1, 0, '09876543212', NULL, NULL, '2026-03-21 22:30:52', '2026-03-21 10:44:23', '2026-03-21 22:30:52'),
@@ -968,7 +1309,7 @@ INSERT INTO `users` (`id`, `email`, `password_hash`, `full_name`, `account_type`
 (9, 'vgmalolos@victory.com', '$2y$10$BFM2F4SQ2p7D6bMfHYn9z.j.Hn6ZUOvz/zcX7jcmp/4XNRo7be.tG', 'ella cortez', 'employer', 1, 1, 0, '09876543212', 'vgmalolos', NULL, NULL, '2026-03-21 13:38:53', '2026-03-21 13:38:53'),
 (10, 'rey@gmail.com', '$2y$10$bJXEyLsIH/r85ba.UdYWLuDNIvPhmiq1/w4570/Wp1Jn9IBQTPxA6', 'Rey Carlos', 'seeker', 1, 1, 0, '09876543213', NULL, NULL, '2026-03-21 22:38:39', '2026-03-21 22:29:30', '2026-03-21 22:38:39'),
 (11, 'Medranacorp@yahoo.com', '$2y$10$lmhmkmdL8eb88dIVE7fOmeMQRg9SP5tThizfznJY4shTRHBhWvEua', 'Juan Medrana', 'employer', 1, 1, 0, '09876543214', 'MedranaGroup', NULL, '2026-03-21 22:35:35', '2026-03-21 22:32:36', '2026-03-21 22:35:35'),
-(12, 'anne@gmail.com', '$2y$10$Qa9/mIex9ncFl2L8yER8DuELvdExFsc7dz.ywp7m4X7tca6FfCSF.', 'anne dionisio', 'seeker', 1, 1, 0, '0976543215', NULL, NULL, NULL, '2026-03-23 01:10:57', '2026-03-23 01:10:57'),
+(12, 'anne@gmail.com', '$2y$10$Qa9/mIex9ncFl2L8yER8DuELvdExFsc7dz.ywp7m4X7tca6FfCSF.', 'anne dionisio', 'seeker', 1, 1, 0, '0976543215', NULL, NULL, '2026-04-17 11:52:38', '2026-03-23 01:10:57', '2026-04-17 11:52:38'),
 (13, 'globe@corp.com', '$2y$10$iFD0Ec95CGuQQijA0c7pzuYktWD1crhwsmXJ9zA1L/IDpUqAb4Mhy', 'lem castro', 'employer', 1, 1, 0, '09876543218', 'Globe', NULL, NULL, '2026-03-23 01:14:05', '2026-03-23 01:14:05'),
 (16, 'ariannepauleneaspiras@gmail.com', '$2y$10$U9IvBn9Ib2PuW.UTjCy.MejiBO3giDxcTyW1mlIyy4nsuL0G1zYJO', 'ARIANNE ASPIRAS', 'seeker', 1, 1, 0, '+639321046250', NULL, NULL, NULL, '2026-03-24 01:32:38', '2026-03-24 01:32:38'),
 (17, 'acme@gmail.com', '$2y$10$I/NYmACgJL.kvEG56fDLIeDLWZEDAetnlxq3sZq7SdTjAmrFZs9Qm', 'ARIANNE ASPIRAS', 'employer', 1, 1, 0, '+639323107907', 'AcmeCorp', NULL, NULL, '2026-03-24 01:40:08', '2026-03-24 01:40:08'),
@@ -977,14 +1318,17 @@ INSERT INTO `users` (`id`, `email`, `password_hash`, `full_name`, `account_type`
 (20, 'riot@gmail.com', '$2y$10$4f07aeRnbTg6XgJJno6mhOKPfR.oVyTLifiKWg8coSETinsgSa.f6', 'Mark Reeze Maniego', 'employer', 1, 1, 0, '63 0923 928 7754', 'Riot Games', NULL, NULL, '2026-03-29 03:23:13', '2026-03-29 03:23:13'),
 (21, 'mark@gmail.com', '$2y$10$XTiRfvhIhPgqbp4w1JuV2.mVQ0FUvZ88QG1WqPi6JxcWp4z8lWkCq', 'Mark Santos', 'seeker', 1, 1, 0, '12345678', NULL, NULL, '2026-04-10 07:56:14', '2026-03-29 03:48:49', '2026-04-10 07:56:14'),
 (22, 'asd@mail.com', '$2y$10$5G7YlyPLWmO2fJNM0MYjYO0FS2fdsk6bvyBSgqljhaCu4ZU8XVTn.', 'Mark Sigma', 'employer', 1, 1, 0, '1231231231321', 'adsadasdsa', NULL, NULL, '2026-03-30 07:21:19', '2026-03-30 07:21:19'),
-(23, 'rye@gmail.com', '$2y$10$5UJ1UZEDso2l9iGEUAINg.rht9a7K1L55465fubEzvhs9va7v2wCO', 'rye del rosario', 'seeker', 1, 1, 0, '09876543212', NULL, 'uploads/avatars/avatar_23_1775522944.jpg', '2026-04-14 22:43:31', '2026-03-30 21:49:38', '2026-04-14 22:43:31'),
+(23, 'rye@gmail.com', '$2y$10$5UJ1UZEDso2l9iGEUAINg.rht9a7K1L55465fubEzvhs9va7v2wCO', 'rye del rosario', 'seeker', 1, 1, 0, '09876543212', NULL, 'uploads/avatars/avatar_23_1775522944.jpg', '2026-04-17 02:33:43', '2026-03-30 21:49:38', '2026-04-17 02:33:43'),
 (24, 'ryalcorp@gmail.com', '$2y$10$IalyXI6vBJj.JkH2RRb9tuU8p0PI6t46yI2Hw6XoIX6yxhVyeIF8W', 'Ryal Eve', 'employer', 1, 1, 0, '09876543213', 'RyalCorp', NULL, NULL, '2026-03-30 21:53:39', '2026-03-30 21:53:39'),
-(25, 'asd@gmail.com', '$2y$10$Y/SrlWSQ5uqpfm1wdX7daeE.hF9P2iH1kek4zvrbr4jilaJqSXZZi', 'asdasd asdasdas', 'employer', 1, 1, 0, '123123123123123', 'asdasd', NULL, '2026-04-14 08:42:13', '2026-03-31 02:13:31', '2026-04-14 08:42:13'),
+(25, 'asd@gmail.com', '$2y$10$Y/SrlWSQ5uqpfm1wdX7daeE.hF9P2iH1kek4zvrbr4jilaJqSXZZi', 'asdasd asdasdas', 'employer', 1, 1, 0, '123123123123123', 'asdasd', NULL, '2026-04-16 20:06:46', '2026-03-31 02:13:31', '2026-04-16 20:06:46'),
 (26, 'ryerye@gmail.com', '$2y$10$73O4jx09sotgwPeQFqBf8eshWRUyCuC3Jl6tBMSesSMYwnU1tjURm', 'rye cortez', 'seeker', 1, 1, 0, '09685990044', NULL, NULL, NULL, '2026-03-31 02:15:39', '2026-03-31 02:15:39'),
-(27, 'ryecorp@gmail.com', '$2y$10$LkqO.aFFwWq5LaGOCxI4refhiHCxMk6tz8dZvZVRkSpKvN0Wv6Xym', 'ryal eve', 'employer', 1, 1, 0, '09876543214', 'ryepagodna', NULL, '2026-04-14 22:41:31', '2026-03-31 02:37:51', '2026-04-14 22:41:31'),
+(27, 'ryecorp@gmail.com', '$2y$10$LkqO.aFFwWq5LaGOCxI4refhiHCxMk6tz8dZvZVRkSpKvN0Wv6Xym', 'ryal eve', 'employer', 1, 1, 0, '09876543214', 'ryepagodna', NULL, '2026-04-17 20:58:58', '2026-03-31 02:37:51', '2026-04-17 20:58:58'),
 (28, 'employer@antcareers.test', '$2y$12$PlaceholderHashXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', 'Maria Santos', 'employer', 1, 1, 0, NULL, 'TechNova PH', NULL, NULL, '2026-04-02 02:41:03', '2026-04-02 02:41:03'),
 (29, 'seeker@antcareers.test', '$2y$12$PlaceholderHashXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', 'Juan dela Cruz', 'seeker', 1, 1, 0, NULL, NULL, NULL, NULL, '2026-04-02 02:41:03', '2026-04-02 02:41:03'),
-(32, 'mark1@gmail.com', '$2y$10$XTpx6oOtfKDYm6WxgFpRXeFrzms79ZPmw/GJh9E3L8PUG0ptWE1Qq', 'mark admin', 'employer', 1, 1, 0, '3123123123', 'adsadmar', NULL, '2026-04-11 02:44:35', '2026-04-10 03:59:46', '2026-04-11 02:44:35');
+(32, 'mark1@gmail.com', '$2y$10$XTpx6oOtfKDYm6WxgFpRXeFrzms79ZPmw/GJh9E3L8PUG0ptWE1Qq', 'mark admin', 'employer', 1, 1, 0, '3123123123', 'adsadmar', NULL, '2026-04-11 02:44:35', '2026-04-10 03:59:46', '2026-04-11 02:44:35'),
+(33, 'd.dollano@deyangcorp.work', '$2y$10$5cxo12uDzUHwN2BqElwKOu2wZ734SUmWfrsxfhibShF8LwgHrmt.2', 'Dea Dollano', 'recruiter', 0, 1, 0, NULL, NULL, NULL, '2026-04-17 19:13:35', '2026-04-15 11:26:26', '2026-04-17 19:13:35'),
+(35, 'reyal@gmail.com', '$2y$10$BkpAXd/X8pw3BvtQWv4Gr.AZO71u6e8aVfh2aNrV/s6pIiOaqNRs6', 'reyal ib', 'seeker', 1, 1, 0, '09876543212', NULL, NULL, '2026-04-17 00:01:56', '2026-04-16 20:07:35', '2026-04-17 00:01:56'),
+(38, 'a.dionisio@ryepagodna.work', '$2y$10$C9DzeB.iISQSltoCsQX5puCY4GlpN82D7j5ZLKetrc6w7VraqLD3y', 'Anne Dionisio', 'recruiter', 0, 1, 0, NULL, NULL, NULL, '2026-04-17 00:08:07', '2026-04-17 00:05:35', '2026-04-17 00:08:19');
 
 -- --------------------------------------------------------
 
@@ -1038,6 +1382,16 @@ ALTER TABLE `conversations`
   ADD UNIQUE KEY `uq_conversation_key` (`conversation_key`);
 
 --
+-- Indexes for table `hired_credentials`
+--
+ALTER TABLE `hired_credentials`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_hired_application` (`application_id`),
+  ADD KEY `idx_hired_seeker` (`seeker_id`),
+  ADD KEY `idx_hired_company` (`company_id`),
+  ADD KEY `fk_hired_recruiter_user` (`recruiter_user_id`);
+
+--
 -- Indexes for table `interview_schedules`
 --
 ALTER TABLE `interview_schedules`
@@ -1052,8 +1406,21 @@ ALTER TABLE `interview_schedules`
 ALTER TABLE `jobs`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_job_employer` (`employer_id`),
-  ADD KEY `idx_job_status` (`status`);
+  ADD KEY `idx_job_status` (`status`),
+  ADD KEY `idx_jobs_recruiter` (`recruiter_id`),
+  ADD KEY `idx_jobs_approval` (`approval_status`);
 ALTER TABLE `jobs` ADD FULLTEXT KEY `ft_jobs_search` (`title`,`description`,`skills_required`);
+
+--
+-- Indexes for table `job_invitations`
+--
+ALTER TABLE `job_invitations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_invite` (`job_id`,`jobseeker_id`),
+  ADD KEY `idx_inv_job` (`job_id`),
+  ADD KEY `idx_inv_recruiter` (`recruiter_id`),
+  ADD KEY `idx_inv_seeker` (`jobseeker_id`),
+  ADD KEY `idx_inv_status` (`status`);
 
 --
 -- Indexes for table `login_attempts`
@@ -1091,6 +1458,30 @@ ALTER TABLE `password_reset_tokens`
   ADD UNIQUE KEY `uq_reset_token` (`token_hash`),
   ADD KEY `idx_reset_user` (`user_id`),
   ADD KEY `idx_reset_expiry` (`expires_at`);
+
+--
+-- Indexes for table `recruiters`
+--
+ALTER TABLE `recruiters`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_recruiter_user` (`user_id`),
+  ADD KEY `idx_recruiter_company` (`company_id`),
+  ADD KEY `idx_recruiter_employer` (`employer_id`),
+  ADD KEY `idx_recruiter_active` (`is_active`);
+
+--
+-- Indexes for table `recruiter_profiles`
+--
+ALTER TABLE `recruiter_profiles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_rec_profile_user` (`user_id`);
+
+--
+-- Indexes for table `recruiter_stats`
+--
+ALTER TABLE `recruiter_stats`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_stats_recruiter` (`recruiter_id`);
 
 --
 -- Indexes for table `remember_tokens`
@@ -1191,55 +1582,67 @@ ALTER TABLE `user_preferences`
 -- AUTO_INCREMENT for table `applications`
 --
 ALTER TABLE `applications`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `company_follows`
 --
 ALTER TABLE `company_follows`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `company_profiles`
 --
 ALTER TABLE `company_profiles`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `conversations`
 --
 ALTER TABLE `conversations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41044;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=92117;
+
+--
+-- AUTO_INCREMENT for table `hired_credentials`
+--
+ALTER TABLE `hired_credentials`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `interview_schedules`
 --
 ALTER TABLE `interview_schedules`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `jobs`
 --
 ALTER TABLE `jobs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
+-- AUTO_INCREMENT for table `job_invitations`
+--
+ALTER TABLE `job_invitations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `login_attempts`
 --
 ALTER TABLE `login_attempts`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=309;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=464;
 
 --
 -- AUTO_INCREMENT for table `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT for table `password_reset_tokens`
@@ -1248,16 +1651,34 @@ ALTER TABLE `password_reset_tokens`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `recruiters`
+--
+ALTER TABLE `recruiters`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT for table `recruiter_profiles`
+--
+ALTER TABLE `recruiter_profiles`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `recruiter_stats`
+--
+ALTER TABLE `recruiter_stats`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT for table `remember_tokens`
 --
 ALTER TABLE `remember_tokens`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=268;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=407;
 
 --
 -- AUTO_INCREMENT for table `saved_jobs`
 --
 ALTER TABLE `saved_jobs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `seeker_certifications`
@@ -1311,7 +1732,7 @@ ALTER TABLE `social_accounts`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- Constraints for dumped tables
@@ -1329,6 +1750,14 @@ ALTER TABLE `applications`
 --
 ALTER TABLE `company_profiles`
   ADD CONSTRAINT `fk_company_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `hired_credentials`
+--
+ALTER TABLE `hired_credentials`
+  ADD CONSTRAINT `fk_hired_app` FOREIGN KEY (`application_id`) REFERENCES `applications` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_hired_recruiter_user` FOREIGN KEY (`recruiter_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_hired_seeker` FOREIGN KEY (`seeker_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `interview_schedules`
@@ -1362,6 +1791,26 @@ ALTER TABLE `notifications`
 --
 ALTER TABLE `password_reset_tokens`
   ADD CONSTRAINT `fk_reset_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `recruiters`
+--
+ALTER TABLE `recruiters`
+  ADD CONSTRAINT `fk_recruiter_company` FOREIGN KEY (`company_id`) REFERENCES `company_profiles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_recruiter_employer` FOREIGN KEY (`employer_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_recruiter_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `recruiter_profiles`
+--
+ALTER TABLE `recruiter_profiles`
+  ADD CONSTRAINT `fk_rec_profile_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `recruiter_stats`
+--
+ALTER TABLE `recruiter_stats`
+  ADD CONSTRAINT `fk_stats_recruiter` FOREIGN KEY (`recruiter_id`) REFERENCES `recruiters` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `remember_tokens`
