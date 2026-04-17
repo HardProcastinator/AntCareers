@@ -140,7 +140,7 @@ $navActive   = 'manage-jobs';
     .rs-online { background:var(--green); box-shadow:0 0 6px rgba(76,175,112,0.5); }
     .rs-offline { background:#555; }
     .rec-action-btn { background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:6px; padding:6px 12px; font-size:12px; font-weight:600; color:var(--text-mid); cursor:pointer; font-family:var(--font-body); transition:0.15s; display:flex; align-items:center; gap:5px; }
-    .rec-action-btn:hover { color:#F5F0EE; border-color:var(--soil-hover); }
+    .rec-action-btn:hover { background:rgba(209,61,44,.08); border-color:rgba(209,61,44,.35); color:#F5F0EE; }
     .rec-action-btn.danger { color:#E05555; }
     .rec-action-btn.danger:hover { background:rgba(224,85,85,0.1); border-color:rgba(224,85,85,0.2); }
 
@@ -181,11 +181,6 @@ $navActive   = 'manage-jobs';
     .btn-modal-cancel { padding:10px 16px; border-radius:8px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:14px; cursor:pointer; transition:0.2s; }
     .btn-modal-cancel:hover { color:#F5F0EE; }
 
-    /* Toast */
-    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--soil-card); border:1px solid var(--soil-line); color:#F5F0EE; padding:11px 22px; border-radius:10px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:9px; z-index:9999; animation:toastIn 0.25s ease; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
-    .toast i { color:var(--green); }
-    @keyframes toastIn { from { opacity:0; transform:translate(-50%,12px); } to { opacity:1; transform:translate(-50%,0); } }
-
     /* Footer */
     .footer { position:relative; z-index:2; border-top:1px solid var(--soil-line); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:10px; }
     .footer-logo { font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--red-bright); }
@@ -217,13 +212,14 @@ $navActive   = 'manage-jobs';
     body.light .search-box input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .filter-select { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .rec-action-btn { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
+    body.light .rec-action-btn:hover { background:#FEF0EE; color:var(--red-vivid); border-color:rgba(209,61,44,0.4); }
+    body.light .rec-action-btn.danger:hover { color:#D13D2C; border-color:rgba(209,61,44,0.5); }
     body.light .invite-row { background:#FFFFFF; border-color:#E0CECA; }
     body.light .modal-box { background:#FFFFFF; border-color:#E0CECA; }
     body.light .modal-title { color:#1A0A09; }
     body.light .modal-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .role-opt { background:#F5EEEC; border-color:#E0CECA; }
     body.light .role-opt-name { color:#1A0A09; }
-    body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
     body.light .footer { border-color:#E0CECA; }
 
     @media(max-width:760px) {
@@ -702,13 +698,6 @@ $navActive   = 'manage-jobs';
     if (!d) return '—';
     const dt = new Date(d);
     return dt.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-  }
-
-  function showToast(msg, icon) {
-    const t = document.createElement('div'); t.className = 'toast';
-    t.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2400);
   }
 
   // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script

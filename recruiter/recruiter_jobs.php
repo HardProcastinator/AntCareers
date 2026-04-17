@@ -30,15 +30,31 @@ try {
 
 /* ── Country → Currency map ── */
 const COUNTRY_CURRENCIES = [
-    'PH'=>'PHP','US'=>'USD','GB'=>'GBP','AU'=>'AUD','CA'=>'CAD','JP'=>'JPY','KR'=>'KRW','SG'=>'SGD',
-    'HK'=>'HKD','MY'=>'MYR','TH'=>'THB','ID'=>'IDR','IN'=>'INR','CN'=>'CNY','NZ'=>'NZD','AE'=>'AED',
-    'SA'=>'SAR','DE'=>'EUR','FR'=>'EUR','IT'=>'EUR','ES'=>'EUR','NL'=>'EUR','IE'=>'EUR','PT'=>'EUR',
-    'AT'=>'EUR','BE'=>'EUR','FI'=>'EUR','GR'=>'EUR','LU'=>'EUR','MT'=>'EUR','CY'=>'EUR','EE'=>'EUR',
-    'LV'=>'EUR','LT'=>'EUR','SK'=>'EUR','SI'=>'EUR','HR'=>'EUR','BG'=>'BGN','RO'=>'RON','PL'=>'PLN',
-    'CZ'=>'CZK','HU'=>'HUF','SE'=>'SEK','DK'=>'DKK','NO'=>'NOK','CH'=>'CHF','BR'=>'BRL','MX'=>'MXN',
-    'ZA'=>'ZAR','NG'=>'NGN','EG'=>'EGP','KE'=>'KES','GH'=>'GHS','TW'=>'TWD','VN'=>'VND','PK'=>'PKR',
-    'BD'=>'BDT','LK'=>'LKR','NP'=>'NPR','QA'=>'QAR','KW'=>'KWD','BH'=>'BHD','OM'=>'OMR','JO'=>'JOD',
-    'IL'=>'ILS','TR'=>'TRY','RU'=>'RUB','UA'=>'UAH','CL'=>'CLP','CO'=>'COP','PE'=>'PEN','AR'=>'ARS',
+    'AF'=>'AFN','AL'=>'ALL','DZ'=>'DZD','AD'=>'EUR','AO'=>'AOA','AG'=>'XCD','AR'=>'ARS','AM'=>'AMD',
+    'AU'=>'AUD','AT'=>'EUR','AZ'=>'AZN','BS'=>'BSD','BH'=>'BHD','BD'=>'BDT','BB'=>'BBD','BY'=>'BYN',
+    'BE'=>'EUR','BZ'=>'BZD','BJ'=>'XOF','BT'=>'BTN','BO'=>'BOB','BA'=>'BAM','BW'=>'BWP','BR'=>'BRL',
+    'BN'=>'BND','BG'=>'BGN','BF'=>'XOF','BI'=>'BIF','KH'=>'KHR','CM'=>'XAF','CA'=>'CAD','CV'=>'CVE',
+    'CF'=>'XAF','TD'=>'XAF','CL'=>'CLP','CN'=>'CNY','CO'=>'COP','KM'=>'KMF','CG'=>'XAF','CR'=>'CRC',
+    'HR'=>'EUR','CU'=>'CUP','CY'=>'EUR','CZ'=>'CZK','DK'=>'DKK','DJ'=>'DJF','DM'=>'XCD','DO'=>'DOP',
+    'EC'=>'USD','EG'=>'EGP','SV'=>'USD','GQ'=>'XAF','ER'=>'ERN','EE'=>'EUR','ET'=>'ETB','FJ'=>'FJD',
+    'FI'=>'EUR','FR'=>'EUR','GA'=>'XAF','GM'=>'GMD','GE'=>'GEL','DE'=>'EUR','GH'=>'GHS','GR'=>'EUR',
+    'GD'=>'XCD','GT'=>'GTQ','GN'=>'GNF','GW'=>'XOF','GY'=>'GYD','HT'=>'HTG','HN'=>'HNL','HU'=>'HUF',
+    'IS'=>'ISK','IN'=>'INR','ID'=>'IDR','IR'=>'IRR','IQ'=>'IQD','IE'=>'EUR','IL'=>'ILS','IT'=>'EUR',
+    'JM'=>'JMD','JP'=>'JPY','JO'=>'JOD','KZ'=>'KZT','KE'=>'KES','KI'=>'AUD','KW'=>'KWD','KG'=>'KGS',
+    'LA'=>'LAK','LV'=>'EUR','LB'=>'LBP','LS'=>'LSL','LR'=>'LRD','LY'=>'LYD','LI'=>'CHF','LT'=>'EUR',
+    'LU'=>'EUR','MG'=>'MGA','MW'=>'MWK','MY'=>'MYR','MV'=>'MVR','ML'=>'XOF','MT'=>'EUR','MH'=>'USD',
+    'MR'=>'MRU','MU'=>'MUR','MX'=>'MXN','FM'=>'USD','MD'=>'MDL','MC'=>'EUR','MN'=>'MNT','ME'=>'EUR',
+    'MA'=>'MAD','MZ'=>'MZN','MM'=>'MMK','NA'=>'NAD','NR'=>'AUD','NP'=>'NPR','NL'=>'EUR','NZ'=>'NZD',
+    'NI'=>'NIO','NE'=>'XOF','NG'=>'NGN','KP'=>'KPW','MK'=>'MKD','NO'=>'NOK','OM'=>'OMR','PK'=>'PKR',
+    'PW'=>'USD','PS'=>'ILS','PA'=>'PAB','PG'=>'PGK','PY'=>'PYG','PE'=>'PEN','PH'=>'PHP','PL'=>'PLN',
+    'PT'=>'EUR','QA'=>'QAR','RO'=>'RON','RU'=>'RUB','RW'=>'RWF','KN'=>'XCD','LC'=>'XCD','VC'=>'XCD',
+    'WS'=>'WST','SM'=>'EUR','ST'=>'STN','SA'=>'SAR','SN'=>'XOF','RS'=>'RSD','SC'=>'SCR','SL'=>'SLL',
+    'SG'=>'SGD','SK'=>'EUR','SI'=>'EUR','SB'=>'SBD','SO'=>'SOS','ZA'=>'ZAR','KR'=>'KRW','SS'=>'SSP',
+    'ES'=>'EUR','LK'=>'LKR','SD'=>'SDG','SR'=>'SRD','SE'=>'SEK','CH'=>'CHF','SY'=>'SYP','TW'=>'TWD',
+    'TJ'=>'TJS','TZ'=>'TZS','TH'=>'THB','TL'=>'USD','TG'=>'XOF','TO'=>'TOP','TT'=>'TTD','TN'=>'TND',
+    'TR'=>'TRY','TM'=>'TMT','TV'=>'AUD','UG'=>'UGX','UA'=>'UAH','AE'=>'AED','GB'=>'GBP','US'=>'USD',
+    'UY'=>'UYU','UZ'=>'UZS','VU'=>'VUV','VA'=>'EUR','VE'=>'VES','VN'=>'VND','YE'=>'YER','ZM'=>'ZMW',
+    'ZW'=>'ZWL','HK'=>'HKD',
 ];
 
 /* ══════════════════════════════════════════════════════════════
@@ -138,14 +154,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     }
 
-    /* ── delete_job (drafts only) ── */
+    /* ── delete_job ── */
     if ($action === 'delete_job') {
         $jobId = (int)($_POST['job_id'] ?? 0);
         try {
-            $st = $db->prepare("DELETE FROM jobs WHERE id=? AND recruiter_id=? AND status='Draft'");
+            $st = $db->prepare("DELETE FROM jobs WHERE id=? AND recruiter_id=?");
             $st->execute([$jobId, $uid]);
             if ($st->rowCount() === 0) {
-                echo json_encode(['ok' => false, 'msg' => 'Only draft jobs can be deleted']);
+                echo json_encode(['ok' => false, 'msg' => 'Job not found or not yours']);
             } else {
                 echo json_encode(['ok' => true]);
             }
@@ -220,7 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
    FETCH JOBS & COUNTS
    ══════════════════════════════════════════════════════════════ */
 $jobs   = [];
-$counts = ['total' => 0, 'Active' => 0, 'pending' => 0, 'Draft' => 0];
+$counts = ['total' => 0, 'Active' => 0, 'Closed' => 0, 'pending' => 0, 'Draft' => 0];
 $dbErr  = false;
 
 try {
@@ -301,32 +317,39 @@ $jobsJson = json_encode($jobs ?: []);
     body.light .sp-count{color:#1A0A09;}
 
     /* ── Toolbar ── */
-    .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
-    .toolbar-search{flex:1;min-width:200px;position:relative;}
-    .toolbar-search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;}
-    .toolbar-search input{width:100%;padding:9px 13px 9px 34px;border-radius:7px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
-    .toolbar-search input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
-    body.light .toolbar-search input{background:#fff;border-color:#E0CECA;color:#1A0A09;}
-    .toolbar-select{padding:9px 13px;border-radius:7px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;cursor:pointer;transition:.2s;}
-    .toolbar-select:focus{border-color:var(--red-vivid);}
-    body.light .toolbar-select{background:#fff;border-color:#E0CECA;color:#1A0A09;}
-    body.light .toolbar-select option{background:#fff;color:#1A0A09;}
+    .filter-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+    .filter-toolbar .search-wrap{flex:1;min-width:200px;position:relative;}
+    .filter-toolbar .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;}
+    .filter-toolbar .search-wrap input{width:100%;padding:9px 13px 9px 34px;border-radius:7px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
+    .filter-toolbar .search-wrap input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
+    body.light .filter-toolbar .search-wrap input{background:#fff;border-color:#E0CECA;color:#1A0A09;}
+    .filter-toolbar select{padding:9px 13px;border-radius:7px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;cursor:pointer;transition:.2s;}
+    .filter-toolbar select:focus{border-color:var(--red-vivid);}
+    body.light .filter-toolbar select{background:#fff;border-color:#E0CECA;color:#1A0A09;}
+    body.light .filter-toolbar select option{background:#fff;color:#1A0A09;}
 
     /* ── Job list ── */
     .job-list{display:flex;flex-direction:column;gap:10px;}
-    .job-card{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:18px 20px;display:flex;align-items:start;gap:14px;transition:all 0.2s;position:relative;}
-    .job-card:hover{border-color:rgba(209,61,44,.4);box-shadow:0 6px 24px rgba(0,0,0,.25);}
+    .job-card{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:14px;padding:22px 24px;display:flex;align-items:start;gap:16px;transition:all 0.25s;position:relative;}
+    .job-card:hover{border-color:rgba(209,61,44,.4);box-shadow:0 8px 32px rgba(0,0,0,.3),0 0 0 1px rgba(209,61,44,.08);transform:translateY(-1px);}
     .job-card.hidden{display:none;}
     body.light .job-card{background:#fff;border-color:#E0CECA;}
+    body.light .job-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08),0 0 0 1px rgba(209,61,44,.12);}
     .job-icon{width:42px;height:42px;border-radius:10px;background:rgba(209,61,44,.1);border:1px solid rgba(209,61,44,.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--red-bright);flex-shrink:0;}
     .job-body{flex:1;min-width:0;}
-    .job-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:#F5F0EE;margin-bottom:4px;}
+    .job-title{font-family:var(--font-display);font-size:18px;font-weight:700;color:#F5F0EE;margin-bottom:6px;letter-spacing:-0.01em;}
     body.light .job-title{color:#1A0A09;}
     .job-meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--text-muted);margin-bottom:9px;}
     .job-meta i{font-size:10px;color:var(--red-bright);}
-    .chips{display:flex;gap:5px;flex-wrap:wrap;}
-    .chip{font-size:11px;font-weight:500;padding:3px 8px;border-radius:4px;background:var(--soil-hover);color:#A09090;border:1px solid var(--soil-line);}
+    .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;}
+    .chip{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;background:var(--soil-hover);color:#A09090;border:1px solid var(--soil-line);display:inline-flex;align-items:center;gap:4px;}
     body.light .chip{background:#F5EDEB;border-color:#D4B0AB;color:#6A4A4A;}
+    .chip-type{background:rgba(59,130,246,.1);color:#60A5FA;border-color:rgba(59,130,246,.2);}
+    body.light .chip-type{background:rgba(59,130,246,.08);color:#2563EB;border-color:rgba(59,130,246,.2);}
+    .chip-setup{background:rgba(168,85,247,.1);color:#C084FC;border-color:rgba(168,85,247,.2);}
+    body.light .chip-setup{background:rgba(168,85,247,.08);color:#7C3AED;border-color:rgba(168,85,247,.2);}
+    .chip-level{background:rgba(212,148,58,.1);color:var(--amber);border-color:rgba(212,148,58,.2);}
+    body.light .chip-level{background:rgba(212,148,58,.08);color:#B8620A;border-color:rgba(212,148,58,.2);}
 
     /* Status badges */
     .sbadge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em;}
@@ -340,15 +363,18 @@ $jobsJson = json_encode($jobs ?: []);
     .abadge.approved{color:#6ccf8a;background:rgba(76,175,112,.1);border:1px solid rgba(76,175,112,.2);}
     .abadge.rejected{color:#ff8080;background:rgba(220,53,69,.1);border:1px solid rgba(220,53,69,.2);}
 
-    .job-right{display:flex;flex-direction:column;align-items:flex-end;gap:9px;flex-shrink:0;}
-    .app-count{font-family:var(--font-display);font-size:22px;font-weight:700;color:#F5F0EE;text-align:right;}
+    .job-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0;}
+    .app-badge{display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(212,148,58,.06);border:1px solid rgba(212,148,58,.15);border-radius:10px;padding:10px 16px;min-width:72px;}
+    body.light .app-badge{background:rgba(212,148,58,.06);border-color:rgba(212,148,58,.2);}
+    .app-badge>i{font-size:14px;color:var(--amber);margin-bottom:2px;}
+    .app-count{font-family:var(--font-display);font-size:22px;font-weight:700;color:#F5F0EE;text-align:center;}
     .app-count-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
     body.light .app-count{color:#1A0A09;}
     .job-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
     @media(max-width:620px){.job-right{display:none;}}
 
     /* ── Buttons ── */
-    .btn{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:.18s;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);white-space:nowrap;}
+    .btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:.18s;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
     .btn:hover{background:var(--soil-hover);color:#F5F0EE;}
     .btn.primary{background:var(--red-vivid);border-color:var(--red-vivid);color:#fff;}
     .btn.primary:hover{background:var(--red-bright);}
@@ -375,17 +401,25 @@ $jobsJson = json_encode($jobs ?: []);
     body.light .modal-title{color:#1A0A09;}
     .modal-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:6px;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;}
     .modal-close:hover{background:var(--soil-hover);color:#F5F0EE;}
-    .fg{margin-bottom:13px;}
-    .fl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block;}
-    .fi{width:100%;padding:9px 13px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:#F5F0EE;font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
+    .fg{margin-bottom:14px;}
+    .fl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:flex;align-items:center;gap:4px;}
+    .fl .req{color:var(--red-bright);font-size:13px;line-height:1;}
+    .fi{width:100%;padding:10px 14px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:#F5F0EE;font-family:var(--font-body);font-size:13px;outline:none;transition:all .2s;}
+    .fi:hover{border-color:var(--text-muted);}
     .fi:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
     body.light .fi{background:#F5EDEB;border-color:#D4B0AB;color:#1A0A09;}
+    body.light .fi:hover{border-color:#B89090;}
     body.light .fi option{background:#F5EDEB;color:#1A0A09;}
     body.light .fl{color:#7A5555;}
     textarea.fi{resize:vertical;min-height:80px;}
     .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
     @media(max-width:480px){.frow{grid-template-columns:1fr!important;}}
-    .mfoot{display:flex;justify-content:flex-end;gap:9px;margin-top:20px;flex-wrap:wrap;}
+    .form-divider{display:flex;align-items:center;gap:10px;margin:20px 0 14px;font-size:11px;font-weight:700;color:var(--red-pale);text-transform:uppercase;letter-spacing:.08em;}
+    .form-divider::after{content:'';flex:1;height:1px;background:var(--soil-line);}
+    body.light .form-divider{color:var(--red-vivid);}
+    body.light .form-divider::after{background:#E0CECA;}
+    .mfoot{display:flex;justify-content:flex-end;gap:9px;margin-top:22px;padding-top:18px;border-top:1px solid var(--soil-line);flex-wrap:wrap;}
+    body.light .mfoot{border-top-color:#E0CECA;}
 
     /* ── Confirm modal ── */
     .confirm-box{background:var(--soil-card);border:1px solid rgba(220,53,69,.3);border-radius:14px;padding:28px;width:100%;max-width:380px;text-align:center;margin:auto;}
@@ -396,13 +430,109 @@ $jobsJson = json_encode($jobs ?: []);
     .confirm-sub{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
     .confirm-actions{display:flex;gap:10px;justify-content:center;}
 
-    /* ── Toast ── */
-    .toast{position:fixed;bottom:22px;right:22px;background:var(--soil-card);border:1px solid var(--soil-line);border-left:4px solid var(--red-vivid);border-radius:8px;padding:11px 16px;font-size:13px;font-weight:600;color:#F5F0EE;z-index:900;transform:translateY(80px);opacity:0;transition:all .35s ease;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.4);pointer-events:none;}
-    .toast.show{transform:translateY(0);opacity:1;}
-    .toast.ok{border-left-color:#4CAF70;}
-    .toast.err{border-left-color:#E05555;}
+
     @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
     .anim{animation:fadeUp 0.4s ease both;}.anim-d1{animation-delay:0.05s;}.anim-d2{animation-delay:0.1s;}
+
+    /* ── Send Invite Button ── */
+    .btn-send-invite{padding:7px 15px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);white-space:nowrap;display:inline-flex;align-items:center;gap:6px;border:none;background:linear-gradient(135deg,#3B82F6,#1D4ED8);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.35);transition:all .2s ease;letter-spacing:.01em;}
+    .btn-send-invite:hover{background:linear-gradient(135deg,#60A5FA,#2563EB);box-shadow:0 4px 16px rgba(37,99,235,.55);transform:translateY(-1px);}
+    .btn-send-invite:active{transform:translateY(0);box-shadow:0 2px 6px rgba(37,99,235,.3);}
+    .btn-send-invite i{font-size:11px;}
+    /* keep .btn.blue for the modal send button */
+    .btn.blue{background:linear-gradient(135deg,#3B82F6,#1D4ED8);border-color:#2563EB;color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.3);}
+    .btn.blue:hover{background:linear-gradient(135deg,#60A5FA,#2563EB);box-shadow:0 4px 14px rgba(37,99,235,.45);transform:translateY(-1px);}
+    .btn.blue:disabled,.btn.blue[disabled]{background:#4B7AC7;border-color:#4B7AC7;opacity:.55;cursor:not-allowed;transform:none;box-shadow:none;}
+
+    /* ── Premium Send Invitation CTA ── */
+    #invSendBtn{padding:13px 30px;font-size:14px;font-weight:800;letter-spacing:.04em;gap:9px;border-radius:11px;background:linear-gradient(135deg,#3B82F6 0%,#1E40AF 100%);border:none;box-shadow:0 4px 20px rgba(37,99,235,.52);transition:all .25s ease;position:relative;overflow:hidden;}
+    #invSendBtn::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);transition:left .55s ease;pointer-events:none;}
+    #invSendBtn:not(:disabled){animation:invBtnPulse 3.5s ease infinite;}
+    #invSendBtn:not(:disabled):hover{background:linear-gradient(135deg,#60A5FA 0%,#2563EB 100%);box-shadow:0 8px 30px rgba(37,99,235,.7);transform:translateY(-2px);}
+    #invSendBtn:not(:disabled):hover::after{left:140%;}
+    #invSendBtn:disabled{opacity:.55;cursor:not-allowed;box-shadow:none;animation:none;}
+    @keyframes invBtnPulse{0%,100%{box-shadow:0 4px 20px rgba(37,99,235,.52);}55%{box-shadow:0 6px 28px rgba(37,99,235,.78),0 0 0 5px rgba(37,99,235,.13);}}
+    #invSendBtn i{font-size:13px;transition:transform .22s;}
+    #invSendBtn:not(:disabled):hover i{transform:translateX(3px) rotate(-8deg);}
+
+    /* ══════ SEND INVITE MODAL ══════ */
+    .inv-modal-box{background:var(--soil-card);border:1px solid var(--soil-line);border-top:3px solid #3B82F6;border-radius:16px;padding:0;width:100%;max-width:980px;position:relative;margin:auto;display:flex;flex-direction:column;max-height:90vh;box-shadow:0 24px 60px rgba(0,0,0,.6);overflow:hidden;}
+    body.light .inv-modal-box{background:#fff;border-color:#E0CECA;border-top-color:#2563EB;box-shadow:0 24px 60px rgba(0,0,0,.15);}
+    .inv-modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 26px;border-bottom:1px solid var(--soil-line);background:linear-gradient(135deg,rgba(37,99,235,.11),rgba(37,99,235,.03));flex-shrink:0;gap:14px;}
+    body.light .inv-modal-header{background:linear-gradient(135deg,rgba(37,99,235,.06),rgba(37,99,235,.01));border-bottom-color:#E0CECA;}
+    .inv-modal-hicon{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,rgba(59,130,246,.3),rgba(29,78,216,.2));border:1px solid rgba(59,130,246,.35);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .inv-modal-hicon i{font-size:18px;color:#60A5FA;}
+    body.light .inv-modal-hicon{background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(37,99,235,.05));}
+    .inv-modal-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:#F5F0EE;line-height:1.2;}
+    body.light .inv-modal-title{color:#1A0A09;}
+    .inv-modal-subtitle{font-size:12px;color:var(--text-muted);margin-top:3px;}
+    .inv-panels{display:grid;grid-template-columns:1fr 1fr;gap:18px;flex:1;overflow:hidden;min-height:0;padding:22px 26px;}
+    @media(max-width:680px){.inv-panels{grid-template-columns:1fr;overflow:auto;}}
+    .inv-panel{display:flex;flex-direction:column;overflow:hidden;}
+    .inv-panel-title{font-size:10.5px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--soil-line);}
+    body.light .inv-panel-title{border-bottom-color:#E8D9D7;}
+    .inv-panel-title::before{content:'';display:inline-block;width:3px;height:13px;border-radius:2px;flex-shrink:0;}
+    .inv-panel:first-child .inv-panel-title::before{background:linear-gradient(to bottom,#60A5FA,#1D4ED8);}
+    .inv-panel.inv-right .inv-panel-title::before{background:linear-gradient(to bottom,var(--red-bright),var(--red-deep));}
+    /* Left panel */
+    .inv-search-wrap{position:relative;flex-shrink:0;margin-bottom:10px;}
+    .inv-search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:12px;pointer-events:none;}
+    .inv-search-wrap input{width:100%;padding:10px 14px 10px 34px;border-radius:9px;background:var(--soil-hover);border:1px solid var(--soil-line);color:#F5F0EE;font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
+    .inv-search-wrap input:focus{border-color:#3B82F6;box-shadow:0 0 0 3px rgba(59,130,246,.12);}
+    body.light .inv-search-wrap input{background:#F5EDEB;border-color:#D4B0AB;color:#1A0A09;}
+    .inv-seeker-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding-right:3px;min-height:0;}
+    .inv-seeker-list::-webkit-scrollbar{width:4px;}
+    .inv-seeker-list::-webkit-scrollbar-track{background:transparent;}
+    .inv-seeker-list::-webkit-scrollbar-thumb{background:var(--soil-line);border-radius:4px;}
+    .inv-seeker-card{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:11px;border:1px solid var(--soil-line);cursor:pointer;transition:all .18s;background:var(--soil-hover);}
+    .inv-seeker-card:hover:not(.disabled){border-color:rgba(59,130,246,.5);background:rgba(59,130,246,.07);}
+    .inv-seeker-card.selected{border-color:rgba(59,130,246,.65);background:rgba(59,130,246,.12);border-left:3px solid #3B82F6;padding-left:12px;}
+    .inv-seeker-card.disabled{opacity:.5;cursor:not-allowed;}
+    body.light .inv-seeker-card{background:#F5EDEB;border-color:#D4B0AB;}
+    body.light .inv-seeker-card:hover:not(.disabled){background:rgba(37,99,235,.05);}
+    body.light .inv-seeker-card.selected{background:rgba(37,99,235,.09);border-left-color:#2563EB;}
+    .inv-av{width:38px;height:38px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#D13D2C,#7A1515);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;overflow:hidden;}
+    .inv-av img{width:100%;height:100%;object-fit:cover;}
+    .inv-seeker-info{flex:1;min-width:0;}
+    .inv-seeker-name{font-size:13px;font-weight:600;color:#F5F0EE;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+    body.light .inv-seeker-name{color:#1A0A09;}
+    .inv-seeker-hl{font-size:11px;color:var(--text-muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .inv-seeker-loc{font-size:11px;color:var(--text-muted);}
+    .inv-seeker-loc i{font-size:9px;color:var(--red-bright);}
+    .inv-skills-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+    .inv-skill{font-size:10px;padding:2px 7px;border-radius:5px;background:var(--soil-line);color:var(--text-muted);border:1px solid rgba(255,255,255,.05);}
+    body.light .inv-skill{background:#E5D5D3;border-color:#C0A0A0;color:#5A4040;}
+    .inv-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.03em;}
+    .inv-badge.applied{background:rgba(76,175,112,.15);color:#5ec87a;border:1px solid rgba(76,175,112,.25);}
+    .inv-badge.sent{background:rgba(37,99,235,.15);color:#93C5FD;border:1px solid rgba(37,99,235,.25);}
+    .inv-badge.accepted{background:rgba(76,175,112,.15);color:#5ec87a;border:1px solid rgba(76,175,112,.25);}
+    .inv-badge.declined{background:rgba(220,53,69,.15);color:#ff8080;border:1px solid rgba(220,53,69,.25);}
+    .inv-check{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3B82F6,#1D4ED8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;flex-shrink:0;box-shadow:0 2px 6px rgba(37,99,235,.4);}
+    .inv-counter{font-size:12px;font-weight:600;color:var(--text-muted);padding-top:9px;flex-shrink:0;}
+    .inv-loading,.inv-empty{text-align:center;padding:34px 10px;color:var(--text-muted);font-size:13px;}
+    .inv-empty i{font-size:32px;margin-bottom:8px;display:block;opacity:.65;}
+    /* Right panel */
+    .inv-right{overflow-y:auto;}
+    .inv-right::-webkit-scrollbar{width:4px;}
+    .inv-right::-webkit-scrollbar-thumb{background:var(--soil-line);border-radius:4px;}
+    .inv-preview-card{background:var(--soil-hover);border:1px solid var(--soil-line);border-top:3px solid var(--red-vivid);border-radius:12px;padding:20px 22px;font-size:13px;line-height:1.72;color:var(--text-mid);position:relative;overflow:hidden;}
+    .inv-preview-card::after{content:'\f0e0';font-family:'Font Awesome 6 Free';font-weight:900;position:absolute;bottom:-10px;right:10px;font-size:80px;color:rgba(209,61,44,.04);pointer-events:none;line-height:1;}
+    body.light .inv-preview-card{background:#FFFBFA;border-color:#EBDAD8;border-top-color:var(--red-vivid);}
+    body.light .inv-preview-card::after{color:rgba(209,61,44,.05);}
+    .inv-preview-greeting{font-size:15px;font-weight:700;color:#F5F0EE;margin-bottom:14px;font-family:var(--font-display);}
+    body.light .inv-preview-greeting{color:#1A0A09;}
+    .inv-preview-card p{margin-bottom:10px;}
+    .inv-apply-btn{display:inline-flex;align-items:center;gap:7px;margin:12px 0;padding:9px 20px;background:linear-gradient(135deg,var(--red-vivid),var(--red-deep));border-radius:8px;color:#fff;font-size:12px;font-weight:700;text-decoration:none;box-shadow:0 3px 12px rgba(209,61,44,.4);letter-spacing:.02em;}
+    .inv-preview-sig{margin-top:14px;padding-top:13px;border-top:1px dashed var(--soil-line);font-size:12px;color:var(--text-muted);line-height:1.7;display:flex;flex-direction:column;gap:2px;}
+    body.light .inv-preview-sig{border-top-color:#D4B0AB;}
+    .inv-preview-sig strong{color:var(--text-mid);font-size:13px;}
+    .inv-note-count{font-size:11px;color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;}
+    .inv-mfoot{display:flex;justify-content:space-between;align-items:center;padding:16px 26px;background:linear-gradient(to right,rgba(0,0,0,.18),rgba(0,0,0,.1));border-top:1px solid var(--soil-line);flex-shrink:0;flex-wrap:wrap;gap:12px;}
+    body.light .inv-mfoot{border-top-color:#E0CECA;background:linear-gradient(to right,rgba(37,99,235,.04),rgba(37,99,235,.01));}
+    .inv-mfoot .inv-cancel-btn{padding:12px 22px;font-size:13px;font-weight:600;border-radius:10px;border:1.5px solid var(--soil-line);background:transparent;color:var(--text-muted);cursor:pointer;font-family:var(--font-body);transition:all .2s;}
+    .inv-mfoot .inv-cancel-btn:hover{background:var(--soil-hover);color:var(--text-mid);border-color:var(--text-muted);}
+    body.light .inv-mfoot .inv-cancel-btn{border-color:#D4B0AB;color:#6A4A4A;}
+    body.light .inv-mfoot .inv-cancel-btn:hover{background:#F5EDEB;color:#3A2020;}
   </style>
 </head>
 <body>
@@ -441,20 +571,30 @@ $jobsJson = json_encode($jobs ?: []);
       <span class="sp-label">Pending Approval</span>
       <span class="sp-count" id="cntPending"><?= $counts['pending'] ?></span>
     </div>
+    <div class="stat-pill" data-filter="closed" onclick="filterJobs('closed',this)">
+      <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
+      <span class="sp-label">Closed</span>
+      <span class="sp-count" id="cntClosed"><?= $counts['Closed'] ?></span>
+    </div>
     <div class="stat-pill" data-filter="draft" onclick="filterJobs('draft',this)">
       <i class="fas fa-pencil-alt sp-icon" style="color:var(--text-muted)"></i>
       <span class="sp-label">Drafts</span>
       <span class="sp-count" id="cntDraft"><?= $counts['Draft'] ?></span>
     </div>
+    <div class="stat-pill" style="cursor:default;">
+      <i class="fas fa-users sp-icon" style="color:var(--amber)"></i>
+      <span class="sp-label">Applicants</span>
+      <span class="sp-count"><?= array_sum(array_column($jobs, 'app_count')) ?></span>
+    </div>
   </div>
 
   <!-- Toolbar -->
-  <div class="toolbar">
-    <div class="toolbar-search">
+  <div class="filter-toolbar">
+    <div class="search-wrap">
       <i class="fas fa-search"></i>
       <input type="text" id="searchInput" placeholder="Search jobs by title, location, skills…" oninput="applyFilters()">
     </div>
-    <select class="toolbar-select" id="statusFilter" onchange="applyFilters()">
+    <select id="statusFilter" onchange="applyFilters()">
       <option value="all">All Statuses</option>
       <option value="active">Active</option>
       <option value="closed">Closed</option>
@@ -492,24 +632,26 @@ $jobsJson = json_encode($jobs ?: []);
       <div class="job-title"><?= htmlspecialchars($j['title']) ?></div>
       <div class="job-meta">
         <?php if ($j['location']): ?><span><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($j['location']) ?></span><?php endif; ?>
-        <span><i class="fas fa-tag"></i> <?= htmlspecialchars($j['job_type']) ?></span>
-        <span><i class="fas fa-laptop-house"></i> <?= htmlspecialchars($j['setup']) ?></span>
         <?php if ($sal): ?><span><i class="fas fa-money-bill-wave"></i> <?= htmlspecialchars($sal) ?></span><?php endif; ?>
         <span><i class="fas fa-calendar-alt"></i> Posted <?= $pd ?></span>
       </div>
       <div class="chips">
         <span class="sbadge <?= $sc ?>"><?= htmlspecialchars($j['status']) ?></span>
         <span class="abadge <?= $asc ?>"><i class="fas fa-<?= $asc === 'approved' ? 'check' : ($asc === 'rejected' ? 'times' : 'clock') ?>"></i> <?= ucfirst($asc) ?></span>
-        <?php if ($j['experience_level']): ?><span class="chip"><?= htmlspecialchars($j['experience_level']) ?></span><?php endif; ?>
+        <span class="chip chip-type"><i class="fas fa-tag"></i> <?= htmlspecialchars($j['job_type']) ?></span>
+        <span class="chip chip-setup"><i class="fas fa-laptop-house"></i> <?= htmlspecialchars($j['setup']) ?></span>
+        <?php if ($j['experience_level']): ?><span class="chip chip-level"><?= htmlspecialchars($j['experience_level']) ?></span><?php endif; ?>
         <?php foreach (array_slice(explode(',', $j['skills_required'] ?? ''), 0, 3) as $sk): if (trim($sk)): ?><span class="chip"><?= htmlspecialchars(trim($sk)) ?></span><?php endif; endforeach; ?>
       </div>
     </div>
     <div class="job-right">
-      <div>
+      <div class="app-badge">
+        <i class="fas fa-users"></i>
         <div class="app-count"><?= (int)$j['app_count'] ?></div>
         <div class="app-count-lbl">Applicants</div>
       </div>
       <div class="job-actions">
+        <a href="recruiter_applicants.php" class="btn grn"><i class="fas fa-users"></i> View</a>
         <button class="btn" onclick="editJob(<?= $j['id'] ?>)"><i class="fas fa-edit"></i> Edit</button>
         <?php if ($asc === 'approved'): ?>
         <button class="btn <?= $j['status'] === 'Active' ? 'red' : 'grn' ?>" onclick="toggleStatus(<?= $j['id'] ?>,'<?= $j['status'] ?>')" id="tbtn-<?= $j['id'] ?>">
@@ -518,8 +660,11 @@ $jobsJson = json_encode($jobs ?: []);
         <?php endif; ?>
         <?php if ($sc === 'draft'): ?>
         <button class="btn grn" onclick="postDraft(<?= $j['id'] ?>,'<?= htmlspecialchars($j['title'], ENT_QUOTES) ?>')"><i class="fas fa-paper-plane"></i> Post</button>
-        <button class="btn red" onclick="confirmDel(<?= $j['id'] ?>,'<?= htmlspecialchars($j['title'], ENT_QUOTES) ?>')"><i class="fas fa-trash"></i></button>
         <?php endif; ?>
+        <?php if ($sc === 'active'): ?>
+        <button class="btn-send-invite" onclick="openInvite(<?= $j['id'] ?>,'<?= htmlspecialchars($j['title'], ENT_QUOTES) ?>')"><i class="fas fa-user-plus"></i> Send Invite</button>
+        <?php endif; ?>
+        <button class="btn red" onclick="confirmDel(<?= $j['id'] ?>,'<?= htmlspecialchars($j['title'], ENT_QUOTES) ?>')"><i class="fas fa-trash"></i></button>
       </div>
     </div>
   </div>
@@ -538,13 +683,15 @@ $jobsJson = json_encode($jobs ?: []);
     <div class="modal-title" id="mTitle"><i class="fas fa-plus-circle" style="color:var(--red-bright)"></i> Post New Job</div>
     <input type="hidden" id="eJobId">
 
+    <div class="form-divider"><i class="fas fa-briefcase" style="font-size:10px"></i> Job Information</div>
+
     <div class="fg">
-      <label class="fl">Industry *</label>
+      <label class="fl">Industry <span class="req">*</span></label>
       <select class="fi" id="fInd" onchange="updateJobTitleOptions()"><option value="">— Select Industry —</option><option>Accounting</option><option>Administration &amp; Office Support</option><option>Advertising, Arts &amp; Media</option><option>Banking &amp; Financial Services</option><option>Call Centre &amp; Customer Service</option><option>CEO &amp; General Management</option><option>Community Services &amp; Development</option><option>Construction</option><option>Consulting &amp; Strategy</option><option>Design &amp; Architecture</option><option>Education &amp; Training</option><option>Engineering</option><option>Farming, Animals &amp; Conservation</option><option>Government &amp; Defence</option><option>Healthcare &amp; Medical</option><option>Hospitality &amp; Tourism</option><option>Human Resources &amp; Recruitment</option><option>Information &amp; Communication Technology</option><option>Insurance &amp; Superannuation</option><option>Legal</option><option>Manufacturing, Transport &amp; Logistics</option><option>Marketing &amp; Communications</option><option>Mining, Resources &amp; Energy</option><option>Real Estate &amp; Property</option><option>Retail &amp; Consumer Products</option><option>Sales</option><option>Science &amp; Technology</option><option>Self Employment</option><option>Sports &amp; Recreation</option><option>Trades &amp; Services</option></select>
     </div>
 
     <div class="fg">
-      <label class="fl">Job Title *</label>
+      <label class="fl">Job Title <span class="req">*</span></label>
       <select class="fi" id="fTitle" onchange="toggleCustomTitle()"><option value="">— Select industry first —</option></select>
       <input type="text" class="fi" id="fTitleCustom" placeholder="Enter custom job title…" style="display:none;margin-top:7px;">
     </div>
@@ -569,6 +716,8 @@ $jobsJson = json_encode($jobs ?: []);
         </select>
       </div>
     </div>
+
+    <div class="form-divider"><i class="fas fa-map-marker-alt" style="font-size:10px"></i> Location & Compensation</div>
 
     <div class="frow" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="fg">
@@ -602,11 +751,11 @@ $jobsJson = json_encode($jobs ?: []);
 
     <div class="frow">
       <div class="fg">
-        <label class="fl" id="lblSMin">Min Salary (PHP)</label>
+        <label class="fl" id="lblSMin">Min Salary</label>
         <input type="number" class="fi" id="fSMin" placeholder="e.g. 50000">
       </div>
       <div class="fg">
-        <label class="fl" id="lblSMax">Max Salary (PHP)</label>
+        <label class="fl" id="lblSMax">Max Salary</label>
         <input type="number" class="fi" id="fSMax" placeholder="e.g. 90000">
       </div>
     </div>
@@ -617,6 +766,8 @@ $jobsJson = json_encode($jobs ?: []);
         <input type="date" class="fi" id="fDl">
       </div>
     </div>
+
+    <div class="form-divider"><i class="fas fa-file-alt" style="font-size:10px"></i> Additional Details</div>
 
     <div class="fg">
       <label class="fl">Required Skills (comma-separated)</label>
@@ -661,7 +812,58 @@ $jobsJson = json_encode($jobs ?: []);
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ═══════════════════════════════════════════════════════════
+     Send Invite Modal
+     ═══════════════════════════════════════════════════════════ -->
+<div class="modal-bd" id="inviteModal">
+  <div class="inv-modal-box">
+    <button class="modal-close" onclick="closeInviteModal()"><i class="fas fa-times"></i></button>
+    <div class="inv-modal-header">
+      <div class="inv-modal-hicon"><i class="fas fa-paper-plane"></i></div>
+      <div style="flex:1;">
+        <div class="inv-modal-title" id="invModalTitle">Send Invitation</div>
+        <div class="inv-modal-subtitle">Select jobseekers to invite and preview the invitation below.</div>
+      </div>
+    </div>
+
+    <div class="inv-panels">
+      <!-- LEFT: Seeker Selection -->
+      <div class="inv-panel">
+        <div class="inv-panel-title"><i class="fas fa-users" style="font-size:9px;"></i> Jobseeker Selection</div>
+        <div class="inv-search-wrap">
+          <i class="fas fa-search"></i>
+          <input type="text" id="invSearch" placeholder="Search by name, skills, or location…" oninput="invSearchDebounce()">
+        </div>
+        <div id="invSeekerList" class="inv-seeker-list">
+          <div class="inv-loading"><i class="fas fa-circle-notch fa-spin"></i><br>Loading jobseekers…</div>
+        </div>
+        <div class="inv-counter" id="invCounter">0 jobseekers selected</div>
+      </div>
+
+      <!-- RIGHT: Preview -->
+      <div class="inv-panel inv-right">
+        <div class="inv-panel-title"><i class="fas fa-envelope-open-text" style="font-size:9px;"></i> Invitation Message Preview</div>
+        <div class="inv-preview-card" id="invPreviewCard">
+          <div class="inv-preview-greeting">Dear <strong>[Jobseeker Name],</strong></div>
+          <p>We came across your profile on AntCareers and believe you would be an excellent fit for the <strong>[Job Title]</strong> position at <strong><?= htmlspecialchars($companyName, ENT_QUOTES) ?></strong>.</p>
+          <p>We would like to formally invite you to review this opportunity and consider submitting your application.</p>
+          <span class="inv-apply-btn">View Job Details &amp; Apply</span>
+          <p style="margin-top:10px;">We look forward to hearing from you.</p>
+          <div class="inv-preview-sig">Best regards,<br><strong><?= htmlspecialchars($fullName, ENT_QUOTES) ?></strong><br><?= htmlspecialchars($companyName, ENT_QUOTES) ?></div>
+        </div>
+        <div class="fg" style="margin-top:14px;flex-shrink:0;">
+          <label class="fl">Add a personal note <span class="inv-note-count" id="invNoteCount">(optional · 0 / 300)</span></label>
+          <textarea class="fi" id="invNote" rows="3" maxlength="300" placeholder="Add a personal message to accompany this invitation…" oninput="updateInvNoteCount()"></textarea>
+        </div>
+      </div>
+    </div><!-- /.inv-panels -->
+
+    <div class="inv-mfoot">
+      <button class="inv-cancel-btn" onclick="closeInviteModal()"><i class="fas fa-times" style="font-size:11px;margin-right:6px;"></i>Cancel</button>
+      <button class="btn blue" id="invSendBtn" onclick="sendInvites()" disabled><i class="fas fa-paper-plane"></i> Send Invitation</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ══════════════════════════════════════════════════════════════
@@ -669,21 +871,37 @@ $jobsJson = json_encode($jobs ?: []);
    ══════════════════════════════════════════════════════════════ */
 /* Country → Currency map */
 const COUNTRY_CURRENCY = {
-  'PH':'PHP','US':'USD','GB':'GBP','AU':'AUD','CA':'CAD','JP':'JPY','KR':'KRW','SG':'SGD',
-  'HK':'HKD','MY':'MYR','TH':'THB','ID':'IDR','IN':'INR','CN':'CNY','NZ':'NZD','AE':'AED',
-  'SA':'SAR','DE':'EUR','FR':'EUR','IT':'EUR','ES':'EUR','NL':'EUR','IE':'EUR','PT':'EUR',
-  'AT':'EUR','BE':'EUR','FI':'EUR','GR':'EUR','LU':'EUR','MT':'EUR','CY':'EUR','EE':'EUR',
-  'LV':'EUR','LT':'EUR','SK':'EUR','SI':'EUR','HR':'EUR','BG':'BGN','RO':'RON','PL':'PLN',
-  'CZ':'CZK','HU':'HUF','SE':'SEK','DK':'DKK','NO':'NOK','CH':'CHF','BR':'BRL','MX':'MXN',
-  'ZA':'ZAR','NG':'NGN','EG':'EGP','KE':'KES','GH':'GHS','TW':'TWD','VN':'VND','PK':'PKR',
-  'BD':'BDT','LK':'LKR','NP':'NPR','QA':'QAR','KW':'KWD','BH':'BHD','OM':'OMR','JO':'JOD',
-  'IL':'ILS','TR':'TRY','RU':'RUB','UA':'UAH','CL':'CLP','CO':'COP','PE':'PEN','AR':'ARS'
+  'AF':'AFN','AL':'ALL','DZ':'DZD','AD':'EUR','AO':'AOA','AG':'XCD','AR':'ARS','AM':'AMD',
+  'AU':'AUD','AT':'EUR','AZ':'AZN','BS':'BSD','BH':'BHD','BD':'BDT','BB':'BBD','BY':'BYN',
+  'BE':'EUR','BZ':'BZD','BJ':'XOF','BT':'BTN','BO':'BOB','BA':'BAM','BW':'BWP','BR':'BRL',
+  'BN':'BND','BG':'BGN','BF':'XOF','BI':'BIF','KH':'KHR','CM':'XAF','CA':'CAD','CV':'CVE',
+  'CF':'XAF','TD':'XAF','CL':'CLP','CN':'CNY','CO':'COP','KM':'KMF','CG':'XAF','CR':'CRC',
+  'HR':'EUR','CU':'CUP','CY':'EUR','CZ':'CZK','DK':'DKK','DJ':'DJF','DM':'XCD','DO':'DOP',
+  'EC':'USD','EG':'EGP','SV':'USD','GQ':'XAF','ER':'ERN','EE':'EUR','ET':'ETB','FJ':'FJD',
+  'FI':'EUR','FR':'EUR','GA':'XAF','GM':'GMD','GE':'GEL','DE':'EUR','GH':'GHS','GR':'EUR',
+  'GD':'XCD','GT':'GTQ','GN':'GNF','GW':'XOF','GY':'GYD','HT':'HTG','HN':'HNL','HU':'HUF',
+  'IS':'ISK','IN':'INR','ID':'IDR','IR':'IRR','IQ':'IQD','IE':'EUR','IL':'ILS','IT':'EUR',
+  'JM':'JMD','JP':'JPY','JO':'JOD','KZ':'KZT','KE':'KES','KI':'AUD','KW':'KWD','KG':'KGS',
+  'LA':'LAK','LV':'EUR','LB':'LBP','LS':'LSL','LR':'LRD','LY':'LYD','LI':'CHF','LT':'EUR',
+  'LU':'EUR','MG':'MGA','MW':'MWK','MY':'MYR','MV':'MVR','ML':'XOF','MT':'EUR','MH':'USD',
+  'MR':'MRU','MU':'MUR','MX':'MXN','FM':'USD','MD':'MDL','MC':'EUR','MN':'MNT','ME':'EUR',
+  'MA':'MAD','MZ':'MZN','MM':'MMK','NA':'NAD','NR':'AUD','NP':'NPR','NL':'EUR','NZ':'NZD',
+  'NI':'NIO','NE':'XOF','NG':'NGN','KP':'KPW','MK':'MKD','NO':'NOK','OM':'OMR','PK':'PKR',
+  'PW':'USD','PS':'ILS','PA':'PAB','PG':'PGK','PY':'PYG','PE':'PEN','PH':'PHP','PL':'PLN',
+  'PT':'EUR','QA':'QAR','RO':'RON','RU':'RUB','RW':'RWF','KN':'XCD','LC':'XCD','VC':'XCD',
+  'WS':'WST','SM':'EUR','ST':'STN','SA':'SAR','SN':'XOF','RS':'RSD','SC':'SCR','SL':'SLL',
+  'SG':'SGD','SK':'EUR','SI':'EUR','SB':'SBD','SO':'SOS','ZA':'ZAR','KR':'KRW','SS':'SSP',
+  'ES':'EUR','LK':'LKR','SD':'SDG','SR':'SRD','SE':'SEK','CH':'CHF','SY':'SYP','TW':'TWD',
+  'TJ':'TJS','TZ':'TZS','TH':'THB','TL':'USD','TG':'XOF','TO':'TOP','TT':'TTD','TN':'TND',
+  'TR':'TRY','TM':'TMT','TV':'AUD','UG':'UGX','UA':'UAH','AE':'AED','GB':'GBP','US':'USD',
+  'UY':'UYU','UZ':'UZS','VU':'VUV','VA':'EUR','VE':'VES','VN':'VND','YE':'YER','ZM':'ZMW',
+  'ZW':'ZWL','HK':'HKD'
 };
 function onCountryChange() {
   var code = document.getElementById('fCountry').value;
-  var cur = COUNTRY_CURRENCY[code] || 'PHP';
-  document.getElementById('lblSMin').textContent = 'Min Salary (' + cur + ')';
-  document.getElementById('lblSMax').textContent = 'Max Salary (' + cur + ')';
+  var cur = code ? (COUNTRY_CURRENCY[code] || code) : '';
+  document.getElementById('lblSMin').textContent = cur ? 'Min Salary (' + cur + ')' : 'Min Salary';
+  document.getElementById('lblSMax').textContent = cur ? 'Max Salary (' + cur + ')' : 'Max Salary';
 }
 
 var currentFilter = 'all';
@@ -695,6 +913,7 @@ function filterJobs(type, el) {
   var sel = document.getElementById('statusFilter');
   if (type === 'all')     sel.value = 'all';
   else if (type === 'active')  sel.value = 'active';
+  else if (type === 'closed')  sel.value = 'closed';
   else if (type === 'pending') sel.value = 'pending';
   else if (type === 'draft')   sel.value = 'draft';
 
@@ -960,19 +1179,8 @@ function doPost(data, cb) {
   }).then(function(r){ return r.json(); }).then(cb).catch(function(){ toast('Network error', 'err'); });
 }
 
-/* ══════════════════════════════════════════════════════════════
-   Toast
-   ══════════════════════════════════════════════════════════════ */
-function toast(msg, type) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show' + (type ? ' ' + type : '');
-  clearTimeout(t._t);
-  t._t = setTimeout(function(){ t.className = 'toast'; }, 3000);
-}
-
 /* ══ Close modals on backdrop click ══ */
-['jobModal', 'confirmModal'].forEach(function(id){
+['jobModal', 'confirmModal', 'inviteModal'].forEach(function(id){
   document.getElementById(id).addEventListener('click', function(e){
     if (e.target === this) this.classList.remove('open');
   });
@@ -980,6 +1188,209 @@ function toast(msg, type) {
 
 /* ══ Auto-open post modal if ?postjob=1 ══ */
 if (new URLSearchParams(window.location.search).get('postjob') === '1') openPost();
+
+/* ══ Auto-open edit modal if ?edit=<jobId> ══ */
+(function(){
+  var editId = new URLSearchParams(window.location.search).get('edit');
+  if (editId) { setTimeout(function(){ editJob(parseInt(editId,10)); }, 300); }
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   SEND INVITE FEATURE
+   ══════════════════════════════════════════════════════════════ */
+var _invJobId     = null;
+var _invJobTitle  = '';
+var _invSelected  = {};   /* { seekerId: seekerObj } */
+var _invSeekers   = [];   /* current search results */
+var _invTimer     = null;
+var _invCompany   = <?= json_encode($companyName) ?>;
+var _invRecruiter = <?= json_encode($fullName) ?>;
+
+function _esc(s) {
+  var d = document.createElement('div');
+  d.textContent = String(s || '');
+  return d.innerHTML;
+}
+
+function openInvite(jobId, jobTitle) {
+  _invJobId    = jobId;
+  _invJobTitle = jobTitle;
+  _invSelected = {};
+  document.getElementById('invModalTitle').textContent = 'Send Invite — ' + jobTitle;
+  document.getElementById('invSearch').value    = '';
+  document.getElementById('invNote').value      = '';
+  document.getElementById('invNoteCount').textContent = '(optional · 0 / 300)';
+  invUpdateCounter();
+  invUpdateSendBtn();
+  invRenderPreview();
+  document.getElementById('inviteModal').classList.add('open');
+  invLoadSeekers('');
+}
+
+function closeInviteModal() {
+  document.getElementById('inviteModal').classList.remove('open');
+}
+
+function invSearchDebounce() {
+  clearTimeout(_invTimer);
+  _invTimer = setTimeout(function () {
+    invLoadSeekers(document.getElementById('invSearch').value.trim());
+  }, 320);
+}
+
+function invLoadSeekers(q) {
+  var list = document.getElementById('invSeekerList');
+  list.innerHTML = '<div class="inv-loading"><i class="fas fa-circle-notch fa-spin"></i><br>Loading jobseekers…</div>';
+  fetch('../api/job_invitations.php?action=search_seekers&job_id=' + _invJobId + '&q=' + encodeURIComponent(q))
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data.ok) {
+        list.innerHTML = '<div class="inv-empty"><i class="fas fa-exclamation-circle"></i><p>Could not load jobseekers.</p></div>';
+        return;
+      }
+      _invSeekers = data.seekers || [];
+      invRenderList();
+    })
+    .catch(function () {
+      list.innerHTML = '<div class="inv-empty"><i class="fas fa-wifi"></i><p>Connection error. Please try again.</p></div>';
+    });
+}
+
+function invRenderList() {
+  var list = document.getElementById('invSeekerList');
+  if (!_invSeekers.length) {
+    list.innerHTML = '<div class="inv-empty"><i class="fas fa-users-slash"></i><p>No jobseekers found.<br><small>Try a different search term.</small></p></div>';
+    return;
+  }
+
+  var html = '';
+  _invSeekers.forEach(function (s) {
+    var disabled  = s.already_applied || s.invite_status === 'pending' || s.invite_status === 'accepted';
+    var selected  = !!_invSelected[s.id];
+    var badgeHtml = '';
+    if (s.already_applied)          badgeHtml = '<span class="inv-badge applied">Already Applied</span>';
+    else if (s.invite_status === 'pending')  badgeHtml = '<span class="inv-badge sent">Invite Sent</span>';
+    else if (s.invite_status === 'accepted') badgeHtml = '<span class="inv-badge accepted">Accepted</span>';
+    else if (s.invite_status === 'declined') badgeHtml = '<span class="inv-badge declined">Declined</span>';
+
+    var avatarHtml = s.avatar_url
+      ? '<img src="' + _esc(s.avatar_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+      : _esc(s.initials);
+
+    var skillsHtml = (s.skills || []).slice(0, 3).map(function (sk) {
+      return '<span class="inv-skill">' + _esc(sk) + '</span>';
+    }).join('');
+
+    var checkHtml = selected ? '<div class="inv-check"><i class="fas fa-check"></i></div>' : '';
+
+    html += '<div class="inv-seeker-card' + (disabled ? ' disabled' : '') + (selected ? ' selected' : '') + '"'
+      + (disabled ? '' : ' onclick="invToggle(' + s.id + ')" ')
+      + 'data-id="' + s.id + '">'
+      + '<div class="inv-av" style="background:' + _invAvatarColor(s.id) + '">' + avatarHtml + '</div>'
+      + '<div class="inv-seeker-info">'
+        + '<div class="inv-seeker-name">' + _esc(s.name) + badgeHtml + '</div>'
+        + (s.headline ? '<div class="inv-seeker-hl">' + _esc(s.headline) + '</div>' : '')
+        + '<div class="inv-seeker-loc"><i class="fas fa-map-marker-alt"></i> ' + _esc(s.location) + '</div>'
+        + (skillsHtml ? '<div class="inv-skills-row">' + skillsHtml + '</div>' : '')
+      + '</div>'
+      + checkHtml
+      + '</div>';
+  });
+
+  list.innerHTML = html;
+}
+
+function _invAvatarColor(id) {
+  var colors = [
+    'linear-gradient(135deg,#D13D2C,#7A1515)',
+    'linear-gradient(135deg,#2563EB,#1D4ED8)',
+    'linear-gradient(135deg,#4CAF70,#2A7040)',
+    'linear-gradient(135deg,#D4943A,#8A5A10)',
+    'linear-gradient(135deg,#9C27B0,#5A0080)',
+  ];
+  return colors[id % colors.length];
+}
+
+function invToggle(seekerId) {
+  var found = _invSeekers.find(function (s) { return s.id === seekerId; });
+  if (!found) return;
+  if (_invSelected[seekerId]) {
+    delete _invSelected[seekerId];
+  } else {
+    _invSelected[seekerId] = found;
+  }
+  invRenderList();
+  invUpdateCounter();
+  invRenderPreview();
+  invUpdateSendBtn();
+}
+
+function invUpdateCounter() {
+  var n = Object.keys(_invSelected).length;
+  document.getElementById('invCounter').textContent =
+    n + ' jobseeker' + (n !== 1 ? 's' : '') + ' selected';
+}
+
+function invUpdateSendBtn() {
+  document.getElementById('invSendBtn').disabled = Object.keys(_invSelected).length === 0;
+}
+
+function invRenderPreview() {
+  var ids        = Object.keys(_invSelected);
+  var seekerName = '[Jobseeker Name]';
+  if (ids.length > 0) {
+    var first = _invSelected[ids[0]];
+    seekerName = first ? first.name : '[Jobseeker Name]';
+    if (ids.length > 1) seekerName += ' + ' + (ids.length - 1) + ' more';
+  }
+  document.getElementById('invPreviewCard').innerHTML =
+    '<div class="inv-preview-greeting">Dear <strong>' + _esc(seekerName) + ',</strong></div>'
+    + '<p>We came across your profile on AntCareers and believe you would be an excellent fit for the <strong>' + _esc(_invJobTitle) + '</strong> position at <strong>' + _esc(_invCompany) + '</strong>.</p>'
+    + '<p>We would like to formally invite you to review this opportunity and consider submitting your application.</p>'
+    + '<span class="inv-apply-btn">View Job Details &amp; Apply</span>'
+    + '<p style="margin-top:10px;">We look forward to hearing from you.</p>'
+    + '<div class="inv-preview-sig">Best regards,<br><strong>' + _esc(_invRecruiter) + '</strong><br>' + _esc(_invCompany) + '</div>';
+}
+
+function updateInvNoteCount() {
+  var n = document.getElementById('invNote').value.length;
+  document.getElementById('invNoteCount').textContent = '(optional · ' + n + ' / 300)';
+}
+
+function sendInvites() {
+  var ids = Object.keys(_invSelected).map(Number);
+  if (!ids.length) return;
+
+  var btn = document.getElementById('invSendBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Sending…';
+
+  var note = document.getElementById('invNote').value.trim();
+  var fd   = new FormData();
+  fd.append('action',     'send_invites');
+  fd.append('job_id',     _invJobId);
+  fd.append('seeker_ids', JSON.stringify(ids));
+  fd.append('custom_note', note);
+
+  fetch('../api/job_invitations.php', { method: 'POST', body: fd })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Invitation';
+      if (d.ok) {
+        closeInviteModal();
+        var n = d.sent || 0;
+        toast(n === 1 ? 'Invitation sent successfully!' : n + ' invitations sent successfully!', 'ok');
+      } else {
+        toast(d.msg || 'Error sending invitations', 'err');
+      }
+    })
+    .catch(function () {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Invitation';
+      toast('Network error — please try again', 'err');
+    });
+}
 </script>
 </body>
 </html>

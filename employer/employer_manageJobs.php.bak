@@ -1,0 +1,537 @@
+<?php
+declare(strict_types=1);
+require_once dirname(__DIR__) . '/config.php';
+require_once dirname(__DIR__) . '/includes/auth.php';
+requireLogin('employer');
+require_once dirname(__DIR__) . '/includes/countries.php';
+$user        = getUser();
+$fullName    = $user['fullName'];
+$firstName   = $user['firstName'];
+$initials    = $user['initials'];
+$avatarUrl   = $user['avatarUrl'];
+$companyName = $user['companyName'] ?: 'Your Company';
+$navActive   = 'manage-jobs';
+
+/* ── Country → Currency map ── */
+const COUNTRY_CURRENCIES = [
+    'AF'=>'AFN','AL'=>'ALL','DZ'=>'DZD','AD'=>'EUR','AO'=>'AOA','AG'=>'XCD','AR'=>'ARS','AM'=>'AMD',
+    'AU'=>'AUD','AT'=>'EUR','AZ'=>'AZN','BS'=>'BSD','BH'=>'BHD','BD'=>'BDT','BB'=>'BBD','BY'=>'BYN',
+    'BE'=>'EUR','BZ'=>'BZD','BJ'=>'XOF','BT'=>'BTN','BO'=>'BOB','BA'=>'BAM','BW'=>'BWP','BR'=>'BRL',
+    'BN'=>'BND','BG'=>'BGN','BF'=>'XOF','BI'=>'BIF','KH'=>'KHR','CM'=>'XAF','CA'=>'CAD','CV'=>'CVE',
+    'CF'=>'XAF','TD'=>'XAF','CL'=>'CLP','CN'=>'CNY','CO'=>'COP','KM'=>'KMF','CG'=>'XAF','CR'=>'CRC',
+    'HR'=>'EUR','CU'=>'CUP','CY'=>'EUR','CZ'=>'CZK','DK'=>'DKK','DJ'=>'DJF','DM'=>'XCD','DO'=>'DOP',
+    'EC'=>'USD','EG'=>'EGP','SV'=>'USD','GQ'=>'XAF','ER'=>'ERN','EE'=>'EUR','ET'=>'ETB','FJ'=>'FJD',
+    'FI'=>'EUR','FR'=>'EUR','GA'=>'XAF','GM'=>'GMD','GE'=>'GEL','DE'=>'EUR','GH'=>'GHS','GR'=>'EUR',
+    'GD'=>'XCD','GT'=>'GTQ','GN'=>'GNF','GW'=>'XOF','GY'=>'GYD','HT'=>'HTG','HN'=>'HNL','HU'=>'HUF',
+    'IS'=>'ISK','IN'=>'INR','ID'=>'IDR','IR'=>'IRR','IQ'=>'IQD','IE'=>'EUR','IL'=>'ILS','IT'=>'EUR',
+    'JM'=>'JMD','JP'=>'JPY','JO'=>'JOD','KZ'=>'KZT','KE'=>'KES','KI'=>'AUD','KW'=>'KWD','KG'=>'KGS',
+    'LA'=>'LAK','LV'=>'EUR','LB'=>'LBP','LS'=>'LSL','LR'=>'LRD','LY'=>'LYD','LI'=>'CHF','LT'=>'EUR',
+    'LU'=>'EUR','MG'=>'MGA','MW'=>'MWK','MY'=>'MYR','MV'=>'MVR','ML'=>'XOF','MT'=>'EUR','MH'=>'USD',
+    'MR'=>'MRU','MU'=>'MUR','MX'=>'MXN','FM'=>'USD','MD'=>'MDL','MC'=>'EUR','MN'=>'MNT','ME'=>'EUR',
+    'MA'=>'MAD','MZ'=>'MZN','MM'=>'MMK','NA'=>'NAD','NR'=>'AUD','NP'=>'NPR','NL'=>'EUR','NZ'=>'NZD',
+    'NI'=>'NIO','NE'=>'XOF','NG'=>'NGN','KP'=>'KPW','MK'=>'MKD','NO'=>'NOK','OM'=>'OMR','PK'=>'PKR',
+    'PW'=>'USD','PS'=>'ILS','PA'=>'PAB','PG'=>'PGK','PY'=>'PYG','PE'=>'PEN','PH'=>'PHP','PL'=>'PLN',
+    'PT'=>'EUR','QA'=>'QAR','RO'=>'RON','RU'=>'RUB','RW'=>'RWF','KN'=>'XCD','LC'=>'XCD','VC'=>'XCD',
+    'WS'=>'WST','SM'=>'EUR','ST'=>'STN','SA'=>'SAR','SN'=>'XOF','RS'=>'RSD','SC'=>'SCR','SL'=>'SLL',
+    'SG'=>'SGD','SK'=>'EUR','SI'=>'EUR','SB'=>'SBD','SO'=>'SOS','ZA'=>'ZAR','KR'=>'KRW','SS'=>'SSP',
+    'ES'=>'EUR','LK'=>'LKR','SD'=>'SDG','SR'=>'SRD','SE'=>'SEK','CH'=>'CHF','SY'=>'SYP','TW'=>'TWD',
+    'TJ'=>'TJS','TZ'=>'TZS','TH'=>'THB','TL'=>'USD','TG'=>'XOF','TO'=>'TOP','TT'=>'TTD','TN'=>'TND',
+    'TR'=>'TRY','TM'=>'TMT','TV'=>'AUD','UG'=>'UGX','UA'=>'UAH','AE'=>'AED','GB'=>'GBP','US'=>'USD',
+    'UY'=>'UYU','UZ'=>'UZS','VU'=>'VUV','VA'=>'EUR','VE'=>'VES','VN'=>'VND','YE'=>'YER','ZM'=>'ZMW',
+    'ZW'=>'ZWL','HK'=>'HKD',
+];
+
+/* ── AJAX ── */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $action = (string)($_POST['action'] ?? '');
+    $uid    = (int)$_SESSION['user_id'];
+
+    if ($action === 'post_job') {
+        $title   = trim((string)($_POST['title'] ?? ''));
+        if (!$title) { echo json_encode(['ok'=>false,'msg'=>'Title required']); exit; }
+        $desc    = trim((string)($_POST['description'] ?? ''));
+        $req     = trim((string)($_POST['requirements'] ?? ''));
+        $loc     = trim((string)($_POST['location'] ?? ''));
+        $type    = (string)($_POST['job_type'] ?? 'Full-time');
+        $setup   = (string)($_POST['setup'] ?? 'On-site');
+        $sMin    = $_POST['salary_min'] !== '' ? (float)$_POST['salary_min'] : null;
+        $sMax    = $_POST['salary_max'] !== '' ? (float)$_POST['salary_max'] : null;
+        $ind     = trim((string)($_POST['industry'] ?? ''));
+        $exp     = (string)($_POST['experience_level'] ?? '') ?: null;
+        $skills  = trim((string)($_POST['skills'] ?? ''));
+        $dl      = (string)($_POST['deadline'] ?? '') ?: null;
+        $country  = trim((string)($_POST['country'] ?? ''));
+        $duration = trim((string)($_POST['recruitment_duration'] ?? '')) ?: null;
+        $currency = $country ? (COUNTRY_CURRENCIES[$country] ?? 'PHP') : 'PHP';
+        try {
+            $db = getDB();
+            $db->prepare("INSERT INTO jobs (employer_id,title,description,requirements,location,job_type,setup,salary_min,salary_max,salary_currency,industry,experience_level,skills_required,status,deadline,country,recruitment_duration) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'Active',?,?,?)")
+               ->execute([$uid,$title,$desc,$req,$loc,$type,$setup,$sMin,$sMax,$currency,$ind,$exp,$skills,$dl,$country,$duration]);
+            echo json_encode(['ok'=>true,'job_id'=>(int)$db->lastInsertId(),'title'=>$title]);
+        } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
+        exit;
+    }
+
+    if ($action === 'toggle_status') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        try {
+            $db  = getDB();
+            $row = $db->prepare("SELECT status FROM jobs WHERE id=? AND employer_id=?");
+            $row->execute([$jobId,$uid]);
+            $r   = $row->fetch(PDO::FETCH_ASSOC);
+            if (!$r) { echo json_encode(['ok'=>false,'msg'=>'Not found']); exit; }
+            $new = $r['status']==='Active'?'Closed':'Active';
+            $db->prepare("UPDATE jobs SET status=? WHERE id=?")->execute([$new,$jobId]);
+            echo json_encode(['ok'=>true,'status'=>$new]);
+        } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
+        exit;
+    }
+
+    if ($action === 'delete_job') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        try {
+            getDB()->prepare("DELETE FROM jobs WHERE id=? AND employer_id=?")->execute([$jobId,$uid]);
+            echo json_encode(['ok'=>true]);
+        } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
+        exit;
+    }
+
+    if ($action === 'get_job') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        try {
+            $st = getDB()->prepare("SELECT * FROM jobs WHERE id=? AND employer_id=?");
+            $st->execute([$jobId,$uid]);
+            $r  = $st->fetch(PDO::FETCH_ASSOC);
+            if (!$r) { echo json_encode(['ok'=>false,'msg'=>'Not found']); exit; }
+            echo json_encode(['ok'=>true,'job'=>$r]);
+        } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
+        exit;
+    }
+
+    if ($action === 'update_job') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        $title = trim((string)($_POST['title'] ?? ''));
+        if (!$title) { echo json_encode(['ok'=>false,'msg'=>'Title required']); exit; }
+        $desc  = trim((string)($_POST['description'] ?? ''));
+        $req   = trim((string)($_POST['requirements'] ?? ''));
+        $loc   = trim((string)($_POST['location'] ?? ''));
+        $type  = (string)($_POST['job_type'] ?? 'Full-time');
+        $setup = (string)($_POST['setup'] ?? 'On-site');
+        $sMin  = $_POST['salary_min'] !== '' ? (float)$_POST['salary_min'] : null;
+        $sMax  = $_POST['salary_max'] !== '' ? (float)$_POST['salary_max'] : null;
+        $ind   = trim((string)($_POST['industry'] ?? ''));
+        $exp   = (string)($_POST['experience_level'] ?? '') ?: null;
+        $skills= trim((string)($_POST['skills'] ?? ''));
+        $dl    = (string)($_POST['deadline'] ?? '') ?: null;
+        $country  = trim((string)($_POST['country'] ?? ''));
+        $duration = trim((string)($_POST['recruitment_duration'] ?? '')) ?: null;
+        $currency = $country ? (COUNTRY_CURRENCIES[$country] ?? 'PHP') : 'PHP';
+        try {
+            getDB()->prepare("UPDATE jobs SET title=?,description=?,requirements=?,location=?,job_type=?,setup=?,salary_min=?,salary_max=?,salary_currency=?,industry=?,experience_level=?,skills_required=?,deadline=?,country=?,recruitment_duration=? WHERE id=? AND employer_id=?")
+                   ->execute([$title,$desc,$req,$loc,$type,$setup,$sMin,$sMax,$currency,$ind,$exp,$skills,$dl,$country,$duration,$jobId,$uid]);
+            echo json_encode(['ok'=>true,'title'=>$title]);
+        } catch(Exception $e) { echo json_encode(['ok'=>false,'msg'=>'DB error']); }
+        exit;
+    }
+
+    echo json_encode(['ok'=>false,'msg'=>'Unknown action']); exit;
+}
+
+/* ── FETCH JOBS ── */
+$filterStatus = trim((string)($_GET['status'] ?? ''));
+$uid  = (int)$_SESSION['user_id'];
+$jobs = []; $counts = ['Active'=>0,'Closed'=>0,'Draft'=>0,'total'=>0,'applicants'=>0];
+$dbErr = false;
+
+try {
+    $db = getDB();
+    $sc = $db->prepare("SELECT status,COUNT(*) AS c FROM jobs WHERE employer_id=? GROUP BY status");
+    $sc->execute([$uid]);
+    foreach($sc->fetchAll(PDO::FETCH_ASSOC) as $r){ $counts[$r['status']]=(int)$r['c']; $counts['total']+=(int)$r['c']; }
+    $ta = $db->prepare("SELECT COUNT(*) FROM applications a JOIN jobs j ON j.id=a.job_id WHERE j.employer_id=?");
+    $ta->execute([$uid]); $counts['applicants']=(int)$ta->fetchColumn();
+    $w='WHERE j.employer_id=?'; $p=[$uid];
+    if($filterStatus && in_array($filterStatus,['Active','Closed','Draft'],true)){ $w.=' AND j.status=?'; $p[]=$filterStatus; }
+    $st=$db->prepare("SELECT j.*,COUNT(a.id) AS app_count FROM jobs j LEFT JOIN applications a ON a.job_id=j.id {$w} GROUP BY j.id ORDER BY j.created_at DESC");
+    $st->execute($p); $jobs=$st->fetchAll(PDO::FETCH_ASSOC);
+} catch(Exception $e) {
+    $dbErr=true;
+    error_log('[AntCareers] manageJobs fetch error: '.$e->getMessage());
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>AntCareers — Manage Jobs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    :root{--red-deep:#7A1515;--red-mid:#B83525;--red-vivid:#D13D2C;--red-bright:#E85540;--red-pale:#F07060;--soil-dark:#0A0909;--soil-med:#131010;--soil-card:#1C1818;--soil-hover:#252020;--soil-line:#352E2E;--text-light:#F5F0EE;--text-mid:#D0BCBA;--text-muted:#927C7A;--amber:#D4943A;--green:#4CAF70;--font-display:'Playfair Display',Georgia,serif;--font-body:'Plus Jakarta Sans',system-ui,sans-serif;}
+    html{overflow-x:hidden;}
+    body{font-family:var(--font-body);background:var(--soil-dark);color:var(--text-light);overflow-x:hidden;min-height:100vh;-webkit-font-smoothing:antialiased;}
+    .glow-orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;}
+    .glow-1{width:600px;height:600px;background:radial-gradient(circle,rgba(209,61,44,0.13) 0%,transparent 70%);top:-100px;left:-150px;animation:orb1 18s ease-in-out infinite alternate;}
+    .glow-2{width:400px;height:400px;background:radial-gradient(circle,rgba(209,61,44,0.06) 0%,transparent 70%);bottom:0;right:-80px;animation:orb2 24s ease-in-out infinite alternate;}
+    @keyframes orb1{to{transform:translate(60px,80px) scale(1.1);}}
+    @keyframes orb2{to{transform:translate(-40px,-50px) scale(1.1);}}
+    .navbar{position:sticky;top:0;z-index:400;background:rgba(10,9,9,0.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(209,61,44,0.35);box-shadow:0 1px 0 rgba(209,61,44,0.06),0 4px 24px rgba(0,0,0,0.5);}
+    .nav-inner{max-width:1380px;margin:0 auto;padding:0 24px;display:flex;align-items:center;height:64px;gap:0;min-width:0;}
+    .logo{display:flex;align-items:center;gap:8px;text-decoration:none;margin-right:28px;flex-shrink:0;}
+    .logo-icon{width:34px;height:34px;background:var(--red-vivid);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 0 18px rgba(209,61,44,0.35);}
+    .logo-icon::before{content:'🐜';font-size:18px;filter:brightness(0) invert(1);}
+    .logo-text{font-family:var(--font-display);font-weight:700;font-size:19px;color:#F5F0EE;white-space:nowrap;}
+    .logo-text span{color:var(--red-bright);}
+    .nav-links{display:flex;align-items:center;gap:2px;flex:1;min-width:0;}
+    .nav-link{font-size:13px;font-weight:600;color:#A09090;text-decoration:none;padding:7px 11px;border-radius:6px;transition:all 0.2s;cursor:pointer;background:none;border:none;font-family:var(--font-body);display:flex;align-items:center;gap:5px;white-space:nowrap;letter-spacing:0.01em;}
+    .nav-link:hover,.nav-link.active{color:#F5F0EE;background:var(--soil-hover);}
+    .nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0;}
+    .theme-btn{width:34px;height:34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:13px;flex-shrink:0;}
+    .theme-btn:hover{color:var(--red-bright);border-color:var(--red-vivid);}
+    .notif-btn-nav{position:relative;width:36px;height:36px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:14px;color:var(--text-muted);flex-shrink:0;}
+    .notif-btn-nav:hover{color:var(--red-pale);border-color:var(--red-vivid);}
+    .notif-btn-nav .badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:50%;background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--soil-dark);overflow:hidden;padding:0 3px;}
+    .btn-nav-red{padding:7px 16px;border-radius:7px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;transition:0.2s;white-space:nowrap;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(209,61,44,0.3);text-decoration:none;display:flex;align-items:center;gap:7px;}
+    .btn-nav-red:hover{background:var(--red-bright);transform:translateY(-1px);box-shadow:0 4px 14px rgba(209,61,44,0.45);}
+    .profile-wrap{position:relative;}
+    .profile-btn{display:flex;align-items:center;gap:9px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:6px 12px 6px 8px;cursor:pointer;transition:0.2s;flex-shrink:0;}
+    .profile-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#8a5010);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
+    .profile-avatar img{width:100%;height:100%;object-fit:cover;}
+    .profile-name{font-size:13px;font-weight:600;color:#F5F0EE;}
+    .profile-role{font-size:10px;color:var(--amber);margin-top:1px;letter-spacing:0.02em;font-weight:600;}
+    .profile-chevron{font-size:9px;color:var(--text-muted);margin-left:2px;}
+    .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;padding:6px;min-width:200px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:all 0.18s ease;z-index:300;box-shadow:0 20px 40px rgba(0,0,0,0.5);}
+    .profile-dropdown.open{opacity:1;visibility:visible;transform:translateY(0);}
+    .profile-dropdown-head{padding:12px 14px 10px;border-bottom:1px solid var(--soil-line);margin-bottom:4px;}
+    .pdh-name{font-size:14px;font-weight:700;color:#F5F0EE;}
+    .pdh-sub{font-size:11px;color:var(--amber);margin-top:2px;font-weight:600;}
+    .pd-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;font-size:13px;font-weight:500;color:var(--text-mid);cursor:pointer;transition:0.15s;font-family:var(--font-body);text-decoration:none;}
+    .pd-item i{color:var(--text-muted);width:16px;text-align:center;font-size:12px;}
+    .pd-item:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .pd-item:hover i{color:var(--red-bright);}
+    .pd-divider{height:1px;background:var(--soil-line);margin:4px 6px;}
+    .pd-item.danger{color:#E05555;}
+    .pd-item.danger i{color:#E05555;}
+    .pd-item.danger:hover{background:rgba(224,85,85,0.1);color:#FF7070;}
+    .hamburger{display:none;width:34px;height:34px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-mid);align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;margin-left:8px;}
+    .mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:rgba(10,9,9,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--soil-line);padding:12px 20px 16px;z-index:190;flex-direction:column;gap:2px;}
+    .mobile-menu.open{display:flex;}
+    .mobile-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:7px;font-size:14px;font-weight:500;color:var(--text-mid);cursor:pointer;transition:0.15s;font-family:var(--font-body);text-decoration:none;}
+    .mobile-link i{color:var(--red-mid);width:16px;text-align:center;}
+    .mobile-link:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .mobile-divider{height:1px;background:var(--soil-line);margin:6px 0;}
+    @media(max-width:880px){.nav-links{display:none;}.hamburger{display:flex;}}
+    body.light{background:#FAF7F5;color:#1A0A09;--soil-dark:#F9F5F4;--soil-card:#FFFFFF;--soil-hover:#FEF0EE;--soil-line:#E0CECA;--text-light:#1A0A09;--text-mid:#4A2828;--text-muted:#7A5555;--amber-dim:#FFF4E0;--amber:#B8620A;}
+    body.light .navbar{background:rgba(255,253,252,0.98);border-bottom-color:#D4B0AB;box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08);}
+    body.light .logo-text{color:#1A0A09;}
+    body.light .logo-text span{color:var(--red-vivid);}
+    body.light .nav-link{color:#5A4040;}
+    body.light .nav-link:hover,body.light .nav-link.active{color:#1A0A09;background:#FEF0EE;}
+    body.light .theme-btn,body.light .notif-btn-nav,body.light .profile-btn{background:#F5EDEB;border-color:#D4B0AB;}
+    body.light .profile-name{color:#1A0A09;}
+    body.light .pdh-name{color:#1A0A09;}
+    body.light .profile-dropdown,body.light .mobile-menu{background:#FFF8F7;border-color:#D4B0AB;}
+    body.light .pd-item{color:#4A3030;}
+    body.light .pd-item:hover{background:#FEF0EE;}
+    .page-shell{max-width:1380px;margin:0 auto;padding:28px 24px 60px;position:relative;z-index:1;}
+    .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+    .page-title{font-family:var(--font-display);font-size:28px;font-weight:700;color:#F5F0EE;margin-bottom:4px;}
+    .page-title span{color:var(--red-bright);font-style:italic;}
+    .page-sub{font-size:14px;color:var(--text-muted);}
+    body.light .page-title{color:#1A0A09;}
+    .db-warn{background:rgba(212,148,58,.1);border:1px solid rgba(212,148,58,.3);border-radius:8px;padding:10px 16px;font-size:13px;color:var(--amber);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+    .stats-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+    .stat-pill{display:flex;align-items:center;gap:8px;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;padding:10px 15px;cursor:pointer;transition:all 0.18s;text-decoration:none;}
+    .stat-pill:hover,.stat-pill.active{border-color:rgba(209,61,44,.45);background:rgba(209,61,44,.07);}
+    .sp-icon{font-size:13px;width:17px;text-align:center;}
+    .sp-label{font-size:12px;font-weight:600;color:var(--text-muted);}
+    .sp-count{font-size:17px;font-weight:800;color:#F5F0EE;font-family:var(--font-display);}
+    body.light .stat-pill{background:#fff;border-color:#E0CECA;}
+    body.light .sp-count{color:#1A0A09;}
+    .job-list{display:flex;flex-direction:column;gap:10px;}
+    /* ── Search Toolbar ── */
+    .filter-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+    .filter-toolbar .search-wrap{flex:1;min-width:200px;position:relative;}
+    .filter-toolbar .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;}
+    .filter-toolbar .search-wrap input{width:100%;padding:9px 13px 9px 34px;border-radius:7px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
+    .filter-toolbar .search-wrap input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
+    .filter-toolbar select{padding:9px 13px;border-radius:7px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;cursor:pointer;outline:none;transition:.2s;}
+    .filter-toolbar select:focus{border-color:var(--red-vivid);}
+    body.light .filter-toolbar .search-wrap input{background:#fff;border-color:#E0CECA;color:#1A0A09;}
+    body.light .filter-toolbar select{background:#fff;border-color:#E0CECA;color:#1A0A09;}
+    body.light .filter-toolbar select option{background:#fff;color:#1A0A09;}
+    .job-card{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:14px;padding:22px 24px;display:flex;align-items:start;gap:16px;transition:all 0.25s;position:relative;}
+    .job-card:hover{border-color:rgba(209,61,44,.4);box-shadow:0 8px 32px rgba(0,0,0,.3),0 0 0 1px rgba(209,61,44,.08);transform:translateY(-1px);}
+    body.light .job-card{background:#fff;border-color:#E0CECA;}
+    body.light .job-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08),0 0 0 1px rgba(209,61,44,.12);}
+    .job-icon{width:42px;height:42px;border-radius:10px;background:rgba(209,61,44,.1);border:1px solid rgba(209,61,44,.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--red-bright);flex-shrink:0;}
+    .job-body{flex:1;min-width:0;}
+    .job-title{font-family:var(--font-display);font-size:18px;font-weight:700;color:#F5F0EE;margin-bottom:6px;letter-spacing:-0.01em;}
+    body.light .job-title{color:#1A0A09;}
+    .job-meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--text-muted);margin-bottom:9px;}
+    .job-meta i{font-size:10px;color:var(--red-bright);}
+    .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;}
+    .chip{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;background:var(--soil-hover);color:#A09090;border:1px solid var(--soil-line);display:inline-flex;align-items:center;gap:4px;}
+    body.light .chip{background:#F5EDEB;border-color:#D4B0AB;color:#6A4A4A;}
+    .chip-type{background:rgba(59,130,246,.1);color:#60A5FA;border-color:rgba(59,130,246,.2);}
+    body.light .chip-type{background:rgba(59,130,246,.08);color:#2563EB;border-color:rgba(59,130,246,.2);}
+    .chip-setup{background:rgba(168,85,247,.1);color:#C084FC;border-color:rgba(168,85,247,.2);}
+    body.light .chip-setup{background:rgba(168,85,247,.08);color:#7C3AED;border-color:rgba(168,85,247,.2);}
+    .chip-level{background:rgba(212,148,58,.1);color:var(--amber);border-color:rgba(212,148,58,.2);}
+    body.light .chip-level{background:rgba(212,148,58,.08);color:#B8620A;border-color:rgba(212,148,58,.2);}
+    .sbadge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em;}
+    .sbadge.active{color:#6ccf8a;background:rgba(76,175,112,.1);border:1px solid rgba(76,175,112,.2);}
+    .sbadge.closed{color:#ff8080;background:rgba(220,53,69,.1);border:1px solid rgba(220,53,69,.2);}
+    .sbadge.draft{color:var(--text-muted);background:var(--soil-hover);border:1px solid var(--soil-line);}
+    .job-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0;}
+    .app-badge{display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(212,148,58,.06);border:1px solid rgba(212,148,58,.15);border-radius:10px;padding:10px 16px;min-width:72px;}
+    body.light .app-badge{background:rgba(212,148,58,.06);border-color:rgba(212,148,58,.2);}
+    .app-badge>i{font-size:14px;color:var(--amber);margin-bottom:2px;}
+    .app-count{font-family:var(--font-display);font-size:22px;font-weight:700;color:#F5F0EE;text-align:center;}
+    .app-count-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
+    body.light .app-count{color:#1A0A09;}
+    .job-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+    .btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:.18s;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+    .btn:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .btn.primary{background:var(--red-vivid);border-color:var(--red-vivid);color:#fff;}
+    .btn.primary:hover{background:var(--red-bright);}
+    .btn.grn{border-color:rgba(76,175,112,.4);color:#6ccf8a;}
+    .btn.grn:hover{background:rgba(76,175,112,.1);}
+    .btn.red{border-color:rgba(220,53,69,.4);color:#ff8080;}
+    .btn.red:hover{background:rgba(220,53,69,.1);}
+    body.light .btn{border-color:#D4B0AB;color:#5A4040;}
+    @media(max-width:620px){.job-right{display:none;}}
+    .empty{text-align:center;padding:55px 20px;color:var(--text-muted);}
+    .empty i{font-size:42px;margin-bottom:12px;color:var(--soil-line);display:block;}
+    .modal-bd{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto;}
+    .modal-bd.open{display:flex;}
+    .modal-box{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:16px;padding:26px;width:100%;max-width:620px;position:relative;margin:auto;}
+    body.light .modal-box{background:#fff;border-color:#E0CECA;}
+    .modal-title{font-family:var(--font-display);font-size:21px;font-weight:700;color:#F5F0EE;margin-bottom:20px;display:flex;align-items:center;gap:9px;}
+    body.light .modal-title{color:#1A0A09;}
+    .modal-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:6px;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;}
+    .modal-close:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .fg{margin-bottom:14px;}
+    .fl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:flex;align-items:center;gap:4px;}
+    .fl .req{color:var(--red-bright);font-size:13px;line-height:1;}
+    .fi{width:100%;padding:10px 14px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:#F5F0EE;font-family:var(--font-body);font-size:13px;outline:none;transition:all .2s;}
+    .fi:hover{border-color:var(--text-muted);}
+    .fi:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
+    body.light .fi{background:#F5EDEB;border-color:#D4B0AB;color:#1A0A09;}
+    body.light .fi:hover{border-color:#B89090;}
+    body.light .fi option{background:#F5EDEB;color:#1A0A09;}
+    body.light .fl{color:#7A5555;}
+    textarea.fi{resize:vertical;min-height:80px;}
+    .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    @media(max-width:480px){.frow{grid-template-columns:1fr;}
+    @media(max-width:480px){.frow[style*="grid-template-columns"]{grid-template-columns:1fr!important;}}
+    .form-divider{display:flex;align-items:center;gap:10px;margin:20px 0 14px;font-size:11px;font-weight:700;color:var(--red-pale);text-transform:uppercase;letter-spacing:.08em;}
+    .form-divider::after{content:'';flex:1;height:1px;background:var(--soil-line);}
+    body.light .form-divider{color:var(--red-vivid);}
+    body.light .form-divider::after{background:#E0CECA;}
+    .mfoot{display:flex;justify-content:flex-end;gap:9px;margin-top:22px;padding-top:18px;border-top:1px solid var(--soil-line);}
+    body.light .mfoot{border-top-color:#E0CECA;}
+    .confirm-box{background:var(--soil-card);border:1px solid rgba(220,53,69,.3);border-radius:14px;padding:28px;width:100%;max-width:380px;text-align:center;margin:auto;}
+    body.light .confirm-box{background:#fff;}
+    .confirm-icon{font-size:38px;color:#ff8080;margin-bottom:12px;}
+    .confirm-title{font-family:var(--font-display);font-size:18px;color:#F5F0EE;margin-bottom:7px;}
+    body.light .confirm-title{color:#1A0A09;}
+    .confirm-sub{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
+    .confirm-actions{display:flex;gap:10px;justify-content:center;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .anim{animation:fadeUp 0.4s ease both;}.anim-d1{animation-delay:0.05s;}.anim-d2{animation-delay:0.1s;}
+  </style>
+</head>
+<body>
+<div class="glow-orb glow-1"></div>
+<div class="glow-orb glow-2"></div>
+
+<?php require_once dirname(__DIR__) . '/includes/navbar_employer.php'; ?>
+
+<div class="page-shell anim">
+  <div class="ph">
+    <div><h1 class="page-title">Manage <span>Jobs</span></h1><p class="page-sub">Post, edit, open or close your job listings.</p></div>
+    <button class="btn primary" onclick="openPost()" style="padding:9px 18px;font-size:13px;color:#ffffff;"><i class="fas fa-plus-circle"></i> Post New Job</button>
+  </div>
+
+  <?php if($dbErr):?>
+  <div class="db-warn"><i class="fas fa-exclamation-triangle"></i> Demo data shown — run <strong>sql/migration_employer.sql</strong> to connect live data.</div>
+  <?php endif;?>
+
+  <div class="stats-row">
+  <?php
+  $sd=[
+    ''=>['i'=>'fa-briefcase','l'=>'All Jobs','c'=>'var(--red-pale)','n'=>$counts['total']],
+    'Active'=>['i'=>'fa-check-circle','l'=>'Active','c'=>'#6ccf8a','n'=>$counts['Active']],
+    'Closed'=>['i'=>'fa-times-circle','l'=>'Closed','c'=>'#ff8080','n'=>$counts['Closed']],
+    'Draft'=>['i'=>'fa-pencil-alt','l'=>'Drafts','c'=>'var(--text-muted)','n'=>$counts['Draft']],
+  ];
+  foreach($sd as $k=>$d):
+    $act=($filterStatus===$k);
+    $hr=$k?"employer_manageJobs.php?status={$k}":'employer_manageJobs.php';
+  ?>
+  <a class="stat-pill <?=$act?'active':''?>" href="<?=htmlspecialchars($hr)?>">
+    <i class="fas <?=$d['i']?> sp-icon" style="color:<?=$d['c']?>"></i>
+    <span class="sp-label"><?=$d['l']?></span>
+    <span class="sp-count"><?=$d['n']?></span>
+  </a>
+  <?php endforeach;?>
+  <div class="stat-pill" style="cursor:default;">
+    <i class="fas fa-users sp-icon" style="color:var(--amber)"></i>
+    <span class="sp-label">Applicants</span>
+    <span class="sp-count"><?=$counts['applicants']?></span>
+  </div>
+  </div>
+
+  <div class="filter-toolbar">
+    <div class="search-wrap"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search jobs by title, location, skills…" oninput="filterJobCards()"></div>
+    <select id="statusFilter" onchange="filterJobCards()">
+      <option value="">All Statuses</option>
+      <option value="active"<?=$filterStatus==='Active'?' selected':''?>>Active</option>
+      <option value="closed"<?=$filterStatus==='Closed'?' selected':''?>>Closed</option>
+      <option value="draft"<?=$filterStatus==='Draft'?' selected':''?>>Draft</option>
+    </select>
+  </div>
+
+  <div class="job-list" id="jobList">
+  <?php if(empty($jobs)):?>
+  <div class="empty"><i class="fas fa-briefcase"></i><p>No jobs found. <a href="#" onclick="openPost();return false;" style="color:var(--red-pale)">Post your first job →</a></p></div>
+  <?php else: foreach($jobs as $j):
+    $sc=strtolower($j['status']);
+    $sal='';
+    if($j['salary_min']||$j['salary_max']){$cur=$j['salary_currency']??'PHP';$mn=$j['salary_min']?number_format((float)$j['salary_min']):'';$mx=$j['salary_max']?number_format((float)$j['salary_max']):'';$sal=$mn&&$mx?"{$cur} {$mn}–{$mx}":($mn?"{$cur} {$mn}+":"{$cur} up to {$mx}");}
+    $pd=date('M j, Y',strtotime($j['created_at']));
+  ?>
+  <div class="job-card" id="jc-<?=$j['id']?>">
+    <div class="job-icon"><i class="fas fa-briefcase"></i></div>
+    <div class="job-body">
+      <div class="job-title"><?=htmlspecialchars($j['title'])?></div>
+      <div class="job-meta">
+        <?php if($j['location']):?><span><i class="fas fa-map-marker-alt"></i> <?=htmlspecialchars($j['location'])?></span><?php endif;?>
+        <?php if($sal):?><span><i class="fas fa-money-bill-wave"></i> <?=htmlspecialchars($sal)?></span><?php endif;?>
+        <span><i class="fas fa-calendar-alt"></i> Posted <?=$pd?></span>
+      </div>
+      <div class="chips">
+        <span class="sbadge <?=$sc?>"><?=$j['status']?></span>
+        <span class="chip chip-type"><i class="fas fa-tag"></i> <?=htmlspecialchars($j['job_type'])?></span>
+        <span class="chip chip-setup"><i class="fas fa-laptop-house"></i> <?=htmlspecialchars($j['setup'])?></span>
+        <?php if($j['experience_level']):?><span class="chip chip-level"><?=htmlspecialchars($j['experience_level'])?></span><?php endif;?>
+        <?php foreach(array_slice(explode(',',$j['skills_required']??''),0,3) as $sk): if(trim($sk)):?><span class="chip"><?=htmlspecialchars(trim($sk))?></span><?php endif; endforeach;?>
+      </div>
+    </div>
+    <div class="job-right">
+      <div class="app-badge"><i class="fas fa-users"></i><div class="app-count"><?=(int)$j['app_count']?></div><div class="app-count-lbl">Applicants</div></div>
+      <div class="job-actions">
+        <a href="employer_applicants.php?job_id=<?=$j['id']?>" class="btn grn"><i class="fas fa-users"></i> View</a>
+        <button class="btn" onclick="editJob(<?=$j['id']?>)"><i class="fas fa-edit"></i> Edit</button>
+        <button class="btn <?=$j['status']==='Active'?'red':''?>" onclick="toggleStatus(<?=$j['id']?>,'<?=$j['status']?>')" id="tbtn-<?=$j['id']?>">
+          <?=$j['status']==='Active'?'<i class="fas fa-lock"></i> Close':'<i class="fas fa-lock-open"></i> Open'?>
+        </button>
+        <button class="btn red" onclick="confirmDel(<?=$j['id']?>,'<?=htmlspecialchars($j['title'],ENT_QUOTES)?>')"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  </div>
+  <?php endforeach; endif;?>
+  </div>
+</div>
+
+<!-- Post/Edit Modal -->
+<div class="modal-bd" id="jobModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeJobModal()"><i class="fas fa-times"></i></button>
+    <div class="modal-title" id="mTitle"><i class="fas fa-plus-circle" style="color:var(--red-bright)"></i> Post New Job</div>
+    <input type="hidden" id="eJobId">
+    <div class="form-divider"><i class="fas fa-briefcase" style="font-size:10px"></i> Job Information</div>
+    <div class="frow"><div class="fg" style="grid-column:1/-1"><label class="fl">Industry <span class="req">*</span></label><select class="fi" id="fInd" onchange="updateJobTitleOptions()"><option value="">— Select Industry —</option><option>Accounting</option><option>Administration &amp; Office Support</option><option>Advertising, Arts &amp; Media</option><option>Banking &amp; Financial Services</option><option>Call Centre &amp; Customer Service</option><option>CEO &amp; General Management</option><option>Community Services &amp; Development</option><option>Construction</option><option>Consulting &amp; Strategy</option><option>Design &amp; Architecture</option><option>Education &amp; Training</option><option>Engineering</option><option>Farming, Animals &amp; Conservation</option><option>Government &amp; Defence</option><option>Healthcare &amp; Medical</option><option>Hospitality &amp; Tourism</option><option>Human Resources &amp; Recruitment</option><option>Information &amp; Communication Technology</option><option>Insurance &amp; Superannuation</option><option>Legal</option><option>Manufacturing, Transport &amp; Logistics</option><option>Marketing &amp; Communications</option><option>Mining, Resources &amp; Energy</option><option>Real Estate &amp; Property</option><option>Retail &amp; Consumer Products</option><option>Sales</option><option>Science &amp; Technology</option><option>Self Employment</option><option>Sports &amp; Recreation</option><option>Trades &amp; Services</option></select></div></div>
+    <div class="frow"><div class="fg" style="grid-column:1/-1"><label class="fl">Job Title <span class="req">*</span></label><select class="fi" id="fTitle" onchange="toggleCustomTitle()"><option value="">— Select industry first —</option></select><input type="text" class="fi" id="fTitleCustom" placeholder="Enter custom job title…" style="display:none;margin-top:7px;"></div></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Job Type</label><select class="fi" id="fType"><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Freelance</option><option>Internship</option></select></div>
+      <div class="fg"><label class="fl">Setup</label><select class="fi" id="fSetup"><option>On-site</option><option>Remote</option><option>Hybrid</option></select></div>
+    </div>
+    <div class="form-divider"><i class="fas fa-map-marker-alt" style="font-size:10px"></i> Location & Compensation</div>
+    <div class="frow" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="fg"><label class="fl">Country</label><select class="fi" id="fCountry" onchange="onCountryChange()"><option value="">— Select Country —</option><?php foreach (getCountries() as $c): ?><option value="<?= htmlspecialchars($c['code']) ?>"><?= htmlspecialchars($c['name']) ?></option><?php endforeach; ?></select></div>
+      <div class="fg"><label class="fl">Location</label><input type="text" class="fi" id="fLoc" placeholder="City, Province…"></div>
+      <div class="fg"><label class="fl">Experience Level</label><select class="fi" id="fExp"><option value="">— Any —</option><option>Entry</option><option>Junior</option><option>Mid</option><option>Senior</option><option>Lead</option><option>Executive</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl" id="lblSMin">Min Salary</label><input type="number" class="fi" id="fSMin" placeholder="e.g. 50000"></div>
+      <div class="fg"><label class="fl" id="lblSMax">Max Salary</label><input type="number" class="fi" id="fSMax" placeholder="e.g. 90000"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Application Deadline</label><input type="date" class="fi" id="fDl"></div>
+    </div>
+    <div class="form-divider"><i class="fas fa-file-alt" style="font-size:10px"></i> Additional Details</div>
+    <div class="fg"><label class="fl">Required Skills (comma-separated)</label><input type="text" class="fi" id="fSkills" placeholder="React, TypeScript, MySQL"></div>
+    <div class="fg"><label class="fl">Job Description</label><textarea class="fi" id="fDesc" rows="4" placeholder="What will this role involve?"></textarea></div>
+    <div class="fg"><label class="fl">Requirements</label><textarea class="fi" id="fReq" rows="3" placeholder="Qualifications, experience…"></textarea></div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeJobModal()">Cancel</button>
+      <button class="btn primary" id="submitBtn" onclick="submitJob()"><i class="fas fa-plus-circle"></i> Post Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete -->
+<div class="modal-bd" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
+    <div class="confirm-title">Delete this job?</div>
+    <div class="confirm-sub" id="confirmMsg">This cannot be undone.</div>
+    <input type="hidden" id="delJobId">
+    <div class="confirm-actions">
+      <button class="btn" onclick="document.getElementById('confirmModal').classList.remove('open')">Cancel</button>
+      <button class="btn red" onclick="doDelete()"><i class="fas fa-trash"></i> Delete</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* Country → Currency map */
+const COUNTRY_CURRENCY={'AF':'AFN','AL':'ALL','DZ':'DZD','AD':'EUR','AO':'AOA','AG':'XCD','AR':'ARS','AM':'AMD','AU':'AUD','AT':'EUR','AZ':'AZN','BS':'BSD','BH':'BHD','BD':'BDT','BB':'BBD','BY':'BYN','BE':'EUR','BZ':'BZD','BJ':'XOF','BT':'BTN','BO':'BOB','BA':'BAM','BW':'BWP','BR':'BRL','BN':'BND','BG':'BGN','BF':'XOF','BI':'BIF','KH':'KHR','CM':'XAF','CA':'CAD','CV':'CVE','CF':'XAF','TD':'XAF','CL':'CLP','CN':'CNY','CO':'COP','KM':'KMF','CG':'XAF','CR':'CRC','HR':'EUR','CU':'CUP','CY':'EUR','CZ':'CZK','DK':'DKK','DJ':'DJF','DM':'XCD','DO':'DOP','EC':'USD','EG':'EGP','SV':'USD','GQ':'XAF','ER':'ERN','EE':'EUR','ET':'ETB','FJ':'FJD','FI':'EUR','FR':'EUR','GA':'XAF','GM':'GMD','GE':'GEL','DE':'EUR','GH':'GHS','GR':'EUR','GD':'XCD','GT':'GTQ','GN':'GNF','GW':'XOF','GY':'GYD','HT':'HTG','HN':'HNL','HU':'HUF','IS':'ISK','IN':'INR','ID':'IDR','IR':'IRR','IQ':'IQD','IE':'EUR','IL':'ILS','IT':'EUR','JM':'JMD','JP':'JPY','JO':'JOD','KZ':'KZT','KE':'KES','KI':'AUD','KW':'KWD','KG':'KGS','LA':'LAK','LV':'EUR','LB':'LBP','LS':'LSL','LR':'LRD','LY':'LYD','LI':'CHF','LT':'EUR','LU':'EUR','MG':'MGA','MW':'MWK','MY':'MYR','MV':'MVR','ML':'XOF','MT':'EUR','MH':'USD','MR':'MRU','MU':'MUR','MX':'MXN','FM':'USD','MD':'MDL','MC':'EUR','MN':'MNT','ME':'EUR','MA':'MAD','MZ':'MZN','MM':'MMK','NA':'NAD','NR':'AUD','NP':'NPR','NL':'EUR','NZ':'NZD','NI':'NIO','NE':'XOF','NG':'NGN','KP':'KPW','MK':'MKD','NO':'NOK','OM':'OMR','PK':'PKR','PW':'USD','PS':'ILS','PA':'PAB','PG':'PGK','PY':'PYG','PE':'PEN','PH':'PHP','PL':'PLN','PT':'EUR','QA':'QAR','RO':'RON','RU':'RUB','RW':'RWF','KN':'XCD','LC':'XCD','VC':'XCD','WS':'WST','SM':'EUR','ST':'STN','SA':'SAR','SN':'XOF','RS':'RSD','SC':'SCR','SL':'SLL','SG':'SGD','SK':'EUR','SI':'EUR','SB':'SBD','SO':'SOS','ZA':'ZAR','KR':'KRW','SS':'SSP','ES':'EUR','LK':'LKR','SD':'SDG','SR':'SRD','SE':'SEK','CH':'CHF','SY':'SYP','TW':'TWD','TJ':'TJS','TZ':'TZS','TH':'THB','TL':'USD','TG':'XOF','TO':'TOP','TT':'TTD','TN':'TND','TR':'TRY','TM':'TMT','TV':'AUD','UG':'UGX','UA':'UAH','AE':'AED','GB':'GBP','US':'USD','UY':'UYU','UZ':'UZS','VU':'VUV','VA':'EUR','VE':'VES','VN':'VND','YE':'YER','ZM':'ZMW','ZW':'ZWL','HK':'HKD'};
+function onCountryChange(){var code=document.getElementById('fCountry').value;var cur=code?(COUNTRY_CURRENCY[code]||code):'';document.getElementById('lblSMin').textContent=cur?'Min Salary ('+cur+')':'Min Salary';document.getElementById('lblSMax').textContent=cur?'Max Salary ('+cur+')':'Max Salary';}
+  var isEdit=false;
+  const JOB_ROLES_POST={'Accounting':['Accounts Officers / Clerks','Accounts Payable','Accounts Receivable / Credit Control','Analysis & Reporting','Assistant Accountants','Audit - External','Audit - Internal','Bookkeeping & Small Practice Accounting','Business Services & Corporate Advisory','Company Secretaries','Compliance & Risk','Cost Accounting','Financial Accounting & Reporting','Financial Managers & Controllers','Forensic Accounting & Investigation','Insolvency & Corporate Recovery','Inventory & Fixed Assets','Management','Management Accounting & Budgeting','Payroll','Strategy & Planning','Systems Accounting & IT Audit','Taxation','Treasury','Other'],'Administration & Office Support':['Administrative Assistants','Client & Sales Administration','Contracts Administration','Data Entry & Word Processing','Office Management','PA, EA & Secretarial','Receptionists','Records Management & Document Control','Other'],'Advertising, Arts & Media':['Agency Account Management','Art Direction','Editing & Publishing','Event Management','Journalism & Writing','Management','Media Strategy, Planning & Buying','Other'],'Banking & Financial Services':['Account & Relationship Management','Analysis & Reporting','Banking - Business','Banking - Corporate & Institutional','Banking - Retail / Branch','Client Services','Compliance & Risk','Corporate Finance & Investment Banking','Credit','Financial Planning','Funds Management','Management','Mortgages','Settlements','Other'],'Call Centre & Customer Service':['Collections','Customer Service - Call Centre','Customer Service - Customer Facing','Management & Support','Sales - Inbound','Sales - Outbound','Supervisors / Team Leaders','Other'],'CEO & General Management':['Board Appointments','CEO','COO & MD','General / Business Unit Manager','Other'],'Community Services & Development':['Aged & Disability Support','Child Welfare, Youth & Family Services','Community Development','Employment Services','Fundraising','Housing & Homelessness Services','Indigenous & Multicultural Services','Management','Volunteer Coordination & Support','Other'],'Construction':['Contracts Management','Estimating','Foreperson / Supervisors','Health, Safety & Environment','Management','Planning & Scheduling','Plant & Machinery Operators','Project Management','Quality Assurance & Control','Surveying','Other'],'Consulting & Strategy':['Analysts','Corporate Development','Environment & Sustainability Consulting','Management & Change Consulting','Policy','Strategy & Planning','Other'],'Design & Architecture':['Architectural Drafting','Architecture','Fashion Design','Graphic Design','Interior Design','Landscape Architecture','Management','Product Design','Urban Design & Planning','Other'],'Education & Training':['Childcare & Outside School Hours Care','Library Services & Information Management','Management - Schools','Management - Universities','Management - Vocational','Research & Fellowships','Student Services','Teaching - Early Childhood','Teaching - Primary','Teaching - Secondary','Teaching - Tertiary','Teaching - Vocational','Teaching Aides & Special Needs','Tutoring','Workplace Training & Assessment','Other'],'Engineering':['Aerospace Engineering','Automotive Engineering','Building Services Engineering','Chemical Engineering','Civil/Structural Engineering','Electrical/Electronic Engineering','Engineering Drafting','Environmental Engineering','Field Engineering','Industrial Engineering','Maintenance','Management','Materials Handling Engineering','Mechanical Engineering','Process Engineering','Project Engineering','Project Management','Supervisors','Systems Engineering','Water & Waste Engineering','Other'],'Farming, Animals & Conservation':['Agronomy & Farm Services','Conservation, Parks & Wildlife','Farm Labour','Farm Management','Fishing & Aquaculture','Horticulture','Veterinary Services & Animal Welfare','Winery & Viticulture','Other'],'Government & Defence':['Air Force','Army','Emergency Services','Government - Federal','Government - Local','Government - State','Navy','Police & Corrections','Other'],'Healthcare & Medical':['Ambulance/Paramedics','Chiropractic & Osteopathic','Clinical/Medical Research','Dental','Dieticians','Environmental Services','General Practitioners','Management','Medical Administration','Medical Imaging','Medical Specialists','Natural Therapies & Alternative Medicine','Nursing - A&E, Critical Care & ICU','Nursing - Aged Care','Nursing - Community, Maternal & Child Health','Nursing - Educators & Facilitators','Nursing - General Medical & Surgical','Nursing - High Acuity','Nursing - Management','Nursing - Midwifery, Neo-Natal, SCN & NICU','Nursing - Paediatric & PICU','Nursing - Psych, Forensic & Correctional Health','Nursing - Theatre & Recovery','Optical','Pathology','Pharmaceuticals & Medical Devices','Pharmacy','Physiotherapy, OT & Rehabilitation','Psychology, Counselling & Social Work','Residents & Registrars','Sales','Speech Therapy','Other'],'Hospitality & Tourism':['Airlines','Bar & Beverage Staff','Chefs/Cooks','Front Office & Guest Services','Gaming','Housekeeping','Kitchen & Sandwich Hands','Management','Reservations','Tour Guides','Travel Agents/Consultants','Waiting Staff','Other'],'Human Resources & Recruitment':['Consulting & Generalist HR','Industrial & Employee Relations','Management - Agency','Management - Internal','Occupational Health & Safety','Organisational Development','Recruitment - Agency','Recruitment - Internal','Remuneration & Benefits','Training & Development','Other'],'Information & Communication Technology':['Architects','Computer Operators','Consultants','Database Development & Administration','Developers/Programmers','Engineering - Hardware','Engineering - Network','Engineering - Software','Help Desk & IT Support','Management','Networks & Systems Administration','Product Management & Development','Program & Project Management','Sales - Pre & Post','Security','Software Quality Assurance','System Services & Support','Systems Analysis & Modelling','Team Leaders','Technical Writing','Telecommunications','Testing & Quality Assurance','Other'],'Insurance & Superannuation':['Actuarial','Assessment','Brokerage','Claims','Management','Risk Management','Superannuation','Underwriting',"Workers' Compensation",'Other'],'Legal':['Banking & Financial Services Law','Construction Law','Corporate & Commercial Law','Criminal Law','Family Law','Generalists - In-house','Generalists - Law Firm','Industrial Relations & Employment Law','Insurance & Superannuation Law','Intellectual Property Law','Legal Secretaries','Litigation & Dispute Resolution','Management','Personal Injury Law','Property Law','Tax Law','Other'],'Manufacturing, Transport & Logistics':['Assembly & Process Work','Aviation Services','Couriers, Drivers & Postal Services','Fleet Management','Freight/Cargo Forwarding','Import/Export & Customs','Inventory & Stock Control','Machine Operators','Management','Methods & Quality Control','Operations','Production, Planning & Scheduling','Public Transport & Taxi Services','Purchasing, Procurement & Inventory','Rail Operations','Road Transport','Shipping','Warehouse, Storage & Distribution','Other'],'Marketing & Communications':['Brand Management','Digital & Search Marketing','Direct Marketing & CRM','Event Management','Internal Communications','Management','Market Research & Analysis','Marketing Assistants/Coordinators','Marketing Communications','Media Strategy, Planning & Buying','Product Management & Development','Public Relations & Corporate Affairs','Trade Marketing','Other'],'Mining, Resources & Energy':['Analysis & Reporting','Corporate Services','Engineering','Health, Safety & Environment','Management','Natural Resources & Water','Oil & Gas - Drilling','Oil & Gas - Exploration & Geoscience','Oil & Gas - Operations','Oil & Gas - Production & Refinement','Operations','Power Generation & Distribution','Project Management','Renewable Energy','Surveying','Other'],'Real Estate & Property':['Administration','Body Corporate & Facilities Management','Commercial Sales, Leasing & Property Mgmt','Management','Residential Leasing & Property Management','Residential Sales','Retail & Shopping Centre Management','Valuation','Other'],'Retail & Consumer Products':['Merchandisers','Management - Area/Multi-site','Management - Department/Assistant','Management - Store','Planning','Purchasing, Procurement & Inventory','Retail Assistants','Sales Representatives/Consultants','Visual Merchandising','Other'],'Sales':['Account & Relationship Management','Analysis & Reporting','Management','New Business Development','Sales Representatives/Consultants','Other'],'Science & Technology':['Biological & Biomedical Sciences','Biotechnology','Chemistry','Environmental, Earth & Geosciences','Food Technology & Safety','Laboratory & Technical Services','Materials Sciences','Mathematics, Statistics & Information Sciences','Modelling & Simulation','Physics','Other'],'Self Employment':['Self Employment'],'Sports & Recreation':['Coaching & Instruction','Fitness & Personal Training','Management','Other'],'Trades & Services':['Automotive Trades','Bakers & Pastry Cooks','Building Trades','Butchers','Caretakers & Handypersons','Cleaning Services','Electricians','Floristry','Gardening & Landscaping','Hair & Beauty Services','Labourers','Locksmiths','Maintenance & Handypersons','Management','Nannies & Babysitters','Painters & Sign Writers','Plumbers','Printing & Publishing Services','Security Services','Tailors & Dressmakers','Technicians','Upholstery & Textile Trades','Other']};
+  function toggleCustomTitle(){var v=document.getElementById('fTitle').value;var ci=document.getElementById('fTitleCustom');if(v==='Other'){ci.style.display='block';ci.focus();}else{ci.style.display='none';ci.value='';}}
+  function updateJobTitleOptions(){var ind=document.getElementById('fInd').value;var sel=document.getElementById('fTitle');var prev=sel.value;sel.innerHTML='';var ci=document.getElementById('fTitleCustom');ci.style.display='none';ci.value='';var roles=JOB_ROLES_POST[ind]||[];if(!roles.length){sel.innerHTML='<option value="">— Select industry first —</option>';return;}var opts='<option value="">— Select job title —</option>';roles.forEach(function(r){opts+='<option value="'+r.replace(/"/g,'&quot;')+'">'+r.replace(/&/g,'&amp;')+'</option>';});sel.innerHTML=opts;if(prev&&roles.includes(prev)){sel.value=prev;toggleCustomTitle();}}
+  function openPost(){isEdit=false;document.getElementById('mTitle').innerHTML='<i class="fas fa-plus-circle" style="color:var(--red-bright)"></i> Post New Job';document.getElementById('submitBtn').innerHTML='<i class="fas fa-plus-circle"></i> Post Job';document.getElementById('eJobId').value='';clearForm();document.getElementById('jobModal').classList.add('open');}
+  function closeJobModal(){document.getElementById('jobModal').classList.remove('open');}
+  function clearForm(){['fLoc','fSMin','fSMax','fSkills','fDesc','fReq','fDl','fTitleCustom'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('fTitleCustom').style.display='none';document.getElementById('fType').value='Full-time';document.getElementById('fSetup').value='On-site';document.getElementById('fExp').value='';document.getElementById('fInd').value='';updateJobTitleOptions();document.getElementById('fCountry').value='';onCountryChange();}
+  function editJob(id){doPost({action:'get_job',job_id:id},function(d){if(!d.ok){toast(d.msg||'Error','err');return;}var j=d.job;isEdit=true;document.getElementById('eJobId').value=j.id;document.getElementById('fDesc').value=j.description||'';document.getElementById('fReq').value=j.requirements||'';document.getElementById('fLoc').value=j.location||'';document.getElementById('fCountry').value=j.country||'';onCountryChange();document.getElementById('fType').value=j.job_type||'Full-time';document.getElementById('fSetup').value=j.setup||'On-site';document.getElementById('fSMin').value=j.salary_min||'';document.getElementById('fSMax').value=j.salary_max||'';document.getElementById('fInd').value=j.industry||'';updateJobTitleOptions();var _knownTitle=document.getElementById('fTitle');var _titleVal=j.title||'';var _opts=[..._knownTitle.options].map(function(o){return o.value;});if(_titleVal&&!_opts.includes(_titleVal)&&_titleVal!==''){_knownTitle.value='Other';var _ci=document.getElementById('fTitleCustom');_ci.style.display='block';_ci.value=_titleVal;}else{_knownTitle.value=_titleVal;toggleCustomTitle();}document.getElementById('fExp').value=j.experience_level||'';document.getElementById('fSkills').value=j.skills_required||'';document.getElementById('fDl').value=j.deadline||'';document.getElementById('mTitle').innerHTML='<i class="fas fa-edit" style="color:var(--red-bright)"></i> Edit Job';document.getElementById('submitBtn').innerHTML='<i class="fas fa-save"></i> Save Changes';document.getElementById('jobModal').classList.add('open');});}
+  function submitJob(){var sel=document.getElementById('fTitle');var t=(sel.value==='Other'?document.getElementById('fTitleCustom').value:sel.value).trim();if(!t){toast('Job title required','err');return;}var id=document.getElementById('eJobId').value;var data={action:id?'update_job':'post_job',title:t,description:document.getElementById('fDesc').value,requirements:document.getElementById('fReq').value,location:document.getElementById('fLoc').value,job_type:document.getElementById('fType').value,setup:document.getElementById('fSetup').value,salary_min:document.getElementById('fSMin').value,salary_max:document.getElementById('fSMax').value,industry:document.getElementById('fInd').value,experience_level:document.getElementById('fExp').value,skills:document.getElementById('fSkills').value,deadline:document.getElementById('fDl').value,country:document.getElementById('fCountry').value};if(id)data.job_id=id;doPost(data,function(d){if(d.ok){closeJobModal();toast(id?'Job updated!':'Job "'+d.title+'" posted!','ok');setTimeout(function(){location.reload();},1200);}else{toast(d.msg||'Error','err');}});}
+  function toggleStatus(id,cur){doPost({action:'toggle_status',job_id:id},function(d){if(d.ok){var b=document.getElementById('tbtn-'+id);b.innerHTML=d.status==='Active'?'<i class="fas fa-lock"></i> Close':'<i class="fas fa-lock-open"></i> Open';if(d.status==='Active')b.classList.add('red');else b.classList.remove('red');var card=document.getElementById('jc-'+id);var badge=card.querySelector('.sbadge');if(badge){badge.className='sbadge '+d.status.toLowerCase();badge.textContent=d.status;}toast('Job '+d.status.toLowerCase()+'!','ok');}else{toast(d.msg||'Error','err');}});}
+  function confirmDel(id,title){document.getElementById('delJobId').value=id;document.getElementById('confirmMsg').textContent='Delete "'+title+'"? This cannot be undone.';document.getElementById('confirmModal').classList.add('open');}
+  function doDelete(){var id=document.getElementById('delJobId').value;doPost({action:'delete_job',job_id:id},function(d){document.getElementById('confirmModal').classList.remove('open');if(d.ok){var c=document.getElementById('jc-'+id);if(c){c.style.opacity='0';c.style.transform='translateX(20px)';c.style.transition='.35s';setTimeout(function(){c.remove();},350);}toast('Job deleted','ok');}else{toast(d.msg||'Error','err');}});}
+  function doPost(data,cb){var b=Object.keys(data).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(data[k]);}).join('&');fetch('employer_manageJobs.php',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b}).then(function(r){return r.json();}).then(cb).catch(function(){toast('Network error','err');});}
+  // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
+  ['jobModal','confirmModal'].forEach(function(id){document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});});
+  if(new URLSearchParams(window.location.search).get('postjob')==='1')openPost();
+  (function(){ var eId=new URLSearchParams(window.location.search).get('edit'); if(eId){setTimeout(function(){editJob(parseInt(eId,10));},300);} })();
+
+  /* ── Client-side search + status filter ── */
+  function filterJobCards(){
+    var q=(document.getElementById('searchInput').value||'').toLowerCase();
+    var sf=document.getElementById('statusFilter').value.toLowerCase();
+    var cards=document.querySelectorAll('#jobList .job-card');
+    var empty=document.getElementById('emptyFilter');
+    var vis=0;
+    cards.forEach(function(c){
+      var text=c.textContent.toLowerCase();
+      var badge=c.querySelector('.sbadge');
+      var st=badge?badge.textContent.trim().toLowerCase():'';
+      var show=true;
+      if(q&&text.indexOf(q)===-1)show=false;
+      if(sf&&st!==sf)show=false;
+      c.style.display=show?'':'none';
+      if(show)vis++;
+    });
+    if(empty){empty.style.display=vis?'none':'block';}
+  }
+</script>
+<?php require_once dirname(__DIR__) . '/includes/employer_chat_system.php'; ?>
+</body>
+</html>

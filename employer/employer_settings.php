@@ -194,12 +194,6 @@ $navActive   = 'profile';
     .btn-modal-danger:hover { background:#E85540; }
     .btn-modal-danger:disabled { opacity:0.4; cursor:not-allowed; }
 
-    /* Toast */
-    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--soil-card); border:1px solid var(--soil-line); color:#F5F0EE; padding:11px 22px; border-radius:10px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:9px; z-index:9999; animation:toastIn 0.25s ease; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
-    .toast i { color:var(--green); }
-    .toast.warn i { color:var(--amber); }
-    @keyframes toastIn { from { opacity:0; transform:translate(-50%,12px); } to { opacity:1; transform:translate(-50%,0); } }
-
     /* Footer */
     .footer { position:relative; z-index:2; border-top:1px solid var(--soil-line); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:10px; }
     .footer-logo { font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--red-bright); }
@@ -233,7 +227,6 @@ $navActive   = 'profile';
     body.light .modal-title { color:#1A0A09; }
     body.light .modal-confirm-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .btn-inline { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
-    body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
     body.light .footer { border-color:#E0CECA; }
 
     @media(max-width:760px) {
@@ -764,14 +757,6 @@ $navActive   = 'profile';
         ${!s.current?`<button class="btn-inline" style="font-size:12px;" onclick="showToast('Session revoked','fa-sign-out-alt')">Revoke</button>`:''}
       </div>
     `).join('') + `<div style="padding-top:12px;"><button class="btn-danger" onclick="showToast('All other sessions signed out','fa-sign-out-alt')">Sign out all other devices</button></div>`;
-  }
-
-  function showToast(msg, icon, warn=false) {
-    const t = document.createElement('div');
-    t.className = 'toast' + (warn ? ' warn' : '');
-    t.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2500);
   }
 
   // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script

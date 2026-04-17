@@ -108,7 +108,8 @@ try {
         $db->exec("ALTER TABLE interview_schedules ADD COLUMN venue_name VARCHAR(300) DEFAULT NULL, ADD COLUMN full_address VARCHAR(500) DEFAULT NULL, ADD COLUMN map_link VARCHAR(500) DEFAULT NULL, ADD COLUMN phone_number VARCHAR(50) DEFAULT NULL, ADD COLUMN contact_person VARCHAR(150) DEFAULT NULL");
     }
     $s = $db->prepare("
-        SELECT iv.id, u.full_name, u.avatar_url, j.title AS job, iv.scheduled_at, iv.interview_type,
+        SELECT iv.id, iv.application_id, iv.seeker_id AS seeker_uid,
+               u.full_name, u.avatar_url, j.title AS job, iv.scheduled_at, iv.interview_type,
                iv.meeting_link, iv.location, iv.notes,
                COALESCE(iv.venue_name, iv.location) AS venue_name,
                iv.full_address, iv.map_link, iv.phone_number, iv.contact_person
@@ -157,6 +158,8 @@ try {
         $color = $colors[count($dashInterviews) % count($colors)] ?? 'linear-gradient(135deg,#4A90D9,#2A6090)';
         $dashInterviews[] = [
             'id' => $r['id'],
+            'applicationId' => (int)$r['application_id'],
+            'seekerUid' => (int)$r['seeker_uid'],
             'name' => $r['full_name'],
             'job' => $r['job'],
             'initials' => $ini,
@@ -422,11 +425,6 @@ try {
     .modal-close { position:absolute; top:16px; right:16px; width:28px; height:28px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.15s; }
     .modal-close:hover { color:#F5F0EE; }
 
-    /* Toast */
-    .toast { position:fixed; bottom:24px; right:24px; z-index:999; background:var(--soil-card); border:1px solid var(--soil-line); border-left:2px solid var(--red-vivid); border-radius:8px; padding:11px 18px; font-size:13px; font-weight:500; color:#F5F0EE; box-shadow:0 10px 30px rgba(0,0,0,0.4); display:flex; align-items:center; gap:9px; animation:toastIn 0.25s ease; }
-    @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-    .toast i { color:var(--red-pale); }
-
     /* Footer */
     .footer { border-top:1px solid var(--soil-line); padding:20px 24px; max-width:1380px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; color:var(--text-muted); font-size:12px; position:relative; z-index:2; flex-wrap:wrap; gap:10px; }
     .footer-logo { font-family:var(--font-display); font-weight:700; color:var(--red-pale); font-size:15px; }
@@ -494,6 +492,12 @@ try {
     body.light .mobile-menu { background:rgba(255,253,252,0.97); border-color:#E0CECA; }
     body.light .mobile-link { color:#4A2828; }
     body.light .mobile-link:hover { background:#FEF0EE; color:#1A0A09; }
+    body.light .jr-btn { background:#F5EEEC; border-color:#E0CECA; color:#5A4040; }
+    body.light .jr-btn:hover { background:#FEF0EE; color:var(--red-vivid); border-color:rgba(209,61,44,0.4); }
+    body.light .jr-btn.r:hover { color:#D13D2C; border-color:rgba(209,61,44,0.5); }
+    body.light .jr-btn.g:hover { color:#2E7D32; border-color:rgba(46,125,50,0.5); }
+    body.light .jr-btn.b:hover { color:#1565C0; border-color:rgba(21,101,192,0.5); }
+    body.light .jr-btn.a:hover { color:#B8620A; border-color:rgba(184,98,10,0.5); }
 
     @media(max-width:1060px) { .cards-row{grid-template-columns:repeat(3,1fr);} }
     @media(max-width:760px) {
@@ -560,7 +564,7 @@ try {
         <div class="sum-card"><div class="sc-top"><div class="sc-icon a"><i class="fas fa-users"></i></div><div class="sc-num"><?php echo $totalApplicants;?></div></div><div class="sc-label">Total Applicants</div><button class="sc-btn" onclick="window.location.href='employer_applicants.php'">View Applicants</button></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon g"><i class="fas fa-user-check"></i></div><div class="sc-num"><?php echo $shortlistedCount;?></div></div><div class="sc-label">Shortlisted</div><button class="sc-btn" onclick="window.location.href='employer_applicants.php?status=Shortlisted'">View Shortlisted</button></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-calendar-check"></i></div><div class="sc-num"><?php echo $interviewCount;?></div></div><div class="sc-label">Interviews</div><button class="sc-btn" onclick="window.location.href='employer_applicants.php'">View Interviews</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-envelope"></i></div><div class="sc-num"><?php echo $messageCount;?></div></div><div class="sc-label">Messages</div><button class="sc-btn" onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();}">Open Messages</button></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-envelope"></i></div><div class="sc-num"><?php echo $messageCount;?></div></div><div class="sc-label">Messages</div><a class="sc-btn" href="employer_messages.php" style="text-decoration:none;">Open Messages</a></div>
       </div>
 
       <!-- RECENT JOB POSTS -->
@@ -585,7 +589,7 @@ try {
       <div id="section-interviews" style="margin-top:40px;" class="anim anim-d2">
         <div class="sec-header">
           <div class="sec-title"><i class="fas fa-calendar-alt"></i> Upcoming Interviews</div>
-          <button class="see-more" onclick="showToast('View all interviews','fa-calendar-alt')">View all <i class="fas fa-arrow-right"></i></button>
+          <button class="see-more" onclick="window.location.href='employer_applicants.php'">View all <i class="fas fa-arrow-right"></i></button>
         </div>
         <div class="featured-scroll" id="interviewsContainer"></div>
       </div>
@@ -644,10 +648,10 @@ try {
         </div>
         <div class="job-row-right">
           <div class="jr-actions">
-            <button class="jr-btn" onclick="event.stopPropagation();showToast('View ${j.title}','fa-eye')">View</button>
-            <button class="jr-btn" onclick="event.stopPropagation();showToast('Edit ${j.title}','fa-pen')">Edit</button>
-            ${j.status==='Active'?`<button class="jr-btn r" onclick="event.stopPropagation();showToast('Closed','fa-times-circle')">Close</button>`:''}
-            <button class="jr-btn r" onclick="event.stopPropagation();showToast('Deleted','fa-trash')">Delete</button>
+            <a class="jr-btn" href="employer_manageJobs.php#job-${j.id}" style="text-decoration:none;">View</a>
+            <a class="jr-btn" href="employer_manageJobs.php?edit=${j.id}" style="text-decoration:none;">Edit</a>
+            ${j.status==='Active'?`<button class="jr-btn a" onclick="event.stopPropagation();closeJob(${j.id},this)">Close</button>`:''}
+            <button class="jr-btn r" onclick="event.stopPropagation();deleteJob(${j.id},this)">Delete</button>
           </div>
         </div>
       </div>`).join('');
@@ -676,11 +680,11 @@ try {
           </div>
         </div>
         <div class="job-row-right">
-          <div class="jr-actions">
+          <div class="jr-actions" id="appActions_${a.id}">
             <a class="jr-btn" href="employer_view_applicant.php?id=${a.seekerId}" style="text-decoration:none;">View Profile</a>
-            <button class="jr-btn g" onclick="showToast('Shortlisted ${escapeHtml(a.name)}','fa-user-check')">Shortlist</button>
-            <button class="jr-btn r" onclick="showToast('Rejected ${escapeHtml(a.name)}','fa-times')">Reject</button>
-            <button class="jr-btn b" onclick="showToast('Message ${escapeHtml(a.name)}','fa-envelope')">Message</button>
+            ${a.status !== 'Shortlisted' && a.status !== 'Rejected' && a.status !== 'Offered' ? `<button class="jr-btn g" onclick="updateAppStatus(${a.id},'Shortlisted',this)">Shortlist</button>` : ''}
+            ${a.status !== 'Rejected' && a.status !== 'Offered' ? `<button class="jr-btn r" onclick="updateAppStatus(${a.id},'Rejected',this)">Reject</button>` : ''}
+            <a class="jr-btn b" href="employer_messages.php?user_id=${a.seekerId}" style="text-decoration:none;">Message</a>
           </div>
         </div>
       </div>`).join('');
@@ -728,8 +732,8 @@ try {
         </div>
         <div class="fc-chips" style="flex-direction:column;gap:4px;">${typeBadge}${detailChip}</div>
         <div class="fc-footer" style="margin-top:12px;">
-          <button class="jr-btn" style="font-size:11px;" onclick="showToast('Reschedule','fa-calendar')">Reschedule</button>
-          <button class="jr-apply" onclick="showToast('Message ${escapeHtml(iv.name)}','fa-envelope')">Message</button>
+          <a class="jr-btn" style="font-size:11px;text-decoration:none;" href="employer_applicants.php?view=${iv.applicationId}&reschedule=1">Reschedule</a>
+          <a class="jr-apply" style="text-decoration:none;" href="employer_messages.php?user_id=${iv.seekerUid}">Message</a>
         </div>
       </div>`;
     }).join('');
@@ -779,12 +783,75 @@ try {
   const _guard_closeModal = document.getElementById('closeModal'); if (_guard_closeModal) _guard_closeModal.addEventListener('click', () => document.getElementById('jobModal').classList.remove('open'));
   const _guard_jobModal = document.getElementById('jobModal'); if (_guard_jobModal) _guard_jobModal.addEventListener('click', e => { if(e.target===document.getElementById('jobModal')) document.getElementById('jobModal').classList.remove('open'); });
 
-  // ── TOAST ──
-  function showToast(msg, icon) {
-    const t = document.createElement('div'); t.className = 'toast';
-    t.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2400);
+  // ── CLOSE JOB ──
+  function closeJob(jobId, btn) {
+    if (!confirm('Close this job posting? It will no longer be visible to applicants.')) return;
+    btn.disabled = true; btn.textContent = '…';
+    var fd = new FormData();
+    fd.append('action', 'toggle_status');
+    fd.append('job_id', jobId);
+    fetch('employer_manageJobs.php', { method:'POST', body:fd })
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          jobsData.forEach(function(j){ if (j.id===jobId) j.status = d.status; });
+          renderJobs(jobsData);
+          showToast('Job ' + (d.status==='Closed'?'closed':'reopened') + '!', 'fa-check-circle');
+        } else {
+          showToast(d.msg || 'Failed to update job', 'fa-exclamation-circle');
+          btn.disabled = false; btn.textContent = 'Close';
+        }
+      })
+      .catch(function(){ showToast('Network error','fa-wifi'); btn.disabled=false; btn.textContent='Close'; });
+  }
+
+  // ── DELETE JOB ──
+  function deleteJob(jobId, btn) {
+    if (!confirm('Are you sure you want to permanently delete this job? This cannot be undone.')) return;
+    btn.disabled = true; btn.textContent = '…';
+    var fd = new FormData();
+    fd.append('action', 'delete_job');
+    fd.append('job_id', jobId);
+    fetch('employer_manageJobs.php', { method:'POST', body:fd })
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          var idx = jobsData.findIndex(function(j){ return j.id===jobId; });
+          if (idx > -1) jobsData.splice(idx, 1);
+          renderJobs(jobsData);
+          showToast('Job deleted', 'fa-trash');
+        } else {
+          showToast(d.msg || 'Failed to delete job', 'fa-exclamation-circle');
+          btn.disabled = false; btn.textContent = 'Delete';
+        }
+      })
+      .catch(function(){ showToast('Network error','fa-wifi'); btn.disabled=false; btn.textContent='Delete'; });
+  }
+
+  // ── UPDATE APPLICANT STATUS ──
+  function updateAppStatus(appId, newStatus, btn) {
+    if (!confirm('Set this applicant to ' + newStatus + '?')) return;
+    btn.disabled = true; btn.textContent = '…';
+    var fd = new FormData();
+    fd.append('action', 'update_status');
+    fd.append('application_id', appId);
+    fd.append('status', newStatus);
+    fetch('employer_applicants.php', { method:'POST', body:fd })
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          applicantsData.forEach(function(a){ if (a.id===appId) a.status = newStatus; });
+          renderApplicants(applicantsData);
+          showToast(newStatus === 'Shortlisted' ? 'Applicant shortlisted!' : 'Applicant rejected', newStatus === 'Shortlisted' ? 'fa-user-check' : 'fa-times-circle');
+        } else {
+          showToast(d.msg || 'Failed to update status', 'fa-exclamation-circle');
+          btn.disabled = false; btn.textContent = newStatus === 'Shortlisted' ? 'Shortlist' : 'Reject';
+        }
+      })
+      .catch(function() {
+        showToast('Network error — try again', 'fa-wifi');
+        btn.disabled = false; btn.textContent = newStatus === 'Shortlisted' ? 'Shortlist' : 'Reject';
+      });
   }
 
   // ── INIT ──

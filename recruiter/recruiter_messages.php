@@ -185,11 +185,6 @@ try {
     /* LOADING */
     .loading-spinner { padding:40px; text-align:center; color:var(--text-muted); font-size:13px; }
 
-    /* TOAST */
-    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:10px 18px; font-size:13px; font-weight:600; color:var(--text-light); display:flex; align-items:center; gap:8px; box-shadow:0 8px 32px rgba(0,0,0,0.4); opacity:0; transition:all 0.3s; z-index:999; pointer-events:none; }
-    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-    .toast i { color:var(--red-bright); }
-
     /* FOOTER */
     .footer { text-align:center; padding:24px 20px; font-size:12px; color:var(--text-muted); border-top:1px solid var(--soil-line); margin-top:40px; position:relative; z-index:1; }
     body.light .footer { border-top-color:#E0CECA; color:#7A5555; }
@@ -297,8 +292,6 @@ try {
   <div>Messages &mdash; Recruiter Portal</div>
 </footer>
 
-<div class="toast" id="toast"><i class="fas fa-check"></i> <span id="toastMsg"></span></div>
-
 <script>
 const API = '../api/messages.php';
 const MY_INI = <?= json_encode($initials, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
@@ -323,14 +316,6 @@ function userLabel(t) {
     if (type === 'employer')  return { text:'Employer', cls:'employer' };
     if (type === 'recruiter') return { text:'Recruiter', cls:'recruiter' };
     return null;
-}
-
-function showToast(msg, icon) {
-    const t = document.getElementById('toast');
-    t.querySelector('i').className = 'fas ' + (icon || 'fa-check');
-    document.getElementById('toastMsg').textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 /* ── Load conversations ───────────────────────────────────────────── */

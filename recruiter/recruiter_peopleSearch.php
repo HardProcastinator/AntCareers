@@ -313,8 +313,6 @@ $jobTitlesTreeJson = json_encode($jobTitlesTree, JSON_HEX_TAG | JSON_HEX_AMP);
     .empty-state h3 { font-family:var(--font-display); font-size:20px; color:var(--text-mid); margin-bottom:8px; }
     .empty-state p { font-size:14px; }
 
-    /* Toast */
-    @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
     /* Anim */
     .anim { animation:fadeUp 0.4s ease both; }
     .anim-d1 { animation-delay:0.05s; } .anim-d2 { animation-delay:0.1s; } .anim-d3 { animation-delay:0.15s; }

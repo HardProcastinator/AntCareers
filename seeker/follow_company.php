@@ -58,8 +58,8 @@ try {
         $followerName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')) ?: 'Someone';
         $notifType = $following ? 'follow' : 'unfollow';
         $notifContent = htmlspecialchars($followerName) . ($following ? ' started following your company' : ' unfollowed your company');
-        $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (:uid, :type, :content, :ref)")
-           ->execute([':uid' => $employerId, ':type' => $notifType, ':content' => $notifContent, ':ref' => $userId]);
+        $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (:uid, :actor, :type, :content, :ref, 'user')")
+           ->execute([':uid' => $employerId, ':actor' => $userId, ':type' => $notifType, ':content' => $notifContent, ':ref' => $userId]);
     } catch (\Throwable $_) { /* notification failure should not block follow */ }
 
     $cnt = $db->prepare("SELECT COUNT(*) FROM company_follows WHERE employer_user_id = :eid");

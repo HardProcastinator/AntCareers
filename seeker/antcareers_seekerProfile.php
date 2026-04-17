@@ -406,11 +406,6 @@ try {
     .checkbox-row input[type="checkbox"] { width:16px; height:16px; accent-color:var(--red-vivid); cursor:pointer; }
     .checkbox-row label { font-size:13px; color:var(--text-mid); cursor:pointer; }
 
-    /* Toast */
-    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:#2A1A18; color:var(--text-light); padding:11px 22px; border-radius:8px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px; z-index:9999; border:1px solid rgba(255,255,255,0.08); box-shadow:0 4px 20px rgba(0,0,0,0.4); animation:toastIn 0.2s ease; }
-    .toast i { color:#E05C3A; }
-    body.light .toast { background:#1A0A09; color:#F5EDEC; }
-    @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
     /* LIGHT THEME */
     body.light {
       background:#F5EDEC; color:#1A0A09;
@@ -1402,15 +1397,6 @@ try {
       if (e.target === overlay) overlay.classList.remove('open');
     });
   });
-
-  // ── TOAST ──
-  function showToast(msg, icon = 'fa-check') {
-    const d = document.createElement('div');
-    d.className = 'toast';
-    d.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
-    document.body.appendChild(d);
-    setTimeout(() => d.remove(), 3000);
-  }
 
   // ── PHOTO UPLOAD (avatar / banner) ──
   async function uploadPhoto(input, type) {

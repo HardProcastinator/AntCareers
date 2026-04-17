@@ -219,11 +219,6 @@ $cpScore = min($cpScore, 100);
     .btn-cancel { padding:10px 20px; border-radius:8px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:14px; font-weight:600; cursor:pointer; transition:0.2s; }
     .btn-cancel:hover { border-color:var(--text-muted); color:#F5F0EE; }
 
-    /* Toast */
-    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--soil-card); border:1px solid var(--soil-line); color:#F5F0EE; padding:11px 22px; border-radius:10px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:9px; z-index:9999; animation:toastIn 0.25s ease; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
-    .toast i { color:var(--green); }
-    @keyframes toastIn { from { opacity:0; transform:translate(-50%,12px); } to { opacity:1; transform:translate(-50%,0); } }
-
     /* Footer */
     .footer { position:relative; z-index:2; border-top:1px solid var(--soil-line); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:10px; }
     .footer-logo { font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--red-bright); }
@@ -278,7 +273,6 @@ $cpScore = min($cpScore, 100);
     body.light .cl-item { color:#7A5555; }
     body.light .perk-chip { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
     body.light .perk-chip.selected { background:rgba(209,61,44,0.08); border-color:var(--red-mid); color:var(--red-bright); }
-    body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
     body.light .save-info { color:#7A5555; }
     body.light .btn-cancel { border-color:#E0CECA; color:#7A5555; }
     body.light .btn-cancel:hover { border-color:#7A5555; color:#1A0A09; }
@@ -755,13 +749,6 @@ $cpScore = min($cpScore, 100);
 
   function escHTML(str) {
     const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
-  }
-
-  function showToast(msg, icon) {
-    const t = document.createElement('div'); t.className = 'toast';
-    t.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2400);
   }
 
   // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script

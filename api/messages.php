@@ -147,6 +147,10 @@ function ensure_schema(PDO $db): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
 
+    // Ensure new notification columns exist
+    ensure_column($db, 'notifications', 'actor_id', 'INT UNSIGNED DEFAULT NULL AFTER user_id');
+    ensure_column($db, 'notifications', 'reference_type', "VARCHAR(50) DEFAULT NULL AFTER reference_id");
+
     try {
         $db->query('SELECT 1 FROM conversations LIMIT 0');
     } catch (PDOException $e) {
@@ -505,10 +509,11 @@ switch ($action) {
                 $senderName = normalize_name($sender['company_name'], $senderName);
             }
 
-            $notifStmt = $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id, is_read, created_at)
-                VALUES (?, 'message', ?, ?, 0, NOW())");
+            $notifStmt = $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type, is_read, created_at)
+                VALUES (?, ?, 'message', ?, ?, 'user', 0, NOW())");
             $notifStmt->execute([
                 $receiverId,
+                $uid,
                 $senderName . ' sent you a new message.',
                 $uid,
             ]);
@@ -595,7 +600,7 @@ switch ($action) {
 
     case 'notifications':
         try {
-            $stmt = $db->prepare("SELECT id, type, content, reference_id, is_read, created_at,
+            $stmt = $db->prepare("SELECT id, type, content, reference_id, reference_type, actor_id, is_read, created_at,
                        TIMESTAMPDIFF(SECOND, created_at, NOW()) AS age_seconds
                 FROM notifications
                 WHERE user_id = ?
@@ -610,6 +615,8 @@ switch ($action) {
                     'type' => (string) $row['type'],
                     'content' => (string) $row['content'],
                     'reference_id' => $row['reference_id'] !== null ? (int) $row['reference_id'] : null,
+                    'reference_type' => $row['reference_type'] ?? null,
+                    'actor_id' => $row['actor_id'] !== null ? (int) $row['actor_id'] : null,
                     'is_read' => (int) $row['is_read'],
                     'time' => (($notifTime = relative_time_from_seconds((int) ($row['age_seconds'] ?? 0))) !== '')
                         ? $notifTime
@@ -646,6 +653,17 @@ switch ($action) {
         } catch (PDOException $e) {
             error_log('[AntCareers] api_messages mark_notif_read: ' . $e->getMessage());
             api_json(['success' => false, 'message' => 'Failed to mark notification read'], 500);
+        }
+        break;
+
+    case 'clear_notifications':
+        try {
+            $stmt = $db->prepare('DELETE FROM notifications WHERE user_id = ?');
+            $stmt->execute([$uid]);
+            api_json(['success' => true]);
+        } catch (PDOException $e) {
+            error_log('[AntCareers] api_messages clear_notifications: ' . $e->getMessage());
+            api_json(['success' => false, 'message' => 'Failed to clear notifications'], 500);
         }
         break;
 

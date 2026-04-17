@@ -62,20 +62,20 @@ try {
 
     // Notify employer and assigned recruiter about new application
     try {
-        $jobInfo = $db->prepare("SELECT j.title, j.employer_id, j.recruiter_id, u.first_name, u.last_name FROM jobs j JOIN users u ON u.id = :sid WHERE j.id = :jid LIMIT 1");
+        $jobInfo = $db->prepare("SELECT j.title, j.employer_id, j.recruiter_id, u.full_name FROM jobs j JOIN users u ON u.id = :sid WHERE j.id = :jid LIMIT 1");
         $jobInfo->execute([':jid' => $jobId, ':sid' => $seekerId]);
         $ji = $jobInfo->fetch();
         if ($ji) {
-            $seekerName = trim(($ji['first_name'] ?? '') . ' ' . ($ji['last_name'] ?? '')) ?: 'A job seeker';
+            $seekerName = trim((string)($ji['full_name'] ?? '')) ?: 'A job seeker';
             $notifContent = htmlspecialchars($seekerName) . ' applied for "' . htmlspecialchars($ji['title'] ?? 'a job') . '"';
-            $notifStmt = $db->prepare("INSERT INTO notifications (user_id, type, content, reference_id) VALUES (:uid, 'new_application', :content, :ref)");
+            $notifStmt = $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (:uid, :actor, 'new_application', :content, :ref, 'job')");
             // Notify employer
             if (!empty($ji['employer_id'])) {
-                $notifStmt->execute([':uid' => $ji['employer_id'], ':content' => $notifContent, ':ref' => $jobId]);
+                $notifStmt->execute([':uid' => $ji['employer_id'], ':actor' => $seekerId, ':content' => $notifContent, ':ref' => $jobId]);
             }
             // Notify assigned recruiter (if any)
             if (!empty($ji['recruiter_id']) && $ji['recruiter_id'] != ($ji['employer_id'] ?? 0)) {
-                $notifStmt->execute([':uid' => $ji['recruiter_id'], ':content' => $notifContent, ':ref' => $jobId]);
+                $notifStmt->execute([':uid' => $ji['recruiter_id'], ':actor' => $seekerId, ':content' => $notifContent, ':ref' => $jobId]);
             }
         }
     } catch (PDOException $e) { /* notification failure should not block application */ }

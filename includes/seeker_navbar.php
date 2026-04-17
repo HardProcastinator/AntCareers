@@ -177,12 +177,7 @@ function _navHref(string $file): string {
   .n-text { font-size:13px; color:var(--text-mid); line-height:1.55; }
   .n-time { font-size:11px; color:var(--text-muted); margin-top:3px; font-weight:600; }
 
-  /* Toast */
-  .toast { position:fixed; bottom:24px; right:24px; z-index:999; background:var(--soil-card); border:1px solid var(--soil-line); border-left:2px solid var(--red-vivid); border-radius:8px; padding:11px 18px; font-size:13px; font-weight:500; color:#F5F0EE; box-shadow:0 10px 30px rgba(0,0,0,0.4); display:flex; align-items:center; gap:9px; animation:toastIn 0.25s ease; pointer-events:none; }
-  @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  .toast i { color:var(--red-pale); }
-  body.light .toast { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; box-shadow:0 10px 30px rgba(0,0,0,0.1); }
-  body.light .toast i { color:var(--red-vivid); }
+  /* Toast — handled by includes/toast.php */
 
   /* Light theme overrides for navbar elements */
   body.light .navbar { background:rgba(249,245,244,0.97); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }
@@ -435,6 +430,7 @@ function _navHref(string $file): string {
   <div class="notif-panel-head">
     <div class="notif-panel-title"><i class="fas fa-bell"></i> Notifications</div>
     <div style="display:flex;gap:6px;align-items:center;">
+      <button class="notif-close" id="notifClearAll" title="Clear all"><i class="fas fa-trash-alt"></i></button>
       <button class="notif-close" id="notifMarkAll" title="Mark all read"><i class="fas fa-check-double"></i></button>
       <button class="notif-close" id="notifClose" aria-label="Close notifications"><i class="fas fa-times"></i></button>
     </div>
@@ -515,6 +511,12 @@ function _navHref(string $file): string {
       .then(function () { loadNotifications(); updateSeekerBadges(); });
   });
 
+  // Clear all notifications
+  document.getElementById('notifClearAll').addEventListener('click', function () {
+    fetch('../api/messages.php?action=clear_notifications', { method: 'POST' })
+      .then(function () { loadNotifications(); updateSeekerBadges(); });
+  });
+
   // ── MESSAGES PANEL ─────────────────────────────────────────────────────────
   const msgPanel = document.getElementById('msgPanel');
   const msgThreadView = document.getElementById('msgThreadView');
@@ -571,10 +573,11 @@ function _navHref(string $file): string {
   function getNotifUrl(type, refId) {
     switch (type) {
       case 'message': return 'antcareers_seekerMessages.php' + (refId ? '?user_id=' + refId : '');
-      case 'application': return 'antcareers_seekerApplications.php';
+      case 'application': case 'offer': case 'offer_response': return 'antcareers_seekerApplications.php';
       case 'offer_credential': case 'hired_credential': return 'antcareers_seekerApplications.php';
       case 'interview': case 'interview_invite': case 'interview_accepted': return 'antcareers_seekerApplications.php';
       case 'new_application': return 'antcareers_seekerApplications.php';
+      case 'job_invite': return 'view_invitation.php' + (refId ? '?id=' + refId : '');
       case 'follow': case 'unfollow': return 'antcareers_seekerDashboard.php';
       default: return 'antcareers_seekerDashboard.php';
     }
@@ -751,9 +754,9 @@ function _navHref(string $file): string {
         data.notifications.forEach(function (n) {
           var dotClass = n.is_read ? 'read' : (n.type === 'message' ? 'red' : (n.type === 'application' ? 'green' : 'amber'));
           var href = getNotifUrl(n.type, n.reference_id);
-          html += '<div class="notif-item" data-notif-id="' + n.id + '" data-href="' + href + '" style="cursor:pointer;">'
+          html += '<div class="notif-item" data-notif-id="' + n.id + '" data-href="' + _esc(href) + '" style="cursor:pointer;">'
             + '<div class="n-dot ' + dotClass + '"></div>'
-            + '<div><div class="n-text">' + n.content + '</div><div class="n-time">' + _esc(n.time) + '</div></div>'
+            + '<div><div class="n-text">' + _esc(n.content) + '</div><div class="n-time">' + _esc(n.time) + '</div></div>'
             + '</div>';
         });
         container.innerHTML = html;
@@ -765,7 +768,17 @@ function _navHref(string $file): string {
               .then(function () {
                 el.querySelector('.n-dot').className = 'n-dot read';
                 updateSeekerBadges();
-                if (href) window.location.href = href;
+                if (href) {
+                  if (href.indexOf('seekerMessages.php?user_id=') !== -1 && window.location.pathname.indexOf('seekerMessages.php') !== -1) {
+                    var uid = parseInt(href.split('user_id=')[1]);
+                    if (uid > 0 && typeof openThread === 'function') {
+                      closeNotif();
+                      openThread(uid);
+                      return;
+                    }
+                  }
+                  window.location.href = href;
+                }
               });
           });
         });
@@ -884,16 +897,9 @@ function _navHref(string $file): string {
     }
   });
 
-  // ── TOAST ──────────────────────────────────────────────────────────────────
-  window.showToast = function (msg, icon) {
-    icon = icon || 'fa-info-circle';
-    const t = document.createElement('div');
-    t.className = 'toast';
-    t.innerHTML = '<i class="fas ' + icon + '"></i> ' + msg;
-    document.body.appendChild(t);
-    setTimeout(function () { t.remove(); }, 2600);
-  };
+  // ── TOAST — handled by includes/toast.php ──
 
 })();
 </script>
+<?php require_once __DIR__ . '/toast.php'; ?>
 
