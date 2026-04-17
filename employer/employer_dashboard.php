@@ -273,7 +273,7 @@ try {
     .page-shell { max-width:1380px; margin:0 auto; padding:0 24px 40px; position:relative; z-index:2; }
 
     /* ── SEARCH HEADER ── */
-    .search-header { padding:20px 0 18px; }
+    .search-header { padding:24px 0 18px; }
     .search-greeting { font-family:var(--font-display); font-size:26px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
     .search-greeting em { color:var(--red-bright); font-style:italic; }
     .search-sub { font-size:13px; color:var(--text-muted); }
@@ -346,19 +346,19 @@ try {
     .see-more:hover { color:var(--red-bright); }
 
     /* ── SUMMARY CARDS ROW ── */
-    .cards-row { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:22px; }
-    .sum-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:22px; display:flex; flex-direction:column; gap:12px; transition:all 0.2s; cursor:default; }
+    .cards-row { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:24px; }
+    .sum-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:28px; display:flex; flex-direction:column; gap:14px; transition:all 0.2s; cursor:default; min-height:170px; }
     .sum-card:hover { border-color:rgba(209,61,44,0.4); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.25); }
     .sc-top { display:flex; align-items:center; justify-content:space-between; }
-    .sc-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; }
+    .sc-icon { width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
     .sc-icon.r { background:rgba(209,61,44,.12); color:var(--red-pale); }
     .sc-icon.a { background:rgba(212,148,58,.12); color:var(--amber); }
     .sc-icon.b { background:rgba(74,144,217,.1); color:#7ab8f0; }
     .sc-icon.g { background:rgba(76,175,112,.1); color:#6ccf8a; }
     .sc-icon.p { background:rgba(156,39,176,.1); color:#cf8ae0; }
-    .sc-num { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; line-height:1; }
-    .sc-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
-    .sc-btn { padding:6px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:11px; font-weight:700; cursor:pointer; transition:0.18s; width:100%; display:block; text-align:center; text-decoration:none; }
+    .sc-num { font-family:var(--font-display); font-size:32px; font-weight:700; color:#F5F0EE; line-height:1; }
+    .sc-label { font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+    .sc-btn { padding:8px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; transition:0.18s; width:100%; display:block; text-align:center; text-decoration:none; }
     .sc-btn:hover { background:var(--soil-hover); border-color:var(--red-vivid); color:var(--red-pale); }
 
     /* ── FEATURED CARDS (same as seeker) ── */
@@ -689,7 +689,7 @@ try {
   // ── RENDER INTERVIEWS ──
   function renderInterviews() {
     const el = document.getElementById('interviewsContainer');
-    if (!interviewsData.length) { el.innerHTML = `<div class="empty-state" style="padding:30px 20px;text-align:center;width:100%;"><i class="fas fa-calendar-alt"></i><p>No upcoming interviews.</p></div>`; return; }
+    if (!interviewsData.length) { el.innerHTML = `<div class="empty-state" style="padding:30px 20px;text-align:center;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;"><i class="fas fa-calendar-alt"></i><p>No upcoming interviews.</p></div>`; return; }
     el.innerHTML = interviewsData.map(iv => {
       // Build type-specific detail chip
       let detailChip = '';

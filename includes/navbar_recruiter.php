@@ -613,7 +613,7 @@ function _recActive(string $key, string $active): string {
   function getRecNotifUrl(type, refId){
     switch(type){
       case 'message': return 'recruiter_messages.php' + (refId ? '?user_id=' + refId : '');
-      case 'application': return 'recruiter_applicants.php';
+      case 'application': case 'new_application': return 'recruiter_applicants.php';
       case 'recruiter_credentials': case 'recruiter_added': return 'recruiter_profile.php';
       case 'offer_credential': return 'recruiter_applicants.php';
       default: return 'recruiter_dashboard.php';

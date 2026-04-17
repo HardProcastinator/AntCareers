@@ -331,10 +331,10 @@ try {
           <div class="new-chat-results" id="newChatResults"></div>
         </div>
       </div>
-      <div class="thread-filters">
-        <button class="tf-pill active" data-filter="all" onclick="filterThreads('all',this)">All</button>
-        <button class="tf-pill" data-filter="unread" onclick="filterThreads('unread',this)">Unread</button>
-      </div>
+            <div class="thread-filters">
+                <button class="filter-select tf-pill active" data-filter="all" onclick="filterThreads('all',this)">All</button>
+                <button class="filter-select tf-pill" data-filter="unread" onclick="filterThreads('unread',this)">Unread</button>
+            </div>
       <div class="threads-scroll" id="threadsList">
         <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading conversations...</div>
       </div>

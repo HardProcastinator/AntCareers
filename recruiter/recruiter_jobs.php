@@ -401,6 +401,8 @@ $jobsJson = json_encode($jobs ?: []);
     .toast.show{transform:translateY(0);opacity:1;}
     .toast.ok{border-left-color:#4CAF70;}
     .toast.err{border-left-color:#E05555;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .anim{animation:fadeUp 0.4s ease both;}.anim-d1{animation-delay:0.05s;}.anim-d2{animation-delay:0.1s;}
   </style>
 </head>
 <body>
@@ -409,7 +411,7 @@ $jobsJson = json_encode($jobs ?: []);
 
 <?php require_once dirname(__DIR__) . '/includes/navbar_recruiter.php'; ?>
 
-<div class="page-shell">
+<div class="page-shell anim">
   <div class="ph">
     <div>
       <h1 class="page-title">My <span>Jobs</span></h1>
@@ -614,19 +616,6 @@ $jobsJson = json_encode($jobs ?: []);
         <label class="fl">Application Deadline</label>
         <input type="date" class="fi" id="fDl">
       </div>
-      <div class="fg">
-        <label class="fl">Recruitment Duration</label>
-        <select class="fi" id="fDuration">
-          <option value="">— Not specified —</option>
-          <option value="1 week">1 Week</option>
-          <option value="2 weeks">2 Weeks</option>
-          <option value="1 month">1 Month</option>
-          <option value="2 months">2 Months</option>
-          <option value="3 months">3 Months</option>
-          <option value="6 months">6 Months</option>
-          <option value="Ongoing">Ongoing</option>
-        </select>
-      </div>
     </div>
 
     <div class="fg">
@@ -780,7 +769,7 @@ function closeJobModal() {
 }
 
 function clearForm() {
-  ['fLoc','fSMin','fSMax','fSkills','fDesc','fReq','fDl','fDuration'].forEach(function(id){
+  ['fLoc','fSMin','fSMax','fSkills','fDesc','fReq','fDl'].forEach(function(id){
     document.getElementById(id).value = '';
   });
   document.getElementById('fCountry').value = '';
@@ -810,8 +799,7 @@ function getFormData() {
     industry:         document.getElementById('fInd').value.trim(),
     experience_level: document.getElementById('fExp').value,
     skills:           document.getElementById('fSkills').value,
-    deadline:         document.getElementById('fDl').value,
-    recruitment_duration: document.getElementById('fDuration').value
+    deadline:         document.getElementById('fDl').value
   };
 }
 
@@ -854,7 +842,6 @@ function editJob(id) {
     document.getElementById('fLoc').value           = j.location || '';
     document.getElementById('fCountry').value        = j.country || '';
     onCountryChange();
-    document.getElementById('fDuration').value       = j.recruitment_duration || '';
     document.getElementById('fType').value          = j.job_type || 'Full-time';
     document.getElementById('fSetup').value         = j.setup || 'On-site';
     document.getElementById('fSMin').value          = j.salary_min || '';

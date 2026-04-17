@@ -189,6 +189,8 @@ function cpfImg(?array $p, string $key): string {
       .social-row { grid-template-columns:1fr; }
       .readonly-notice { flex-direction:column; text-align:center; gap:8px; }
     }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .anim{animation:fadeUp 0.4s ease both;}.anim-d1{animation-delay:0.05s;}.anim-d2{animation-delay:0.1s;}
   </style>
 </head>
 <body>
@@ -198,7 +200,7 @@ function cpfImg(?array $p, string $key): string {
 
 <?php require_once dirname(__DIR__) . '/includes/navbar_recruiter.php'; ?>
 
-<div class="page-shell">
+<div class="page-shell anim">
 
 <?php if (!$cp): ?>
   <div class="empty-state">
@@ -213,8 +215,6 @@ function cpfImg(?array $p, string $key): string {
     $city     = cpf($cp, 'city');
     $province = cpf($cp, 'province');
   ?>
-
-  <div class="page-sub">View your company's public-facing profile. Only the Company Admin can edit this information.</div>
 
   <!-- Read-only notice -->
   <div class="readonly-notice">

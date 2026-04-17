@@ -204,7 +204,7 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
     .page-shell { max-width:1380px; margin:0 auto; padding:0 24px 40px; position:relative; z-index:2; }
 
     /* ── GREETING HEADER ── */
-    .search-header { padding:20px 0 18px; }
+    .search-header { padding:24px 0 18px; }
     .search-greeting { font-family:var(--font-display); font-size:26px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
     .search-greeting em { color:var(--red-bright); font-style:italic; }
     .search-sub { font-size:13px; color:var(--text-muted); }
@@ -335,6 +335,12 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
     body.light .chip { background:#F5EEEC; border-color:#E0CECA; color:#5A3838; }
     body.light .featured-card { background:#FFFFFF; border-color:#E0CECA; }
     body.light .fc-title { color:#1A0A09; }
+    body.light .jr-btn:hover { background:#FEF0EE; color:var(--red-vivid); border-color:var(--red-vivid); }
+    body.light .sc-btn:hover { background:#FEF0EE; border-color:var(--red-vivid); color:var(--red-vivid); }
+    body.light .chip.green { color:#2E7D46; background:rgba(76,175,112,.12); }
+    body.light .chip.amber { color:#8B5500; background:rgba(212,148,58,.12); }
+    body.light .chip.blue { color:#1565C0; background:rgba(74,144,217,.12); }
+    body.light .featured-card:hover { box-shadow:0 12px 32px rgba(0,0,0,0.12); }
 
     @media(max-width:1060px) { .cards-row { grid-template-columns:repeat(2,1fr); } }
     @media(max-width:760px) {
@@ -586,7 +592,7 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
           </div>
         </div>
         <div style="background:rgba(209,61,44,0.08);border:1px solid rgba(209,61,44,0.18);border-radius:6px;padding:10px 14px;margin-bottom:12px;">
-          <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:#F5F0EE;line-height:1;">${escapeHtml(iv.mon)} ${escapeHtml(iv.day)}</div>
+          <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text-light);line-height:1;">${escapeHtml(iv.mon)} ${escapeHtml(iv.day)}</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:2px;"><i class="fas fa-clock" style="color:var(--red-bright);margin-right:3px;"></i>${escapeHtml(iv.time)}</div>
         </div>
         <div class="fc-chips" style="flex-direction:column;gap:4px;">${typeBadge}${detailChip}</div>

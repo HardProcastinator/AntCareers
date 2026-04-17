@@ -475,13 +475,12 @@ $jobTitlesTreeJson = json_encode($jobTitlesTree, JSON_HEX_TAG | JSON_HEX_AMP);
         <div class="fs-section-label">Experience Level</div>
         <select class="fs-select" id="filterExperience" onchange="filterPeople()">
           <option value="">Any level</option>
-          <option value="Entry Level">Entry Level</option>
-          <option value="Entry-Level (0–1 year)">Entry-Level (0–1 year)</option>
-          <option value="Junior (1–3 years)">Junior (1–3 years)</option>
-          <option value="Mid-Level (3–5 years)">Mid-Level (3–5 years)</option>
-          <option value="Senior (5–10 years)">Senior (5–10 years)</option>
-          <option value="Lead / Manager">Lead / Manager</option>
-          <option value="Executive (10+ years)">Executive (10+ years)</option>
+          <option value="Entry">Entry</option>
+          <option value="Junior">Junior</option>
+          <option value="Mid">Mid</option>
+          <option value="Senior">Senior</option>
+          <option value="Lead">Lead</option>
+          <option value="Executive">Executive</option>
         </select>
       </div>
 
