@@ -59,6 +59,11 @@ $fullName = trim($firstName . ' ' . $lastName);
 $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
 try {
+    // Employers start as pending_approval (login blocked until admin approves)
+    $isEmployer    = ($accountType === 'employer');
+    $accountStatus = $isEmployer ? 'pending_approval' : 'active';
+    $isActive      = $isEmployer ? 0 : 1;
+
     $stmt = $db->prepare(
         'INSERT INTO users (
             full_name,
@@ -69,6 +74,7 @@ try {
             company_name,
             is_verified,
             is_active,
+            account_status,
             created_at
         ) VALUES (
             :full_name,
@@ -79,24 +85,76 @@ try {
             :company_name,
             :is_verified,
             :is_active,
+            :account_status,
             NOW()
         )'
     );
 
     $stmt->execute([
-        ':full_name'     => $fullName,
-        ':email'         => $email,
-        ':password_hash' => $passwordHash,
-        ':account_type'  => $accountType,
-        ':contact'       => $contact !== '' ? $contact : null,
-        ':company_name'  => $accountType === 'employer' ? $companyName : null,
-        ':is_verified'   => 1,
-        ':is_active'     => 1,
+        ':full_name'      => $fullName,
+        ':email'          => $email,
+        ':password_hash'  => $passwordHash,
+        ':account_type'   => $accountType,
+        ':contact'        => $contact !== '' ? $contact : null,
+        ':company_name'   => $isEmployer ? $companyName : null,
+        ':is_verified'    => 1,
+        ':is_active'      => $isActive,
+        ':account_status' => $accountStatus,
     ]);
 
     $userId = (int)$db->lastInsertId();
 
-    // Log the user in immediately after registration
+    // Notify all admin accounts about the new company awaiting approval
+    if ($isEmployer) {
+        try {
+            $adminStmt = $db->query("SELECT id FROM users WHERE account_type = 'admin' AND is_active = 1");
+            $admins = $adminStmt->fetchAll();
+            foreach ($admins as $admin) {
+                $db->prepare(
+                    'INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type, is_read, created_at)
+                     VALUES (:uid, :actor, :type, :content, :ref_id, :ref_type, 0, NOW())'
+                )->execute([
+                    ':uid'      => $admin['id'],
+                    ':actor'    => $userId,
+                    ':type'     => 'company_approval_request',
+                    ':content'  => htmlspecialchars($companyName, ENT_QUOTES) . ' (' . htmlspecialchars($email, ENT_QUOTES) . ') has registered and is awaiting company approval.',
+                    ':ref_id'   => $userId,
+                    ':ref_type' => 'user',
+                ]);
+            }
+        } catch (Throwable) {
+            // Non-fatal — notifications table may not be updated yet
+        }
+
+        // Log to activity_logs
+        try {
+            $db->prepare(
+                'INSERT INTO activity_logs (user_id, actor_id, action_type, entity_type, entity_id, description, ip_address, user_agent, created_at)
+                 VALUES (:uid, :actor, :action, :etype, :eid, :desc, :ip, :ua, NOW())'
+            )->execute([
+                ':uid'    => $userId,
+                ':actor'  => $userId,
+                ':action' => 'employer_registered',
+                ':etype'  => 'user',
+                ':eid'    => $userId,
+                ':desc'   => "Employer '{$companyName}' ({$email}) registered and is pending admin approval.",
+                ':ip'     => getClientIp(),
+                ':ua'     => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
+            ]);
+        } catch (Throwable) {
+            // Non-fatal
+        }
+
+        // Employer cannot log in yet — return success with pending message (no auto-login)
+        jsonResponse([
+            'success'  => true,
+            'pending'  => true,
+            'message'  => 'Registration successful! Your company account is pending admin approval. You will be notified once it has been reviewed.',
+            'redirect' => url('auth/antcareers_login.php'),
+        ]);
+    }
+
+    // Seeker: log in immediately after registration
     session_regenerate_id(true);
 
     $_SESSION['user_id']      = $userId;
@@ -104,12 +162,26 @@ try {
     $_SESSION['user_name']    = $fullName;
     $_SESSION['account_type'] = $accountType;
 
-    // Absolute redirect paths
-    $redirect = match ($accountType) {
-        'seeker'   => url('seeker/antcareers_seekerDashboard.php'),
-        'employer' => url('employer/employer_dashboard.php'),
-        default    => url('index.php'),
-    };
+    // Log seeker registration
+    try {
+        $db->prepare(
+            'INSERT INTO activity_logs (user_id, actor_id, action_type, entity_type, entity_id, description, ip_address, user_agent, created_at)
+             VALUES (:uid, :actor, :action, :etype, :eid, :desc, :ip, :ua, NOW())'
+        )->execute([
+            ':uid'    => $userId,
+            ':actor'  => $userId,
+            ':action' => 'user_registered',
+            ':etype'  => 'user',
+            ':eid'    => $userId,
+            ':desc'   => "New seeker registered: {$email}",
+            ':ip'     => getClientIp(),
+            ':ua'     => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
+        ]);
+    } catch (Throwable) {
+        // Non-fatal
+    }
+
+    $redirect = url('seeker/antcareers_seekerDashboard.php');
 
     jsonResponse([
         'success'  => true,

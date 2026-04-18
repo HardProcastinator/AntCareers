@@ -88,8 +88,10 @@ if (isRateLimited($email, $ip)) {
 // Fetch user
 $db   = getDB();
 $stmt = $db->prepare(
-    'SELECT id, email, password_hash, full_name, account_type, is_verified, is_active, company_name,
-            avatar_url, COALESCE(must_change_password, 0) AS must_change_password
+    'SELECT id, email, password_hash, full_name, account_type, is_verified, is_active,
+            COALESCE(account_status, \'active\') AS account_status,
+            status_reason, status_expires_at,
+            company_name, avatar_url, COALESCE(must_change_password, 0) AS must_change_password
      FROM users
      WHERE email = :email
      LIMIT 1'
@@ -106,6 +108,35 @@ recordLoginAttempt($email, $ip, $passwordOk);
 
 if (!$passwordOk) {
     $respondError('Incorrect email or password. Please try again.');
+}
+
+// Block by account_status (column may not exist on older schema — default to 'active')
+$accountStatus = (string)($user['account_status'] ?? 'active');
+
+if ($accountStatus === 'pending_approval') {
+    $respondError('Your account is pending admin approval. You will be notified once it is reviewed.');
+}
+
+if ($accountStatus === 'suspended') {
+    $expiresAt = $user['status_expires_at'] ?? null;
+    $reason    = trim((string)($user['status_reason'] ?? ''));
+    $msg = 'Your account has been suspended.';
+    if ($reason !== '') {
+        $msg .= ' Reason: ' . $reason;
+    }
+    if ($expiresAt !== null) {
+        $msg .= ' Suspension lifts on: ' . date('M j, Y g:i A', strtotime($expiresAt));
+    }
+    $respondError($msg);
+}
+
+if ($accountStatus === 'banned') {
+    $reason = trim((string)($user['status_reason'] ?? ''));
+    $msg = 'Your account has been permanently banned from AntCareers.';
+    if ($reason !== '') {
+        $msg .= ' Reason: ' . $reason;
+    }
+    $respondError($msg);
 }
 
 // Rehash if needed
@@ -144,6 +175,16 @@ if ($remember) {
 // Update last login timestamp
 $db->prepare('UPDATE users SET last_login_at = NOW() WHERE id = :id')
    ->execute([':id' => $user['id']]);
+
+// Log the successful login
+logActivity(
+    (int)$user['id'],
+    (int)$user['id'],
+    'login',
+    'user',
+    (int)$user['id'],
+    "User '{$user['email']}' logged in."
+);
 
 // Determine redirect URL based on account type
 // If must_change_password is set, always redirect to force-change page

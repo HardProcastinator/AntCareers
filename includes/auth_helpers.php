@@ -8,6 +8,7 @@
  *   - "Remember me" split-token pattern (secure, timing-attack resistant)
  *   - JSON response helper
  *   - Client IP detection
+ *   - Activity logging
  */
 
 declare(strict_types=1);
@@ -323,4 +324,50 @@ function getClientIp(): string
     }
 
     return '0.0.0.0';
+}
+
+
+// =============================================================================
+// Activity Logging
+// =============================================================================
+
+/**
+ * Insert one row into activity_logs.
+ * Silently swallows exceptions so a logging failure never breaks a request.
+ *
+ * @param int|null    $userId     Affected user (null for system/anonymous actions)
+ * @param int|null    $actorId    Who performed the action (null if same as user)
+ * @param string      $actionType Short action identifier, e.g. 'login', 'job_approved'
+ * @param string|null $entityType Entity kind: 'user', 'job', 'company', 'application'
+ * @param int|null    $entityId   PK of the affected entity
+ * @param string      $description Human-readable summary
+ */
+function logActivity(
+    ?int    $userId,
+    ?int    $actorId,
+    string  $actionType,
+    ?string $entityType = null,
+    ?int    $entityId   = null,
+    string  $description = ''
+): void {
+    try {
+        $db = getDB();
+        $db->prepare(
+            'INSERT INTO activity_logs
+                 (user_id, actor_id, action_type, entity_type, entity_id, description, ip_address, user_agent, created_at)
+             VALUES
+                 (:uid, :actor, :action, :etype, :eid, :desc, :ip, :ua, NOW())'
+        )->execute([
+            ':uid'    => $userId,
+            ':actor'  => $actorId ?? $userId,
+            ':action' => $actionType,
+            ':etype'  => $entityType,
+            ':eid'    => $entityId,
+            ':desc'   => $description,
+            ':ip'     => getClientIp(),
+            ':ua'     => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
+        ]);
+    } catch (Throwable) {
+        // Non-fatal — never propagate logging errors
+    }
 }

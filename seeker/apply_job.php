@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
+require_once dirname(__DIR__) . '/includes/auth_helpers.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -80,7 +81,13 @@ try {
         }
     } catch (PDOException $e) { /* notification failure should not block application */ }
 
+    $appId = (int)$db->lastInsertId();
+    logActivity($seekerId, $seekerId, 'application_made', 'application', $appId, "Seeker applied to job ID {$jobId}.");
+
     exit(json_encode(['success' => true]));
+
+    // Log the application
+    logActivity($seekerId, $seekerId, 'application_made', 'application', (int)$db->lastInsertId(), "Seeker applied to job ID {$jobId}.");
 
 } catch (PDOException $e) {
     error_log('[AntCareers] apply_job error: ' . $e->getMessage());

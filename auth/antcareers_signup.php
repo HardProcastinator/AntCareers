@@ -367,9 +367,9 @@ $platformStats = getPublicPlatformStats();
       <!-- SUCCESS -->
       <div class="success-screen" id="successScreen">
         <div class="success-icon"><i class="fas fa-check"></i></div>
-        <div class="success-title">Welcome to AntCareers!</div>
-        <div class="success-sub">Your account has been created. You're ready to explore opportunities.</div>
-        <button class="btn-success" onclick="redirectAfterSignup()">Go to Dashboard <i class="fas fa-arrow-right"></i></button>
+        <div class="success-title" id="successTitle">Welcome to AntCareers!</div>
+        <div class="success-sub" id="successSub">Your account has been created. You're ready to explore opportunities.</div>
+        <button class="btn-success" id="successBtn" onclick="redirectAfterSignup()">Go to Dashboard <i class="fas fa-arrow-right"></i></button>
       </div>
 
     </div>
@@ -500,6 +500,11 @@ $platformStats = getPublicPlatformStats();
           _signupRedirect = data.redirect;
           hide('step3');
           document.getElementById('stepsBar').style.display = 'none';
+          if (data.pending) {
+            document.getElementById('successTitle').textContent = 'Registration Submitted!';
+            document.getElementById('successSub').textContent = 'Your company account is pending admin approval. You\'ll be notified once it has been reviewed.';
+            document.getElementById('successBtn').innerHTML = 'Go to Login <i class="fas fa-arrow-right"></i>';
+          }
           document.getElementById('successScreen').style.display = 'block';
         } else {
           errBanner.textContent = data.message || 'Registration failed. Please try again.';

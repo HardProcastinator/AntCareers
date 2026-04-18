@@ -26,16 +26,31 @@ $countValue = static function (string $sql) use ($db): int {
     return 0;
   }
 };
-//Sample changes
-//Add code here
+$adminId = (int)$_SESSION['user_id'];
 $adminStats = [
-  'users' => $countValue("SELECT COUNT(*) FROM users"),
-  'seekers' => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type) = 'seeker'"),
-  'employers' => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type) = 'employer'"),
-  'jobs' => $countValue("SELECT COUNT(*) FROM jobs"),
-  'active_jobs' => $countValue("SELECT COUNT(*) FROM jobs WHERE status = 'Active' AND (deadline IS NULL OR deadline >= CURDATE())"),
-  'applications' => $countValue("SELECT COUNT(*) FROM applications"),
+  'users'             => $countValue("SELECT COUNT(*) FROM users"),
+  'seekers'           => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type) = 'seeker'"),
+  'employers'         => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type) = 'employer'"),
+  'jobs'              => $countValue("SELECT COUNT(*) FROM jobs"),
+  'active_jobs'       => $countValue("SELECT COUNT(*) FROM jobs WHERE status = 'Active' AND (deadline IS NULL OR deadline >= CURDATE())"),
+  'applications'      => $countValue("SELECT COUNT(*) FROM applications"),
+  'pending_companies' => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type)='employer' AND account_status='pending_approval'"),
+  'pending_jobs'      => $countValue("SELECT COUNT(*) FROM jobs WHERE approval_status='pending' AND status='Active'"),
+  'recruiters'        => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type)='recruiter'"),
+  'unread_notifs'     => $countValue("SELECT COUNT(*) FROM notifications WHERE user_id={$adminId} AND is_read=0"),
 ];
+
+// Recent activity logs — defensive (table created by migration)
+$recentActivity = [];
+try {
+  $stmt = $db->query(
+    "SELECT al.action_type, al.description, al.created_at, u.full_name
+     FROM activity_logs al
+     LEFT JOIN users u ON u.id = al.user_id
+     ORDER BY al.created_at DESC LIMIT 8"
+  );
+  $recentActivity = $stmt ? $stmt->fetchAll() : [];
+} catch (Throwable) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -170,7 +185,7 @@ $adminStats = [
     .sb-stat-lbl { font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-top:3px; }
 
     /* Sidebar nav */
-    .sb-nav-item { display:flex; align-items:center; gap:10px; padding:11px 18px; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:all 0.18s; border:none; background:none; font-family:var(--font-body); width:100%; text-align:left; border-bottom:1px solid var(--soil-line); }
+    .sb-nav-item { display:flex; align-items:center; gap:10px; padding:11px 18px; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:all 0.18s; border:none; background:none; font-family:var(--font-body); width:100%; text-align:left; border-bottom:1px solid var(--soil-line); text-decoration:none; }
     .sb-nav-item:last-child { border-bottom:none; }
     .sb-nav-item:hover { color:#F5F0EE; background:var(--soil-hover); }
     .sb-nav-item.active { color:var(--red-pale); background:rgba(209,61,44,0.08); border-right:2px solid var(--red-vivid); }
@@ -417,38 +432,38 @@ $adminStats = [
       <span class="logo-text">Ant<span>Careers</span></span>
     </a>
     <div class="nav-links">
-      <a class="nav-link active"><i class="fas fa-th-large"></i> Dashboard</a>
-      <a class="nav-link"><i class="fas fa-users"></i> Manage Users</a>
-      <a class="nav-link"><i class="fas fa-briefcase"></i> Job Posts <span style="background:var(--amber);color:#1A0A09;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;margin-left:2px;">4</span></a>
-      <a class="nav-link"><i class="fas fa-building"></i> Employers</a>
-      <a class="nav-link"><i class="fas fa-tags"></i> Categories</a>
-      <a class="nav-link"><i class="fas fa-chart-line"></i> Reports</a>
+      <a class="nav-link active" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+      <a class="nav-link" href="admin_users.php"><i class="fas fa-users"></i> Users</a>
+      <a class="nav-link" href="admin_companies.php"><i class="fas fa-building"></i> Companies<?php if($adminStats['pending_companies']>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_companies']; ?></span><?php endif; ?></a>
+      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminStats['pending_jobs']>0): ?> <span style="background:var(--amber);color:#1A0A09;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_jobs']; ?></span><?php endif; ?></a>
+      <a class="nav-link" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
+      <a class="nav-link" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
     </div>
     <div class="nav-right">
       <button class="theme-btn" id="themeToggle"><i class="fas fa-sun"></i></button>
-      <button class="notif-btn-nav" id="activityToggle" title="Platform Activity">
-        <i class="fas fa-stream"></i>
-        <span class="badge">6</span>
-      </button>
+      <a class="notif-btn-nav" href="admin_notifications.php" title="Admin Notifications">
+        <i class="fas fa-bell"></i>
+        <?php if($adminStats['unread_notifs']>0): ?><span class="badge"><?php echo $adminStats['unread_notifs']; ?></span><?php endif; ?>
+      </a>
       <span class="admin-pill"><i class="fas fa-shield-alt"></i> Admin</span>
       <div class="profile-wrap" id="profileWrap">
         <button class="profile-btn" id="profileToggle">
-          <div class="profile-avatar">SA</div>
+          <div class="profile-avatar"><?php echo htmlspecialchars($initials, ENT_QUOTES); ?></div>
           <div>
-            <div class="profile-name">System Admin</div>
+            <div class="profile-name"><?php echo htmlspecialchars($fullName, ENT_QUOTES); ?></div>
             <div class="profile-role">Administrator</div>
           </div>
           <i class="fas fa-chevron-down profile-chevron"></i>
         </button>
         <div class="profile-dropdown" id="profileDropdown">
           <div class="profile-dropdown-head">
-            <div class="pdh-name">System Admin</div>
+            <div class="pdh-name"><?php echo htmlspecialchars($fullName, ENT_QUOTES); ?></div>
             <div class="pdh-sub"><i class="fas fa-shield-alt" style="margin-right:4px;"></i>Administrator</div>
           </div>
-          <div class="pd-item" onclick="showToast('Admin Settings','fa-cog')"><i class="fas fa-cog"></i> Settings</div>
-          <div class="pd-item" onclick="showToast('View Reports','fa-chart-bar')"><i class="fas fa-chart-bar"></i> Reports</div>
+          <a class="pd-item" href="admin_notifications.php"><i class="fas fa-bell"></i> Notifications</a>
+          <a class="pd-item" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
           <div class="pd-divider"></div>
-          <div class="pd-item danger" onclick="window.location.href='auth/logout.php'"><i class="fas fa-sign-out-alt"></i> Sign out</div>
+          <a class="pd-item danger" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
         </div>
       </div>
       <button class="theme-btn hamburger" id="hamburger"><i class="fas fa-bars"></i></button>
@@ -458,42 +473,28 @@ $adminStats = [
 
 <!-- Mobile menu -->
 <div class="mobile-menu" id="mobileMenu">
-  <a class="mobile-link"><i class="fas fa-th-large"></i> Dashboard</a>
-  <a class="mobile-link"><i class="fas fa-users"></i> Manage Users</a>
-  <a class="mobile-link"><i class="fas fa-briefcase"></i> Job Posts</a>
+  <a class="mobile-link" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+  <a class="mobile-link" href="admin_users.php"><i class="fas fa-users"></i> User Accounts</a>
+  <a class="mobile-link" href="admin_companies.php"><i class="fas fa-building"></i> Company Approval</a>
+  <a class="mobile-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Job Moderation</a>
   <div class="mobile-divider"></div>
-  <a class="mobile-link"><i class="fas fa-building"></i> Employers</a>
-  <a class="mobile-link"><i class="fas fa-tags"></i> Categories</a>
-  <a class="mobile-link"><i class="fas fa-chart-line"></i> Reports</a>
+  <a class="mobile-link" href="admin_activity.php"><i class="fas fa-history"></i> Activity Logs</a>
+  <a class="mobile-link" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
+  <a class="mobile-link" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
+  <a class="mobile-link" href="admin_notifications.php"><i class="fas fa-bell"></i> Notifications</a>
   <div class="mobile-divider"></div>
-  <a class="mobile-link" onclick="window.location.href='auth/logout.php'"><i class="fas fa-sign-out-alt"></i> Sign out</a>
+  <a class="mobile-link" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
 </div>
 
-<!-- Activity slide-in panel -->
-<div class="activity-panel" id="activityPanel">
-  <div class="ap-head">
-    <div class="ap-title"><i class="fas fa-stream"></i> Platform Activity</div>
-    <button class="ap-close" onclick="closeActivity()"><i class="fas fa-times"></i></button>
-  </div>
-  <div class="ap-body">
-    <div class="ap-item"><div class="a-dot amber"></div><div><div class="a-text">New employer registered — <strong>CloudServe Inc.</strong></div><div class="a-time">1 hour ago</div></div></div>
-    <div class="ap-item"><div class="a-dot blue"></div><div><div class="a-text">New seeker registered — <strong>Carlos Mendoza</strong></div><div class="a-time">2 hours ago</div></div></div>
-    <div class="ap-item"><div class="a-dot red"></div><div><div class="a-text">New job posted — <em>Senior React Developer</em> by AppWorks PH</div><div class="a-time">3 hours ago</div></div></div>
-    <div class="ap-item"><div class="a-dot green"></div><div><div class="a-text">New application submitted — Juan Santos to Frontend Developer</div><div class="a-time">5 hours ago</div></div></div>
-    <div class="ap-item"><div class="a-dot red"></div><div><div class="a-text">Account suspended — suspicious activity on user ID #4821</div><div class="a-time">Yesterday</div></div></div>
-    <div class="ap-item"><div class="a-dot amber"></div><div><div class="a-text">Job removed — policy violation on listing ID #3092</div><div class="a-time">Mar 20</div></div></div>
-    <div class="ap-item"><div class="a-dot read"></div><div><div class="a-text">New category added — <strong>Cybersecurity</strong></div><div class="a-time">Mar 19</div></div></div>
-    <div class="ap-item"><div class="a-dot read"></div><div><div class="a-text">Report generated — Monthly Platform Summary Mar 2026</div><div class="a-time">Mar 18</div></div></div>
-  </div>
-</div>
+<!-- Activity slide-in panel (removed; replaced by inline notification bell link) -->
 
 <!-- PAGE -->
 <div class="page-shell">
 
   <!-- SEARCH HEADER -->
   <div class="search-header anim">
-    <div class="search-greeting">Welcome back, <span>Admin.</span></div>
-    <div class="search-sub">4 job posts pending approval · 2 accounts flagged for review today.</div>
+    <div class="search-greeting">Welcome back, <span><?php echo htmlspecialchars($firstName, ENT_QUOTES); ?>.</span></div>
+    <div class="search-sub"><?php echo $adminStats['pending_jobs']; ?> job post<?php echo $adminStats['pending_jobs']!==1?'s':''; ?> pending approval&nbsp;·&nbsp;<?php echo $adminStats['pending_companies']; ?> company account<?php echo $adminStats['pending_companies']!==1?'s':''; ?> awaiting review.</div>
 
     <div class="search-bar">
       <span class="si"><i class="fas fa-search"></i></span>
@@ -531,15 +532,14 @@ $adminStats = [
         </div>
 
         <!-- Navigation -->
-        <button class="sb-nav-item active"><i class="fas fa-th-large"></i> Dashboard</button>
-        <button class="sb-nav-item" onclick="showToast('Manage Users','fa-users')"><i class="fas fa-users"></i> Manage Users <span class="sb-badge blue"><?php echo number_format($adminStats['users']); ?></span></button>
-        <button class="sb-nav-item" onclick="showToast('View Job Seekers','fa-user-search')"><i class="fas fa-user-search"></i> Job Seekers <span class="sb-badge blue"><?php echo number_format($adminStats['seekers']); ?></span></button>
-        <button class="sb-nav-item" onclick="showToast('Manage Employers','fa-building')"><i class="fas fa-building"></i> Manage Employers <span class="sb-badge blue"><?php echo number_format($adminStats['employers']); ?></span></button>
-        <button class="sb-nav-item" onclick="showToast('Manage Job Posts','fa-briefcase')"><i class="fas fa-briefcase"></i> Manage Job Posts <span class="sb-badge amber"><?php echo number_format($adminStats['active_jobs']); ?></span></button>
-        <button class="sb-nav-item" onclick="showToast('Manage Categories','fa-tags')"><i class="fas fa-tags"></i> Manage Categories</button>
-        <button class="sb-nav-item" onclick="showToast('Manage Industries','fa-industry')"><i class="fas fa-industry"></i> Manage Industries</button>
-        <button class="sb-nav-item" onclick="showToast('Manage Locations','fa-map-marker-alt')"><i class="fas fa-map-marker-alt"></i> Manage Locations</button>
-        <button class="sb-nav-item" onclick="showToast('View Reports','fa-chart-line')"><i class="fas fa-chart-line"></i> Reports / Analytics</button>
+        <a class="sb-nav-item active" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+        <a class="sb-nav-item" href="admin_users.php"><i class="fas fa-users"></i> User Accounts <span class="sb-badge blue"><?php echo number_format($adminStats['users']); ?></span></a>
+        <a class="sb-nav-item" href="admin_companies.php"><i class="fas fa-building"></i> Company Approval <?php if($adminStats['pending_companies']>0): ?><span class="sb-badge"><?php echo $adminStats['pending_companies']; ?></span><?php endif; ?></a>
+        <a class="sb-nav-item" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Job Moderation <?php if($adminStats['pending_jobs']>0): ?><span class="sb-badge amber"><?php echo $adminStats['pending_jobs']; ?></span><?php endif; ?></a>
+        <a class="sb-nav-item" href="admin_activity.php"><i class="fas fa-history"></i> Activity Logs</a>
+        <a class="sb-nav-item" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters <span class="sb-badge blue"><?php echo number_format($adminStats['recruiters']); ?></span></a>
+        <a class="sb-nav-item" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports &amp; Analytics</a>
+        <a class="sb-nav-item" href="admin_notifications.php"><i class="fas fa-bell"></i> Notifications <?php if($adminStats['unread_notifs']>0): ?><span class="sb-badge"><?php echo $adminStats['unread_notifs']; ?></span><?php endif; ?></a>
       </div>
     </aside>
 
@@ -548,12 +548,12 @@ $adminStats = [
 
       <!-- 6 SUMMARY CARDS -->
       <div class="cards-row anim">
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-users"></i></div><div class="sc-num"><?php echo number_format($adminStats['users']); ?></div></div><div class="sc-label">Total Users</div><button class="sc-btn" onclick="showToast('Manage Users','fa-users')">Manage Users</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-user-search"></i></div><div class="sc-num"><?php echo number_format($adminStats['seekers']); ?></div></div><div class="sc-label">Job Seekers</div><button class="sc-btn" onclick="showToast('View Job Seekers','fa-user-search')">View Job Seekers</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon a"><i class="fas fa-building"></i></div><div class="sc-num"><?php echo number_format($adminStats['employers']); ?></div></div><div class="sc-label">Employers</div><button class="sc-btn" onclick="showToast('Manage Employers','fa-building')">Manage Employers</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon r"><i class="fas fa-briefcase"></i></div><div class="sc-num"><?php echo number_format($adminStats['jobs']); ?></div></div><div class="sc-label">Total Job Posts</div><button class="sc-btn" onclick="showToast('Manage Job Posts','fa-briefcase')">Manage Job Posts</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-paper-plane"></i></div><div class="sc-num"><?php echo number_format($adminStats['applications']); ?></div></div><div class="sc-label">Applications</div><button class="sc-btn" onclick="showToast('View Reports','fa-chart-line')">View Reports</button></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon g"><i class="fas fa-check-circle"></i></div><div class="sc-num"><?php echo number_format($adminStats['active_jobs']); ?></div></div><div class="sc-label">Active Jobs</div><button class="sc-btn" onclick="showToast('View Active Jobs','fa-check-circle')">View Active Jobs</button></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-users"></i></div><div class="sc-num"><?php echo number_format($adminStats['users']); ?></div></div><div class="sc-label">Total Users</div><a class="sc-btn" href="admin_users.php">Manage Users</a></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon a"><i class="fas fa-building"></i></div><div class="sc-num"><?php echo number_format($adminStats['employers']); ?></div></div><div class="sc-label">Employers<?php if($adminStats['pending_companies']>0): ?> <span style="font-size:10px;font-weight:700;background:var(--red-vivid);color:#fff;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_companies']; ?> pending</span><?php endif; ?></div><a class="sc-btn" href="admin_companies.php">Review Companies</a></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon r"><i class="fas fa-briefcase"></i></div><div class="sc-num"><?php echo number_format($adminStats['jobs']); ?></div></div><div class="sc-label">Job Posts<?php if($adminStats['pending_jobs']>0): ?> <span style="font-size:10px;font-weight:700;background:var(--amber);color:#1A0A09;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_jobs']; ?> pending</span><?php endif; ?></div><a class="sc-btn" href="admin_jobs.php">Moderate Jobs</a></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-paper-plane"></i></div><div class="sc-num"><?php echo number_format($adminStats['applications']); ?></div></div><div class="sc-label">Applications</div><a class="sc-btn" href="admin_reports.php">View Reports</a></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon g"><i class="fas fa-check-circle"></i></div><div class="sc-num"><?php echo number_format($adminStats['active_jobs']); ?></div></div><div class="sc-label">Active Jobs</div><a class="sc-btn" href="admin_jobs.php">View Active</a></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-user-tie"></i></div><div class="sc-num"><?php echo number_format($adminStats['recruiters']); ?></div></div><div class="sc-label">Recruiters</div><a class="sc-btn" href="admin_recruiters.php">View Recruiters</a></div>
       </div>
 
       <!-- MASTER DATA (featured-card scroll) -->
@@ -614,7 +614,7 @@ $adminStats = [
       <div id="section-users" class="anim anim-d1" style="margin-bottom:40px;">
         <div class="sec-header">
           <div class="sec-title"><i class="fas fa-user-plus"></i> Recent Registrations <span class="sec-count" id="userCount">5 users</span></div>
-          <button class="see-more" onclick="showToast('View all users','fa-users')">View all <i class="fas fa-arrow-right"></i></button>
+          <a class="see-more" href="admin_users.php">View all <i class="fas fa-arrow-right"></i></a>
         </div>
         <div class="job-list" id="usersContainer"></div>
       </div>
@@ -623,7 +623,7 @@ $adminStats = [
       <div id="section-jobs" class="anim anim-d1" style="margin-bottom:40px;">
         <div class="sec-header">
           <div class="sec-title"><i class="fas fa-briefcase"></i> Recent Job Posts <span class="sec-count" id="jobCount">5 posts</span></div>
-          <button class="see-more" onclick="showToast('Manage all job posts','fa-briefcase')">Manage all <i class="fas fa-arrow-right"></i></button>
+          <a class="see-more" href="admin_jobs.php">Manage all <i class="fas fa-arrow-right"></i></a>
         </div>
         <div class="job-list" id="jobsContainer"></div>
       </div>
@@ -633,8 +633,8 @@ $adminStats = [
         <div class="sec-header">
           <div class="sec-title"><i class="fas fa-chart-line"></i> Reports / Analytics Summary</div>
           <div style="display:flex;gap:14px;">
-            <button class="see-more" onclick="showToast('Open Full Reports','fa-chart-bar')">Open Reports <i class="fas fa-arrow-right"></i></button>
-            <button class="see-more" onclick="showToast('Exporting report…','fa-download')">Export <i class="fas fa-arrow-right"></i></button>
+            <a class="see-more" href="admin_reports.php">Open Reports <i class="fas fa-arrow-right"></i></a>
+            <a class="see-more" href="admin_reports.php">Export <i class="fas fa-arrow-right"></i></a>
           </div>
         </div>
         <div class="analytics-card">
@@ -662,7 +662,7 @@ $adminStats = [
   <div class="footer-logo">AntCareers</div>
   <div>© 2025 AntCareers — Admin Panel</div>
   <div style="display:flex;gap:14px;color:var(--text-muted);">
-    <span style="cursor:pointer;" onclick="window.location.href='index.php'">← Public Site</span>
+    <a href="../index.php" style="color:inherit;text-decoration:none;cursor:pointer;">← Public Site</a>
     <span style="cursor:pointer;">Privacy</span>
     <span style="cursor:pointer;">Terms</span>
   </div>
@@ -808,12 +808,7 @@ $adminStats = [
   });
 
   // ── ACTIVITY PANEL ──
-  const activityPanel = document.getElementById('activityPanel');
-  document.getElementById('activityToggle').addEventListener('click', e => {
-    e.stopPropagation();
-    activityPanel.classList.toggle('open');
-  });
-  function closeActivity() { activityPanel.classList.remove('open'); }
+  // Activity panel removed (replaced by notifications page link)
 
   // ── CLICK OUTSIDE ──
   document.addEventListener('click', e => {
@@ -823,8 +818,7 @@ $adminStats = [
     }
     if (!document.getElementById('profileToggle').contains(e.target) && !document.getElementById('profileDropdown').contains(e.target))
       document.getElementById('profileDropdown').classList.remove('open');
-    if (!activityPanel.contains(e.target) && !document.getElementById('activityToggle').contains(e.target))
-      activityPanel.classList.remove('open');
+    // activity panel removed
   });
 
   // ── MODAL ──
