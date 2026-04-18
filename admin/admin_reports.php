@@ -55,6 +55,25 @@ if ($exportType === 'applications') {
     } catch (Throwable) {}
     fclose($out); exit;
 }
+if ($exportType === 'hirings') {
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="antcareers_hirings_' . date('Ymd') . '.csv"');
+    $out = fopen('php://output', 'w');
+    fputcsv($out, ['Application ID','Job Title','Company','Applicant','Email','Hired Date']);
+    try {
+        $rows = $db->query(
+            "SELECT a.id, j.title, u2.company_name, u.full_name, u.email, a.updated_at
+             FROM applications a
+             JOIN jobs j ON j.id = a.job_id
+             JOIN users u ON u.id = a.user_id
+             JOIN users u2 ON u2.id = j.employer_id
+             WHERE a.status = 'Accepted'
+             ORDER BY a.updated_at DESC"
+        )->fetchAll(PDO::FETCH_NUM);
+        foreach ($rows as $r) fputcsv($out, $r);
+    } catch (Throwable) {}
+    fclose($out); exit;
+}
 
 // ── Stats ─────────────────────────────────────────────────────
 $totalUsers    = (int)$safe("SELECT COUNT(*) FROM users", $db);
@@ -201,7 +220,8 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
 
     /* LAYOUT */
     .page-shell{max-width:1380px;margin:0 auto;padding:0 24px 80px}
-    .content-layout{display:grid;grid-template-columns:244px 1fr;gap:28px;align-items:start}
+    .content-layout{display:block}
+    .sidebar{display:none}
 
     /* SIDEBAR */
     .sidebar{position:sticky;top:72px;max-height:calc(100vh - 88px);overflow-y:auto;scrollbar-width:none}
@@ -404,6 +424,7 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
         <a class="export-btn" href="admin_reports.php?export=users"><i class="fas fa-download"></i> Export Users CSV</a>
         <a class="export-btn" href="admin_reports.php?export=jobs"><i class="fas fa-download"></i> Export Jobs CSV</a>
         <a class="export-btn" href="admin_reports.php?export=applications"><i class="fas fa-download"></i> Export Applications CSV</a>
+        <a class="export-btn" href="admin_reports.php?export=hirings"><i class="fas fa-handshake"></i> Export Hirings CSV</a>
       </div>
 
       <!-- SUMMARY STATS -->

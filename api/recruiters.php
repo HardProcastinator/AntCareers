@@ -333,6 +333,78 @@ switch ($action) {
         ]);
         break;
 
+    // ─── RESEND CREDENTIALS ───
+    case 'resend_credentials':
+        requireEmployerRole($role);
+        $recId = (int)($_POST['recruiter_id'] ?? 0);
+        if (!$recId) jsonResponse(['success' => false, 'message' => 'Missing recruiter_id.']);
+
+        // Fetch recruiter info
+        $recStmt = $db->prepare(
+            'SELECT r.user_id, u.full_name, u.email AS platform_email, rp.personal_email
+             FROM recruiters r
+             JOIN users u ON u.id = r.user_id
+             LEFT JOIN recruiter_profiles rp ON rp.user_id = r.user_id
+             WHERE r.id = :id AND r.employer_id = :eid
+             LIMIT 1'
+        );
+        $recStmt->execute([':id' => $recId, ':eid' => $userId]);
+        $rec = $recStmt->fetch();
+        if (!$rec) jsonResponse(['success' => false, 'message' => 'Recruiter not found.'], 404);
+
+        // Fetch company name
+        $companyStmt = $db->prepare('SELECT company_name FROM company_profiles WHERE user_id = :uid LIMIT 1');
+        $companyStmt->execute([':uid' => $userId]);
+        $companyRow  = $companyStmt->fetch();
+        $companyName = $companyRow['company_name'] ?? 'Your Company';
+
+        // Generate new temp password and update hash
+        $tempPassword = generateTempPassword();
+        $db->prepare('UPDATE users SET password_hash = :hash, must_change_password = 1 WHERE id = :uid')
+           ->execute([':hash' => password_hash($tempPassword, PASSWORD_BCRYPT), ':uid' => $rec['user_id']]);
+
+        // Send credentials via in-platform message to personal email account
+        $personalEmail = (string)($rec['personal_email'] ?? '');
+        if ($personalEmail !== '') {
+            $recipientStmt = $db->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
+            $recipientStmt->execute([':email' => $personalEmail]);
+            $recipient = $recipientStmt->fetch();
+            if ($recipient) {
+                $recipientId = (int)$recipient['id'];
+                $convKey     = 'direct:' . min($userId, $recipientId) . ':' . max($userId, $recipientId);
+                $cs = $db->prepare('SELECT id FROM conversations WHERE conversation_key = :key LIMIT 1');
+                $cs->execute([':key' => $convKey]);
+                $conv = $cs->fetch();
+                if ($conv) {
+                    $convId = (int)$conv['id'];
+                } else {
+                    $db->prepare('INSERT INTO conversations (conversation_key, participant_a_id, participant_b_id) VALUES (:key, :a, :b)')
+                       ->execute([':key' => $convKey, ':a' => min($userId, $recipientId), ':b' => max($userId, $recipientId)]);
+                    $convId = (int)$db->lastInsertId();
+                }
+                $firstName = explode(' ', trim((string)$rec['full_name']))[0];
+                $msgBody   = "Hello {$firstName},\n\n"
+                           . "Your recruiter credentials for {$companyName} have been reset.\n\n"
+                           . "Here are your updated login credentials:\n"
+                           . "\u2022 Platform Email: {$rec['platform_email']}\n"
+                           . "\u2022 Temporary Password: {$tempPassword}\n\n"
+                           . "Please log in at " . APP_URL . " and change your password immediately.\n\n"
+                           . "\u2014 {$companyName} Admin";
+                $db->prepare('INSERT INTO messages (sender_id, receiver_id, conversation_id, subject, body, is_read) VALUES (:sid, :rid, :cid, :subj, :body, 0)')
+                   ->execute([':sid' => $userId, ':rid' => $recipientId, ':cid' => $convId, ':subj' => 'Your Recruiter Credentials (Updated)', ':body' => $msgBody]);
+                $msgId = (int)$db->lastInsertId();
+                $db->prepare('UPDATE conversations SET latest_message_id = :mid, latest_message_at = NOW() WHERE id = :cid')
+                   ->execute([':mid' => $msgId, ':cid' => $convId]);
+            }
+        }
+
+        jsonResponse([
+            'success'       => true,
+            'message'       => 'New credentials sent via message.',
+            'temp_password' => $tempPassword,
+        ]);
+        break;
+
     // ─── REASSIGN JOBS ───
     case 'reassign_jobs':
         requireEmployerRole($role);

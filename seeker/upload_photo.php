@@ -22,6 +22,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// CSRF validation
+$_csrfSubmitted = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+if (!hash_equals($_SESSION['csrf_token'] ?? '', $_csrfSubmitted)) {
+    http_response_code(403);
+    echo json_encode(['ok' => false, 'error' => 'Invalid request. Please refresh the page and try again.']);
+    exit;
+}
+
 $userId = (int) $_SESSION['user_id'];
 $type = $_POST['type'] ?? '';
 
@@ -48,8 +56,8 @@ if (!in_array($mime, $allowed, true)) {
     exit;
 }
 
-// Max 5MB
-if ($file['size'] > 5 * 1024 * 1024) {
+// Max file size
+if ($file['size'] > MAX_UPLOAD_BYTES) {
     http_response_code(400);
     echo json_encode(['ok' => false, 'error' => 'File too large (max 5MB)']);
     exit;

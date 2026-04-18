@@ -30,6 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// CSRF validation
+$_csrfSubmitted = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+if (!hash_equals($_SESSION['csrf_token'] ?? '', $_csrfSubmitted)) {
+    if ($isAjax) jsonError('Invalid request. Please refresh the page and try again.', 403);
+    header('Location: antcareers_seekerProfile.php');
+    exit;
+}
+
 if (!isset($_FILES['resume']) || !is_array($_FILES['resume'])) {
     if ($isAjax) jsonError('No file provided');
     header('Location: antcareers_seekerProfile.php?error=upload');
@@ -44,7 +52,7 @@ if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
 }
 
 $userId = (int)$_SESSION['user_id'];
-$maxSize = 5 * 1024 * 1024;
+$maxSize = MAX_UPLOAD_BYTES;
 $originalName = (string)($file['name'] ?? '');
 $tmpName = (string)($file['tmp_name'] ?? '');
 $fileSize = (int)($file['size'] ?? 0);

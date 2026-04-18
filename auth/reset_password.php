@@ -45,6 +45,9 @@ if ($method === 'GET') {
     $tokenHash = hash('sha256', $plainToken);
     $db        = getDB();
 
+    // Clean up expired tokens on each validation
+    $db->exec("DELETE FROM password_reset_tokens WHERE expires_at < NOW()");
+
     $stmt = $db->prepare(
         'SELECT id
          FROM   password_reset_tokens

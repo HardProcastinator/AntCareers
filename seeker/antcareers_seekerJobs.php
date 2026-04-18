@@ -19,8 +19,28 @@ $db = getDB();
 $jobs      = [];
 $companies = [];
 $dbJobs    = [];
+$perPage   = 20;
+$page      = max(1, (int)($_GET['page'] ?? 1));
+$offset    = ($page - 1) * $perPage;
+$totalJobs  = 0;
+$totalPages = 1;
 
 try {
+    // Count for pagination
+    $cStmt = $db->prepare("
+        SELECT COUNT(*)
+        FROM jobs j
+        WHERE j.status = 'Active'
+          AND (j.approval_status IS NULL OR j.approval_status = 'approved')
+          AND (j.deadline IS NULL OR j.deadline >= CURDATE())
+          AND j.deleted_at IS NULL
+    ");
+    $cStmt->execute();
+    $totalJobs  = (int)$cStmt->fetchColumn();
+    $totalPages = max(1, (int)ceil($totalJobs / $perPage));
+    $page       = min($page, $totalPages);
+    $offset     = ($page - 1) * $perPage;
+
     // Full query — works after migration (new columns exist)
     $jStmt = $db->prepare("
         SELECT
@@ -35,9 +55,12 @@ try {
         WHERE j.status = 'Active'
           AND (j.approval_status IS NULL OR j.approval_status = 'approved')
           AND (j.deadline IS NULL OR j.deadline >= CURDATE())
+          AND j.deleted_at IS NULL
         ORDER BY j.created_at DESC
-        LIMIT 100
+        LIMIT :perPage OFFSET :offset
     ");
+    $jStmt->bindValue(':perPage', $perPage, PDO::PARAM_INT);
+    $jStmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $jStmt->execute();
     $dbJobs = $jStmt->fetchAll();
 } catch (PDOException $e) {
@@ -868,6 +891,19 @@ foreach ($industryFilterValues as $industryValue) {
           <button class="see-more" id="seeMoreJobs">Browse all <i class="fas fa-arrow-right"></i></button>
         </div>
         <div class="job-list" id="jobsContainer"></div>
+        <?php if ($totalPages > 1): ?>
+        <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap;padding:0 4px;">
+          <?php if ($page > 1): ?>
+            <a href="?page=<?= $page - 1 ?>" style="padding:7px 14px;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:8px;color:var(--text-mid);text-decoration:none;font-size:13px;">← Prev</a>
+          <?php endif; ?>
+          <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
+            <a href="?page=<?= $p ?>" style="padding:7px 14px;background:<?= $p === $page ? 'var(--red-vivid)' : 'var(--soil-card)' ?>;border:1px solid <?= $p === $page ? 'var(--red-vivid)' : 'var(--soil-line)' ?>;border-radius:8px;color:<?= $p === $page ? '#fff' : 'var(--text-mid)' ?>;text-decoration:none;font-size:13px;"><?= $p ?></a>
+          <?php endfor; ?>
+          <?php if ($page < $totalPages): ?>
+            <a href="?page=<?= $page + 1 ?>" style="padding:7px 14px;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:8px;color:var(--text-mid);text-decoration:none;font-size:13px;">Next →</a>
+          <?php endif; ?>
+        </div>
+        <?php endif; ?>
       </div>
 
     </main>

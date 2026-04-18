@@ -17,6 +17,8 @@ $db = getDB();
 $typeFilter   = $_GET['type']   ?? 'all';
 $statusFilter = $_GET['status'] ?? 'all';
 $search       = trim($_GET['q'] ?? '');
+$page         = max(1, (int)($_GET['page'] ?? 1));
+$perPage      = 25;
 
 $where  = ["LOWER(u.account_type) != 'admin'"];
 $params = [];
@@ -28,11 +30,17 @@ if (in_array($statusFilter, ['active','pending_approval','suspended','banned'], 
     $where[]         = "u.account_status = :status";
     $params[':status'] = $statusFilter;
 }
-if ($search !== '') {
-    $where[]     = "(u.full_name LIKE :q OR u.email LIKE :q OR u.company_name LIKE :q)";
-    $params[':q'] = "%{$search}%";
-}
+// search is handled client-side
 $whereStr = 'WHERE ' . implode(' AND ', $where);
+
+try {
+    $countStmt = $db->prepare("SELECT COUNT(*) FROM users u {$whereStr}");
+    $countStmt->execute($params);
+    $totalUsers = (int)$countStmt->fetchColumn();
+} catch (Throwable) { $totalUsers = 0; }
+$totalPages = $totalUsers > 0 ? (int)ceil($totalUsers / $perPage) : 1;
+$page = min($page, $totalPages);
+$offset = ($page - 1) * $perPage;
 
 try {
     $stmt = $db->prepare(
@@ -41,7 +49,7 @@ try {
               u.status_expires_at, u.created_at, u.last_login_at AS last_login
        FROM users u
        {$whereStr}
-       ORDER BY u.created_at DESC LIMIT 100"
+       ORDER BY u.created_at DESC LIMIT {$perPage} OFFSET {$offset}"
     );
     $stmt->execute($params);
     $users = $stmt->fetchAll();
@@ -129,7 +137,8 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .page-title span { color:var(--red-bright); font-style:italic; }
     .page-sub { font-size:14px; color:var(--text-muted); }
 
-    .content-layout { display:grid; grid-template-columns:244px 1fr; gap:28px; align-items:start; }
+    .content-layout { display:block; }
+    .sidebar { display:none; }
     .sidebar { position:sticky; top:72px; max-height:calc(100vh - 88px); overflow-y:auto; scrollbar-width:none; }
     .sidebar::-webkit-scrollbar { display:none; }
     .sidebar-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; }
@@ -193,6 +202,14 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .btn-approve:hover { background:rgba(76,175,112,0.22); }
     .btn-reject { background:rgba(209,61,44,0.1); border-color:rgba(209,61,44,0.25); color:var(--red-pale); }
     .btn-reject:hover { background:rgba(209,61,44,0.18); }
+    .btn-reset-pw { background:rgba(74,144,217,0.08); border-color:rgba(74,144,217,0.2); color:#7ab8f0; }
+    .btn-reset-pw:hover { background:rgba(74,144,217,0.16); }
+
+    .pagination { display:flex; align-items:center; gap:6px; justify-content:center; margin-top:24px; flex-wrap:wrap; }
+    .pag-btn { padding:7px 13px; border-radius:7px; border:1px solid var(--soil-line); background:var(--soil-hover); color:var(--text-muted); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; transition:0.18s; text-decoration:none; }
+    .pag-btn:hover { color:#F5F0EE; border-color:rgba(209,61,44,0.4); }
+    .pag-btn.active { background:rgba(209,61,44,0.12); border-color:rgba(209,61,44,0.4); color:var(--red-pale); cursor:default; }
+    .pag-btn.disabled { opacity:0.35; pointer-events:none; }
 
     .empty-state { text-align:center; padding:56px 20px; color:var(--text-muted); }
     .empty-state i { font-size:32px; margin-bottom:14px; display:block; color:var(--soil-line); }
@@ -309,7 +326,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
 <div class="page-shell">
   <div class="page-header anim">
     <div class="page-title"><i class="fas fa-users" style="color:var(--red-bright);font-size:22px;vertical-align:middle;margin-right:8px;"></i>User <span>Accounts</span></div>
-    <div class="page-sub">Manage all platform users. Showing <?php echo count($users); ?> result<?php echo count($users) !== 1 ? 's' : ''; ?>.</div>
+    <div class="page-sub">Manage all platform users. Showing <?php echo count($users); ?> of <?php echo $totalUsers; ?> result<?php echo $totalUsers !== 1 ? 's' : ''; ?>.</div>
   </div>
 
   <div class="content-layout">
@@ -357,9 +374,9 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
           </div>
           <div class="filter-group" style="flex:1;min-width:220px;">
             <div class="filter-label">Search</div>
-            <div style="display:flex;gap:6px;">
-              <input class="search-input" type="text" name="q" value="<?php echo htmlspecialchars($search, ENT_QUOTES); ?>" placeholder="Name, email, company…">
-              <button class="filter-submit" type="submit"><i class="fas fa-search"></i></button>
+            <div style="position:relative;">
+              <i class="fas fa-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none;"></i>
+              <input class="search-input" id="liveSearch" type="text" autocomplete="off" value="<?php echo htmlspecialchars($search, ENT_QUOTES); ?>" placeholder="Filter by name, email, company…" style="padding-left:32px;width:100%;">
             </div>
           </div>
           <input type="hidden" name="type" value="<?php echo htmlspecialchars($typeFilter, ENT_QUOTES); ?>">
@@ -392,7 +409,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
               default     => '<span class="chip">' . htmlspecialchars($role, ENT_QUOTES) . '</span>',
             };
           ?>
-          <div class="user-row" id="user-row-<?php echo $userId; ?>">
+          <div class="user-row" id="user-row-<?php echo $userId; ?>" data-search="<?php echo htmlspecialchars(strtolower(($u['full_name'] ?? '').' '.($u['email'] ?? '').' '.($u['company_name'] ?? '')), ENT_QUOTES); ?>">
             <div>
               <div class="ur-name"><?php echo htmlspecialchars((string)($u['full_name'] ?? ''), ENT_QUOTES); ?><?php if (!empty($u['company_name'])): ?> <span style="font-size:12px;color:var(--text-muted);font-family:var(--font-body);font-weight:400;">— <?php echo htmlspecialchars((string)$u['company_name'], ENT_QUOTES); ?></span><?php endif; ?></div>
               <div class="ur-email"><?php echo htmlspecialchars((string)($u['email'] ?? ''), ENT_QUOTES); ?></div>
@@ -418,10 +435,24 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
               <?php elseif ($st === 'banned'): ?>
                 <button class="btn btn-reinstate" onclick="doUserAction('unban_user', <?php echo $userId; ?>, null, null)"><i class="fas fa-unlock"></i> Unban</button>
               <?php endif; ?>
+              <button class="btn btn-reset-pw" onclick="doUserAction('force_password_reset', <?php echo $userId; ?>, null, null)" title="Force user to reset password on next login"><i class="fas fa-key"></i> Reset PW</button>
             </div>
           </div>
           <?php endforeach; ?>
         </div>
+        <?php if ($totalPages > 1): ?>
+        <div class="pagination">
+          <?php
+            $baseUrl = '?type='.urlencode($typeFilter).'&status='.urlencode($statusFilter).'&q='.urlencode($search);
+            $prev = $page - 1; $next = $page + 1;
+          ?>
+          <a class="pag-btn <?php echo $page <= 1 ? 'disabled' : ''; ?>" href="<?php echo $baseUrl; ?>&page=<?php echo $prev; ?>"><i class="fas fa-chevron-left"></i></a>
+          <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
+            <a class="pag-btn <?php echo $p === $page ? 'active' : ''; ?>" href="<?php echo $baseUrl; ?>&page=<?php echo $p; ?>"><?php echo $p; ?></a>
+          <?php endfor; ?>
+          <a class="pag-btn <?php echo $page >= $totalPages ? 'disabled' : ''; ?>" href="<?php echo $baseUrl; ?>&page=<?php echo $next; ?>"><i class="fas fa-chevron-right"></i></a>
+        </div>
+        <?php endif; ?>
       <?php endif; ?>
     </main>
   </div>
@@ -553,6 +584,44 @@ function setTheme(t) {
 document.getElementById('themeToggle').addEventListener('click', () =>
   setTheme(document.body.classList.contains('light') ? 'dark' : 'light'));
 setTheme(localStorage.getItem('ac-theme') || 'dark');
+
+// Live search filter
+(function() {
+  const input = document.getElementById('liveSearch');
+  if (!input) return;
+  const rows = document.querySelectorAll('.user-row');
+  const countEl = document.querySelector('.results-count');
+  const emptyEl = document.querySelector('.empty-state');
+  const userList = document.querySelector('.user-list');
+
+  function filter() {
+    const q = input.value.trim().toLowerCase();
+    let visible = 0;
+    rows.forEach(row => {
+      const match = !q || (row.dataset.search || '').includes(q);
+      row.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    if (countEl) countEl.textContent = visible + ' user' + (visible !== 1 ? 's' : '') + ' found';
+    if (userList) userList.style.display = visible === 0 ? 'none' : '';
+    const existingEmpty = document.getElementById('live-empty');
+    if (visible === 0 && q) {
+      if (!existingEmpty) {
+        const d = document.createElement('div');
+        d.id = 'live-empty';
+        d.className = 'empty-state';
+        d.innerHTML = '<i class="fas fa-search"></i><div>No users match "' + q.replace(/</g,'&lt;') + '".</div>';
+        userList && userList.parentNode.insertBefore(d, userList.nextSibling);
+      }
+    } else {
+      existingEmpty && existingEmpty.remove();
+    }
+  }
+
+  input.addEventListener('input', filter);
+  // Run on load if there's a pre-filled value
+  if (input.value.trim()) filter();
+})();
 
 document.getElementById('profileToggle').addEventListener('click', e => {
   e.stopPropagation();

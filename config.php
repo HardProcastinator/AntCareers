@@ -44,6 +44,7 @@ define('REMEMBER_ME_DAYS',           30);  // "Remember me" cookie lifetime (day
 define('RESET_TOKEN_EXPIRY_MINUTES', 30);  // Forgot-password link TTL (minutes)
 define('MAX_LOGIN_ATTEMPTS',          5);  // Failed attempts before lockout
 define('LOCKOUT_MINUTES',            15);  // How long the lockout lasts
+define('MAX_UPLOAD_BYTES',    5 * 1024 * 1024);  // Maximum upload file size (5 MB)
 
 // ── Session bootstrap ─────────────────────────────────────────────────────────
 // Must be called before any output. All auth/*.php files rely on $_SESSION.
@@ -58,7 +59,7 @@ if (session_status() === PHP_SESSION_NONE) {
         'lifetime' => 0,
         'path'     => '/',
         'domain'   => '',
-        'secure'   => false,       // byethost serves over HTTP — keep false to avoid CSRF token mismatch
+        'secure'   => $isHttps,
         'httponly' => true,
         'samesite' => 'Lax',
     ]);

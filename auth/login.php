@@ -104,6 +104,15 @@ $passwordOk = $user !== false
            && $user['is_active']
            && password_verify($password, $user['password_hash']);
 
+// pending_approval accounts have is_active=0, so $passwordOk fails before the status
+// check below is ever reached. Intercept here so they see the real reason.
+if (!$passwordOk && $user !== false
+    && (string)($user['account_status'] ?? '') === 'pending_approval'
+    && password_verify($password, $user['password_hash'])) {
+    recordLoginAttempt($email, $ip, false);
+    $respondError('Your account is pending admin approval. You will be notified once it is reviewed.');
+}
+
 recordLoginAttempt($email, $ip, $passwordOk);
 
 if (!$passwordOk) {

@@ -4,7 +4,7 @@
     {
       "label": "Sync to htdocs",
       "type": "shell",
-      "command": "robocopy \"${workspaceFolder}\" \"C:\\xampp\\htdocs\\AntCareers\" /MIR /MON:1 /XD \".git\" \".vscode\" /XF \".gitignore\"; exit 0",
+      "command": "robocopy \"${workspaceFolder}\" \"C:\\xampweb\\htdocs\\AntCareers\" /MIR /MON:1 /XD \".git\" \".vscode\" /XF \".gitignore\"; exit 0",
       "isBackground": true,
       "presentation": {
         "reveal": "silent",

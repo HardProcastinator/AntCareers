@@ -61,8 +61,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $loc    = trim((string)($_POST['location'] ?? ''));
         $type   = (string)($_POST['job_type'] ?? 'Full-time');
         $setup  = (string)($_POST['setup'] ?? 'On-site');
-        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? (float)$_POST['salary_min'] : null;
-        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? (float)$_POST['salary_max'] : null;
+        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? min((float)$_POST['salary_min'], 9999999999) : null;
+        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? min((float)$_POST['salary_max'], 9999999999) : null;
+        if ($sMin !== null && $sMin < 0) $sMin = null;
+        if ($sMax !== null && $sMax < 0) $sMax = null;
+        if ($sMin !== null && $sMax !== null && $sMin > $sMax) { echo json_encode(['ok' => false, 'msg' => 'Min salary cannot be greater than max salary.']); exit; }
         $ind    = trim((string)($_POST['industry'] ?? ''));
         $exp    = (string)($_POST['experience_level'] ?? '') ?: null;
         $skills = trim((string)($_POST['skills'] ?? ''));
@@ -101,8 +104,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $loc    = trim((string)($_POST['location'] ?? ''));
         $type   = (string)($_POST['job_type'] ?? 'Full-time');
         $setup  = (string)($_POST['setup'] ?? 'On-site');
-        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? (float)$_POST['salary_min'] : null;
-        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? (float)$_POST['salary_max'] : null;
+        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? min((float)$_POST['salary_min'], 9999999999) : null;
+        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? min((float)$_POST['salary_max'], 9999999999) : null;
+        if ($sMin !== null && $sMin < 0) $sMin = null;
+        if ($sMax !== null && $sMax < 0) $sMax = null;
+        if ($sMin !== null && $sMax !== null && $sMin > $sMax) { echo json_encode(['ok' => false, 'msg' => 'Min salary cannot be greater than max salary.']); exit; }
         $ind    = trim((string)($_POST['industry'] ?? ''));
         $exp    = (string)($_POST['experience_level'] ?? '') ?: null;
         $skills = trim((string)($_POST['skills'] ?? ''));
@@ -131,8 +137,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $loc    = trim((string)($_POST['location'] ?? ''));
         $type   = (string)($_POST['job_type'] ?? 'Full-time');
         $setup  = (string)($_POST['setup'] ?? 'On-site');
-        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? (float)$_POST['salary_min'] : null;
-        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? (float)$_POST['salary_max'] : null;
+        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? min((float)$_POST['salary_min'], 9999999999) : null;
+        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? min((float)$_POST['salary_max'], 9999999999) : null;
+        if ($sMin !== null && $sMin < 0) $sMin = null;
+        if ($sMax !== null && $sMax < 0) $sMax = null;
+        if ($sMin !== null && $sMax !== null && $sMin > $sMax) { echo json_encode(['ok' => false, 'msg' => 'Min salary cannot be greater than max salary.']); exit; }
         $ind    = trim((string)($_POST['industry'] ?? ''));
         $exp    = (string)($_POST['experience_level'] ?? '') ?: null;
         $skills = trim((string)($_POST['skills'] ?? ''));
@@ -151,19 +160,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     }
 
-    /* ── delete_job ── */
+    /* ── delete_job (soft) ── */
     if ($action === 'delete_job') {
         $jobId = (int)($_POST['job_id'] ?? 0);
         try {
-            $st = $db->prepare("DELETE FROM jobs WHERE id=? AND employer_id=?");
+            $st = $db->prepare("UPDATE jobs SET deleted_at=NOW(), status='Closed', updated_at=NOW() WHERE id=? AND employer_id=? AND deleted_at IS NULL");
             $st->execute([$jobId, $uid]);
             if ($st->rowCount() === 0) {
-                echo json_encode(['ok' => false, 'msg' => 'Job not found or not yours']);
+                echo json_encode(['ok' => false, 'msg' => 'Job not found or already deleted']);
             } else {
                 echo json_encode(['ok' => true]);
             }
         } catch (Exception $e) {
             error_log('[AntCareers] employer delete_job: ' . $e->getMessage());
+            echo json_encode(['ok' => false, 'msg' => 'DB error']);
+        }
+        exit;
+    }
+
+    /* ── restore_job ── */
+    if ($action === 'restore_job') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        try {
+            $st = $db->prepare("UPDATE jobs SET deleted_at=NULL, status='Draft', approval_status='pending', updated_at=NOW() WHERE id=? AND employer_id=? AND deleted_at IS NOT NULL");
+            $st->execute([$jobId, $uid]);
+            if ($st->rowCount() === 0) {
+                echo json_encode(['ok' => false, 'msg' => 'Job not found or not in Trash']);
+            } else {
+                echo json_encode(['ok' => true]);
+            }
+        } catch (Exception $e) {
+            error_log('[AntCareers] employer restore_job: ' . $e->getMessage());
             echo json_encode(['ok' => false, 'msg' => 'DB error']);
         }
         exit;
@@ -245,35 +272,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 /* ══════════════════════════════════════════════════════════════
    FETCH JOBS & COUNTS
    ══════════════════════════════════════════════════════════════ */
-$jobs   = [];
-$counts = ['total' => 0, 'Active' => 0, 'Closed' => 0, 'pending' => 0, 'Draft' => 0];
+$jobs        = [];
+$deletedJobs = [];
+$counts = ['total' => 0, 'Active' => 0, 'Closed' => 0, 'pending' => 0, 'Draft' => 0, 'deleted' => 0];
 $dbErr  = false;
 
 try {
-    /* Status counts */
-    $sc = $db->prepare("SELECT status, COUNT(*) AS c FROM jobs WHERE employer_id=? GROUP BY status");
+    /* Status counts (non-deleted only) */
+    $sc = $db->prepare("SELECT status, COUNT(*) AS c FROM jobs WHERE employer_id=? AND deleted_at IS NULL GROUP BY status");
     $sc->execute([$uid]);
     foreach ($sc->fetchAll(PDO::FETCH_ASSOC) as $r) {
         if (isset($counts[$r['status']])) $counts[$r['status']] = (int)$r['c'];
         $counts['total'] += (int)$r['c'];
     }
 
-    /* Pending approval count */
-    $pc = $db->prepare("SELECT COUNT(*) FROM jobs WHERE employer_id=? AND approval_status='pending'");
+    /* Pending approval count (non-deleted only) */
+    $pc = $db->prepare("SELECT COUNT(*) FROM jobs WHERE employer_id=? AND approval_status='pending' AND deleted_at IS NULL");
     $pc->execute([$uid]);
     $counts['pending'] = (int)$pc->fetchColumn();
 
-    /* All jobs with app count */
+    /* All active (non-deleted) jobs with app count */
     $st = $db->prepare("
         SELECT j.*, COUNT(a.id) AS app_count
         FROM jobs j
         LEFT JOIN applications a ON a.job_id = j.id
-        WHERE j.employer_id = ?
+        WHERE j.employer_id = ? AND j.deleted_at IS NULL
         GROUP BY j.id
         ORDER BY j.created_at DESC
     ");
     $st->execute([$uid]);
     $jobs = $st->fetchAll(PDO::FETCH_ASSOC);
+
+    /* Deleted jobs */
+    $dc = $db->prepare("SELECT COUNT(*) FROM jobs WHERE employer_id=? AND deleted_at IS NOT NULL");
+    $dc->execute([$uid]);
+    $counts['deleted'] = (int)$dc->fetchColumn();
+    if ($counts['deleted'] > 0) {
+        $ds = $db->prepare("
+            SELECT j.*, 0 AS app_count
+            FROM jobs j
+            WHERE j.employer_id = ? AND j.deleted_at IS NOT NULL
+            ORDER BY j.deleted_at DESC
+        ");
+        $ds->execute([$uid]);
+        $deletedJobs = $ds->fetchAll(PDO::FETCH_ASSOC);
+    }
 } catch (Exception $e) {
     $dbErr = true;
     error_log('[AntCareers] employer_manageJobs fetch: ' . $e->getMessage());
@@ -651,6 +694,11 @@ $jobsJson = json_encode($jobs ?: []);
       <span class="sp-label">Drafts</span>
       <span class="sp-count" id="cntDraft"><?= $counts['Draft'] ?></span>
     </div>
+    <div class="stat-pill" data-filter="deleted" onclick="filterJobs('deleted',this)">
+      <i class="fas fa-trash-alt sp-icon" style="color:var(--red-pale)"></i>
+      <span class="sp-label">Trash</span>
+      <span class="sp-count" id="cntDeleted"><?= $counts['deleted'] ?></span>
+    </div>
     <div class="stat-pill" style="cursor:default;">
       <i class="fas fa-users sp-icon" style="color:var(--amber)"></i>
       <span class="sp-label">Applicants</span>
@@ -669,6 +717,7 @@ $jobsJson = json_encode($jobs ?: []);
       <option value="active">Active</option>
       <option value="closed">Closed</option>
       <option value="draft">Draft</option>
+      <option value="deleted">Trash</option>
       <option value="pending">Pending Approval</option>
       <option value="rejected">Rejected</option>
     </select>
@@ -696,7 +745,8 @@ $jobsJson = json_encode($jobs ?: []);
        data-location="<?= htmlspecialchars(strtolower($j['location'] ?? ''), ENT_QUOTES) ?>"
        data-skills="<?= htmlspecialchars(strtolower($j['skills_required'] ?? ''), ENT_QUOTES) ?>"
        data-status="<?= $sc ?>"
-       data-approval="<?= $asc ?>">
+       data-approval="<?= $asc ?>"
+       data-deleted="0">
     <div class="job-icon"><i class="fas fa-briefcase"></i></div>
     <div class="job-body">
       <div class="job-title"><?= htmlspecialchars($j['title']) ?></div>
@@ -739,6 +789,34 @@ $jobsJson = json_encode($jobs ?: []);
     </div>
   </div>
   <?php endforeach; endif; ?>
+
+  <?php foreach ($deletedJobs as $j):
+      $pd = date('M j, Y', strtotime($j['deleted_at']));
+  ?>
+  <div class="job-card"
+       id="jc-<?= $j['id'] ?>"
+       data-title="<?= htmlspecialchars(strtolower($j['title']), ENT_QUOTES) ?>"
+       data-location="<?= htmlspecialchars(strtolower($j['location'] ?? ''), ENT_QUOTES) ?>"
+       data-skills="<?= htmlspecialchars(strtolower($j['skills_required'] ?? ''), ENT_QUOTES) ?>"
+       data-status="closed"
+       data-approval="n/a"
+       data-deleted="1"
+       style="opacity:0.65;border-color:rgba(146,124,122,0.25);">
+    <div class="job-icon" style="opacity:0.5"><i class="fas fa-briefcase"></i></div>
+    <div class="job-body">
+      <div class="job-title"><?= htmlspecialchars($j['title']) ?></div>
+      <div class="job-meta">
+        <?php if ($j['location']): ?><span><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($j['location']) ?></span><?php endif; ?>
+        <span style="color:var(--red-pale)"><i class="fas fa-trash-alt"></i> Moved to Trash <?= $pd ?></span>
+      </div>
+    </div>
+    <div class="job-right">
+      <div class="job-actions">
+        <button class="btn grn" onclick="restoreJob(<?= $j['id'] ?>,'<?= htmlspecialchars($j['title'], ENT_QUOTES) ?>')"><i class="fas fa-trash-restore"></i> Restore</button>
+      </div>
+    </div>
+  </div>
+  <?php endforeach; ?>
   </div>
 
   <div class="empty" id="noResults" style="display:none;"><i class="fas fa-search"></i><p>No jobs match your search or filter.</p></div>
@@ -820,11 +898,11 @@ $jobsJson = json_encode($jobs ?: []);
     <div class="frow">
       <div class="fg">
         <label class="fl" id="lblSMin">Min Salary</label>
-        <input type="number" class="fi" id="fSMin" placeholder="e.g. 50000">
+        <input type="number" class="fi" id="fSMin" placeholder="e.g. 50000" min="0" max="9999999999">
       </div>
       <div class="fg">
         <label class="fl" id="lblSMax">Max Salary</label>
-        <input type="number" class="fi" id="fSMax" placeholder="e.g. 90000">
+        <input type="number" class="fi" id="fSMax" placeholder="e.g. 90000" min="0" max="9999999999">
       </div>
     </div>
 
@@ -983,6 +1061,7 @@ function filterJobs(type, el) {
   else if (type === 'closed')  sel.value = 'closed';
   else if (type === 'pending') sel.value = 'pending';
   else if (type === 'draft')   sel.value = 'draft';
+  else if (type === 'deleted') sel.value = 'deleted';
 
   currentFilter = type;
   applyFilters();
@@ -997,19 +1076,25 @@ function applyFilters() {
   cards.forEach(function(c) {
     var cStatus   = c.getAttribute('data-status');
     var cApproval = c.getAttribute('data-approval');
+    var cDeleted  = c.getAttribute('data-deleted') === '1';
     var cTitle    = c.getAttribute('data-title') || '';
     var cLoc      = c.getAttribute('data-location') || '';
     var cSkills   = c.getAttribute('data-skills') || '';
 
     var show = true;
 
-    if (status !== 'all') {
-      if (status === 'pending') {
-        if (cApproval !== 'pending') show = false;
-      } else if (status === 'rejected') {
-        if (cApproval !== 'rejected') show = false;
-      } else {
-        if (cStatus !== status) show = false;
+    if (status === 'deleted') {
+      if (!cDeleted) show = false;
+    } else {
+      if (cDeleted) show = false;
+      if (show && status !== 'all') {
+        if (status === 'pending') {
+          if (cApproval !== 'pending') show = false;
+        } else if (status === 'rejected') {
+          if (cApproval !== 'rejected') show = false;
+        } else {
+          if (cStatus !== status) show = false;
+        }
       }
     }
 
@@ -1087,10 +1172,22 @@ function getFormData() {
   };
 }
 
+function validateSalary(d) {
+  var mn = d.salary_min !== '' ? parseFloat(d.salary_min) : null;
+  var mx = d.salary_max !== '' ? parseFloat(d.salary_max) : null;
+  if (mn !== null && mx !== null && mn > mx) {
+    toast('Min salary cannot be greater than max salary.', 'err');
+    document.getElementById('fSMin').focus();
+    return false;
+  }
+  return true;
+}
+
 /* Submit for Approval (Active + pending) */
 function submitJob() {
   var d = getFormData();
   if (!d.title) { toast('Job title required', 'err'); return; }
+  if (!validateSalary(d)) return;
   d.action = 'post_job';
   doPost(d, function(r) {
     if (r.ok) {
@@ -1105,6 +1202,7 @@ function submitJob() {
 function submitDraft() {
   var d = getFormData();
   if (!d.title) { toast('Job title required', 'err'); return; }
+  if (!validateSalary(d)) return;
   d.action = 'save_draft';
   doPost(d, function(r) {
     if (r.ok) {
@@ -1208,7 +1306,7 @@ function postDraft(id, title) {
    ══════════════════════════════════════════════════════════════ */
 function confirmDel(id, title) {
   document.getElementById('delJobId').value = id;
-  document.getElementById('confirmMsg').textContent = 'Delete "' + title + '"? This cannot be undone.';
+  document.getElementById('confirmMsg').textContent = 'Move "' + title + '" to Trash? You can restore it later.';
   document.getElementById('confirmModal').classList.add('open');
 }
 
@@ -1224,7 +1322,18 @@ function doDelete() {
         c.style.transition = '.35s';
         setTimeout(function(){ c.remove(); applyFilters(); }, 350);
       }
-      toast('Job deleted', 'ok');
+      toast('Job moved to Trash', 'ok');
+      setTimeout(function(){ location.reload(); }, 700);
+    } else { toast(d.msg || 'Error', 'err'); }
+  });
+}
+
+function restoreJob(id, title) {
+  if (!confirm('Restore "' + title + '" as a Draft?')) return;
+  doPost({ action: 'restore_job', job_id: id }, function(d) {
+    if (d.ok) {
+      toast('Job restored to Drafts', 'ok');
+      setTimeout(function(){ location.reload(); }, 700);
     } else { toast(d.msg || 'Error', 'err'); }
   });
 }

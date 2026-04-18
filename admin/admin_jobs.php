@@ -132,7 +132,8 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .page-title span { color:var(--red-bright); font-style:italic; }
     .page-sub { font-size:14px; color:var(--text-muted); }
 
-    .content-layout { display:grid; grid-template-columns:244px 1fr; gap:28px; align-items:start; }
+    .content-layout { display:block; }
+    .sidebar { display:none; }
     .sidebar { position:sticky; top:72px; max-height:calc(100vh - 88px); overflow-y:auto; scrollbar-width:none; }
     .sidebar::-webkit-scrollbar { display:none; }
     .sidebar-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; }
@@ -343,6 +344,13 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
 
     <!-- MAIN -->
     <main class="anim">
+      <!-- SEARCH -->
+      <div style="margin-bottom:16px;position:relative;max-width:420px;">
+        <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;"></i>
+        <input id="jobSearch" type="text" placeholder="Search jobs, company, location…"
+          style="width:100%;padding:9px 12px 9px 36px;border-radius:8px;border:1px solid var(--soil-line);background:var(--soil-hover);color:#F5F0EE;font-family:var(--font-body);font-size:14px;outline:none;box-sizing:border-box;"
+          oninput="filterJobs(this.value)">
+      </div>
       <div class="tab-bar">
         <button class="tab-btn active" data-tab="pending" onclick="switchTab('pending')">
           <i class="fas fa-hourglass-half"></i> Pending
@@ -365,7 +373,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
             <div class="empty-state"><i class="fas fa-check-circle"></i><div>No pending jobs to review.</div></div>
           <?php else: ?>
             <?php foreach ($pendingJobs as $j): ?>
-            <div class="job-row" id="job-row-<?php echo (int)$j['id']; ?>">
+            <div class="job-row" id="job-row-<?php echo (int)$j['id']; ?>" data-search="<?php echo strtolower(htmlspecialchars((string)($j['title'] ?? '').' '.(string)($j['company_name'] ?? '').' '.(string)($j['location'] ?? '').' '.(string)($j['type'] ?? ''), ENT_QUOTES)); ?>">
               <div class="jr-layout">
                 <div>
                   <div class="jr-top">
@@ -405,7 +413,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
             <thead><tr><th>Job Title</th><th>Company</th><th>Location</th><th>Type</th><th>Approved</th><th>Deadline</th><th>Action</th></tr></thead>
             <tbody>
               <?php foreach ($approvedJobs as $j): ?>
-              <tr id="job-row-<?php echo (int)$j['id']; ?>">
+              <tr id="job-row-<?php echo (int)$j['id']; ?>" data-search="<?php echo strtolower(htmlspecialchars((string)($j['title'] ?? '').' '.(string)($j['company_name'] ?? '').' '.(string)($j['location'] ?? '').' '.(string)($j['type'] ?? ''), ENT_QUOTES)); ?>">
                 <td><div class="td-name"><?php echo htmlspecialchars((string)($j['title'] ?? ''), ENT_QUOTES); ?></div></td>
                 <td><?php echo htmlspecialchars((string)($j['company_name'] ?? ''), ENT_QUOTES); ?></td>
                 <td><?php echo htmlspecialchars((string)($j['location'] ?? '—'), ENT_QUOTES); ?></td>
@@ -431,7 +439,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
             <thead><tr><th>Job Title</th><th>Company</th><th>Location</th><th>Reason</th><th>Date</th></tr></thead>
             <tbody>
               <?php foreach ($rejectedJobs as $j): ?>
-              <tr>
+              <tr data-search="<?php echo strtolower(htmlspecialchars((string)($j['title'] ?? '').' '.(string)($j['company_name'] ?? '').' '.(string)($j['location'] ?? ''), ENT_QUOTES)); ?>">
                 <td><div class="td-name"><?php echo htmlspecialchars((string)($j['title'] ?? ''), ENT_QUOTES); ?></div></td>
                 <td><?php echo htmlspecialchars((string)($j['company_name'] ?? ''), ENT_QUOTES); ?></td>
                 <td><?php echo htmlspecialchars((string)($j['location'] ?? '—'), ENT_QUOTES); ?></td>
@@ -481,7 +489,38 @@ async function adminAction(action, data) {
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-section').forEach(s => s.classList.toggle('active', s.id === 'tab-' + name));
+  filterJobs(document.getElementById('jobSearch').value);
 }
+
+function filterJobs(q) {
+  q = q.toLowerCase().trim();
+  const activeSection = document.querySelector('.tab-section.active');
+  if (!activeSection) return;
+  const items = activeSection.querySelectorAll('[data-search]');
+  let visible = 0;
+  items.forEach(el => {
+    const match = !q || el.dataset.search.includes(q);
+    el.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  let noRes = activeSection.querySelector('.no-search-result');
+  if (!q || visible > 0) { if (noRes) noRes.remove(); }
+  else {
+    if (!noRes) {
+      noRes = document.createElement('div');
+      noRes.className = 'no-search-result';
+      noRes.style.cssText = 'text-align:center;padding:32px;color:var(--text-muted);font-size:14px;';
+      noRes.innerHTML = '<i class="fas fa-search" style="font-size:28px;margin-bottom:10px;display:block;opacity:0.4;"></i>No jobs match your search.';
+      activeSection.appendChild(noRes);
+    }
+  }
+}
+
+// Switch to tab from URL param
+(function() {
+  const tab = new URLSearchParams(location.search).get('tab');
+  if (tab && ['pending','approved','rejected'].includes(tab)) switchTab(tab);
+})();
 
 async function approveJob(jobId, btn) {
   btn.disabled = true;
