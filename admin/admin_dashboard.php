@@ -51,6 +51,43 @@ try {
   );
   $recentActivity = $stmt ? $stmt->fetchAll() : [];
 } catch (Throwable) {}
+
+// ── Recent users (latest 5) ──
+$recentUsers = [];
+try {
+  $stmt = $db->query(
+    "SELECT id, full_name, email, account_type, account_status, avatar_url, created_at
+     FROM users
+     WHERE LOWER(account_type) != 'admin'
+     ORDER BY created_at DESC LIMIT 5"
+  );
+  $recentUsers = $stmt ? $stmt->fetchAll() : [];
+} catch (Throwable) {}
+
+// ── Recent jobs (latest 5) ──
+$recentJobs = [];
+try {
+  $stmt = $db->query(
+    "SELECT j.id, j.title, j.status, j.approval_status, j.job_type, j.created_at,
+            u.company_name, u.full_name AS employer_name
+     FROM jobs j
+     LEFT JOIN users u ON u.id = j.employer_id
+     ORDER BY j.created_at DESC LIMIT 5"
+  );
+  $recentJobs = $stmt ? $stmt->fetchAll() : [];
+} catch (Throwable) {}
+
+// ── Analytics: weekly stats ──
+$weeklyUsers = $countValue("SELECT COUNT(*) FROM users WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$weeklyJobs  = $countValue("SELECT COUNT(*) FROM jobs WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$weeklyApps  = $countValue("SELECT COUNT(*) FROM applications WHERE applied_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHERE status='Active' AND (deadline IS NULL OR deadline >= CURDATE())");
+
+// ── Master data counts ──
+$mdCategories = $countValue("SELECT COUNT(DISTINCT industry) FROM jobs WHERE industry IS NOT NULL AND industry != ''");
+$mdLocations  = $countValue("SELECT COUNT(DISTINCT location) FROM jobs WHERE location IS NOT NULL AND location != ''");
+$mdExpLevels  = $countValue("SELECT COUNT(DISTINCT experience_level) FROM jobs WHERE experience_level IS NOT NULL");
+$mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -169,31 +206,6 @@ try {
 
     /* ── CONTENT LAYOUT ── */
     .content-layout { display:block; }
-    .sidebar { display:none; }
-
-    /* ── SIDEBAR ── */
-    .sidebar { position:sticky; top:72px; max-height:calc(100vh - 88px); overflow-y:auto; scrollbar-width:none; isolation:isolate; }
-    .sidebar::-webkit-scrollbar { display:none; }
-    .sidebar-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; }
-    .sidebar-head { padding:16px 18px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--soil-line); }
-    .sidebar-title { font-family:var(--font-body); font-size:12px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:7px; letter-spacing:0.07em; text-transform:uppercase; }
-    .sidebar-title i { color:var(--red-bright); font-size:11px; }
-
-    /* Sidebar stats */
-    .sidebar-stats { padding:14px 16px; border-bottom:1px solid var(--soil-line); display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .sb-stat { background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:7px; padding:10px 12px; }
-    .sb-stat-num { font-family:var(--font-display); font-size:20px; font-weight:700; color:#F5F0EE; line-height:1; }
-    .sb-stat-lbl { font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-top:3px; }
-
-    /* Sidebar nav */
-    .sb-nav-item { display:flex; align-items:center; gap:10px; padding:11px 18px; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:all 0.18s; border:none; background:none; font-family:var(--font-body); width:100%; text-align:left; border-bottom:1px solid var(--soil-line); text-decoration:none; }
-    .sb-nav-item:last-child { border-bottom:none; }
-    .sb-nav-item:hover { color:#F5F0EE; background:var(--soil-hover); }
-    .sb-nav-item.active { color:var(--red-pale); background:rgba(209,61,44,0.08); border-right:2px solid var(--red-vivid); }
-    .sb-nav-item i { width:16px; text-align:center; font-size:12px; color:var(--red-bright); }
-    .sb-badge { margin-left:auto; background:var(--red-vivid); color:#fff; font-size:10px; font-weight:700; border-radius:10px; padding:1px 7px; }
-    .sb-badge.amber { background:var(--amber); color:#1A0A09; }
-    .sb-badge.blue { background:#4A90D9; color:#fff; }
 
     /* ── MAIN SECTIONS ── */
     .sec-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
@@ -356,13 +368,6 @@ try {
     body.light .search-sub { color:#7A5555; }
     body.light .qf-pill { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
     body.light .qf-pill.active, body.light .qf-pill:hover { background:rgba(209,61,44,0.08); border-color:rgba(209,61,44,0.3); color:var(--red-mid); }
-    body.light .sidebar-card { background:#FFFFFF; border-color:#E0CECA; }
-    body.light .sidebar-title { color:#1A0A09; }
-    body.light .sb-nav-item { color:#5A4040; border-color:#E0CECA; }
-    body.light .sb-nav-item:hover { color:#1A0A09; background:#FEF0EE; }
-    body.light .sb-nav-item.active { color:var(--red-mid); }
-    body.light .sb-stat { background:#F5EEEC; border-color:#E0CECA; }
-    body.light .sb-stat-num { color:#1A0A09; }
     body.light .sec-title { color:#1A0A09; }
     body.light .sum-card { background:#FFFFFF; border-color:#E0CECA; }
     body.light .sc-num { color:#1A0A09; }
@@ -392,7 +397,6 @@ try {
     body.light .mobile-link:hover { background:#FEF0EE; color:#1A0A09; }
 
     @media(max-width:1200px) { .cards-row{grid-template-columns:repeat(3,1fr);} }
-    @media(max-width:1060px) { .content-layout{grid-template-columns:1fr} .sidebar{position:static} }
     @media(max-width:760px) {
       .nav-links{display:none} .hamburger{display:flex}
       .page-shell{padding:0 16px 60px} .nav-inner{padding:0 16px}
@@ -463,6 +467,7 @@ try {
           </div>
           <a class="pd-item" href="admin_notifications.php"><i class="fas fa-bell"></i> Notifications</a>
           <a class="pd-item" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
+          <a class="pd-item" href="admin_settings.php"><i class="fas fa-cog"></i> Settings</a>
           <div class="pd-divider"></div>
           <a class="pd-item danger" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
         </div>
@@ -517,33 +522,6 @@ try {
 
   <div class="content-layout">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar anim anim-d1">
-      <div class="sidebar-card">
-        <div class="sidebar-head">
-          <div class="sidebar-title"><i class="fas fa-shield-alt"></i> Admin Panel</div>
-        </div>
-
-        <!-- Platform stats -->
-        <div class="sidebar-stats">
-          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($adminStats['users']); ?></div><div class="sb-stat-lbl">Total Users</div></div>
-          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($adminStats['jobs']); ?></div><div class="sb-stat-lbl">Job Posts</div></div>
-          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($adminStats['employers']); ?></div><div class="sb-stat-lbl">Employers</div></div>
-          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($adminStats['applications']); ?></div><div class="sb-stat-lbl">Applications</div></div>
-        </div>
-
-        <!-- Navigation -->
-        <a class="sb-nav-item active" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
-        <a class="sb-nav-item" href="admin_users.php"><i class="fas fa-users"></i> User Accounts <span class="sb-badge blue"><?php echo number_format($adminStats['users']); ?></span></a>
-        <a class="sb-nav-item" href="admin_companies.php"><i class="fas fa-building"></i> Company Approval <?php if($adminStats['pending_companies']>0): ?><span class="sb-badge"><?php echo $adminStats['pending_companies']; ?></span><?php endif; ?></a>
-        <a class="sb-nav-item" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Job Moderation <?php if($adminStats['pending_jobs']>0): ?><span class="sb-badge amber"><?php echo $adminStats['pending_jobs']; ?></span><?php endif; ?></a>
-        <a class="sb-nav-item" href="admin_activity.php"><i class="fas fa-history"></i> Activity Logs</a>
-        <a class="sb-nav-item" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters <span class="sb-badge blue"><?php echo number_format($adminStats['recruiters']); ?></span></a>
-        <a class="sb-nav-item" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports &amp; Analytics</a>
-        <a class="sb-nav-item" href="admin_notifications.php"><i class="fas fa-bell"></i> Notifications <?php if($adminStats['unread_notifs']>0): ?><span class="sb-badge"><?php echo $adminStats['unread_notifs']; ?></span><?php endif; ?></a>
-      </div>
-    </aside>
-
     <!-- MAIN -->
     <main>
 
@@ -564,26 +542,26 @@ try {
           <button class="see-more" onclick="showToast('Manage all master data','fa-database')">Manage all <i class="fas fa-arrow-right"></i></button>
         </div>
         <div class="featured-scroll">
-          <div class="featured-card" onclick="showToast('Manage Categories','fa-tags')">
+          <div class="featured-card" onclick="showToast('Manage Industries','fa-tags')">
             <div class="fc-badge"><i class="fas fa-tags"></i> Master Data</div>
             <div class="fc-icon"><i class="fas fa-tags"></i></div>
-            <div class="fc-title">Categories</div>
+            <div class="fc-title">Industries</div>
             <div class="fc-sub">Job classification groups</div>
-            <div class="fc-num">12</div>
+            <div class="fc-num"><?php echo $mdCategories; ?></div>
             <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">Last updated today</span>
-              <button class="fc-action">Manage</button>
+              <span style="font-size:11px;color:var(--text-muted);">From job posts</span>
+              <button class="fc-action">View</button>
             </div>
           </div>
-          <div class="featured-card" onclick="showToast('Manage Industries','fa-industry')">
-            <div class="fc-badge"><i class="fas fa-industry"></i> Master Data</div>
-            <div class="fc-icon"><i class="fas fa-industry"></i></div>
-            <div class="fc-title">Industries</div>
-            <div class="fc-sub">Sector classifications</div>
-            <div class="fc-num">18</div>
+          <div class="featured-card" onclick="showToast('Manage Job Types','fa-briefcase')">
+            <div class="fc-badge"><i class="fas fa-briefcase"></i> Master Data</div>
+            <div class="fc-icon"><i class="fas fa-briefcase"></i></div>
+            <div class="fc-title">Job Types</div>
+            <div class="fc-sub">Employment types</div>
+            <div class="fc-num"><?php echo $mdJobTypes; ?></div>
             <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">Last updated Mar 19</span>
-              <button class="fc-action">Manage</button>
+              <span style="font-size:11px;color:var(--text-muted);">System-defined</span>
+              <button class="fc-action">View</button>
             </div>
           </div>
           <div class="featured-card" onclick="showToast('Manage Locations','fa-map-marker-alt')">
@@ -591,10 +569,10 @@ try {
             <div class="fc-icon"><i class="fas fa-map-marker-alt"></i></div>
             <div class="fc-title">Locations</div>
             <div class="fc-sub">Cities and regions</div>
-            <div class="fc-num">47</div>
+            <div class="fc-num"><?php echo $mdLocations; ?></div>
             <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">Last updated Mar 18</span>
-              <button class="fc-action">Manage</button>
+              <span style="font-size:11px;color:var(--text-muted);">From job posts</span>
+              <button class="fc-action">View</button>
             </div>
           </div>
           <div class="featured-card" onclick="showToast('Manage Experience Levels','fa-layer-group')">
@@ -602,10 +580,10 @@ try {
             <div class="fc-icon"><i class="fas fa-layer-group"></i></div>
             <div class="fc-title">Experience Levels</div>
             <div class="fc-sub">Seniority tiers</div>
-            <div class="fc-num">5</div>
+            <div class="fc-num"><?php echo $mdExpLevels; ?></div>
             <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">Stable</span>
-              <button class="fc-action">Manage</button>
+              <span style="font-size:11px;color:var(--text-muted);">System-defined</span>
+              <button class="fc-action">View</button>
             </div>
           </div>
         </div>
@@ -641,16 +619,21 @@ try {
         <div class="analytics-card">
           <div class="analytics-col">
             <div>
-              <div class="aitem"><div class="a-row"><span class="a-key">Users Over Time (this week)</span><span class="a-val">+48</span></div><div class="bar-track"><div class="bar-fill blue" style="width:72%"></div></div></div>
-              <div class="aitem"><div class="a-row"><span class="a-key">Jobs Posted Over Time</span><span class="a-val">+18</span></div><div class="bar-track"><div class="bar-fill amber" style="width:40%"></div></div></div>
+              <?php $userBar = $adminStats['users'] > 0 ? min(100, round($weeklyUsers / max($adminStats['users'], 1) * 100)) : 0; ?>
+              <div class="aitem"><div class="a-row"><span class="a-key">New Users (this week)</span><span class="a-val">+<?php echo $weeklyUsers; ?></span></div><div class="bar-track"><div class="bar-fill blue" style="width:<?php echo max($userBar, 5); ?>%"></div></div></div>
+              <?php $jobBar = $adminStats['jobs'] > 0 ? min(100, round($weeklyJobs / max($adminStats['jobs'], 1) * 100)) : 0; ?>
+              <div class="aitem"><div class="a-row"><span class="a-key">Jobs Posted (this week)</span><span class="a-val">+<?php echo $weeklyJobs; ?></span></div><div class="bar-track"><div class="bar-fill amber" style="width:<?php echo max($jobBar, 5); ?>%"></div></div></div>
             </div>
             <div>
-              <div class="aitem"><div class="a-row"><span class="a-key">Applications Over Time</span><span class="a-val">+231</span></div><div class="bar-track"><div class="bar-fill red" style="width:88%"></div></div></div>
-              <div class="aitem"><div class="a-row"><span class="a-key">Active Employers</span><span class="a-val">94 / 120</span></div><div class="bar-track"><div class="bar-fill green" style="width:78%"></div></div></div>
+              <?php $appBar = $adminStats['applications'] > 0 ? min(100, round($weeklyApps / max($adminStats['applications'], 1) * 100)) : 0; ?>
+              <div class="aitem"><div class="a-row"><span class="a-key">Applications (this week)</span><span class="a-val">+<?php echo $weeklyApps; ?></span></div><div class="bar-track"><div class="bar-fill red" style="width:<?php echo max($appBar, 5); ?>%"></div></div></div>
+              <?php $empBar = $adminStats['employers'] > 0 ? min(100, round($activeEmployers / max($adminStats['employers'], 1) * 100)) : 0; ?>
+              <div class="aitem"><div class="a-row"><span class="a-key">Active Employers</span><span class="a-val"><?php echo $activeEmployers; ?> / <?php echo $adminStats['employers']; ?></span></div><div class="bar-track"><div class="bar-fill green" style="width:<?php echo max($empBar, 5); ?>%"></div></div></div>
             </div>
           </div>
           <div class="analytics-note">
-            <strong style="color:var(--red-pale);">System Performance:</strong> All services operational · Most active employer: TechPH Inc. · Most applied job: Frontend Developer · Full chart visualization integrates with the backend in Week 4.
+            <strong style="color:var(--red-pale);">Platform Summary:</strong>
+            <?php echo $adminStats['users']; ?> total users · <?php echo $adminStats['active_jobs']; ?> active jobs · <?php echo $adminStats['applications']; ?> total applications · <?php echo $adminStats['pending_jobs']; ?> jobs pending approval.
           </div>
         </div>
       </div>
@@ -677,22 +660,55 @@ try {
 </div>
 
 <script>
-  // ── DATA ──
-  const usersData = [
-    { id:1, name:"Juan Santos", initials:"JS", color:"linear-gradient(135deg,#D13D2C,#7A1515)", role:"seeker", email:"juan@email.com", date:"Mar 20", status:"active" },
-    { id:2, name:"Maria Admin", initials:"MA", color:"linear-gradient(135deg,#D4943A,#a06020)", role:"employer", email:"maria@techph.com", date:"Mar 18", status:"active" },
-    { id:3, name:"Pedro Cruz", initials:"PC", color:"linear-gradient(135deg,#4CAF70,#2A7040)", role:"seeker", email:"pedro@email.com", date:"Mar 17", status:"flagged" },
-    { id:4, name:"Ana Lim", initials:"AL", color:"linear-gradient(135deg,#4A90D9,#2A6090)", role:"seeker", email:"ana@email.com", date:"Mar 15", status:"active" },
-    { id:5, name:"DataBridge Corp", initials:"DB", color:"linear-gradient(135deg,#9C27B0,#5A1070)", role:"employer", email:"hr@databridge.com", date:"Mar 14", status:"inactive" },
-  ];
+  // ── DATA (from DB) ──
+  const usersData = <?php
+    $jsUsers = [];
+    $colors = [
+      'seeker'    => 'linear-gradient(135deg,#4A90D9,#2A6090)',
+      'employer'  => 'linear-gradient(135deg,#D4943A,#a06020)',
+      'recruiter' => 'linear-gradient(135deg,#9C27B0,#5A1070)',
+    ];
+    foreach ($recentUsers as $u) {
+      $name = $u['full_name'] ?: 'Unknown';
+      $parts = preg_split('/\s+/', $name);
+      $initials = count($parts) >= 2
+        ? strtoupper(substr($parts[0],0,1).substr($parts[1],0,1))
+        : strtoupper(substr($name,0,2));
+      $role = strtolower($u['account_type']);
+      $status = strtolower($u['account_status'] ?? 'active');
+      $jsUsers[] = [
+        'id'       => (int)$u['id'],
+        'name'     => $name,
+        'initials' => $initials,
+        'color'    => $colors[$role] ?? 'linear-gradient(135deg,#D13D2C,#7A1515)',
+        'role'     => $role,
+        'email'    => $u['email'],
+        'date'     => date('M d', strtotime($u['created_at'])),
+        'status'   => $status === 'active' ? 'active' : ($status === 'suspended' ? 'flagged' : ($status === 'banned' ? 'inactive' : $status)),
+      ];
+    }
+    echo json_encode($jsUsers, JSON_HEX_TAG | JSON_HEX_APOS);
+  ?>;
 
-  const jobPostsData = [
-    { id:1, title:"Senior React Developer", company:"AppWorks PH", date:"Mar 21", status:"pending", tags:["React","TypeScript"] },
-    { id:2, title:"Cloud Infrastructure Engineer", company:"CloudServe Inc.", date:"Mar 21", status:"pending", tags:["AWS","Kubernetes"] },
-    { id:3, title:"Content Writer (Remote)", company:"MediaPH", date:"Mar 20", status:"pending", tags:["Writing","SEO"] },
-    { id:4, title:"Business Analyst Intern", company:"FinancePH", date:"Mar 20", status:"pending", tags:["Excel","Finance"] },
-    { id:5, title:"Frontend Developer", company:"TechPH Inc.", date:"Mar 18", status:"active", tags:["React","CSS"] },
-  ];
+  const jobPostsData = <?php
+    $jsJobs = [];
+    foreach ($recentJobs as $j) {
+      $tags = [];
+      if (!empty($j['job_type'])) $tags[] = $j['job_type'];
+      if (!empty($j['approval_status'])) $tags[] = ucfirst($j['approval_status']);
+      $status = strtolower($j['approval_status'] ?? 'approved');
+      if ($status === 'approved' && strtolower($j['status']) === 'active') $status = 'active';
+      $jsJobs[] = [
+        'id'      => (int)$j['id'],
+        'title'   => $j['title'],
+        'company' => $j['company_name'] ?: ($j['employer_name'] ?: 'Unknown'),
+        'date'    => date('M d', strtotime($j['created_at'])),
+        'status'  => $status,
+        'tags'    => $tags,
+      ];
+    }
+    echo json_encode($jsJobs, JSON_HEX_TAG | JSON_HEX_APOS);
+  ?>;
 
   // ── RENDER USERS ──
   function renderUsers(data) {

@@ -3,425 +3,656 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
 requireLogin('recruiter');
-$user        = getUser();
+$user = getUser();
+
 $fullName    = $user['fullName'];
 $firstName   = $user['firstName'];
 $initials    = $user['initials'];
-$avatarUrl   = $user['avatarUrl'];
+$userEmail   = $user['email'];
 $companyName = $user['companyName'] ?: 'Your Company';
-$navActive   = '';
+$navActive   = 'settings';
 
-$db  = getDB();
-$uid = (int)$_SESSION['user_id'];
+$db = getDB();
 
-/* ── AJAX: change_password ── */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'change_password') {
-    header('Content-Type: application/json');
-    try {
-        $current = $_POST['current_password'] ?? '';
-        $newPass = $_POST['new_password'] ?? '';
-        $confirm = $_POST['confirm_password'] ?? '';
-
-        if ($newPass !== $confirm) {
-            echo json_encode(['success' => false, 'error' => 'New passwords do not match.']);
-            exit;
-        }
-        if (strlen($newPass) < 8) {
-            echo json_encode(['success' => false, 'error' => 'Password must be at least 8 characters.']);
-            exit;
-        }
-
-        $s = $db->prepare("SELECT password_hash FROM users WHERE id = ?");
-        $s->execute([$uid]);
-        $hash = $s->fetchColumn();
-
-        if (!password_verify($current, $hash)) {
-            echo json_encode(['success' => false, 'error' => 'Current password is incorrect.']);
-            exit;
-        }
-
-        $newHash = password_hash($newPass, PASSWORD_DEFAULT);
-        $s = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
-        $s->execute([$newHash, $uid]);
-
-        echo json_encode(['success' => true]);
-    } catch (PDOException $e) {
-        error_log('[AntCareers] recruiter change_password: ' . $e->getMessage());
-        echo json_encode(['success' => false, 'error' => 'Database error.']);
-    }
-    exit;
+// ── Ensure tables & columns exist ──
+function settings_table_has_column(PDO $db, string $table, string $column): bool
+{
+  $stmt = $db->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?");
+  $stmt->execute([$table, $column]);
+  return (int)$stmt->fetchColumn() > 0;
 }
 
-/* ── AJAX: update_notifications ── */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_notifications') {
-    header('Content-Type: application/json');
-    try {
-        $emailApplicant = (int)(!empty($_POST['email_new_applicant']));
-        $emailInterview = (int)(!empty($_POST['email_interview_reminder']));
-        $emailApproval  = (int)(!empty($_POST['email_job_approval']));
-
-        $s = $db->prepare("
-            INSERT INTO recruiter_profiles (user_id, email_new_applicant, email_interview_reminder, email_job_approval)
-            VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                email_new_applicant    = VALUES(email_new_applicant),
-                email_interview_reminder = VALUES(email_interview_reminder),
-                email_job_approval     = VALUES(email_job_approval)
-        ");
-        $s->execute([$uid, $emailApplicant, $emailInterview, $emailApproval]);
-
-        echo json_encode(['success' => true]);
-    } catch (PDOException $e) {
-        error_log('[AntCareers] recruiter update_notifications: ' . $e->getMessage());
-        echo json_encode(['success' => false, 'error' => 'Database error.']);
-    }
-    exit;
+function settings_ensure_column(PDO $db, string $table, string $column, string $definition): void
+{
+  if (!settings_table_has_column($db, $table, $column)) {
+    $db->exec("ALTER TABLE {$table} ADD COLUMN {$column} {$definition}");
+  }
 }
 
-/* ── Data fetch ── */
-$s = $db->prepare("SELECT full_name, email, created_at, last_login_at FROM users WHERE id = ?");
-$s->execute([$uid]);
-$acct = $s->fetch(PDO::FETCH_ASSOC);
+$db->exec("CREATE TABLE IF NOT EXISTS user_preferences (
+  user_id INT UNSIGNED NOT NULL,
+  email_new_message TINYINT(1) NOT NULL DEFAULT 1,
+  email_application_status TINYINT(1) NOT NULL DEFAULT 1,
+  email_interview_invite TINYINT(1) NOT NULL DEFAULT 1,
+  notif_new_applicant TINYINT(1) NOT NULL DEFAULT 1,
+  notif_invite_response TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+settings_ensure_column($db, 'user_preferences', 'notif_invite_response', 'TINYINT(1) NOT NULL DEFAULT 1');
+settings_ensure_column($db, 'user_preferences', 'notif_new_applicant', 'TINYINT(1) NOT NULL DEFAULT 1');
+settings_ensure_column($db, 'user_preferences', 'notif_offer_response', 'TINYINT(1) NOT NULL DEFAULT 1');
+settings_ensure_column($db, 'user_preferences', 'notif_job_approval', 'TINYINT(1) NOT NULL DEFAULT 1');
 
-$s = $db->prepare("SELECT r.*, cp.company_name FROM recruiters r JOIN company_profiles cp ON cp.id = r.company_id WHERE r.user_id = ?");
-$s->execute([$uid]);
-$rec = $s->fetch(PDO::FETCH_ASSOC);
+// ── Load preferences ──
+$notificationPrefs = [
+  'email_new_message'     => 1,
+  'notif_invite_response' => 1,
+  'notif_new_applicant'   => 1,
+  'notif_offer_response'  => 1,
+  'notif_job_approval'    => 1,
+];
 
-$memberSince = $acct ? date('F j, Y', strtotime($acct['created_at'])) : '—';
-$lastLogin   = ($acct && $acct['last_login_at']) ? date('M j, Y g:i A', strtotime($acct['last_login_at'])) : 'Never';
-$emailAddr   = $acct['email'] ?? '—';
-$company     = $rec['company_name'] ?? $companyName;
+$prefStmt = $db->prepare('SELECT email_new_message, notif_invite_response, notif_new_applicant, notif_offer_response, notif_job_approval FROM user_preferences WHERE user_id = ? LIMIT 1');
+$prefStmt->execute([(int)$user['id']]);
+if ($prefRow = $prefStmt->fetch(PDO::FETCH_ASSOC)) {
+  foreach ($notificationPrefs as $key => $default) {
+    $notificationPrefs[$key] = (int)($prefRow[$key] ?? $default);
+  }
+}
 
-$notifApplicant = (int)($rec['email_new_applicant'] ?? 1);
-$notifInterview = (int)($rec['email_interview_reminder'] ?? 1);
-$notifApproval  = (int)($rec['email_job_approval'] ?? 1);
+$settingsNotice = '';
+$settingsError  = '';
 
-$theme = in_array($_GET['theme'] ?? '', ['light','dark'], true) ? $_GET['theme'] : 'dark';
+// ── Handle POST actions ──
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $action = (string)($_POST['action'] ?? '');
+
+  if ($action === 'change_password') {
+    $currentPassword = (string)($_POST['current_password'] ?? '');
+    $newPassword     = (string)($_POST['new_password'] ?? '');
+    $confirmPassword = (string)($_POST['confirm_password'] ?? '');
+
+    $stmt = $db->prepare('SELECT password_hash FROM users WHERE id = ? LIMIT 1');
+    $stmt->execute([(int)$user['id']]);
+    $passwordHash = (string)($stmt->fetchColumn() ?: '');
+
+    if ($passwordHash === '' || !password_verify($currentPassword, $passwordHash)) {
+      header('Location: recruiter_settings.php?error=bad_password');
+      exit;
+    }
+    if (strlen($newPassword) < 8 || $newPassword !== $confirmPassword) {
+      header('Location: recruiter_settings.php?error=password_mismatch');
+      exit;
+    }
+
+    $upd = $db->prepare('UPDATE users SET password_hash = :hash, must_change_password = 0 WHERE id = :id');
+    $upd->execute([
+      ':hash' => password_hash($newPassword, PASSWORD_BCRYPT),
+      ':id'   => (int)$user['id'],
+    ]);
+    header('Location: recruiter_settings.php?pw=1');
+    exit;
+  }
+
+  if ($action === 'save_preferences') {
+    $emailNewMessage     = isset($_POST['email_new_message']) ? 1 : 0;
+    $notifInviteResponse = isset($_POST['notif_invite_response']) ? 1 : 0;
+    $notifNewApplicant   = isset($_POST['notif_new_applicant']) ? 1 : 0;
+    $notifOfferResponse  = isset($_POST['notif_offer_response']) ? 1 : 0;
+    $notifJobApproval    = isset($_POST['notif_job_approval']) ? 1 : 0;
+
+    $prefUpsert = $db->prepare("INSERT INTO user_preferences (user_id, email_new_message, notif_invite_response, notif_new_applicant, notif_offer_response, notif_job_approval)
+      VALUES (:uid, :msg, :inv, :app, :ofr, :apr)
+      ON DUPLICATE KEY UPDATE email_new_message = VALUES(email_new_message), notif_invite_response = VALUES(notif_invite_response), notif_new_applicant = VALUES(notif_new_applicant), notif_offer_response = VALUES(notif_offer_response), notif_job_approval = VALUES(notif_job_approval), updated_at = CURRENT_TIMESTAMP");
+    $prefUpsert->execute([
+      ':uid' => (int)$user['id'],
+      ':msg' => $emailNewMessage,
+      ':inv' => $notifInviteResponse,
+      ':app' => $notifNewApplicant,
+      ':ofr' => $notifOfferResponse,
+      ':apr' => $notifJobApproval,
+    ]);
+    header('Location: recruiter_settings.php?prefs=1');
+    exit;
+  }
+
+  if ($action === 'deactivate_account') {
+    $statusColumnExists = settings_table_has_column($db, 'users', 'status');
+    if ($statusColumnExists) {
+      $db->prepare('UPDATE users SET is_active = 0, status = "inactive" WHERE id = :id')->execute([':id' => (int)$user['id']]);
+    } else {
+      $db->prepare('UPDATE users SET is_active = 0 WHERE id = :id')->execute([':id' => (int)$user['id']]);
+    }
+    session_unset();
+    session_destroy();
+    header('Location: ' . url('auth/antcareers_login.php'));
+    exit;
+  }
+}
+
+if (isset($_GET['pw'])) {
+  $settingsNotice = 'Password updated successfully.';
+} elseif (isset($_GET['prefs'])) {
+  $settingsNotice = 'Preferences saved successfully.';
+} elseif (isset($_GET['error'])) {
+  if ($_GET['error'] === 'bad_password') {
+    $settingsError = 'Current password is incorrect.';
+  } elseif ($_GET['error'] === 'password_mismatch') {
+    $settingsError = 'New password must be at least 8 characters and match the confirmation.';
+  } else {
+    $settingsError = 'Could not save your changes. Please try again.';
+  }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Settings — AntCareers Recruiter</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<style>
-/* ── Reset & tokens ── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --red-deep:#7A1515;--red-mid:#B83525;--red-vivid:#D13D2C;--red-bright:#E85540;--red-pale:#F07060;
-  --soil-dark:#0A0909;--soil-med:#131010;--soil-card:#1C1818;--soil-hover:#252020;--soil-line:#352E2E;
-  --text-light:#F5F0EE;--text-mid:#D0BCBA;--text-muted:#927C7A;
-  --amber:#D4943A;--amber-dim:#251C0E;--green:#4CAF70;--blue:#4A90D9;
-  --font-display:'Playfair Display',Georgia,serif;--font-body:'Plus Jakarta Sans',system-ui,sans-serif;
-  --nav-h:64px;
-}
-body{font-family:var(--font-body);background:var(--soil-dark);color:var(--text-light);min-height:100vh;overflow-x:hidden}
-body.light{--soil-dark:#F9F5F4;--soil-med:#F1ECEB;--soil-card:#FFFFFF;--soil-hover:#FEF0EE;--soil-line:#E0CECA;--text-light:#1A0A09;--text-mid:#4A2828;--text-muted:#7A5555}
-a{color:var(--red-bright);text-decoration:none}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Settings - AntCareers Recruiter</title>
+  <script>
+    (function(){
+      const p=new URLSearchParams(window.location.search).get('theme');
+      const t=p||localStorage.getItem('ac-theme')||'dark';
+      if(p) localStorage.setItem('ac-theme',t);
+      if(t==='light') document.documentElement.classList.add('theme-light');
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --red-deep:#7A1515; --red-mid:#B83525; --red-vivid:#D13D2C; --red-bright:#E85540; --red-pale:#F07060;
+      --soil-dark:#0A0909; --soil-med:#131010; --soil-card:#1C1818; --soil-hover:#252020; --soil-line:#352E2E;
+      --text-light:#F5F0EE; --text-mid:#D0BCBA; --text-muted:#927C7A;
+      --amber:#D4943A; --amber-dim:#251C0E;
+      --green:#4CAF70;
+      --font-display:'Playfair Display',Georgia,serif;
+      --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+    }
+    html { overflow-x:hidden; }
+    body { font-family:var(--font-body); background:var(--soil-dark); color:var(--text-light); overflow-x:hidden; min-height:100vh; -webkit-font-smoothing:antialiased; }
 
-/* ── Glow orbs ── */
-.glow-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-.glow-orbs span{position:absolute;border-radius:50%;filter:blur(100px);opacity:.12}
-.glow-orbs .orb1{width:600px;height:600px;background:var(--red-mid);top:-150px;left:-100px}
-.glow-orbs .orb2{width:500px;height:500px;background:var(--red-deep);bottom:-120px;right:-80px}
-body.light .glow-orbs span{opacity:.06}
+    .glow-orb { position:fixed; border-radius:50%; filter:blur(90px); pointer-events:none; z-index:0; }
+    .glow-1 { width:600px; height:600px; background:radial-gradient(circle,rgba(209,61,44,0.13) 0%,transparent 70%); top:-100px; left:-150px; animation:orb1 18s ease-in-out infinite alternate; }
+    .glow-2 { width:400px; height:400px; background:radial-gradient(circle,rgba(209,61,44,0.06) 0%,transparent 70%); bottom:0; right:-80px; animation:orb2 24s ease-in-out infinite alternate; }
+    @keyframes orb1 { to { transform:translate(60px,80px) scale(1.1); } }
+    @keyframes orb2 { to { transform:translate(-40px,-50px) scale(1.1); } }
+    .tunnel-bg { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+    .tunnel-bg svg { width:100%; height:100%; opacity:0.05; }
 
-/* ── Page shell ── */
-.page-shell{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:calc(var(--nav-h) + 32px) 20px 60px}
-.breadcrumb{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--text-muted);margin-bottom:24px}
-.breadcrumb a{color:var(--text-muted);transition:.2s}
-.breadcrumb a:hover{color:var(--text-light)}
-.breadcrumb .sep{opacity:.4}
-.page-title{font-family:var(--font-display);font-size:1.75rem;font-weight:700;margin-bottom:28px;color:var(--text-light)}
+    .main-wrap { max-width:1380px; margin:0 auto; padding:28px 24px 60px; position:relative; z-index:1; }
+    .content-layout { display:grid; grid-template-columns:1fr; gap:20px; align-items:start; }
+    .settings-content { display:flex; flex-direction:column; gap:16px; }
 
-/* ── Cards ── */
-.card{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:14px;padding:28px;margin-bottom:20px}
-.card-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
-.card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
-.card-icon.blue{background:rgba(74,144,217,.12);color:var(--blue)}
-.card-icon.amber{background:rgba(212,148,58,.12);color:var(--amber)}
-.card-icon.green{background:rgba(76,175,112,.12);color:var(--green)}
-.card-icon.red{background:rgba(209,61,44,.12);color:var(--red-vivid)}
-.card-title{font-size:1.05rem;font-weight:700;color:var(--text-light)}
-.card-subtitle{font-size:.78rem;color:var(--text-muted);margin-top:2px}
+    .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+    .page-title { font-family:var(--font-display); font-size:24px; font-weight:700; color:var(--text-light); }
+    .page-sub { font-size:13px; color:var(--text-muted); margin-top:4px; }
 
-/* ── Info rows ── */
-.info-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--soil-line)}
-.info-row:last-child{border-bottom:none}
-.info-label{font-size:.85rem;color:var(--text-muted);font-weight:500}
-.info-value{font-size:.85rem;color:var(--text-light);font-weight:600;text-align:right}
+    .section-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; overflow:hidden; }
+    .section-head { padding:16px 20px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; gap:10px; }
+    .section-head-icon { width:32px; height:32px; border-radius:8px; background:rgba(209,61,44,0.12); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--red-pale); flex-shrink:0; }
+    .section-title { font-size:14px; font-weight:700; color:#F5F0EE; }
+    .section-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .section-body { padding:20px; }
 
-/* ── Form inputs ── */
-.form-group{margin-bottom:16px}
-.form-group label{display:block;font-size:.82rem;font-weight:600;color:var(--text-mid);margin-bottom:6px}
-.form-input{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--soil-line);background:var(--soil-med);color:var(--text-light);font-family:var(--font-body);font-size:.88rem;transition:.2s;outline:none}
-.form-input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.15)}
-body.light .form-input{background:#F5F0EE;border-color:#E0CECA}
+    .info-row { display:flex; align-items:center; gap:16px; padding:14px 0; border-bottom:1px solid var(--soil-line); }
+    .info-row:last-child { border-bottom:none; padding-bottom:0; }
+    .info-row:first-child { padding-top:0; }
+    .info-icon-wrap { width:38px; height:38px; border-radius:9px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--red-pale); flex-shrink:0; }
+    .info-label { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:3px; }
+    .info-value { font-size:14px; font-weight:600; color:#F5F0EE; }
 
-/* ── Buttons ── */
-.btn{padding:10px 22px;border-radius:8px;font-weight:600;font-size:.88rem;border:none;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:8px}
-.btn-primary{background:linear-gradient(135deg,var(--red-vivid),var(--red-mid));color:#fff}
-.btn-primary:hover{filter:brightness(1.1)}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+    .account-avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,var(--red-vivid),var(--red-deep)); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:800; color:#fff; box-shadow:0 0 0 2px var(--red-vivid),0 4px 16px rgba(209,61,44,0.35); flex-shrink:0; }
+    .account-info-details { flex:1; min-width:0; }
+    .account-name { font-size:16px; font-weight:700; color:#F5F0EE; }
+    .account-email { font-size:13px; color:var(--text-muted); margin-top:3px; }
+    .account-badge { display:inline-flex; align-items:center; gap:5px; margin-top:6px; padding:3px 9px; border-radius:99px; background:rgba(76,175,112,0.12); border:1px solid rgba(76,175,112,0.25); font-size:10px; font-weight:700; color:var(--green); letter-spacing:0.05em; text-transform:uppercase; }
 
-/* ── Toggle switch ── */
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--soil-line)}
-.toggle-row:last-child{border-bottom:none}
-.toggle-info .toggle-label{font-size:.88rem;font-weight:600;color:var(--text-light)}
-.toggle-info .toggle-desc{font-size:.76rem;color:var(--text-muted);margin-top:2px}
-.switch{position:relative;width:45px;height:24px;flex-shrink:0}
-.switch input{opacity:0;width:0;height:0}
-.slider{position:absolute;inset:0;background:var(--soil-line);border-radius:24px;cursor:pointer;transition:.3s}
-.slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
-input:checked+.slider{background:var(--green)}
-input:checked+.slider::before{transform:translateX(21px)}
+    .form-group { margin-bottom:14px; }
+    .form-group:last-child { margin-bottom:0; }
+    .form-label { display:block; font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; }
+    .form-input-wrap { position:relative; }
+    .form-input { width:100%; padding:10px 14px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; font-family:var(--font-body); font-size:13px; color:#F5F0EE; transition:0.18s; outline:none; }
+    .form-input:focus { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.12); }
+    .form-input::placeholder { color:var(--text-muted); }
+    .form-input-wrap .toggle-pw { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; padding:2px 4px; transition:0.15s; }
+    .form-input-wrap .toggle-pw:hover { color:var(--red-pale); }
+    .form-hint { font-size:11px; color:var(--text-muted); margin-top:5px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
-/* ── Danger zone ── */
-.danger-zone{border-color:rgba(209,61,44,.25)}
-.danger-text{font-size:.84rem;color:var(--text-muted);line-height:1.6}
-.danger-text strong{color:var(--red-bright)}
+    .btn-primary { padding:10px 22px; border-radius:8px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 10px rgba(209,61,44,0.35); }
+    .btn-primary:hover { background:var(--red-bright); transform:translateY(-1px); box-shadow:0 6px 18px rgba(209,61,44,0.45); }
+    .btn-primary:active { transform:translateY(0); }
+    .btn-secondary { padding:10px 18px; border-radius:8px; background:transparent; border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; transition:0.2s; }
+    .btn-secondary:hover { background:var(--soil-hover); border-color:var(--red-vivid); color:#F5F0EE; }
+    .btn-danger { padding:10px 22px; border-radius:8px; background:transparent; border:1px solid rgba(224,85,85,0.3); color:#E05555; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.2s; display:inline-flex; align-items:center; gap:8px; text-decoration:none; }
+    .btn-danger:hover { background:rgba(224,85,85,0.1); border-color:#E05555; color:#FF7070; }
+    .section-footer { padding:14px 20px; border-top:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .section-footer-right { display:flex; gap:8px; align-items:center; }
 
-/* ── Password strength ── */
-.pw-strength{height:4px;border-radius:4px;background:var(--soil-line);margin-top:6px;overflow:hidden}
-.pw-strength-bar{height:100%;width:0;border-radius:4px;transition:width .3s,background .3s}
-.pw-hint{font-size:.72rem;color:var(--text-muted);margin-top:4px}
+    .flash-banner { display:flex; align-items:center; gap:10px; margin:0 0 16px; padding:14px 16px; border-radius:12px; border:1px solid transparent; font-size:13px; font-weight:600; }
+    .flash-banner.success { background:rgba(76,175,112,0.1); border-color:rgba(76,175,112,0.22); color:#6ccf8a; }
+    .flash-banner.error { background:rgba(224,85,85,0.08); border-color:rgba(224,85,85,0.2); color:#ff8a8a; }
 
-/* ── Footer ── */
-.footer{text-align:center;padding:40px 20px 28px;color:var(--text-muted);font-size:.78rem;position:relative;z-index:1}
-.footer-logo{font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--text-mid);margin-bottom:4px}
+    .success-notice { display:none; align-items:center; gap:7px; font-size:12px; font-weight:600; color:var(--green); }
+    .success-notice.show { display:flex; }
+    .success-notice i { font-size:13px; }
 
-body.light .card{background:#fff;border-color:#E0CECA}
+    .pref-group-label { font-size:11px; font-weight:700; color:var(--red-bright); text-transform:uppercase; letter-spacing:0.08em; padding:18px 0 6px; display:flex; align-items:center; gap:7px; }
+    .pref-group-label i { font-size:10px; }
+    .pref-group-label:first-child { padding-top:0; }
+    .pref-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--soil-line); }
+    .pref-row:last-child { border-bottom:none; padding-bottom:0; }
+    .pref-row:first-child { padding-top:0; }
+    .pref-info { flex:1; min-width:0; }
+    .pref-label { font-size:13px; font-weight:600; color:#F5F0EE; }
+    .pref-desc { font-size:11px; color:var(--text-muted); margin-top:3px; }
+    .toggle-switch { position:relative; width:44px; height:24px; flex-shrink:0; }
+    .toggle-switch input { opacity:0; width:0; height:0; position:absolute; }
+    .toggle-track { position:absolute; inset:0; border-radius:99px; background:var(--soil-hover); border:1px solid var(--soil-line); cursor:pointer; transition:0.25s; }
+    .toggle-track::after { content:''; position:absolute; width:18px; height:18px; border-radius:50%; background:var(--text-muted); top:2px; left:2px; transition:0.25s; }
+    .toggle-switch input:checked + .toggle-track { background:var(--red-vivid); border-color:var(--red-vivid); }
+    .toggle-switch input:checked + .toggle-track::after { transform:translateX(20px); background:#fff; }
 
-/* ── Responsive ── */
-@media(max-width:768px){
-  .nav-links{display:none}
-  .btn-nav-red{display:none}
-  .hamburger{display:flex}
-  .page-shell{padding-top:calc(var(--nav-h) + 20px)}
-  .page-title{font-size:1.4rem}
-  .card{padding:20px}
-  .info-row{flex-direction:column;align-items:flex-start;gap:4px}
-  .info-value{text-align:left}
-}
-@media(max-width:480px){
-  .page-shell{padding-left:12px;padding-right:12px}
-  .card{padding:16px}
-  .toggle-row{flex-direction:column;align-items:flex-start;gap:10px}
-}
-</style>
+    .security-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--soil-line); gap:16px; }
+    .security-row:last-child { border-bottom:none; padding-bottom:0; }
+    .security-row:first-child { padding-top:0; }
+    .security-info { flex:1; min-width:0; }
+    .security-label { font-size:13px; font-weight:600; color:#F5F0EE; display:flex; align-items:center; gap:7px; }
+    .security-label i { color:var(--red-pale); font-size:12px; }
+    .security-desc { font-size:11px; color:var(--text-muted); margin-top:3px; }
+    .security-status { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:99px; font-size:10px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; }
+    .security-status.active { background:rgba(76,175,112,0.12); border:1px solid rgba(76,175,112,0.25); color:var(--green); }
+
+    .pw-strength-bar { height:3px; border-radius:99px; background:var(--soil-hover); margin-top:6px; overflow:hidden; }
+    .pw-strength-fill { height:100%; border-radius:99px; width:0%; transition:width 0.3s, background 0.3s; }
+
+    .anim { opacity:0; transform:translateY(12px); animation:fadeUp 0.4s ease forwards; }
+    .anim-d1 { animation-delay:0.05s; }
+    .anim-d2 { animation-delay:0.10s; }
+    .anim-d3 { animation-delay:0.15s; }
+    .anim-d4 { animation-delay:0.20s; }
+    .anim-d5 { animation-delay:0.25s; }
+    @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+    body.light { background:#F5EDEC; color:#1A0A09; }
+    body.light .glow-orb { display:none; }
+    body.light .page-title { color:#1A0A09; }
+    body.light .page-sub { color:#8A6060; }
+    body.light .section-card { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .section-head { border-color:#E0CECA; }
+    body.light .section-title { color:#1A0A09; }
+    body.light .section-head-icon { background:#FEF0EE; }
+    body.light .section-footer { border-color:#E0CECA; }
+    body.light .info-row { border-color:#E0CECA; }
+    body.light .info-icon-wrap { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .info-value { color:#1A0A09; }
+    body.light .account-name { color:#1A0A09; }
+    body.light .account-email { color:#8A6060; }
+    body.light .pref-row { border-color:#E0CECA; }
+    body.light .pref-label { color:#1A0A09; }
+    body.light .pref-desc { color:#8A6060; }
+    body.light .toggle-track { background:#F0E4E2; border-color:#D0BCBA; }
+    body.light .security-row { border-color:#E0CECA; }
+    body.light .security-label { color:#1A0A09; }
+    body.light .security-desc { color:#8A6060; }
+    body.light .form-input { background:#F5EEEC; border-color:#D0BCBA; color:#1A0A09; }
+    body.light .form-input:focus { border-color:var(--red-vivid); }
+    body.light .form-input::placeholder { color:#A08080; }
+    body.light .form-label { color:#8A6060; }
+    body.light .form-hint { color:#A08080; }
+    body.light .btn-secondary { border-color:#D0BCBA; color:#4A2828; }
+    body.light .btn-secondary:hover { background:#FEF0EE; }
+
+    @media(max-width:600px) {
+      .main-wrap { padding:16px 14px 48px; }
+      .form-row { grid-template-columns:1fr; }
+    }
+  </style>
 </head>
-<body class="<?= $theme === 'light' ? 'light' : '' ?>">
+<body>
 
-<div class="glow-orbs"><span class="orb1"></span><span class="orb2"></span></div>
+<div class="tunnel-bg">
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#C0392B" stroke-width="1.5" fill="none" opacity="0.6">
+      <path d="M0 200 Q200 180 350 240 Q500 300 600 260 Q750 210 900 280 Q1050 350 1200 300 Q1320 260 1440 280"/>
+      <path d="M0 450 Q150 430 300 490 Q500 560 650 510 Q800 460 950 530 Q1100 600 1300 550 Q1380 530 1440 540"/>
+      <path d="M350 0 Q340 100 360 200 Q380 300 350 400 Q320 500 340 600 Q360 700 350 900"/>
+      <path d="M720 0 Q710 150 730 300 Q750 450 720 600 Q690 750 710 900"/>
+    </g>
+    <g fill="#E54C3A" opacity="0.4">
+      <circle cx="350" cy="240" r="3.5"/><circle cx="600" cy="260" r="3"/>
+      <circle cx="900" cy="280" r="3.5"/><circle cx="300" cy="490" r="3"/>
+    </g>
+  </svg>
+</div>
+<div class="glow-orb glow-1"></div>
+<div class="glow-orb glow-2"></div>
 
 <?php require_once dirname(__DIR__) . '/includes/navbar_recruiter.php'; ?>
 
-<div class="page-shell">
-  <div class="breadcrumb">
-    <a href="recruiter_dashboard.php">Dashboard</a>
-    <span class="sep">/</span>
-    <span>Settings</span>
-  </div>
-  <h1 class="page-title">Settings</h1>
+<main class="main-wrap">
+  <div class="content-layout">
+    <div class="settings-content">
 
-  <!-- Account Info -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-icon blue"><i class="fas fa-user-circle"></i></div>
-      <div>
-        <div class="card-title">Account Information</div>
-        <div class="card-subtitle">Your account details — read only</div>
+      <div class="page-header anim anim-d1">
+        <div>
+          <div class="page-title">Settings</div>
+          <div class="page-sub">Manage your account, preferences, and security.</div>
+        </div>
       </div>
-    </div>
-    <div class="info-row">
-      <span class="info-label">Email</span>
-      <span class="info-value"><?= htmlspecialchars($emailAddr, ENT_QUOTES, 'UTF-8') ?></span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">Account Type</span>
-      <span class="info-value">Recruiter</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">Company</span>
-      <span class="info-value"><?= htmlspecialchars($company, ENT_QUOTES, 'UTF-8') ?></span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">Member Since</span>
-      <span class="info-value"><?= htmlspecialchars($memberSince, ENT_QUOTES, 'UTF-8') ?></span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">Last Login</span>
-      <span class="info-value"><?= htmlspecialchars($lastLogin, ENT_QUOTES, 'UTF-8') ?></span>
+
+      <?php if ($settingsNotice): ?>
+        <div class="flash-banner success anim anim-d1"><i class="fas fa-check-circle"></i> <?= htmlspecialchars($settingsNotice, ENT_QUOTES, 'UTF-8') ?></div>
+      <?php elseif ($settingsError): ?>
+        <div class="flash-banner error anim anim-d1"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($settingsError, ENT_QUOTES, 'UTF-8') ?></div>
+      <?php endif; ?>
+
+      <!-- A. ACCOUNT INFORMATION -->
+      <div class="section-card anim anim-d2">
+        <div class="section-head">
+          <div class="section-head-icon"><i class="fas fa-user"></i></div>
+          <div>
+            <div class="section-title">Account Information</div>
+            <div class="section-sub">Your name and email address on file</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="info-row" style="align-items:center; gap:18px;">
+            <div class="account-avatar"><?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="account-info-details">
+              <div class="account-name"><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></div>
+              <div class="account-email"><?= htmlspecialchars($userEmail, ENT_QUOTES, 'UTF-8') ?></div>
+              <span class="account-badge"><i class="fas fa-check-circle"></i> Active Account</span>
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-icon-wrap"><i class="fas fa-id-card"></i></div>
+            <div style="flex:1; min-width:0;">
+              <div class="info-label">Full Name</div>
+              <div class="info-value"><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></div>
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-icon-wrap"><i class="fas fa-envelope"></i></div>
+            <div style="flex:1; min-width:0;">
+              <div class="info-label">Email Address</div>
+              <div class="info-value"><?= htmlspecialchars($userEmail, ENT_QUOTES, 'UTF-8') ?></div>
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-icon-wrap"><i class="fas fa-building"></i></div>
+            <div style="flex:1; min-width:0;">
+              <div class="info-label">Company</div>
+              <div class="info-value"><?= htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8') ?></div>
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-icon-wrap"><i class="fas fa-user-tie"></i></div>
+            <div style="flex:1; min-width:0;">
+              <div class="info-label">Account Type</div>
+              <div class="info-value">Recruiter</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B. CHANGE PASSWORD -->
+      <div class="section-card anim anim-d3">
+        <div class="section-head">
+          <div class="section-head-icon"><i class="fas fa-lock"></i></div>
+          <div>
+            <div class="section-title">Change Password</div>
+            <div class="section-sub">Choose a strong, unique password</div>
+          </div>
+        </div>
+        <form class="section-body" id="passwordForm" method="post" action="recruiter_settings.php">
+          <input type="hidden" name="action" value="change_password">
+          <div class="form-group">
+            <label class="form-label" for="currentPassword">Current Password</label>
+            <div class="form-input-wrap">
+              <input class="form-input" type="password" id="currentPassword" name="current_password" placeholder="Enter your current password" autocomplete="current-password">
+              <button type="button" class="toggle-pw" tabindex="-1" onclick="togglePw('currentPassword', this)" aria-label="Show/hide"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="newPassword">New Password</label>
+              <div class="form-input-wrap">
+                <input class="form-input" type="password" id="newPassword" name="new_password" placeholder="Minimum 8 characters" autocomplete="new-password" oninput="updatePwStrength(this.value)">
+                <button type="button" class="toggle-pw" tabindex="-1" onclick="togglePw('newPassword', this)" aria-label="Show/hide"><i class="fas fa-eye"></i></button>
+              </div>
+              <div class="pw-strength-bar"><div class="pw-strength-fill" id="pwStrengthFill"></div></div>
+              <div class="form-hint" id="pwStrengthLabel">Enter a new password</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="confirmPassword">Confirm New Password</label>
+              <div class="form-input-wrap">
+                <input class="form-input" type="password" id="confirmPassword" name="confirm_password" placeholder="Re-enter new password" autocomplete="new-password">
+                <button type="button" class="toggle-pw" tabindex="-1" onclick="togglePw('confirmPassword', this)" aria-label="Show/hide"><i class="fas fa-eye"></i></button>
+              </div>
+            </div>
+          </div>
+        </form>
+        <div class="section-footer">
+          <span class="success-notice" id="pwSuccess"><i class="fas fa-check-circle"></i> Password saved successfully</span>
+          <div class="section-footer-right">
+            <button type="button" class="btn-secondary" onclick="clearPasswordFields()">Cancel</button>
+            <button type="button" class="btn-primary" onclick="handleSavePassword()"><i class="fas fa-save" style="margin-right:6px;"></i>Save Password</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- C. PREFERENCES -->
+      <div class="section-card anim anim-d4">
+        <div class="section-head">
+          <div class="section-head-icon"><i class="fas fa-sliders-h"></i></div>
+          <div>
+            <div class="section-title">Preferences</div>
+            <div class="section-sub">Personalise your AntCareers experience</div>
+          </div>
+        </div>
+        <form class="section-body" method="post" action="recruiter_settings.php">
+          <input type="hidden" name="action" value="save_preferences">
+
+          <!-- Appearance -->
+          <div class="pref-group-label"><i class="fas fa-palette"></i> Appearance</div>
+          <div class="pref-row">
+            <div class="pref-info">
+              <div class="pref-label">Dark Mode</div>
+              <div class="pref-desc">Use the dark colour scheme across all pages</div>
+            </div>
+            <label class="toggle-switch" aria-label="Toggle dark mode">
+              <input type="checkbox" id="darkModeToggle" onchange="handleThemeToggle(this.checked)">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <!-- Notification Preferences -->
+          <div class="pref-group-label"><i class="fas fa-bell"></i> Notification Preferences</div>
+          <div class="pref-row">
+            <div class="pref-info">
+              <div class="pref-label">New messages</div>
+              <div class="pref-desc">Notify me when a seeker or employer messages me</div>
+            </div>
+            <label class="toggle-switch" aria-label="Toggle message notifications">
+              <input type="checkbox" name="email_new_message" <?= !empty($notificationPrefs['email_new_message']) ? 'checked' : '' ?>>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="pref-row">
+            <div class="pref-info">
+              <div class="pref-label">Invitation responses</div>
+              <div class="pref-desc">Notify me when a candidate accepts or declines my job invitation</div>
+            </div>
+            <label class="toggle-switch" aria-label="Toggle invite response notifications">
+              <input type="checkbox" name="notif_invite_response" <?= !empty($notificationPrefs['notif_invite_response']) ? 'checked' : '' ?>>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="pref-row">
+            <div class="pref-info">
+              <div class="pref-label">New applicants</div>
+              <div class="pref-desc">Notify me when someone applies to one of my job posts</div>
+            </div>
+            <label class="toggle-switch" aria-label="Toggle applicant notifications">
+              <input type="checkbox" name="notif_new_applicant" <?= !empty($notificationPrefs['notif_new_applicant']) ? 'checked' : '' ?>>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="pref-row">
+            <div class="pref-info">
+              <div class="pref-label">Offer responses</div>
+              <div class="pref-desc">Notify me when a candidate accepts or declines a job offer</div>
+            </div>
+            <label class="toggle-switch" aria-label="Toggle offer response notifications">
+              <input type="checkbox" name="notif_offer_response" <?= !empty($notificationPrefs['notif_offer_response']) ? 'checked' : '' ?>>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="pref-row">
+            <div class="pref-info">
+              <div class="pref-label">Job approval status</div>
+              <div class="pref-desc">Notify me when a job posting is approved or rejected by admin</div>
+            </div>
+            <label class="toggle-switch" aria-label="Toggle job approval notifications">
+              <input type="checkbox" name="notif_job_approval" <?= !empty($notificationPrefs['notif_job_approval']) ? 'checked' : '' ?>>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="section-footer" style="padding:14px 0 0;border-top:none;">
+            <span class="success-notice" id="prefSuccess"><i class="fas fa-check-circle"></i> Preferences saved</span>
+            <div class="section-footer-right" style="margin-left:auto;">
+              <button type="submit" class="btn-primary"><i class="fas fa-save" style="margin-right:6px;"></i>Save Preferences</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- D. SECURITY -->
+      <div class="section-card anim anim-d5">
+        <div class="section-head">
+          <div class="section-head-icon"><i class="fas fa-shield-alt"></i></div>
+          <div>
+            <div class="section-title">Security</div>
+            <div class="section-sub">Manage your session and account access</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="security-row">
+            <div class="security-info">
+              <div class="security-label"><i class="fas fa-circle"></i> Session Status</div>
+              <div class="security-desc">You are currently signed in as <?= htmlspecialchars($userEmail, ENT_QUOTES, 'UTF-8') ?></div>
+            </div>
+            <span class="security-status active"><i class="fas fa-check"></i> Active</span>
+          </div>
+          <div class="security-row">
+            <div class="security-info">
+              <div class="security-label"><i class="fas fa-key"></i> Password</div>
+              <div class="security-desc">Last updated - use the Change Password section above</div>
+            </div>
+          </div>
+          <div class="security-row">
+            <div class="security-info">
+              <div class="security-label"><i class="fas fa-user-slash"></i> Deactivate Account</div>
+              <div class="security-desc">Soft-delete your account and log out immediately</div>
+            </div>
+            <form method="post" action="recruiter_settings.php" onsubmit="return confirm('Deactivate your account?');">
+              <input type="hidden" name="action" value="deactivate_account">
+              <button type="submit" class="btn-danger"><i class="fas fa-user-slash"></i> Deactivate</button>
+            </form>
+          </div>
+          <div class="security-row">
+            <div class="security-info">
+              <div class="security-label"><i class="fas fa-sign-out-alt"></i> Sign Out</div>
+              <div class="security-desc">End your current session and return to the login page</div>
+            </div>
+            <a href="../auth/logout.php" class="btn-danger"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
-
-  <!-- Change Password -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-icon amber"><i class="fas fa-lock"></i></div>
-      <div>
-        <div class="card-title">Change Password</div>
-        <div class="card-subtitle">Update your account password</div>
-      </div>
-    </div>
-    <form id="pwForm" autocomplete="off">
-      <div class="form-group">
-        <label for="currentPw">Current Password</label>
-        <input type="password" id="currentPw" class="form-input" placeholder="Enter current password" required>
-      </div>
-      <div class="form-group">
-        <label for="newPw">New Password</label>
-        <input type="password" id="newPw" class="form-input" placeholder="Min 8 characters" required minlength="8">
-        <div class="pw-strength"><div class="pw-strength-bar" id="pwBar"></div></div>
-        <div class="pw-hint" id="pwHint"></div>
-      </div>
-      <div class="form-group">
-        <label for="confirmPw">Confirm New Password</label>
-        <input type="password" id="confirmPw" class="form-input" placeholder="Re-enter new password" required minlength="8">
-      </div>
-      <button type="submit" class="btn btn-primary" id="pwBtn">
-        <i class="fas fa-shield-alt"></i> Update Password
-      </button>
-    </form>
-  </div>
-
-  <!-- Notification Preferences -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-icon green"><i class="fas fa-bell"></i></div>
-      <div>
-        <div class="card-title">Notification Preferences</div>
-        <div class="card-subtitle">Choose which email notifications you receive</div>
-      </div>
-    </div>
-    <div class="toggle-row">
-      <div class="toggle-info">
-        <div class="toggle-label">New Applicant Alerts</div>
-        <div class="toggle-desc">Receive an email when someone applies to your jobs</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="notifApplicant" <?= $notifApplicant ? 'checked' : '' ?>>
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="toggle-row">
-      <div class="toggle-info">
-        <div class="toggle-label">Interview Reminders</div>
-        <div class="toggle-desc">Get reminders before scheduled interviews</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="notifInterview" <?= $notifInterview ? 'checked' : '' ?>>
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="toggle-row">
-      <div class="toggle-info">
-        <div class="toggle-label">Job Approval Updates</div>
-        <div class="toggle-desc">Notified when your posted jobs are approved or need changes</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="notifApproval" <?= $notifApproval ? 'checked' : '' ?>>
-        <span class="slider"></span>
-      </label>
-    </div>
-  </div>
-
-  <!-- Danger Zone -->
-  <div class="card danger-zone">
-    <div class="card-header">
-      <div class="card-icon red"><i class="fas fa-exclamation-triangle"></i></div>
-      <div>
-        <div class="card-title">Danger Zone</div>
-        <div class="card-subtitle">Irreversible account actions</div>
-      </div>
-    </div>
-    <p class="danger-text">
-      To <strong>delete your account</strong>, please contact your company administrator or email
-      <strong>support@antcareers.com</strong>. Account deletion is permanent and cannot be undone.
-      All your job postings and applicant data will be removed.
-    </p>
-  </div>
-</div>
-
-<footer class="footer">
-  <div class="footer-logo">AntCareers</div>
-  <div>Settings — Recruiter Portal</div>
-</footer>
+</main>
 
 <script>
-(function(){
+(function () {
+  'use strict';
 
-  /* ── Password strength ── */
-  const newPw = document.getElementById('newPw');
-  const pwBar = document.getElementById('pwBar');
-  const pwHint = document.getElementById('pwHint');
-  newPw.addEventListener('input',()=>{
-    const v = newPw.value;
-    let s=0;
-    if(v.length>=8) s++;
-    if(v.length>=12) s++;
-    if(/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
-    if(/\d/.test(v)) s++;
-    if(/[^A-Za-z0-9]/.test(v)) s++;
-    const pct = Math.min(s/5*100,100);
-    const clr = pct<40?'var(--red-vivid)':pct<70?'var(--amber)':'var(--green)';
-    pwBar.style.width = pct+'%';
-    pwBar.style.background = clr;
-    const labels = ['Very weak','Weak','Fair','Strong','Very strong'];
-    pwHint.textContent = v.length ? labels[Math.min(s,4)] : '';
-  });
+  function syncDarkToggle() {
+    const isDark = !document.body.classList.contains('light');
+    const toggle = document.getElementById('darkModeToggle');
+    if (toggle) toggle.checked = isDark;
+  }
+  window.addEventListener('DOMContentLoaded', syncDarkToggle);
+  syncDarkToggle();
 
-  /* ── Change password AJAX ── */
-  document.getElementById('pwForm').addEventListener('submit',async e=>{
-    e.preventDefault();
-    const btn = document.getElementById('pwBtn');
-    btn.disabled = true;
-    const body = new URLSearchParams({
-      action:'change_password',
-      current_password: document.getElementById('currentPw').value,
-      new_password: newPw.value,
-      confirm_password: document.getElementById('confirmPw').value
+  window.handleThemeToggle = function (isDark) {
+    const theme = isDark ? 'dark' : 'light';
+    document.body.classList.toggle('light', !isDark);
+    document.documentElement.classList.toggle('theme-light', !isDark);
+    localStorage.setItem('ac-theme', theme);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
+  };
+
+  window.togglePw = function (inputId, btn) {
+    const input = document.getElementById(inputId);
+    const isText = input.type === 'text';
+    input.type = isText ? 'password' : 'text';
+    btn.querySelector('i').className = isText ? 'fas fa-eye' : 'fas fa-eye-slash';
+  };
+
+  window.updatePwStrength = function (val) {
+    const fill  = document.getElementById('pwStrengthFill');
+    const label = document.getElementById('pwStrengthLabel');
+    if (!fill || !label) return;
+    let score = 0;
+    if (val.length >= 8)  score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const levels = [
+      { pct:'0%',   color:'transparent',  text:'Enter a new password' },
+      { pct:'25%',  color:'#E05555',      text:'Weak' },
+      { pct:'50%',  color:'var(--amber)', text:'Fair' },
+      { pct:'75%',  color:'#6BB8F5',      text:'Good' },
+      { pct:'100%', color:'var(--green)',  text:'Strong' },
+    ];
+    const lvl = levels[val.length === 0 ? 0 : score] || levels[4];
+    fill.style.width      = lvl.pct;
+    fill.style.background = lvl.color;
+    label.textContent     = lvl.text;
+    label.style.color     = val.length === 0 ? '' : lvl.color;
+  };
+
+  window.handleSavePassword = function () {
+    const cur  = document.getElementById('currentPassword').value.trim();
+    const nw   = document.getElementById('newPassword').value;
+    const conf = document.getElementById('confirmPassword').value;
+    if (!cur) return;
+    if (nw.length < 8) return;
+    if (nw !== conf) return;
+    const form = document.getElementById('passwordForm');
+    if (form) form.submit();
+  };
+
+  window.clearPasswordFields = function () {
+    ['currentPassword','newPassword','confirmPassword'].forEach(function(id) {
+      const el = document.getElementById(id);
+      if (el) { el.value = ''; el.type = 'password'; }
+      const wrap = el && el.closest('.form-input-wrap');
+      if (wrap) { const btn = wrap.querySelector('.toggle-pw i'); if (btn) btn.className = 'fas fa-eye'; }
     });
-    try{
-      const r = await fetch(location.pathname,{method:'POST',body,credentials:'same-origin'});
-      const j = await r.json();
-      if(j.success){
-        toast('Password updated successfully');
-        e.target.reset();
-        pwBar.style.width='0';
-        pwHint.textContent='';
-      } else {
-        toast(j.error||'Failed to update password','error');
-      }
-    }catch(err){
-      toast('Network error. Please try again.','error');
-    }
-    btn.disabled = false;
-  });
-
-  /* ── Notification toggles AJAX ── */
-  ['notifApplicant','notifInterview','notifApproval'].forEach(id=>{
-    document.getElementById(id).addEventListener('change',async()=>{
-      const body = new URLSearchParams({
-        action:'update_notifications',
-        email_new_applicant:      document.getElementById('notifApplicant').checked?'1':'',
-        email_interview_reminder: document.getElementById('notifInterview').checked?'1':'',
-        email_job_approval:       document.getElementById('notifApproval').checked?'1':''
-      });
-      try{
-        const r = await fetch(location.pathname,{method:'POST',body,credentials:'same-origin'});
-        const j = await r.json();
-        if(j.success) toast('Preferences saved');
-        else toast(j.error||'Failed to save preferences','error');
-      }catch(err){
-        toast('Network error.','error');
-      }
-    });
-  });
+    updatePwStrength('');
+  };
 })();
 </script>
+
 </body>
 </html>

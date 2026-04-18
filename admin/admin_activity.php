@@ -168,25 +168,6 @@ function actionBadgeClass(string $type): string {
     .page-sub { font-size:14px; color:var(--text-muted); }
 
     .content-layout { display:block; }
-    .sidebar { display:none; }
-    .sidebar { position:sticky; top:72px; max-height:calc(100vh - 88px); overflow-y:auto; scrollbar-width:none; }
-    .sidebar::-webkit-scrollbar { display:none; }
-    .sidebar-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; }
-    .sidebar-head { padding:16px 18px 12px; border-bottom:1px solid var(--soil-line); }
-    .sidebar-title { font-family:var(--font-body); font-size:12px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:7px; letter-spacing:0.07em; text-transform:uppercase; }
-    .sidebar-title i { color:var(--red-bright); font-size:11px; }
-    .sidebar-stats { padding:14px 16px; border-bottom:1px solid var(--soil-line); display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .sb-stat { background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:7px; padding:10px 12px; }
-    .sb-stat-num { font-family:var(--font-display); font-size:20px; font-weight:700; color:#F5F0EE; line-height:1; }
-    .sb-stat-lbl { font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-top:3px; }
-    .sb-nav-item { display:flex; align-items:center; gap:10px; padding:11px 18px; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:all 0.18s; border:none; background:none; font-family:var(--font-body); width:100%; text-align:left; border-bottom:1px solid var(--soil-line); text-decoration:none; }
-    .sb-nav-item:last-child { border-bottom:none; }
-    .sb-nav-item:hover { color:#F5F0EE; background:var(--soil-hover); }
-    .sb-nav-item.active { color:var(--red-pale); background:rgba(209,61,44,0.08); border-right:2px solid var(--red-vivid); }
-    .sb-nav-item i { width:16px; text-align:center; font-size:12px; color:var(--red-bright); }
-    .sb-badge { margin-left:auto; background:var(--red-vivid); color:#fff; font-size:10px; font-weight:700; border-radius:10px; padding:1px 7px; }
-    .sb-badge.amber { background:var(--amber); color:#1A0A09; }
-    .sb-badge.blue { background:#4A90D9; color:#fff; }
 
     /* Filter bar */
     .filter-bar { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:16px 18px; margin-bottom:20px; }
@@ -241,9 +222,7 @@ function actionBadgeClass(string $type): string {
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
     body.light .profile-name { color:#1A0A09; }
-    body.light .sidebar-card, body.light .filter-bar, body.light .table-wrap { background:#FFFFFF; border-color:#E0CECA; }
-    body.light .sb-stat { background:#F5EEEC; border-color:#E0CECA; }
-    body.light .sb-stat-num { color:#1A0A09; }
+    body.light .filter-bar, body.light .table-wrap { background:#FFFFFF; border-color:#E0CECA; }
     body.light .filter-input, body.light .filter-select { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .page-link { background:#F5EEEC; border-color:#E0CECA; }
     body.light .td-user { color:#1A0A09; }
@@ -252,7 +231,6 @@ function actionBadgeClass(string $type): string {
     body.light .pd-item { color:#4A2828; }
     body.light .pd-item:hover { background:#FEF0EE; }
 
-    @media(max-width:1060px) { .content-layout{grid-template-columns:1fr} .sidebar{position:static} }
     @media(max-width:760px) { .nav-links{display:none} .page-shell{padding:0 16px 60px} }
   </style>
 </head>
@@ -307,6 +285,7 @@ function actionBadgeClass(string $type): string {
           </div>
           <a class="pd-item" href="admin_notifications.php"><i class="fas fa-bell"></i> Notifications</a>
           <a class="pd-item" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
+          <a class="pd-item" href="admin_settings.php"><i class="fas fa-cog"></i> Settings</a>
           <div class="pd-divider"></div>
           <a class="pd-item danger" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
         </div>
@@ -322,26 +301,6 @@ function actionBadgeClass(string $type): string {
   </div>
 
   <div class="content-layout">
-    <!-- SIDEBAR -->
-    <aside class="sidebar anim">
-      <div class="sidebar-card">
-        <div class="sidebar-head">
-          <div class="sidebar-title"><i class="fas fa-shield-alt"></i> Admin Panel</div>
-        </div>
-        <div class="sidebar-stats">
-          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($total); ?></div><div class="sb-stat-lbl">Total Logs</div></div>
-          <div class="sb-stat"><div class="sb-stat-num"><?php echo $page; ?>/<?php echo $totalPages; ?></div><div class="sb-stat-lbl">Page</div></div>
-        </div>
-        <a class="sb-nav-item" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
-        <a class="sb-nav-item" href="admin_users.php"><i class="fas fa-users"></i> User Accounts</a>
-        <a class="sb-nav-item" href="admin_companies.php"><i class="fas fa-building"></i> Company Approval <?php if($pendingCompanies > 0): ?><span class="sb-badge"><?php echo $pendingCompanies; ?></span><?php endif; ?></a>
-        <a class="sb-nav-item" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Job Moderation <?php if($pendingJobs > 0): ?><span class="sb-badge amber"><?php echo $pendingJobs; ?></span><?php endif; ?></a>
-        <a class="sb-nav-item active" href="admin_activity.php"><i class="fas fa-history"></i> Activity Logs</a>
-        <a class="sb-nav-item" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters <span class="sb-badge blue"><?php echo $totalRecruiters; ?></span></a>
-        <a class="sb-nav-item" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports &amp; Analytics</a>
-        <a class="sb-nav-item" href="admin_notifications.php"><i class="fas fa-bell"></i> Notifications <?php if($unread > 0): ?><span class="sb-badge"><?php echo $unread; ?></span><?php endif; ?></a>
-      </div>
-    </aside>
 
     <!-- MAIN -->
     <main class="anim">
