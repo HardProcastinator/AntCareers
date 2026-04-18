@@ -72,11 +72,9 @@ if (!in_array($extension, $allowedExtensions, true)) {
     exit;
 }
 
-$finfo = finfo_open(FILEINFO_MIME_TYPE);
-$mimeType = $finfo ? (string)finfo_file($finfo, $tmpName) : '';
-if ($finfo) {
-    finfo_close($finfo);
-}
+$finfo    = new finfo(FILEINFO_MIME_TYPE);
+$mimeType = (string)$finfo->file($tmpName);
+unset($finfo);
 
 $allowedMimeTypes = [
     'application/pdf',
