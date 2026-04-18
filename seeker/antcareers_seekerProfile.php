@@ -342,7 +342,6 @@ try {
 
     /* Contact Info */
     .contact-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .contact-field { }
     .contact-label { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:5px; }
     .contact-value { font-size:13px; color:var(--text-mid); font-weight:500; display:flex; align-items:center; gap:7px; }
     .contact-value i { color:var(--red-pale); font-size:12px; }
