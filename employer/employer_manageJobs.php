@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
+require_once dirname(__DIR__) . '/includes/auth_helpers.php';
 require_once dirname(__DIR__) . '/includes/countries.php';
 requireLogin('employer');
 $user        = getUser();
@@ -72,7 +73,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         try {
             $db->prepare("INSERT INTO jobs (employer_id, title, description, requirements, location, job_type, setup, salary_min, salary_max, salary_currency, industry, experience_level, skills_required, status, approval_status, deadline, country, recruitment_duration) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'Active','pending',?,?,?)")
                ->execute([$uid, $title, $desc, $req, $loc, $type, $setup, $sMin, $sMax, $currency, $ind, $exp, $skills, $dl, $country, $duration]);
-            echo json_encode(['ok' => true, 'job_id' => (int)$db->lastInsertId(), 'title' => $title]);
+            $newJobId = (int)$db->lastInsertId();
+            // Notify admins of pending job post
+            try {
+                $admins = $db->query("SELECT id FROM users WHERE account_type='admin' AND is_active=1")->fetchAll();
+                $companyLabel = htmlspecialchars((string)($_SESSION['company_name'] ?? 'Unknown Company'), ENT_QUOTES);
+                foreach ($admins as $adm) {
+                    $db->prepare("INSERT INTO notifications (user_id,actor_id,type,content,reference_id,reference_type,is_read,created_at) VALUES (?,?,?,?,?,?,0,NOW())")
+                       ->execute([$adm['id'], $uid, 'job_approval_request', "New job post '{$title}' by {$companyLabel} is awaiting approval.", $newJobId, 'job']);
+                }
+            } catch (Throwable) {}
+            logActivity($uid, $uid, 'job_submitted', 'job', $newJobId, "Job '{$title}' submitted for approval.");
+            echo json_encode(['ok' => true, 'job_id' => $newJobId, 'title' => $title]);
         } catch (Exception $e) {
             error_log('[AntCareers] employer post_job: ' . $e->getMessage());
             echo json_encode(['ok' => false, 'msg' => 'DB error']);
@@ -166,6 +178,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if ($st->rowCount() === 0) {
                 echo json_encode(['ok' => false, 'msg' => 'Only draft jobs can be posted']);
             } else {
+                // Notify admins
+                try {
+                    $jobRow = $db->prepare("SELECT title FROM jobs WHERE id=?");
+                    $jobRow->execute([$jobId]);
+                    $jTitle = (string)($jobRow->fetchColumn() ?: 'Untitled');
+                    $admins = $db->query("SELECT id FROM users WHERE account_type='admin' AND is_active=1")->fetchAll();
+                    $companyLabel = htmlspecialchars((string)($_SESSION['company_name'] ?? 'Unknown Company'), ENT_QUOTES);
+                    foreach ($admins as $adm) {
+                        $db->prepare("INSERT INTO notifications (user_id,actor_id,type,content,reference_id,reference_type,is_read,created_at) VALUES (?,?,?,?,?,?,0,NOW())")
+                           ->execute([$adm['id'], $uid, 'job_approval_request', "Draft job '{$jTitle}' by {$companyLabel} published and awaiting approval.", $jobId, 'job']);
+                    }
+                    logActivity($uid, $uid, 'job_submitted', 'job', $jobId, "Draft job '{$jTitle}' submitted for approval.");
+                } catch (Throwable) {}
                 echo json_encode(['ok' => true]);
             }
         } catch (Exception $e) {
