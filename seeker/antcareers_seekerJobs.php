@@ -2,8 +2,8 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
+require_once dirname(__DIR__) . '/includes/auth_helpers.php';
 require_once dirname(__DIR__) . '/includes/countries.php';
-require_once dirname(__DIR__) . '/includes/job_titles.php';
 requireLogin('seeker');
 $user = getUser();
 $fullName  = $user['fullName'];
@@ -31,7 +31,7 @@ try {
         SELECT COUNT(*)
         FROM jobs j
         WHERE j.status = 'Active'
-          AND (j.approval_status IS NULL OR j.approval_status = 'approved')
+          AND j.approval_status = 'approved'
           AND (j.deadline IS NULL OR j.deadline >= CURDATE())
           AND j.deleted_at IS NULL
     ");
@@ -53,7 +53,7 @@ try {
         JOIN users u ON u.id = j.employer_id
         LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
         WHERE j.status = 'Active'
-          AND (j.approval_status IS NULL OR j.approval_status = 'approved')
+          AND j.approval_status = 'approved'
           AND (j.deadline IS NULL OR j.deadline >= CURDATE())
           AND j.deleted_at IS NULL
         ORDER BY j.created_at DESC
@@ -91,9 +91,9 @@ try {
 foreach ($dbJobs as $r) {
     $salMin = (float)($r['salary_min'] ?? 0);
     $salMax = (float)($r['salary_max'] ?? 0);
-    $cur    = ($r['salary_currency'] ?? 'PHP') === 'PHP' ? '₱' : ($r['salary_currency'] ?? '');
-    if ($salMin && $salMax)      $salary = $cur . number_format($salMin/1000,0) . 'k – ' . $cur . number_format($salMax/1000,0) . 'k';
-    elseif ($salMin)             $salary = $cur . number_format($salMin/1000,0) . 'k+';
+    $cur    = currencySymbol($r['salary_currency'] ?? 'PHP');
+    if ($salMin && $salMax)      $salary = $cur . number_format($salMin) . ' – ' . $cur . number_format($salMax);
+    elseif ($salMin)             $salary = $cur . number_format($salMin) . '+';
     else                         $salary = 'Not disclosed';
 
     $tags = array_filter(array_map('trim', explode(',', (string)($r['skills_required'] ?? ''))));
@@ -137,13 +137,6 @@ try {
     $savedJobIds = array_column($sStmt->fetchAll(), 'job_id');
 } catch (PDOException $e) { /* ignore */ }
 
-// ── Distinct industries for filter dropdown ───────────────────────────────────
-$industries = [];
-try {
-    $iStmt = $db->query("SELECT DISTINCT industry FROM jobs WHERE industry IS NOT NULL AND status='Active' ORDER BY industry");
-    $industries = array_column($iStmt->fetchAll(), 'industry');
-} catch (PDOException $e) { /* industry column may not exist yet */ }
-
 $jobsJson     = json_encode($jobs,        JSON_HEX_TAG | JSON_HEX_AMP);
 $appliedJson  = json_encode($appliedJobIds);
 $savedJson    = json_encode($savedJobIds);
@@ -156,10 +149,20 @@ foreach (getCountries() as $country) {
 }
 $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
 
-$sharedIndustryValues = array_column(getIndustryFilterOptions(), 'value');
-$industryFilterValues = array_values(array_unique(array_merge($sharedIndustryValues, $industries)));
+$industryKeys = [
+  'Accounting','Administration & Office Support','Advertising, Arts & Media',
+  'Banking & Financial Services','Call Centre & Customer Service','CEO & General Management',
+  'Community Services & Development','Construction','Consulting & Strategy',
+  'Design & Architecture','Education & Training','Engineering',
+  'Farming, Animals & Conservation','Government & Defence','Healthcare & Medical',
+  'Hospitality & Tourism','Human Resources & Recruitment',
+  'Information & Communication Technology','Insurance & Superannuation','Legal',
+  'Manufacturing, Transport & Logistics','Marketing & Communications',
+  'Mining, Resources & Energy','Real Estate & Property','Retail & Consumer Products',
+  'Sales','Science & Technology','Self Employment','Sports & Recreation','Trades & Services',
+];
 $industryCheckboxesHtml = '';
-foreach ($industryFilterValues as $industryValue) {
+foreach ($industryKeys as $industryValue) {
   $escIndustry = htmlspecialchars((string)$industryValue, ENT_QUOTES, 'UTF-8');
   $industryCheckboxesHtml .= '<label class="ms-item"><input type="checkbox" value="' . $escIndustry . '"><span>' . $escIndustry . '</span></label>';
 }
@@ -329,7 +332,7 @@ foreach ($industryFilterValues as $industryValue) {
     .ms-trigger .ms-arrow { font-size:8px; color:var(--text-muted); transition:transform 0.2s; flex-shrink:0; }
     .ms-wrap.open .ms-trigger .ms-arrow { transform:rotate(180deg); }
     .ms-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .ms-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:20; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+    .ms-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:1050; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
     .ms-wrap.open .ms-panel { display:block; }
     .role-section{display:block;margin-top:8px;}
     .role-section-label{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin:10px 0 6px;display:block;}
@@ -344,6 +347,8 @@ foreach ($industryFilterValues as $industryValue) {
     .sec-count { font-size:11px; font-weight:600; color:var(--text-muted); background:var(--soil-hover); padding:2px 9px; border-radius:4px; letter-spacing:0.04em; }
     .see-more { font-size:12px; font-weight:600; color:var(--red-pale); cursor:pointer; background:none; border:none; font-family:var(--font-body); display:flex; align-items:center; gap:4px; transition:0.15s; letter-spacing:0.02em; }
     .see-more:hover { color:var(--red-bright); }
+    .sort-select { appearance:none; -webkit-appearance:none; background:var(--soil-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23A08080'/%3E%3C/svg%3E") no-repeat right 10px center; border:1px solid var(--soil-line); border-radius:8px; color:var(--text-mid); cursor:pointer; font-family:var(--font-body); font-size:12px; font-weight:600; outline:none; padding:6px 28px 6px 10px; transition:border-color 0.15s,color 0.15s; }
+    .sort-select:hover,.sort-select:focus { border-color:var(--red-vivid); color:var(--text-bright); }
 
     /* ── FEATURED CARDS ── */
     .featured-scroll { display:flex; gap:16px; overflow-x:auto; padding:4px 2px 28px 2px; margin:0 0 36px 0; scrollbar-width:none; }
@@ -742,36 +747,7 @@ foreach ($industryFilterValues as $industryValue) {
         <div class="ms-wrap" id="msIndustry" data-default="All Industries">
           <button class="ms-trigger" type="button"><span class="ms-text">All Industries</span><i class="fas fa-chevron-down ms-arrow"></i></button>
           <div class="ms-panel">
-            <label class="ms-item"><input type="checkbox" value="Accounting"><span>Accounting</span></label>
-            <label class="ms-item"><input type="checkbox" value="Administration &amp; Office Support"><span>Administration &amp; Office Support</span></label>
-            <label class="ms-item"><input type="checkbox" value="Advertising, Arts &amp; Media"><span>Advertising, Arts &amp; Media</span></label>
-            <label class="ms-item"><input type="checkbox" value="Banking &amp; Financial Services"><span>Banking &amp; Financial Services</span></label>
-            <label class="ms-item"><input type="checkbox" value="Call Centre &amp; Customer Service"><span>Call Centre &amp; Customer Service</span></label>
-            <label class="ms-item"><input type="checkbox" value="CEO &amp; General Management"><span>CEO &amp; General Management</span></label>
-            <label class="ms-item"><input type="checkbox" value="Community Services &amp; Development"><span>Community Services &amp; Development</span></label>
-            <label class="ms-item"><input type="checkbox" value="Construction"><span>Construction</span></label>
-            <label class="ms-item"><input type="checkbox" value="Consulting &amp; Strategy"><span>Consulting &amp; Strategy</span></label>
-            <label class="ms-item"><input type="checkbox" value="Design &amp; Architecture"><span>Design &amp; Architecture</span></label>
-            <label class="ms-item"><input type="checkbox" value="Education &amp; Training"><span>Education &amp; Training</span></label>
-            <label class="ms-item"><input type="checkbox" value="Engineering"><span>Engineering</span></label>
-            <label class="ms-item"><input type="checkbox" value="Farming, Animals &amp; Conservation"><span>Farming, Animals &amp; Conservation</span></label>
-            <label class="ms-item"><input type="checkbox" value="Government &amp; Defence"><span>Government &amp; Defence</span></label>
-            <label class="ms-item"><input type="checkbox" value="Healthcare &amp; Medical"><span>Healthcare &amp; Medical</span></label>
-            <label class="ms-item"><input type="checkbox" value="Hospitality &amp; Tourism"><span>Hospitality &amp; Tourism</span></label>
-            <label class="ms-item"><input type="checkbox" value="Human Resources &amp; Recruitment"><span>Human Resources &amp; Recruitment</span></label>
-            <label class="ms-item"><input type="checkbox" value="Information &amp; Communication Technology"><span>Information &amp; Communication Technology</span></label>
-            <label class="ms-item"><input type="checkbox" value="Insurance &amp; Superannuation"><span>Insurance &amp; Superannuation</span></label>
-            <label class="ms-item"><input type="checkbox" value="Legal"><span>Legal</span></label>
-            <label class="ms-item"><input type="checkbox" value="Manufacturing, Transport &amp; Logistics"><span>Manufacturing, Transport &amp; Logistics</span></label>
-            <label class="ms-item"><input type="checkbox" value="Marketing &amp; Communications"><span>Marketing &amp; Communications</span></label>
-            <label class="ms-item"><input type="checkbox" value="Mining, Resources &amp; Energy"><span>Mining, Resources &amp; Energy</span></label>
-            <label class="ms-item"><input type="checkbox" value="Real Estate &amp; Property"><span>Real Estate &amp; Property</span></label>
-            <label class="ms-item"><input type="checkbox" value="Retail &amp; Consumer Products"><span>Retail &amp; Consumer Products</span></label>
-            <label class="ms-item"><input type="checkbox" value="Sales"><span>Sales</span></label>
-            <label class="ms-item"><input type="checkbox" value="Science &amp; Technology"><span>Science &amp; Technology</span></label>
-            <label class="ms-item"><input type="checkbox" value="Self Employment"><span>Self Employment</span></label>
-            <label class="ms-item"><input type="checkbox" value="Sports &amp; Recreation"><span>Sports &amp; Recreation</span></label>
-            <label class="ms-item"><input type="checkbox" value="Trades &amp; Services"><span>Trades &amp; Services</span></label>
+            <?= $industryCheckboxesHtml ?>
           </div>
         </div>
         <div class="role-section" id="rolePickerWrap">
@@ -887,7 +863,12 @@ foreach ($industryFilterValues as $industryValue) {
             <span id="jobsSectionText">Live opportunities</span>
             <span class="sec-count" id="jobCount">0 jobs</span>
           </div>
-          <button class="see-more" id="seeMoreJobs">Browse all <i class="fas fa-arrow-right"></i></button>
+          <select class="sort-select" id="sortSelect" onchange="renderAllJobs()">
+            <option value="relevant">Most Relevant</option>
+            <option value="recent">Most Recent</option>
+            <option value="salary_high">Salary: High to Low</option>
+            <option value="salary_low">Salary: Low to High</option>
+          </select>
         </div>
         <div class="job-list" id="jobsContainer"></div>
         <?php if ($totalPages > 1): ?>
@@ -1124,9 +1105,24 @@ foreach ($industryFilterValues as $industryValue) {
     const f = getFilters();
     const filtered = jobsData.filter(j => matchesFilters(j, f));
 
-    if (countEl) countEl.textContent = filtered.length + ' job' + (filtered.length !== 1 ? 's' : '');
+    const sortVal = document.getElementById('sortSelect')?.value || 'relevant';
+    const sorted = [...filtered];
+    if (sortVal === 'recent') {
+      sorted.sort((a, b) => new Date(b.createdRaw || 0) - new Date(a.createdRaw || 0));
+    } else if (sortVal === 'salary_high') {
+      sorted.sort((a, b) => (b.salaryMax || b.salaryMin || 0) - (a.salaryMax || a.salaryMin || 0));
+    } else if (sortVal === 'salary_low') {
+      sorted.sort((a, b) => (a.salaryMin || a.salaryMax || 0) - (b.salaryMin || b.salaryMax || 0));
+    } else if (f.keyword) {
+      sorted.sort((a, b) => {
+        const score = j => (j.title.toLowerCase().includes(f.keyword) ? 2 : 0) + (j.company.toLowerCase().includes(f.keyword) ? 1 : 0);
+        return score(b) - score(a);
+      });
+    }
 
-    if (filtered.length === 0) {
+    if (countEl) countEl.textContent = sorted.length + ' job' + (sorted.length !== 1 ? 's' : '');
+
+    if (sorted.length === 0) {
       el.innerHTML = `
         <div style="text-align:center;padding:50px 20px;color:var(--text-muted);">
           <i class="fas fa-search" style="font-size:32px;margin-bottom:14px;display:block;opacity:0.4;"></i>
@@ -1136,7 +1132,7 @@ foreach ($industryFilterValues as $industryValue) {
       return;
     }
 
-    el.innerHTML = filtered.map((j, i) => {
+    el.innerHTML = sorted.map((j, i) => {
       const saved   = savedJobs.has(j.id);
       const applied = appliedIds.has(j.id);
       const tags    = (j.tags || []).slice(0, 4).map(t => `<span class="chip">${esc(t)}</span>`).join('');
@@ -1267,6 +1263,7 @@ foreach ($industryFilterValues as $industryValue) {
       const fd = new FormData();
       fd.append('job_id',      currentApplyJobId);
       fd.append('cover_letter', document.getElementById('quickCoverLetter').value);
+      fd.append('csrf_token', document.getElementById('quickCsrfToken').value);
       const res  = await fetch('apply_job.php', { method:'POST', body:fd });
       const data = await res.json();
 
@@ -1372,6 +1369,13 @@ foreach ($industryFilterValues as $industryValue) {
       <label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;">Cover Letter (optional)</label>
       <textarea id="quickCoverLetter" rows="4" placeholder="Tell this employer why you're a great fit..." style="width:100%;padding:10px 14px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:7px;font-family:var(--font-body);font-size:13px;color:var(--text-light);outline:none;resize:vertical;"></textarea>
     </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;">Resume / CV</label>
+      <select id="quickResumeSelect" style="width:100%;padding:10px 14px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:7px;font-family:var(--font-body);font-size:13px;color:var(--text-mid);outline:none;cursor:pointer;">
+        <option value="profile">Use resume from my profile</option>
+      </select>
+    </div>
+    <input type="hidden" id="quickCsrfToken" value="<?= htmlspecialchars(csrfToken(), ENT_QUOTES) ?>">
     <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid var(--soil-line);">
       <button onclick="closeApplyModal()" style="padding:9px 18px;border-radius:7px;background:transparent;border:1px solid var(--soil-line);color:var(--text-mid);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
       <button onclick="submitQuickApply()" style="padding:9px 22px;border-radius:7px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="fas fa-paper-plane"></i> Submit Application</button>

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
+require_once dirname(__DIR__) . '/includes/auth_helpers.php';
 requireLogin('seeker');
 $user = getUser();
 // Convenience aliases for page templates that use the old variable names
@@ -63,9 +64,9 @@ try {
 foreach ($rows as $r) {
     $salMin = (float)($r['salary_min'] ?? 0);
     $salMax = (float)($r['salary_max'] ?? 0);
-    $cur    = ($r['salary_currency'] ?? 'PHP') === 'PHP' ? '₱' : ($r['salary_currency'] ?? '');
-    if ($salMin && $salMax)      $salary = $cur . number_format($salMin/1000,0) . 'k – ' . $cur . number_format($salMax/1000,0) . 'k';
-    elseif ($salMin)             $salary = $cur . number_format($salMin/1000,0) . 'k+';
+    $cur    = currencySymbol($r['salary_currency'] ?? 'PHP');
+    if ($salMin && $salMax)      $salary = $cur . number_format($salMin) . ' – ' . $cur . number_format($salMax);
+    elseif ($salMin)             $salary = $cur . number_format($salMin) . '+';
     else                         $salary = 'Not disclosed';
     $tags = array_filter(array_map('trim', explode(',', (string)($r['skills_required'] ?? ''))));
     $savedJobs[] = [
@@ -535,7 +536,7 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     fetch('apply_job.php', {
       method:'POST',
       headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'},
-      body:'job_id=' + window._applyingJobId + '&cover_letter=' + encodeURIComponent(cover)
+      body:'job_id=' + window._applyingJobId + '&cover_letter=' + encodeURIComponent(cover) + '&csrf_token=' + encodeURIComponent('<?= htmlspecialchars(csrfToken(), ENT_QUOTES) ?>')
     }).then(function(r){ return r.json(); }).then(function(d){
       window.closeModal();
       if (btn) { btn.disabled = false; btn.innerHTML = "<i class=\"fas fa-paper-plane\"></i> Submit Application"; }

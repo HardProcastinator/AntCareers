@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
+require_once dirname(__DIR__) . '/includes/auth_helpers.php';
 requireLogin('seeker');
 $user = getUser();
 $navActive = 'dashboard';
@@ -13,7 +14,8 @@ try {
 
     $sp = $db->prepare("
         SELECT headline, bio, phone,
-               linkedin_url, github_url, portfolio_url
+               linkedin_url, github_url, portfolio_url,
+               nr_classification
         FROM seeker_profiles WHERE user_id = :uid
     ");
     $sp->execute([':uid' => $uid]);
@@ -132,36 +134,73 @@ try {
     }
 
     // Recommended / latest jobs (exclude already-applied)
-    $stmtJobs = $db->prepare("
-        SELECT j.id, j.title, cp.company_name AS company,
-               j.location, j.setup, j.salary_min, j.salary_max,
-               j.skills_required, j.created_at
-        FROM jobs j
-        LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
-        WHERE j.status = 'active'
-           AND j.id NOT IN (SELECT job_id FROM applications WHERE seeker_id = :uid)
-        ORDER BY j.created_at DESC
-        LIMIT 6
-    ");
-    $stmtJobs->execute([':uid' => $uid]);
-    $jobRows = $stmtJobs->fetchAll(PDO::FETCH_ASSOC);
+    // Match by seeker's Classification of interest industry; fall back to recent jobs
+    $nrClass = $spRow['nr_classification'] ?? '';
+    $emDash = "\xE2\x80\x94"; // UTF-8 em dash
+    $classIndustry = $nrClass !== '' ? explode(" $emDash ", $nrClass, 2)[0] : '';
+    $jobRows = [];
+    if ($classIndustry !== '') {
+        $stmtJobs = $db->prepare("
+            SELECT j.id, j.title, cp.company_name AS company,
+                   j.employer_id, j.location, j.setup, j.salary_min, j.salary_max,
+                   j.salary_currency, j.job_type, j.experience_level, j.industry,
+                   j.description, j.skills_required, j.created_at, j.deadline
+            FROM jobs j
+            LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
+            WHERE j.status = 'active'
+               AND j.approval_status = 'approved'
+               AND j.industry = :industry
+               AND j.id NOT IN (SELECT job_id FROM applications WHERE seeker_id = :uid)
+            ORDER BY j.created_at DESC
+            LIMIT 6
+        ");
+        $stmtJobs->execute([':industry' => $classIndustry, ':uid' => $uid]);
+        $jobRows = $stmtJobs->fetchAll(PDO::FETCH_ASSOC);
+    }
+    if (empty($jobRows)) {
+        $stmtJobs = $db->prepare("
+            SELECT j.id, j.title, cp.company_name AS company,
+                   j.employer_id, j.location, j.setup, j.salary_min, j.salary_max,
+                   j.salary_currency, j.job_type, j.experience_level, j.industry,
+                   j.description, j.skills_required, j.created_at, j.deadline
+            FROM jobs j
+            LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
+            WHERE j.status = 'active'
+               AND j.approval_status = 'approved'
+               AND j.id NOT IN (SELECT job_id FROM applications WHERE seeker_id = :uid)
+            ORDER BY j.created_at DESC
+            LIMIT 6
+        ");
+        $stmtJobs->execute([':uid' => $uid]);
+        $jobRows = $stmtJobs->fetchAll(PDO::FETCH_ASSOC);
+    }
     foreach ($jobRows as $r) {
         $tags = $r['skills_required'] ? array_slice(array_map('trim', explode(',', $r['skills_required'])), 0, 3) : [];
         $salaryStr = '';
-        if ($r['salary_min'] && $r['salary_max']) {
-            $salaryStr = '&#8369;' . number_format($r['salary_min']/1000) . 'k – &#8369;' . number_format($r['salary_max']/1000) . 'k';
+        $cur = currencySymbol($r['salary_currency'] ?? 'PHP');
+        $sMin = is_numeric($r['salary_min']) ? (float)$r['salary_min'] : 0;
+        $sMax = is_numeric($r['salary_max']) ? (float)$r['salary_max'] : 0;
+        if ($sMin && $sMax) {
+            $salaryStr = $cur . number_format($sMin) . ' – ' . $cur . number_format($sMax);
+        } elseif ($sMin) {
+            $salaryStr = $cur . number_format($sMin) . '+';
         }
         $dayOld = (time() - strtotime($r['created_at'])) / 86400;
         $jobsData[] = [
-            'id'        => (int)$r['id'],
-            'title'     => $r['title'],
-            'company'   => $r['company'] ?? 'Company',
-            'location'  => $r['location'] ?? '',
-            'workSetup' => ucfirst($r['setup'] ?? 'On-site'),
-            'salary'    => $salaryStr,
-            'tags'      => $tags,
-            'isNew'     => $dayOld <= 3,
-            'saved'     => false,
+            'id'          => (int)$r['id'],
+            'employerId'  => (int)($r['employer_id'] ?? 0),
+            'title'       => $r['title'],
+            'company'     => $r['company'] ?? 'Company',
+            'location'    => $r['location'] ?? '',
+            'workSetup'   => ucfirst($r['setup'] ?? 'On-site'),
+            'jobType'     => $r['job_type'] ?? '',
+            'experience'  => $r['experience_level'] ?? '',
+            'industry'    => $r['industry'] ?? '',
+            'salary'      => $salaryStr,
+            'description' => $r['description'] ?? '',
+            'tags'        => $tags,
+            'isNew'       => $dayOld <= 3,
+            'saved'       => false,
         ];
     }
 } catch (\Throwable $e) {
@@ -252,21 +291,26 @@ $savedJobIdsJson = json_encode($savedJobIds);
     .prog-bar-sm{height:4px;background:var(--soil-hover);border-radius:3px;overflow:hidden;}.prog-fill-sm{height:100%;background:linear-gradient(90deg,var(--red-vivid),var(--red-bright));border-radius:3px;}
     .main-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
     .job-list{display:flex;flex-direction:column;gap:10px;}
-    .job-row{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:22px 24px;transition:all 0.18s;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;}
-    .job-row:hover{border-color:rgba(209,61,44,0.5);background:var(--soil-hover);transform:translateX(2px);}
-    .jr-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;}.jr-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:#F5F0EE;}
-    .jr-new{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:2px 7px;border-radius:3px;color:var(--red-pale);background:rgba(209,61,44,.1);border:1px solid rgba(209,61,44,.2);}
+    .job-row{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:22px 24px;cursor:pointer;transition:border-color 0.18s, transform 0.18s, box-shadow 0.18s;display:flex;gap:16px;align-items:flex-start;position:relative;}
+    .job-row:hover{border-color:rgba(209,61,44,0.45);transform:translateX(2px);box-shadow:0 4px 16px rgba(0,0,0,0.12);}
+    .jr-icon{width:40px;height:40px;border-radius:10px;flex-shrink:0;margin-top:1px;background:rgba(209,61,44,0.1);border:1px solid rgba(209,61,44,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--red-pale);}
+    .jr-left{flex:1;min-width:0;}
+    .jr-top{display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap;}
+    .jr-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:#F5F0EE;}
+    .jr-new{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:2px 7px;border-radius:4px;color:var(--red-pale);background:rgba(209,61,44,.1);border:1px solid rgba(209,61,44,.2);}
     .jr-new.green{color:#6ccf8a;background:rgba(76,175,112,.1);border-color:rgba(76,175,112,.2);}.jr-new.amber{color:var(--amber);background:rgba(212,148,58,.1);border-color:rgba(212,148,58,.2);}
     .jr-new.blue{color:#7ab8f0;background:rgba(74,144,217,.1);border-color:rgba(74,144,217,.2);}.jr-new.purple{color:#cf8ae0;background:rgba(156,39,176,.1);border-color:rgba(156,39,176,.2);}
-    .jr-meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:#927C7A;margin-bottom:8px;}.jr-meta span{display:flex;align-items:center;gap:4px;}.jr-meta i{font-size:10px;color:var(--red-bright);}
-    .jr-company{color:var(--red-pale);font-weight:600;}.jr-chips{display:flex;gap:4px;flex-wrap:wrap;align-items:flex-start;max-height:56px;overflow:hidden;}
-    .chip{font-size:11px;font-weight:500;padding:3px 8px;border-radius:4px;background:var(--soil-hover);color:#A09090;border:1px solid var(--soil-line);}
-    .job-row-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}.jr-salary{font-size:14px;font-weight:700;color:#F5F0EE;white-space:nowrap;}
-    .jr-actions{display:flex;gap:5px;flex-wrap:wrap;}.jr-btn{padding:5px 11px;border-radius:6px;background:transparent;border:1px solid var(--soil-line);color:var(--text-muted);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:0.18s;white-space:nowrap;}
-    .jr-btn:hover{background:var(--soil-hover);color:#F5F0EE;}.jr-apply{padding:6px 14px;border-radius:6px;background:var(--red-vivid);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:0.2s;}.jr-apply:hover{background:var(--red-bright);}
-    .jr-btn.saved{background:rgba(209,61,44,0.12);border-color:rgba(209,61,44,0.3);color:var(--red-pale);}
-    .jr-btn.saved:hover{background:rgba(209,61,44,0.18);color:#fff;}
-    .jr-btn.saved{background:rgba(209,61,44,0.12);border-color:rgba(209,61,44,0.3);color:var(--red-pale);}.jr-btn.saved:hover{background:rgba(209,61,44,0.18);color:#fff;}
+    .jr-meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--text-muted);margin-bottom:8px;}.jr-meta span{display:flex;align-items:center;gap:4px;white-space:nowrap;}.jr-meta i{font-size:10px;color:var(--red-bright);}
+    .jr-company{color:var(--red-pale);font-weight:600;}.jr-chips{display:flex;gap:5px;flex-wrap:wrap;}
+    .chip{font-size:11px;font-weight:500;padding:3px 8px;border-radius:4px;background:var(--soil-hover);color:var(--text-muted);border:1px solid var(--soil-line);letter-spacing:0.01em;white-space:nowrap;}
+    .job-row-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0;min-width:120px;}
+    .jr-salary{font-size:14px;font-weight:700;color:#F5F0EE;white-space:nowrap;letter-spacing:-0.01em;}
+    .jr-actions{display:flex;gap:8px;align-items:center;}
+    .jr-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--soil-line);background:var(--soil-hover);color:var(--text-muted);font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.18s;flex-shrink:0;}
+    .jr-btn:hover{border-color:rgba(209,61,44,0.5);color:var(--red-pale);background:rgba(209,61,44,0.08);}
+    .jr-apply{padding:7px 16px;border-radius:8px;background:var(--red-vivid);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:background 0.18s, transform 0.14s;white-space:nowrap;letter-spacing:0.02em;}
+    .jr-apply:hover:not(:disabled){background:var(--red-bright);transform:translateY(-1px);}
+    .jr-btn.saved{border-color:var(--red-vivid);color:var(--red-pale);background:rgba(209,61,44,0.12);}
     .featured-scroll{display:flex;gap:12px;overflow-x:auto;padding:4px 4px 16px 4px;margin:-4px -4px 0 -4px;scrollbar-width:none;}.featured-scroll::-webkit-scrollbar{display:none;}
     .featured-card{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:14px;padding:24px;min-width:280px;max-width:280px;min-height:220px;cursor:pointer;transition:all 0.25s;position:relative;overflow:hidden;flex-shrink:0;}
     .featured-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--red-vivid),var(--red-bright));}
@@ -280,10 +324,29 @@ $savedJobIdsJson = json_encode($savedJobIds);
     .qa-btn{display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;cursor:pointer;transition:all 0.2s;font-family:var(--font-body);color:var(--text-mid);font-size:13px;font-weight:600;text-decoration:none;}
     .qa-btn:hover{border-color:rgba(209,61,44,0.4);background:var(--soil-hover);color:#F5F0EE;transform:translateY(-1px);}
     .qa-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
-    .modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.82);backdrop-filter:blur(8px);align-items:center;justify-content:center;}.modal-overlay.open{display:flex;}
-    .modal-box{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:28px;max-width:540px;width:92%;position:relative;animation:modalIn 0.2s ease;box-shadow:0 40px 80px rgba(0,0,0,0.6);max-height:88vh;overflow-y:auto;}
+    .modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.78);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:20px;}.modal-overlay.open{display:flex;}
+    .modal-box{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:16px;padding:0;max-width:580px;width:100%;position:relative;animation:modalIn 0.22s ease;box-shadow:0 40px 80px rgba(0,0,0,0.6);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;}
+    .modal-scroll{overflow-y:auto;flex:1;padding:28px 28px 24px;}
+    @keyframes modalIn{from{opacity:0;transform:scale(0.96) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    .modal-header{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-right:28px;}
+    .modal-job-icon{width:52px;height:52px;border-radius:12px;flex-shrink:0;background:rgba(209,61,44,0.1);border:1px solid rgba(209,61,44,0.18);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--red-pale);}
+    .modal-job-title{font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--text-light);line-height:1.3;}
+    .modal-job-company{font-size:13px;color:var(--red-pale);font-weight:600;margin-top:3px;text-decoration:none;}
+    .modal-badges{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;}
+    .modal-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:5px 11px;border-radius:6px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-mid);}
+    .modal-badge i{font-size:10px;color:var(--red-pale);}
+    .modal-badge.salary{background:rgba(76,175,80,0.08);border-color:rgba(76,175,80,0.2);color:#6FCF77;}
+    .modal-badge.salary i{color:#6FCF77;}
+    .modal-desc{font-size:13px;color:var(--text-mid);line-height:1.75;margin-bottom:18px;white-space:pre-line;}
+    .modal-skills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px;}
+    .modal-footer-bar{display:flex;gap:10px;padding:16px 28px;border-top:1px solid var(--soil-line);background:var(--soil-card);flex-shrink:0;}
+    .modal-save-btn{width:44px;height:44px;border-radius:9px;border:1px solid var(--soil-line);background:var(--soil-hover);color:var(--text-muted);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.18s;flex-shrink:0;}
+    .modal-save-btn:hover{border-color:rgba(209,61,44,0.5);color:var(--red-pale);background:rgba(209,61,44,0.08);}
+    .modal-save-btn.saved{border-color:var(--red-vivid);color:var(--red-pale);background:rgba(209,61,44,0.12);}
+    .modal-apply-btn{flex:1;padding:12px 20px;border-radius:9px;background:var(--red-vivid);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:background 0.18s, transform 0.14s;display:flex;align-items:center;justify-content:center;gap:7px;}
+    .modal-apply-btn:hover:not(:disabled){background:var(--red-bright);transform:translateY(-1px);}
     @keyframes modalIn{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}
-    .modal-close{position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:6px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.15s;}.modal-close:hover{color:#F5F0EE;}
+    .modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.15s;z-index:2;}.modal-close:hover{color:#F5F0EE;border-color:var(--red-mid);background:rgba(209,61,44,0.08);}
     .footer{border-top:1px solid var(--soil-line);padding:20px 24px;max-width:1380px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;color:var(--text-muted);font-size:12px;position:relative;z-index:2;flex-wrap:wrap;gap:10px;}
     .footer-logo{font-family:var(--font-display);font-weight:700;color:var(--red-pale);font-size:15px;}
     @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
@@ -294,7 +357,7 @@ $savedJobIdsJson = json_encode($savedJobIds);
     body.light .sb-nav-item:hover{color:#1A0A09;background:#FEF0EE;}body.light .sb-nav-item.active{color:var(--red-mid);}body.light .search-greeting{color:#1A0A09;}body.light .sec-title{color:#1A0A09;}
     body.light .sum-card{background:#FFFFFF;border-color:#E0CECA;}body.light .sc-num{color:#1A0A09;}body.light .job-row{background:#FFFFFF;border-color:#E0CECA;}body.light .job-row:hover{background:#FEF0EE;}
     body.light .jr-title{color:#1A0A09;}body.light .jr-salary{color:#1A0A09;}body.light .chip{background:#F5EEEC;border-color:#E0CECA;color:#5A3838;}body.light .featured-card{background:#FFFFFF;border-color:#E0CECA;}body.light .fc-title{color:#1A0A09;}
-    body.light .qa-btn{background:#FFFFFF;border-color:#E0CECA;color:#4A2828;}body.light .qa-btn:hover{background:#FEF0EE;color:#1A0A09;}body.light .modal-box{background:#FFFFFF;border-color:#E0CECA;}
+    body.light .qa-btn{background:#FFFFFF;border-color:#E0CECA;color:#4A2828;}body.light .qa-btn:hover{background:#FEF0EE;color:#1A0A09;}body.light .modal-box{background:#FFFFFF;border-color:#E0CECA;}body.light .modal-footer-bar{background:#FFFFFF;border-color:#E0CECA;}
     body.light .jr-btn:hover{background:#FEF0EE;color:var(--red-vivid);border-color:var(--red-vivid);}
     body.light .jr-btn.saved{background:rgba(209,61,44,0.08);color:var(--red-vivid);}body.light .jr-btn.saved:hover{background:rgba(209,61,44,0.15);color:#B83525;}
     body.light .sc-btn:hover{background:#FEF0EE;border-color:var(--red-vivid);color:var(--red-vivid);}
@@ -382,7 +445,7 @@ $savedJobIdsJson = json_encode($savedJobIds);
 </footer>
 
 <div class="modal-overlay" id="jobModal">
-  <div class="modal-box"><button class="modal-close" id="closeModal"><i class="fas fa-times"></i></button><div id="modalBody"></div></div>
+  <div class="modal-box"><button class="modal-close" id="closeModal"><i class="fas fa-times"></i></button><div class="modal-scroll" id="modalBody"></div><div class="modal-footer-bar" id="modalFooter"></div></div>
 </div>
 
 <script>
@@ -390,6 +453,7 @@ const applicationsData = <?= $appsJson ?>;
 const interviewsData   = <?= $interviewsJson ?>;
 const jobsData         = <?= $jobsJson ?>;
 const savedJobs        = new Set(<?= $savedJobIdsJson ?>);
+const DASH_CSRF_TOKEN  = '<?= htmlspecialchars(csrfToken(), ENT_QUOTES) ?>';
 let currentApplyJobId  = null;
 
 function escHtmlD(s){ if(!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
@@ -423,13 +487,13 @@ if(iv.type==='Online'){
   if(iv.contactPerson) parts.push(`<span style="color:var(--text-muted);">Contact: ${escHtmlD(iv.contactPerson)}</span>`);
   if(parts.length) detail=`<div style="margin-top:6px;font-size:11px;display:flex;flex-direction:column;gap:2px;">${parts.join('')}</div>`;
 }
-return `<div class="featured-card"><div class="fc-badge green"><i class="fas fa-calendar-check"></i> Scheduled</div><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:36px;height:36px;border-radius:50%;background:${iv.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;">${iv.company.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div><div class="fc-title" style="font-size:13px;">${escHtmlD(iv.company)}</div><div class="fc-company">${escHtmlD(iv.role)}</div></div></div><div style="background:rgba(209,61,44,0.08);border:1px solid rgba(209,61,44,0.18);border-radius:6px;padding:8px 12px;margin-bottom:8px;"><div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text-light);line-height:1;">${iv.mon} ${iv.day}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><i class="fas fa-clock" style="color:var(--red-bright);margin-right:3px;"></i>${iv.time}</div></div><div class="fc-chips"><span class="chip" style="border-color:${typeColor};"><i class="fas ${iv.icon}" style="margin-right:3px;color:${typeColor};"></i>${iv.type}</span></div>${detail}<div class="fc-footer"><button class="jr-btn" style="font-size:10px;" onclick="window.location.href='antcareers_seekerApplications.php?tab=interview'">View Details</button></div></div>`;}).join('');}
+return `<div class="featured-card"><div class="fc-badge green"><i class="fas fa-calendar-check"></i> Scheduled</div><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:36px;height:36px;border-radius:50%;background:${iv.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;">${iv.company.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div><div class="fc-title" style="font-size:13px;">${escHtmlD(iv.company)}</div><div class="fc-company">${escHtmlD(iv.role)}</div></div></div><div style="background:rgba(209,61,44,0.08);border:1px solid rgba(209,61,44,0.18);border-radius:6px;padding:8px 12px;margin-bottom:8px;"><div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text-light);line-height:1;">${iv.mon} ${iv.day}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><i class="fas fa-clock" style="color:var(--red-bright);margin-right:3px;"></i>${iv.time}</div></div><div class="fc-chips"><span class="chip" style="border-color:${typeColor};"><i class="fas ${iv.icon}" style="margin-right:3px;color:${typeColor};"></i>${iv.type}</span></div>${detail}<div class="fc-footer"><button class="fc-action" onclick="window.location.href='antcareers_seekerApplications.php?tab=interview'">View Details</button></div></div>`;}).join('');}
 
 function renderJobs() {
   document.getElementById('jobsContainer').innerHTML = jobsData.map((j,i)=>{
     const isSaved = savedJobs.has(j.id) || !!j.saved;
-    const iconClass = isSaved ? 'fas fa-heart' : 'far fa-heart';
-    return `<div class="job-row" style="animation:fadeUp 0.3s ${i*0.04}s both ease;"><div><div class="jr-top"><div class="jr-title">${j.title}</div>${j.isNew?'<span class="jr-new">New</span>':''}</div><div class="jr-meta"><span class="jr-company"><i class="fas fa-building"></i> ${j.company}</span><span><i class="fas fa-map-marker-alt"></i> ${j.location}</span><span><i class="fas fa-laptop-house"></i> ${j.workSetup}</span></div><div class="jr-chips">${j.tags.map(t=>`<span class="chip">${t}</span>`).join('')}</div></div><div class="job-row-right"><div class="jr-salary">${j.salary}</div><div class="jr-actions"><button class="jr-btn ${isSaved ? 'saved' : ''}" data-saved="${isSaved ? 'true' : 'false'}" title="${isSaved ? 'Unsave job' : 'Save job'}" aria-label="${isSaved ? 'Unsave' : 'Save'}" onclick="event.stopPropagation(); toggleSave(${j.id}, this)"><i class="${iconClass}"></i></button><button class="jr-apply" onclick="event.stopPropagation();openApplyModal(${j.id})">Apply</button></div></div></div>`;
+    const tags = (j.tags || []).slice(0, 4).map(t=>`<span class="chip">${escHtmlD(t)}</span>`).join('');
+    return `<div class="job-row" style="animation:fadeUp 0.28s ${i*0.04}s both ease;" onclick="openJobDetailModal(${j.id})"><div class="jr-icon"><i class="fas ${jobIcon(j.industry)}"></i></div><div class="jr-left"><div class="jr-top"><div class="jr-title">${escHtmlD(j.title)}</div>${j.isNew?'<span class="jr-new">New</span>':''}</div><div class="jr-meta"><span class="jr-company"><i class="fas fa-building"></i>${escHtmlD(j.company)}</span><span><i class="fas fa-map-marker-alt"></i>${escHtmlD(j.location)}</span><span><i class="fas fa-laptop-house"></i>${escHtmlD(j.workSetup)}</span>${j.jobType?`<span><i class="fas fa-briefcase"></i>${escHtmlD(j.jobType)}</span>`:''}</div>${tags?`<div class="jr-chips">${tags}</div>`:''}</div><div class="job-row-right"><div class="jr-salary">${escHtmlD(j.salary) || 'Not disclosed'}</div><div class="jr-actions"><button class="jr-btn ${isSaved?'saved':''}" title="${isSaved?'Unsave':'Save job'}" onclick="event.stopPropagation(); toggleSave(${j.id}, this)"><i class="fas fa-heart"></i></button><button class="jr-apply" onclick="event.stopPropagation();openApplyModal(${j.id})">Apply</button></div></div></div>`;
   }).join('');
 }
 
@@ -467,18 +531,64 @@ async function toggleSave(jobId, btn) {
   }
 }
 
+function jobIcon(industry) {
+  const m = { Tech:'fa-laptop-code', Finance:'fa-chart-line', Healthcare:'fa-heartbeat',
+              Marketing:'fa-bullhorn', Design:'fa-palette', Education:'fa-graduation-cap',
+              Engineering:'fa-cogs', Sales:'fa-handshake' };
+  return m[industry] || 'fa-briefcase';
+}
+
+function openJobDetailModal(id) {
+  const j = jobsData.find(x => x.id === id);
+  if (!j) return;
+  const isSaved = savedJobs.has(j.id);
+  const tags = (j.tags || []).map(t => `<span class="chip">${escHtmlD(t)}</span>`).join('');
+  const box = document.getElementById('modalBody');
+  box.innerHTML = `
+    <div class="modal-header">
+      <div class="modal-job-icon"><i class="fas ${jobIcon(j.industry)}"></i></div>
+      <div style="min-width:0;">
+        <div class="modal-job-title">${escHtmlD(j.title)}</div>
+        <a class="modal-job-company" href="public_company_profile.php?employer_id=${j.employerId}" onclick="event.stopPropagation()">${escHtmlD(j.company)}</a>
+      </div>
+    </div>
+    <div class="modal-badges">
+      <span class="modal-badge"><i class="fas fa-map-marker-alt"></i>${escHtmlD(j.location)}</span>
+      ${j.jobType ? `<span class="modal-badge"><i class="fas fa-briefcase"></i>${escHtmlD(j.jobType)}</span>` : ''}
+      <span class="modal-badge"><i class="fas fa-laptop-house"></i>${escHtmlD(j.workSetup)}</span>
+      ${j.experience ? `<span class="modal-badge"><i class="fas fa-layer-group"></i>${escHtmlD(j.experience)}</span>` : ''}
+      <span class="modal-badge salary"><i class="fas fa-money-bill-wave"></i>${escHtmlD(j.salary) || 'Not disclosed'}</span>
+    </div>
+    ${j.description ? `<div class="modal-desc">${escHtmlD(j.description)}</div>` : ''}
+    ${tags ? `<div class="modal-skills">${tags}</div>` : ''}`;
+  document.getElementById('modalFooter').innerHTML = `
+    <button class="modal-save-btn ${isSaved ? 'saved' : ''}" title="${isSaved ? 'Unsave' : 'Save job'}" onclick="toggleSave(${j.id}, this)"><i class="fas fa-heart"></i></button>
+    <button class="modal-apply-btn" onclick="openApplyModal(${j.id})"><i class="fas fa-paper-plane"></i> Apply Now</button>`;
+  document.getElementById('modalFooter').style.display = '';
+  document.getElementById('jobModal').classList.add('open');
+}
+
 function openApplyModal(jobId) {
   currentApplyJobId = jobId;
   const j = jobsData.find(x => x.id === jobId);
   if (!j) return;
 
+  document.getElementById('modalFooter').style.display = 'none';
   document.getElementById('modalBody').innerHTML = `
     <div class="sec-title" style="font-size:22px;margin-bottom:10px;"><i class="fas fa-paper-plane"></i> Quick Apply</div>
     <div style="font-size:16px;font-weight:700;color:var(--text-light);margin-bottom:6px;">${escHtmlD(j.title)}</div>
     <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">${escHtmlD(j.company)} · ${escHtmlD(j.location)} · ${escHtmlD(j.workSetup)}</div>
-    <label style="display:block;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Cover Letter (Optional)</label>
-    <textarea id="dashApplyCover" rows="5" style="width:100%;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:10px 12px;color:var(--text-light);font-family:var(--font-body);font-size:13px;resize:vertical;outline:none;" placeholder="Tell the employer why you're a great fit..."></textarea>
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Cover Letter (Optional)</label>
+      <textarea id="dashApplyCover" rows="5" style="width:100%;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:10px 12px;color:var(--text-light);font-family:var(--font-body);font-size:13px;resize:vertical;outline:none;" placeholder="Tell the employer why you're a great fit..."></textarea>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Resume / CV</label>
+      <select style="width:100%;padding:10px 12px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;font-family:var(--font-body);font-size:13px;color:var(--text-mid);outline:none;cursor:pointer;">
+        <option value="profile">Use resume from my profile</option>
+      </select>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--soil-line);">
       <button class="jr-btn" onclick="closeApplyModal()">Cancel</button>
       <button class="jr-apply" id="dashApplySubmit" onclick="submitDashboardApply()"><i class="fas fa-paper-plane"></i> Submit Application</button>
     </div>`;
@@ -502,6 +612,7 @@ async function submitDashboardApply() {
   const fd = new FormData();
   fd.append('job_id', String(currentApplyJobId));
   fd.append('cover_letter', document.getElementById('dashApplyCover')?.value || '');
+  fd.append('csrf_token', DASH_CSRF_TOKEN);
 
   try {
     const res = await fetch('apply_job.php', { method:'POST', body:fd });

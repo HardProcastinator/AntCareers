@@ -167,12 +167,12 @@ foreach ($rows as $r) {
 
     // Salary string
     if ($r['salary_min'] && $r['salary_max']) {
-        $cur    = $r['salary_currency'] === 'PHP' ? '₱' : $r['salary_currency'];
-        $salary = $cur . number_format((float)$r['salary_min'] / 1000, 0) . 'k – '
-                . $cur . number_format((float)$r['salary_max'] / 1000, 0) . 'k';
+        $cur    = currencySymbol($r['salary_currency'] ?? 'PHP');
+        $salary = $cur . number_format((float)$r['salary_min']) . ' – '
+                . $cur . number_format((float)$r['salary_max']);
     } elseif ($r['salary_min']) {
-        $cur    = $r['salary_currency'] === 'PHP' ? '₱' : $r['salary_currency'];
-        $salary = $cur . number_format((float)$r['salary_min'] / 1000, 0) . 'k+';
+        $cur    = currencySymbol($r['salary_currency'] ?? 'PHP');
+        $salary = $cur . number_format((float)$r['salary_min']) . '+';
     } else {
         $salary = 'Salary not disclosed';
     }
@@ -676,6 +676,8 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
         // Remove from local array and re-render
         const idx = applications.findIndex(a => a.id === pendingWithdrawId);
         if (idx !== -1) applications.splice(idx, 1);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-times"></i> Withdraw';
         closeWithdraw();
         updateCounts();
         renderApps();

@@ -244,7 +244,7 @@ CREATE TABLE `jobs` (
   `job_type` enum('Full-time','Part-time','Contract','Freelance','Internship','Remote') NOT NULL DEFAULT 'Full-time',
   `setup` enum('On-site','Remote','Hybrid') NOT NULL DEFAULT 'On-site',
   `status` enum('Active','Closed','Draft') NOT NULL DEFAULT 'Active',
-  `approval_status` enum('pending','approved','rejected') NOT NULL DEFAULT 'approved',
+  `approval_status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
   `deadline` date DEFAULT NULL,
   `salary_min` decimal(10,2) DEFAULT NULL,
   `salary_max` decimal(10,2) DEFAULT NULL,

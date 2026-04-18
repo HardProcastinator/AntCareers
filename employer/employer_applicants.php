@@ -832,7 +832,7 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     });
   }
 
-  function doPost(data,cb){var b=Object.keys(data).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(data[k]);}).join('&');fetch('employer_applicants.php',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b}).then(function(r){return r.json();}).then(cb).catch(function(){toast('Network error','err');});}
+  function doPost(data,cb){var b=Object.keys(data).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(data[k]);}).join('&');fetch('employer_applicants.php',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b}).then(function(r){return r.json();}).then(cb).catch(function(){toast('Network error','err');cb({ok:false,msg:'Network error'});});}
   // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
   const _guard_iModal = document.getElementById('iModal'); if (_guard_iModal) _guard_iModal.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
   const _guard_dModal = document.getElementById('dModal'); if (_guard_dModal) _guard_dModal.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});

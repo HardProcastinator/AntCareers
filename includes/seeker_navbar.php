@@ -297,12 +297,12 @@ function _navHref(string $file): string {
 
       <button class="msg-btn-nav" id="msgToggle" data-msg-trigger title="Messages">
         <i class="fas fa-envelope"></i>
-        <span class="badge" id="seekerMsgBadge" style="display:none">0</span>
+        <span class="badge" id="seekerMsgBadge" style="visibility:hidden;opacity:0">0</span>
       </button>
 
       <button class="notif-btn-nav" id="notifToggle" data-notif-trigger title="Notifications">
         <i class="fas fa-bell"></i>
-        <span class="badge" id="seekerNotifBadge" style="display:none">0</span>
+        <span class="badge" id="seekerNotifBadge" style="visibility:hidden;opacity:0">0</span>
       </button>
 
       <!-- Profile dropdown: account actions only -->
@@ -796,8 +796,8 @@ function _navHref(string $file): string {
         if (!data.success) return;
         var mb = document.getElementById('seekerMsgBadge');
         var nb = document.getElementById('seekerNotifBadge');
-        if (mb) { mb.textContent = data.messages || 0; mb.style.display = data.messages > 0 ? '' : 'none'; }
-        if (nb) { nb.textContent = data.notifications || 0; nb.style.display = data.notifications > 0 ? '' : 'none'; }
+        if (mb) { mb.textContent = data.messages || 0; mb.style.visibility = data.messages > 0 ? 'visible' : 'hidden'; mb.style.opacity = data.messages > 0 ? '1' : '0'; }
+        if (nb) { nb.textContent = data.notifications || 0; nb.style.visibility = data.notifications > 0 ? 'visible' : 'hidden'; nb.style.opacity = data.notifications > 0 ? '1' : '0'; }
       })
       .catch(function () {});
   }

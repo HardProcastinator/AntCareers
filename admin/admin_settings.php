@@ -21,14 +21,13 @@ $userEmail = (string)($_SESSION['email'] ?? '');
 $adminId   = (int)$_SESSION['user_id'];
 
 $db = getDB();
+require_once dirname(__DIR__) . '/includes/admin_notif_panel.php';
 
 // ── Helper: count query ──
 $countValue = static function (string $sql) use ($db): int {
   try { return (int)$db->query($sql)->fetchColumn(); }
   catch (PDOException $e) { return 0; }
 };
-
-$unreadNotifs = $countValue("SELECT COUNT(*) FROM notifications WHERE user_id={$adminId} AND is_read=0");
 
 // ── Ensure tables & columns exist ──
 function settings_table_has_column(PDO $db, string $table, string $column): bool
@@ -425,18 +424,17 @@ if (isset($_GET['pw'])) {
     <div class="nav-links">
       <a class="nav-link" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
       <a class="nav-link" href="admin_users.php"><i class="fas fa-users"></i> Users</a>
-      <a class="nav-link" href="admin_companies.php"><i class="fas fa-building"></i> Companies</a>
-      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs</a>
+      <a class="nav-link" href="admin_companies.php"><i class="fas fa-building"></i> Companies<?php if($adminPendingCompanies>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingCompanies; ?></span><?php endif; ?></a>
+      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminPendingJobs>0): ?> <span style="background:var(--amber);color:#1A0A09;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingJobs; ?></span><?php endif; ?></a>
       <a class="nav-link" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
       <a class="nav-link" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
     </div>
     <div class="nav-right">
       <button class="theme-btn" id="themeToggle"><i class="fas fa-sun"></i></button>
-      <a class="notif-btn-nav" href="admin_notifications.php" title="Admin Notifications">
+      <button class="notif-btn-nav" id="navNotifBtn" onclick="toggleAdminNotifPanel()" title="Admin Notifications">
         <i class="fas fa-bell"></i>
-        <?php if($unreadNotifs>0): ?><span class="badge"><?php echo $unreadNotifs; ?></span><?php endif; ?>
-      </a>
-      <span class="admin-pill"><i class="fas fa-shield-alt"></i> Admin</span>
+        <?php if ($adminUnreadCount > 0): ?><span class="badge" id="adminNotifBadge"><?php echo $adminUnreadCount; ?></span><?php endif; ?>
+      </button>
       <div class="profile-wrap" id="profileWrap">
         <button class="profile-btn" id="profileToggle">
           <div class="profile-avatar"><?php echo htmlspecialchars($initials, ENT_QUOTES); ?></div>
@@ -820,6 +818,7 @@ if (isset($_GET['pw'])) {
   };
 })();
 </script>
+<?php renderAdminNotifPanel(); ?>
 <?php require_once dirname(__DIR__) . '/includes/toast.php'; ?>
 </body>
 </html>

@@ -13,11 +13,12 @@ $initials  = count($nameParts) >= 2
     ? strtoupper(substr($nameParts[0],0,1).substr($nameParts[1],0,1))
     : strtoupper(substr($fullName,0,2));
 $db = getDB();
+require_once dirname(__DIR__) . '/includes/admin_notif_panel.php';
 
 try {
     $pendingJobs = $db->query(
       "SELECT j.id, j.title, j.description, j.location, j.job_type AS type,
-             CONCAT(j.salary_currency,' ',FORMAT(j.salary_min,0),'–',FORMAT(j.salary_max,0)) AS salary_range, j.deadline, j.created_at,
+             j.salary_currency, j.salary_min, j.salary_max, j.deadline, j.created_at,
               u.full_name, u.company_name, u.email
        FROM jobs j
        JOIN users u ON u.id = j.employer_id
@@ -52,8 +53,6 @@ $pendingCount  = count($pendingJobs);
 $approvedCount = count($approvedJobs);
 $rejectedCount = count($rejectedJobs);
 
-$unread = 0;
-try { $unread = (int)$db->query("SELECT COUNT(*) FROM notifications WHERE user_id={$adminId} AND is_read=0")->fetchColumn(); } catch (Throwable) {}
 $pendingCompanies = 0;
 try { $pendingCompanies = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER(account_type)='employer' AND account_status='pending_approval'")->fetchColumn(); } catch (Throwable) {}
 $totalRecruiters = 0;
@@ -254,18 +253,17 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     <div class="nav-links">
       <a class="nav-link" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
       <a class="nav-link" href="admin_users.php"><i class="fas fa-users"></i> Users</a>
-      <a class="nav-link" href="admin_companies.php"><i class="fas fa-building"></i> Companies</a>
-      <a class="nav-link active" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs</a>
+      <a class="nav-link" href="admin_companies.php"><i class="fas fa-building"></i> Companies<?php if($adminPendingCompanies>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingCompanies; ?></span><?php endif; ?></a>
+      <a class="nav-link active" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminPendingJobs>0): ?> <span style="background:var(--amber);color:#1A0A09;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingJobs; ?></span><?php endif; ?></a>
       <a class="nav-link" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
       <a class="nav-link" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
     </div>
     <div class="nav-right">
       <button class="theme-btn" id="themeToggle"><i class="fas fa-moon"></i></button>
-      <a class="notif-btn-nav" href="admin_notifications.php" title="Notifications">
+      <button class="notif-btn-nav" id="navNotifBtn" onclick="toggleAdminNotifPanel()" title="Notifications">
         <i class="fas fa-bell"></i>
-        <?php if($unread > 0): ?><span class="badge"><?php echo $unread; ?></span><?php endif; ?>
-      </a>
-      <span class="admin-pill"><i class="fas fa-shield-alt"></i> Admin</span>
+        <?php if ($adminUnreadCount > 0): ?><span class="badge" id="adminNotifBadge"><?php echo $adminUnreadCount; ?></span><?php endif; ?>
+      </button>
       <div class="profile-wrap" id="profileWrap">
         <button class="profile-btn" id="profileToggle">
           <div class="profile-avatar"><?php echo htmlspecialchars($initials, ENT_QUOTES); ?></div>
@@ -341,7 +339,16 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
                     <span class="jr-company"><i class="fas fa-building"></i> <?php echo htmlspecialchars((string)($j['company_name'] ?? ''), ENT_QUOTES); ?></span>
                     <?php if (!empty($j['location'])): ?><span><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars((string)$j['location'], ENT_QUOTES); ?></span><?php endif; ?>
                     <?php if (!empty($j['type'])): ?><span><i class="fas fa-clock"></i> <?php echo htmlspecialchars((string)$j['type'], ENT_QUOTES); ?></span><?php endif; ?>
-                    <?php if (!empty($j['salary_range'])): ?><span><i class="fas fa-money-bill-wave"></i> <?php echo htmlspecialchars((string)$j['salary_range'], ENT_QUOTES); ?></span><?php endif; ?>
+                    <?php
+                      $salRange = '';
+                      if (!empty($j['salary_min']) || !empty($j['salary_max'])) {
+                          $cur = currencySymbol($j['salary_currency'] ?? 'PHP');
+                          $mn = $j['salary_min'] ? number_format((float)$j['salary_min']) : '';
+                          $mx = $j['salary_max'] ? number_format((float)$j['salary_max']) : '';
+                          $salRange = $mn && $mx ? "{$cur}{$mn}–{$mx}" : ($mn ? "{$cur}{$mn}+" : "{$cur}{$mx}");
+                      }
+                    ?>
+                    <?php if ($salRange): ?><span><i class="fas fa-money-bill-wave"></i> <?php echo htmlspecialchars($salRange, ENT_QUOTES); ?></span><?php endif; ?>
                     <?php if (!empty($j['deadline'])): ?><span><i class="fas fa-calendar-times"></i> Deadline: <?php echo htmlspecialchars(date('M j, Y', strtotime((string)$j['deadline'])), ENT_QUOTES); ?></span><?php endif; ?>
                     <span><i class="fas fa-calendar-plus"></i> Posted: <?php echo htmlspecialchars(date('M j, Y', strtotime((string)($j['created_at'] ?? 'now'))), ENT_QUOTES); ?></span>
                   </div>
@@ -428,6 +435,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
   </div>
 </div>
 
+<?php renderAdminNotifPanel(); ?>
 <?php require_once dirname(__DIR__) . '/includes/toast.php'; ?>
 
 <script>

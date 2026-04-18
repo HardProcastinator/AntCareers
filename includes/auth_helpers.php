@@ -60,18 +60,20 @@ function verifyCsrf(string $submitted): void
  */
 function isRateLimited(string $email, string $ip): bool
 {
-    $db     = getDB();
-    $window = date('Y-m-d H:i:s', time() - (LOCKOUT_MINUTES * 60));
+    $db = getDB();
+    // Use MySQL's NOW() so the window comparison stays in the same timezone
+    // as the attempted_at DEFAULT current_timestamp() values.
+    $lockout = (int) LOCKOUT_MINUTES;
 
     // Per-email lockout: prevents brute-forcing a specific account.
     $stmt = $db->prepare(
-        'SELECT COUNT(*) AS cnt
+        "SELECT COUNT(*) AS cnt
          FROM   login_attempts
          WHERE  success      = 0
-           AND  attempted_at > :window
-           AND  email        = :email'
+           AND  attempted_at > NOW() - INTERVAL {$lockout} MINUTE
+           AND  email        = :email"
     );
-    $stmt->execute([':window' => $window, ':email' => $email]);
+    $stmt->execute([':email' => $email]);
     $row = $stmt->fetch();
     if ((int)($row['cnt'] ?? 0) >= MAX_LOGIN_ATTEMPTS) {
         return true;
@@ -79,13 +81,13 @@ function isRateLimited(string $email, string $ip): bool
 
     // Per-IP lockout: higher threshold to avoid false positives on shared/NAT IPs.
     $stmt = $db->prepare(
-        'SELECT COUNT(*) AS cnt
+        "SELECT COUNT(*) AS cnt
          FROM   login_attempts
          WHERE  success      = 0
-           AND  attempted_at > :window
-           AND  ip_address   = :ip'
+           AND  attempted_at > NOW() - INTERVAL {$lockout} MINUTE
+           AND  ip_address   = :ip"
     );
-    $stmt->execute([':window' => $window, ':ip' => $ip]);
+    $stmt->execute([':ip' => $ip]);
     $row = $stmt->fetch();
 
     return (int)($row['cnt'] ?? 0) >= (MAX_LOGIN_ATTEMPTS * 3);

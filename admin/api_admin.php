@@ -20,6 +20,33 @@ if (empty($_SESSION['user_id']) || strtolower((string)($_SESSION['account_type']
     exit(json_encode(['success' => false, 'message' => 'Unauthorized.']));
 }
 
+// ── GET requests — read-only data fetching ───────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $getAction = (string)($_GET['action'] ?? '');
+    $adminId   = (int)$_SESSION['user_id'];
+    $db        = getDB();
+
+    if ($getAction === 'get_notifications') {
+        try {
+            $stmt = $db->prepare(
+                "SELECT n.id, n.type, n.content, n.reference_id, n.reference_type, n.is_read, n.created_at
+                 FROM notifications n
+                 WHERE n.user_id = :uid
+                 ORDER BY n.created_at DESC LIMIT 30"
+            );
+            $stmt->execute([':uid' => $adminId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            exit(json_encode(['success' => true, 'notifications' => $rows]));
+        } catch (Throwable $e) {
+            error_log('[AntCareers] api_admin get_notifications: ' . $e->getMessage());
+            exit(json_encode(['success' => false, 'notifications' => []]));
+        }
+    }
+
+    http_response_code(400);
+    exit(json_encode(['success' => false, 'message' => 'Unknown GET action.']));
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     exit(json_encode(['success' => false, 'message' => 'Method not allowed.']));

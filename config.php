@@ -46,6 +46,62 @@ define('MAX_LOGIN_ATTEMPTS',          5);  // Failed attempts before lockout
 define('LOCKOUT_MINUTES',            15);  // How long the lockout lasts
 define('MAX_UPLOAD_BYTES',    5 * 1024 * 1024);  // Maximum upload file size (5 MB)
 
+// ── Currency symbol map ───────────────────────────────────────────────────────
+const CURRENCY_SYMBOLS = [
+    'EUR' => '€',
+    'USD' => '$',
+    'PHP' => '₱',
+    'GBP' => '£',
+    'JPY' => '¥',
+    'KRW' => '₩',
+    'INR' => '₹',
+    'CNY' => '¥',
+    'THB' => '฿',
+    'TRY' => '₺',
+    'UAH' => '₴',
+    'PLN' => 'zł',
+    'ILS' => '₪',
+    'VND' => '₫',
+    'NGN' => '₦',
+    'GHS' => '₵',
+    'CRC' => '₡',
+    'KZT' => '₸',
+    'MNT' => '₮',
+    'LAK' => '₭',
+    'PYG' => '₲',
+    'RUB' => '₽',
+    'GEL' => '₾',
+    'AFN' => '؋',
+    'KHR' => '៛',
+    'BDT' => '৳',
+    'BRL' => 'R$',
+    'ZAR' => 'R',
+    'TWD' => 'NT$',
+    'HKD' => 'HK$',
+    'SGD' => 'S$',
+    'AUD' => 'A$',
+    'CAD' => 'C$',
+    'NZD' => 'NZ$',
+    'MXN' => 'MX$',
+    'ARS' => 'AR$',
+    'CLP' => 'CL$',
+    'COP' => 'COL$',
+    'IDR' => 'Rp',
+    'MYR' => 'RM',
+    'PKR' => '₨',
+    'LKR' => '₨',
+    'NPR' => '₨',
+    'SCR' => '₨',
+    'MUR' => '₨',
+    'EGP' => 'E£',
+    'CZK' => 'Kč',
+    'HUF' => 'Ft',
+    'MMK' => 'K',
+];
+function currencySymbol(string $code): string {
+    return CURRENCY_SYMBOLS[$code] ?? ($code . ' ');
+}
+
 // ── Session bootstrap ─────────────────────────────────────────────────────────
 // Must be called before any output. All auth/*.php files rely on $_SESSION.
 if (session_status() === PHP_SESSION_NONE) {

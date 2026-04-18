@@ -62,9 +62,10 @@ $platformStats = getPublicPlatformStats();
     html.dark-init .btn-text, body.dark .btn-text { color:var(--text-muted); }
     html.dark-init .btn-text:hover, body.dark .btn-text:hover { color:var(--text); }
     html.dark-init .info-box, body.dark .info-box { background:rgba(74,144,217,0.1); border-color:rgba(74,144,217,0.25); color:#8ABCE8; }
-    html.dark-init .terms-notice a, body.dark .terms-notice a { color:var(--red-pale); }
     html.dark-init .signup-link a, body.dark .signup-link a { color:var(--red-pale); }
-    html.dark-init .forgot-link, body.dark .forgot-link { color:var(--red-pale); }
+    html.dark-init .err-banner.err-pending, body.dark .err-banner.err-pending { background:rgba(212,148,58,0.12); border-color:rgba(212,148,58,0.3); color:#E8B44A; }
+    html.dark-init .err-banner.err-banned, body.dark .err-banner.err-banned { background:rgba(209,61,44,0.15); border-color:rgba(209,61,44,0.4); color:var(--red-pale); }
+    html.dark-init .err-banner.err-suspended, body.dark .err-banner.err-suspended { background:rgba(209,61,44,0.15); border-color:rgba(209,61,44,0.4); color:var(--red-pale); }
     html.dark-init .right-title, body.dark .right-title { color:var(--text); }
     html.dark-init .right-sub, body.dark .right-sub { color:var(--text-muted); }
     html.dark-init .divider, body.dark .divider { color:var(--text-muted); }
@@ -136,13 +137,15 @@ $platformStats = getPublicPlatformStats();
     /* Forgot password row */
     .field-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
     .field-header label { font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--text-mid); }
-    .forgot-link { font-size:12px; font-weight:600; color:var(--red-vivid); text-decoration:none; transition:color .15s; }
-    .forgot-link:hover { color:var(--red-bright); }
 
     /* Error banner */
     .err-banner { background:#FFF5F4; border:1px solid #F0C8C4; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:var(--red-vivid); font-weight:500; display:none; align-items:center; gap:9px; }
     .err-banner.show { display:flex; }
     .err-banner i { flex-shrink:0; }
+    .err-banner.err-pending { background:#FFF8EE; border-color:#F0D8A8; color:#B8860B; }
+    .err-banner.err-pending i { color:#D4943A; }
+    .err-banner.err-suspended { background:#FFF0EE; border-color:#F0B8B4; color:#C0392B; }
+    .err-banner.err-banned { background:#FFF0EE; border-color:#F0B8B4; color:#C0392B; }
 
     /* Remember me */
     .remember-row { display:flex; align-items:center; gap:9px; margin-bottom:4px; }
@@ -162,19 +165,6 @@ $platformStats = getPublicPlatformStats();
     .signup-link { text-align:center; margin-top:22px; font-size:13px; color:var(--text-muted); }
     .signup-link a { color:var(--red-vivid); font-weight:600; text-decoration:none; }
     .signup-link a:hover { color:var(--red-bright); }
-
-    /* Terms */
-    .terms-notice { text-align:center; font-size:11px; color:var(--text-muted); margin-top:14px; line-height:1.5; }
-    .terms-notice a { color:var(--red-mid); text-decoration:none; }
-
-    /* Forgot password screen */
-    .forgot-screen { display:none; }
-    .forgot-screen.show { display:block; }
-    .main-form.hide { display:none; }
-    .btn-text { background:none; border:none; font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; padding:0 0 18px 0; display:flex; align-items:center; gap:5px; transition:color .15s; }
-    .btn-text:hover { color:var(--text); }
-    .info-box { background:#F5F9FF; border:1px solid #C8DCF0; border-radius:8px; padding:14px 16px; margin-bottom:20px; font-size:13px; color:#2A4A6A; line-height:1.6; display:flex; gap:10px; }
-    .info-box i { color:#4A90D9; margin-top:1px; flex-shrink:0; }
 
     @media(max-width:860px) { .page{grid-template-columns:1fr} .left-panel{display:none} .right-panel{padding:70px 24px 40px;min-height:100vh} .right-back-home{left:20px;top:20px} }
   </style>
@@ -263,10 +253,7 @@ $platformStats = getPublicPlatformStats();
           </div>
 
           <div class="field">
-            <div class="field-header">
-              <label>Password</label>
-              <a href="#" class="forgot-link" onclick="showForgot(event)">Forgot password?</a>
-            </div>
+            <label>Password</label>
             <div class="field-pw">
               <input type="password" id="loginPw" name="password" placeholder="Your password" autocomplete="current-password">
               <span class="pw-eye" onclick="togglePw('loginPw',this)"><i class="fas fa-eye-slash"></i></span>
@@ -285,29 +272,6 @@ $platformStats = getPublicPlatformStats();
         </form>
 
         <div class="signup-link">Don't have an account? <a href="javascript:void(0)" onclick="window.location.href='antcareers_signup.php?theme='+(document.body.classList.contains('light')?'light':'dark')">Create one free</a></div>
-        <div class="terms-notice">Protected by AntCareers. <a href="#">Privacy Policy</a> · <a href="#">Terms</a></div>
-      </div>
-
-      <!-- FORGOT PASSWORD SCREEN -->
-      <div class="forgot-screen" id="forgotScreen">
-        <button class="btn-text" onclick="hideForgot()"><i class="fas fa-arrow-left"></i> Back to sign in</button>
-        <div class="right-header">
-          <div class="right-title">Reset password</div>
-          <div class="right-sub">Enter your email and we'll send you a reset link.</div>
-        </div>
-
-        <div class="info-box" id="forgotSuccess" style="display:none;">
-          <i class="fas fa-check-circle"></i>
-          <span>Reset link sent! Check your inbox — it may take a minute or two to arrive.</span>
-        </div>
-
-        <div id="forgotForm">
-          <div class="field">
-            <label>Email address</label>
-            <input type="email" id="forgotEmail" placeholder="you@example.com">
-          </div>
-          <button class="btn-submit" onclick="sendReset()">Send reset link <i class="fas fa-paper-plane"></i></button>
-        </div>
       </div>
 
     </div>
@@ -349,7 +313,10 @@ $platformStats = getPublicPlatformStats();
           window.location.href = data.redirect;
         } else {
           document.getElementById('errMsg').textContent = data.message || 'Login failed. Please try again.';
-          banner.classList.add('show');
+          banner.className = 'err-banner show';
+          if (data.error_type === 'pending') banner.classList.add('err-pending');
+          else if (data.error_type === 'suspended') banner.classList.add('err-suspended');
+          else if (data.error_type === 'banned') banner.classList.add('err-banned');
           document.getElementById('loginEmail').classList.add('err');
           document.getElementById('loginPw').classList.add('err');
         }
@@ -387,43 +354,6 @@ $platformStats = getPublicPlatformStats();
     const showing = inp.type === 'text';
     inp.type = showing ? 'password' : 'text';
     btn.querySelector('i').className = showing ? 'fas fa-eye-slash' : 'fas fa-eye';
-  }
-
-  function showForgot(e) {
-    e.preventDefault();
-    document.getElementById('mainForm').classList.add('hide');
-    document.getElementById('forgotScreen').classList.add('show');
-  }
-  function hideForgot() {
-    document.getElementById('mainForm').classList.remove('hide');
-    document.getElementById('forgotScreen').classList.remove('show');
-  }
-
-  function sendReset() {
-    const email = document.getElementById('forgotEmail').value.trim();
-    const re    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!re.test(email)) {
-      document.getElementById('forgotEmail').classList.add('err'); return;
-    }
-
-    const btn = document.querySelector('#forgotForm .btn-submit');
-    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
-
-    fetch('forgot_password.php', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, csrf_token: '<?php echo htmlspecialchars($_csrfToken, ENT_QUOTES, "UTF-8"); ?>' }),
-    })
-      .then(r => r.json())
-      .then(() => {
-        // Always show success (endpoint never reveals if email exists)
-        document.getElementById('forgotForm').style.display = 'none';
-        document.getElementById('forgotSuccess').style.display = 'flex';
-      })
-      .catch(() => {
-        if (btn) { btn.disabled = false; btn.innerHTML = 'Send reset link <i class="fas fa-paper-plane"></i>'; }
-        document.getElementById('forgotEmail').classList.add('err');
-      });
   }
 
 

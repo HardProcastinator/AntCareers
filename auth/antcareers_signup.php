@@ -280,8 +280,8 @@ $platformStats = getPublicPlatformStats();
           <div class="field"><label>First name</label><input type="text" id="s-first" placeholder="Maria"></div>
           <div class="field"><label>Last name</label><input type="text" id="s-last" placeholder="Santos"></div>
         </div>
-        <div class="field"><label>Email address</label><input type="email" id="s-email" placeholder="maria@email.com"></div>
-        <div class="field"><label>Contact number</label><input type="tel" id="s-contact" placeholder="+63 917 000 0000"></div>
+        <div class="field"><label>Email address</label><input type="email" id="s-email" placeholder="maria@email.com"><div class="err-msg" id="s-email-err">Please enter a valid email address.</div></div>
+        <div class="field"><label>Contact number</label><input type="tel" id="s-contact" placeholder="+63 917 000 0000"><div class="err-msg" id="s-contact-err">Enter a valid phone number (7–15 digits).</div></div>
         <div class="field">
           <label>Password</label>
           <div class="field-pw">
@@ -314,8 +314,8 @@ $platformStats = getPublicPlatformStats();
           <div class="field"><label>Last name</label><input type="text" id="e-last" placeholder="dela Cruz"></div>
         </div>
         <div class="field"><label>Company name</label><input type="text" id="e-company" placeholder="Acme Corp"></div>
-        <div class="field"><label>Company email</label><input type="email" id="e-email" placeholder="hr@acmecorp.com"></div>
-        <div class="field"><label>Contact number</label><input type="tel" id="e-contact" placeholder="+63 917 000 0000"></div>
+        <div class="field"><label>Company email</label><input type="email" id="e-email" placeholder="hr@acmecorp.com"><div class="err-msg" id="e-email-err">Please enter a valid email address.</div></div>
+        <div class="field"><label>Contact number</label><input type="tel" id="e-contact" placeholder="+63 917 000 0000"><div class="err-msg" id="e-contact-err">Enter a valid phone number (7–15 digits).</div></div>
         <div class="field">
           <label>Password</label>
           <div class="field-pw">
@@ -351,17 +351,9 @@ $platformStats = getPublicPlatformStats();
           </div>
           <span class="summary-badge" id="summaryBadge"></span>
         </div>
-        <div id="signupErrBanner" style="display:none;background:rgba(209,61,44,0.1);border:1px solid rgba(209,61,44,0.3);color:#F07060;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;" id="signupErrBanner"></div>
-        <div class="checkbox-field">
-          <input type="checkbox" id="terms">
-          <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
-        </div>
-        <div class="checkbox-field">
-          <input type="checkbox" id="updates" checked>
-          <label for="updates">Send me job alerts and career updates (optional)</label>
-        </div>
+        <div id="signupErrBanner" style="display:none;background:rgba(209,61,44,0.1);border:1px solid rgba(209,61,44,0.3);color:#F07060;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;"></div>
         <button class="btn-submit" id="createBtn" onclick="submitForm()">Create account <i class="fas fa-check"></i></button>
-        <div class="terms-notice">By creating an account you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</div>
+
       </div>
 
       <!-- SUCCESS -->
@@ -403,14 +395,43 @@ $platformStats = getPublicPlatformStats();
     setDots(n);
   }
 
-  function backToStep2() { hide('step3'); show('step2-'+activeStep2); setDots(2); }
+  function backToStep2() {
+    document.getElementById('signupErrBanner').style.display = 'none';
+    hide('step3'); show('step2-'+activeStep2); setDots(2);
+  }
+
+  function validatePhone(val) {
+    const digits = val.replace(/\D/g, '');
+    return digits.length >= 7 && digits.length <= 15;
+  }
 
   function validateAndNext(type) {
     const p = type==='seeker' ? 's' : 'e';
     const first = v(p+'-first'), last = v(p+'-last');
     const email = v(p==='s'?'s-email':'e-email');
+    const contact = v(p+'-contact');
     const pw = v(p+'-pw'), pw2 = v(p+'-pw2');
+
+    // Validate email format
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!first||!last||!email||pw.length<8) return;
+    if (!emailRe.test(email)) {
+      const emailInp = document.getElementById(p+'-email');
+      const emailErr = document.getElementById(p+'-email-err');
+      emailInp.classList.add('err'); emailErr.classList.add('show-err');
+      return;
+    }
+
+    // Validate phone
+    const contactErr = document.getElementById(p+'-contact-err');
+    if (contact && !validatePhone(contact)) {
+      document.getElementById(p+'-contact').classList.add('err');
+      contactErr.classList.add('show-err');
+      return;
+    }
+    contactErr.classList.remove('show-err');
+    document.getElementById(p+'-contact').classList.remove('err');
+
     const errEl = document.getElementById(p+'-pw-err');
     if (pw !== pw2) { errEl.classList.add('show-err'); return; }
     errEl.classList.remove('show-err');
@@ -462,10 +483,6 @@ $platformStats = getPublicPlatformStats();
   let _signupRedirect = null;
 
   function submitForm() {
-    if (!document.getElementById('terms').checked) {
-      document.getElementById('terms').focus(); return;
-    }
-
     const isSeeker = selectedType === 'seeker';
     const p        = isSeeker ? 's' : 'e';
 
@@ -550,6 +567,47 @@ $platformStats = getPublicPlatformStats();
   function show(id) { document.getElementById(id).classList.add('active'); }
   function hide(id) { document.getElementById(id).classList.remove('active'); }
   function v(id) { return document.getElementById(id)?.value.trim()||''; }
+
+  // ── Email validation on blur ──
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  ['s-email','e-email'].forEach(id => {
+    const inp = document.getElementById(id);
+    const err = document.getElementById(id + '-err');
+    if (!inp || !err) return;
+    inp.addEventListener('blur', () => {
+      if (inp.value.trim() && !emailRe.test(inp.value.trim())) {
+        inp.classList.add('err');
+        err.classList.add('show-err');
+      }
+    });
+    inp.addEventListener('input', () => {
+      if (!inp.value.trim() || emailRe.test(inp.value.trim())) {
+        inp.classList.remove('err');
+        err.classList.remove('show-err');
+      }
+    });
+  });
+
+  // ── Phone number validation: strip invalid chars + validate on blur ──
+  ['s-contact','e-contact'].forEach(id => {
+    const inp = document.getElementById(id);
+    const err = document.getElementById(id + '-err');
+    if (!inp) return;
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/[^0-9+\s]/g, '');
+      // Clear error once valid
+      if (!inp.value.trim() || validatePhone(inp.value)) {
+        inp.classList.remove('err');
+        if (err) err.classList.remove('show-err');
+      }
+    });
+    inp.addEventListener('blur', () => {
+      if (inp.value.trim() && !validatePhone(inp.value)) {
+        inp.classList.add('err');
+        if (err) err.classList.add('show-err');
+      }
+    });
+  });
 </script>
 </body>
 </html>

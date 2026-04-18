@@ -15,6 +15,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit(json_encode(['success' => false, 'message' => 'Method not allowed.']));
 }
 
+// CSRF check
+$csrfSent = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (!is_string($csrfSent) || !hash_equals(csrfToken(), $csrfSent)) {
+    http_response_code(403);
+    exit(json_encode(['success' => false, 'message' => 'Invalid CSRF token. Please refresh the page and try again.']));
+}
+
 $seekerId    = (int)$_SESSION['user_id'];
 $jobId       = (int)($_POST['job_id'] ?? 0);
 $coverLetter = trim((string)($_POST['cover_letter'] ?? ''));
