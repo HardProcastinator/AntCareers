@@ -120,6 +120,11 @@ $fullName = trim((string)($_SESSION['user_name'] ?? 'User'));
       <button class="btn-submit" id="submitBtn" onclick="changePassword()">
         <i class="fas fa-lock"></i> Set New Password
       </button>
+      <div style="text-align:center;margin-top:16px;">
+        <a href="logout.php" style="font-size:13px;color:var(--text-muted);text-decoration:none;transition:color 0.18s;" onmouseover="this.style.color='#F5F0EE'" onmouseout="this.style.color=''">
+          <i class="fas fa-arrow-left" style="font-size:11px;margin-right:4px;"></i> Back to Login
+        </a>
+      </div>
     </div>
 
     <div class="success-msg" id="successMsg">

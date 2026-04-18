@@ -86,9 +86,6 @@ try {
 
     exit(json_encode(['success' => true]));
 
-    // Log the application
-    logActivity($seekerId, $seekerId, 'application_made', 'application', (int)$db->lastInsertId(), "Seeker applied to job ID {$jobId}.");
-
 } catch (PDOException $e) {
     error_log('[AntCareers] apply_job error: ' . $e->getMessage());
     // Check for duplicate key (race condition)

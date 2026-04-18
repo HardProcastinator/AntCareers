@@ -154,14 +154,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     }
 
-    /* ── delete_job ── */
+    /* ── delete_job (soft) ── */
     if ($action === 'delete_job') {
         $jobId = (int)($_POST['job_id'] ?? 0);
         try {
-            $st = $db->prepare("DELETE FROM jobs WHERE id=? AND recruiter_id=?");
+            $st = $db->prepare("UPDATE jobs SET deleted_at=NOW(), status='Closed', updated_at=NOW() WHERE id=? AND recruiter_id=? AND deleted_at IS NULL");
             $st->execute([$jobId, $uid]);
             if ($st->rowCount() === 0) {
-                echo json_encode(['ok' => false, 'msg' => 'Job not found or not yours']);
+                echo json_encode(['ok' => false, 'msg' => 'Job not found or already deleted']);
             } else {
                 echo json_encode(['ok' => true]);
             }
@@ -238,31 +238,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 $jobs   = [];
 $counts = ['total' => 0, 'Active' => 0, 'Closed' => 0, 'pending' => 0, 'Draft' => 0];
 $dbErr  = false;
+$perPage   = 20;
+$page      = max(1, (int)($_GET['page'] ?? 1));
+$offset    = ($page - 1) * $perPage;
+$totalPages = 1;
 
 try {
-    /* Status counts */
-    $sc = $db->prepare("SELECT status, COUNT(*) AS c FROM jobs WHERE recruiter_id=? GROUP BY status");
+    /* Status counts (non-deleted only) */
+    $sc = $db->prepare("SELECT status, COUNT(*) AS c FROM jobs WHERE recruiter_id=? AND deleted_at IS NULL GROUP BY status");
     $sc->execute([$uid]);
     foreach ($sc->fetchAll(PDO::FETCH_ASSOC) as $r) {
         if (isset($counts[$r['status']])) $counts[$r['status']] = (int)$r['c'];
         $counts['total'] += (int)$r['c'];
     }
+    $totalPages = max(1, (int)ceil($counts['total'] / $perPage));
+    $page       = min($page, $totalPages);
+    $offset     = ($page - 1) * $perPage;
 
-    /* Pending approval count */
-    $pc = $db->prepare("SELECT COUNT(*) FROM jobs WHERE recruiter_id=? AND approval_status='pending'");
+    /* Pending approval count (non-deleted only) */
+    $pc = $db->prepare("SELECT COUNT(*) FROM jobs WHERE recruiter_id=? AND approval_status='pending' AND deleted_at IS NULL");
     $pc->execute([$uid]);
     $counts['pending'] = (int)$pc->fetchColumn();
 
-    /* All jobs with app count */
+    /* All active (non-deleted) jobs with app count */
     $st = $db->prepare("
         SELECT j.*, COUNT(a.id) AS app_count
         FROM jobs j
         LEFT JOIN applications a ON a.job_id = j.id
-        WHERE j.recruiter_id = ?
+        WHERE j.recruiter_id = :uid AND j.deleted_at IS NULL
         GROUP BY j.id
         ORDER BY j.created_at DESC
+        LIMIT :perPage OFFSET :offset
     ");
-    $st->execute([$uid]);
+    $st->bindValue(':uid',     $uid,     PDO::PARAM_INT);
+    $st->bindValue(':perPage', $perPage, PDO::PARAM_INT);
+    $st->bindValue(':offset',  $offset,  PDO::PARAM_INT);
+    $st->execute();
     $jobs = $st->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $dbErr = true;
@@ -672,7 +683,20 @@ $jobsJson = json_encode($jobs ?: []);
   </div>
 
   <div class="empty" id="noResults" style="display:none;"><i class="fas fa-search"></i><p>No jobs match your search or filter.</p></div>
-</div>
+
+  <?php if ($totalPages > 1): ?>
+  <div style="display:flex;justify-content:center;gap:8px;margin:16px 0;flex-wrap:wrap;">
+    <?php if ($page > 1): ?>
+      <a href="?page=<?= $page - 1 ?>" style="padding:7px 14px;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:8px;color:var(--text-mid);text-decoration:none;font-size:13px;">← Prev</a>
+    <?php endif; ?>
+    <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
+      <a href="?page=<?= $p ?>" style="padding:7px 14px;background:<?= $p === $page ? 'var(--red-vivid)' : 'var(--soil-card)' ?>;border:1px solid <?= $p === $page ? 'var(--red-vivid)' : 'var(--soil-line)' ?>;border-radius:8px;color:<?= $p === $page ? '#fff' : 'var(--text-mid)' ?>;text-decoration:none;font-size:13px;"><?= $p ?></a>
+    <?php endfor; ?>
+    <?php if ($page < $totalPages): ?>
+      <a href="?page=<?= $page + 1 ?>" style="padding:7px 14px;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:8px;color:var(--text-mid);text-decoration:none;font-size:13px;">Next →</a>
+    <?php endif; ?>
+  </div>
+  <?php endif; ?>
 
 <!-- ═══════════════════════════════════════════════════════════
      Post / Edit Job Modal

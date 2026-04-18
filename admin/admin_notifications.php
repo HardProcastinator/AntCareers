@@ -138,7 +138,8 @@ function notifIconClass(string $type): string {
     .page-title span { color:var(--red-bright); font-style:italic; }
     .page-sub { font-size:14px; color:var(--text-muted); }
 
-    .content-layout { display:grid; grid-template-columns:244px 1fr; gap:28px; align-items:start; }
+    .content-layout { display:block; }
+    .sidebar { display:none; }
     .sidebar { position:sticky; top:72px; max-height:calc(100vh - 88px); overflow-y:auto; scrollbar-width:none; }
     .sidebar::-webkit-scrollbar { display:none; }
     .sidebar-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; }

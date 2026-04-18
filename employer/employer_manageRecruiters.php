@@ -488,8 +488,7 @@ $navActive   = 'manage-jobs';
         <div class="rec-actions">
           <div class="rec-status rs-online" title="Active"></div>
           <button class="rec-action-btn" onclick="viewStats(${r.id},'${esc(r.name)}')"><i class="fas fa-chart-bar"></i> View Stats</button>
-          <button class="rec-action-btn" onclick="resetPassword(${r.id},'${esc(r.name)}')"><i class="fas fa-key"></i> Reset PW</button>
-          <button class="rec-action-btn danger" onclick="deactivateRecruiter(${r.id},'${esc(r.name)}')"><i class="fas fa-user-minus"></i> Deactivate</button>
+          <button class="rec-action-btn" onclick="resetPassword(${r.id},'${esc(r.name)}')"><i class="fas fa-key"></i> Reset PW</button>          <button class="rec-action-btn" onclick="resendCredentials(${r.id},'${esc(r.name)}')" ><i class="fas fa-redo"></i> Resend Creds</button>          <button class="rec-action-btn danger" onclick="deactivateRecruiter(${r.id},'${esc(r.name)}')"><i class="fas fa-user-minus"></i> Deactivate</button>
         </div>
       </div>
     `).join('');
@@ -602,6 +601,23 @@ $navActive   = 'manage-jobs';
         document.getElementById('credPassword').textContent = data.temp_password;
         document.getElementById('credentialsModal').classList.add('open');
         showToast('Password reset', 'fa-key');
+      } else showToast(data.message || 'Failed', 'fa-exclamation-triangle');
+    } catch(e) { showToast('Network error', 'fa-exclamation-triangle'); }
+  }
+
+  async function resendCredentials(id, name) {
+    if (!confirm(`Resend new credentials to ${name}? A new temporary password will be generated and sent via message.`)) return;
+    const fd = new FormData();
+    fd.append('action', 'resend_credentials');
+    fd.append('recruiter_id', id);
+    try {
+      const res = await fetch(API, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('credEmail').textContent = name;
+        document.getElementById('credPassword').textContent = data.temp_password;
+        document.getElementById('credentialsModal').classList.add('open');
+        showToast('Credentials resent', 'fa-redo');
       } else showToast(data.message || 'Failed', 'fa-exclamation-triangle');
     } catch(e) { showToast('Network error', 'fa-exclamation-triangle'); }
   }

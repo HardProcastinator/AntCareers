@@ -15,33 +15,6 @@ $userId    = $user['id'];
 // ── LOAD EXISTING PROFILE FROM DB ──────────────────────────────────────────
 $db = getDB();
 
-// ── Ensure optional columns exist before we SELECT * ──────────────────────
-// Mirrors the auto-migration in update_profile.php so links/nr columns are
-// present even if the full migration_seeker.sql has never been run.
-try {
-    $existing = array_column(
-        $db->query("SHOW COLUMNS FROM seeker_profiles")->fetchAll(PDO::FETCH_ASSOC),
-        'Field'
-    );
-    $toAdd = [];
-    if (!in_array('linkedin_url',     $existing, true)) $toAdd[] = "ADD COLUMN linkedin_url     VARCHAR(500) DEFAULT NULL";
-    if (!in_array('github_url',       $existing, true)) $toAdd[] = "ADD COLUMN github_url       VARCHAR(500) DEFAULT NULL";
-    if (!in_array('portfolio_url',    $existing, true)) $toAdd[] = "ADD COLUMN portfolio_url    VARCHAR(500) DEFAULT NULL";
-    if (!in_array('other_url',        $existing, true)) $toAdd[] = "ADD COLUMN other_url        VARCHAR(500) DEFAULT NULL";
-    if (!in_array('banner_url',       $existing, true)) $toAdd[] = "ADD COLUMN banner_url       VARCHAR(500) DEFAULT NULL";
-    if (!in_array('nr_availability',  $existing, true)) $toAdd[] = "ADD COLUMN nr_availability  VARCHAR(100) DEFAULT NULL";
-    if (!in_array('nr_work_types',    $existing, true)) $toAdd[] = "ADD COLUMN nr_work_types    VARCHAR(255) DEFAULT NULL";
-    if (!in_array('nr_locations',     $existing, true)) $toAdd[] = "ADD COLUMN nr_locations     TEXT DEFAULT NULL";
-    if (!in_array('nr_right_to_work', $existing, true)) $toAdd[] = "ADD COLUMN nr_right_to_work VARCHAR(255) DEFAULT NULL";
-    if (!in_array('nr_salary',        $existing, true)) $toAdd[] = "ADD COLUMN nr_salary        VARCHAR(100) DEFAULT NULL";
-    if (!in_array('nr_salary_period', $existing, true)) $toAdd[] = "ADD COLUMN nr_salary_period VARCHAR(50)  DEFAULT NULL";
-    if (!in_array('nr_classification',$existing, true)) $toAdd[] = "ADD COLUMN nr_classification VARCHAR(255) DEFAULT NULL";
-    if (!in_array('nr_approachability',$existing,true)) $toAdd[] = "ADD COLUMN nr_approachability VARCHAR(50) DEFAULT NULL";
-    if ($toAdd) {
-        $db->exec("ALTER TABLE seeker_profiles " . implode(', ', $toAdd));
-    }
-} catch (\Throwable $_) {}
-
 // Ensure certifications + languages tables exist
 try {
     $db->exec("CREATE TABLE IF NOT EXISTS seeker_certifications (
@@ -1378,6 +1351,7 @@ try {
 
 <script>
   // ── STATE — seeded from PHP/DB ──
+  const CSRF_TOKEN = '<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES); ?>';
   const profile = <?= $jsProfile ?>;
   if (!profile.certifications) profile.certifications = [];
   if (!profile.languages) profile.languages = [];
@@ -1406,6 +1380,7 @@ try {
     const fd = new FormData();
     fd.append('photo', file);
     fd.append('type', type);
+    fd.append('csrf_token', CSRF_TOKEN);
     try {
       const res = await fetch('upload_photo.php', { method:'POST', body: fd });
       const data = await res.json();
@@ -1768,6 +1743,7 @@ try {
     // Upload to server
     const fd = new FormData();
     fd.append('resume', file);
+    fd.append('csrf_token', CSRF_TOKEN);
     try {
       const res = await fetch('upload_resume.php', {
         method: 'POST',

@@ -168,7 +168,8 @@ try {
     .qf-pill i { font-size:11px; }
 
     /* ── CONTENT LAYOUT ── */
-    .content-layout { display:grid; grid-template-columns:244px 1fr; gap:28px; align-items:start; }
+    .content-layout { display:block; }
+    .sidebar { display:none; }
 
     /* ── SIDEBAR ── */
     .sidebar { position:sticky; top:72px; max-height:calc(100vh - 88px); overflow-y:auto; scrollbar-width:none; isolation:isolate; }
@@ -549,8 +550,8 @@ try {
       <!-- 6 SUMMARY CARDS -->
       <div class="cards-row anim">
         <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-users"></i></div><div class="sc-num"><?php echo number_format($adminStats['users']); ?></div></div><div class="sc-label">Total Users</div><a class="sc-btn" href="admin_users.php">Manage Users</a></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon a"><i class="fas fa-building"></i></div><div class="sc-num"><?php echo number_format($adminStats['employers']); ?></div></div><div class="sc-label">Employers<?php if($adminStats['pending_companies']>0): ?> <span style="font-size:10px;font-weight:700;background:var(--red-vivid);color:#fff;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_companies']; ?> pending</span><?php endif; ?></div><a class="sc-btn" href="admin_companies.php">Review Companies</a></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon r"><i class="fas fa-briefcase"></i></div><div class="sc-num"><?php echo number_format($adminStats['jobs']); ?></div></div><div class="sc-label">Job Posts<?php if($adminStats['pending_jobs']>0): ?> <span style="font-size:10px;font-weight:700;background:var(--amber);color:#1A0A09;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_jobs']; ?> pending</span><?php endif; ?></div><a class="sc-btn" href="admin_jobs.php">Moderate Jobs</a></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon a"><i class="fas fa-building"></i></div><div class="sc-num"><?php echo number_format($adminStats['employers']); ?></div></div><div class="sc-label">Employers<?php if($adminStats['pending_companies']>0): ?> <span style="font-size:10px;font-weight:700;background:var(--red-vivid);color:#fff;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_companies']; ?> pending</span><?php endif; ?></div><a class="sc-btn" href="admin_companies.php<?php echo $adminStats['pending_companies']>0?'?tab=pending':''; ?>">Review Companies</a></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon r"><i class="fas fa-briefcase"></i></div><div class="sc-num"><?php echo number_format($adminStats['jobs']); ?></div></div><div class="sc-label">Job Posts<?php if($adminStats['pending_jobs']>0): ?> <span style="font-size:10px;font-weight:700;background:var(--amber);color:#1A0A09;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_jobs']; ?> pending</span><?php endif; ?></div><a class="sc-btn" href="admin_jobs.php<?php echo $adminStats['pending_jobs']>0?'?tab=pending':''; ?>">Moderate Jobs</a></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-paper-plane"></i></div><div class="sc-num"><?php echo number_format($adminStats['applications']); ?></div></div><div class="sc-label">Applications</div><a class="sc-btn" href="admin_reports.php">View Reports</a></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon g"><i class="fas fa-check-circle"></i></div><div class="sc-num"><?php echo number_format($adminStats['active_jobs']); ?></div></div><div class="sc-label">Active Jobs</div><a class="sc-btn" href="admin_jobs.php">View Active</a></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-user-tie"></i></div><div class="sc-num"><?php echo number_format($adminStats['recruiters']); ?></div></div><div class="sc-label">Recruiters</div><a class="sc-btn" href="admin_recruiters.php">View Recruiters</a></div>

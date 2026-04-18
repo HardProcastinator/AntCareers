@@ -132,7 +132,8 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .page-title span { color:var(--red-bright); font-style:italic; }
     .page-sub { font-size:14px; color:var(--text-muted); }
 
-    .content-layout { display:grid; grid-template-columns:244px 1fr; gap:28px; align-items:start; }
+    .content-layout { display:block; }
+    .sidebar { display:none; }
     .sidebar { position:sticky; top:72px; max-height:calc(100vh - 88px); overflow-y:auto; scrollbar-width:none; }
     .sidebar::-webkit-scrollbar { display:none; }
     .sidebar-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; }
@@ -344,6 +345,13 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
 
     <!-- MAIN -->
     <main class="anim">
+      <!-- SEARCH -->
+      <div style="margin-bottom:16px;position:relative;max-width:420px;">
+        <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;"></i>
+        <input id="companySearch" type="text" placeholder="Search companies, email, industry…"
+          style="width:100%;padding:9px 12px 9px 36px;border-radius:8px;border:1px solid var(--soil-line);background:var(--soil-hover);color:#F5F0EE;font-family:var(--font-body);font-size:14px;outline:none;box-sizing:border-box;"
+          oninput="filterCompanies(this.value)">
+      </div>
       <!-- TABS -->
       <div class="tab-bar">
         <button class="tab-btn active" data-tab="pending" onclick="switchTab('pending')">
@@ -367,7 +375,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
             <div class="empty-state"><i class="fas fa-check-circle"></i><div>No pending company registrations.</div></div>
           <?php else: ?>
             <?php foreach ($pendingCompanies as $c): ?>
-            <div class="company-card" id="company-row-<?php echo (int)$c['id']; ?>">
+            <div class="company-card" id="company-row-<?php echo (int)$c['id']; ?>" data-search="<?php echo strtolower(htmlspecialchars((string)($c['company_name'] ?? '').' '.(string)($c['full_name'] ?? '').' '.(string)($c['email'] ?? '').' '.(string)($c['industry'] ?? ''), ENT_QUOTES)); ?>">
               <div class="cc-top">
                 <div class="cc-info">
                   <div class="cc-name"><?php echo htmlspecialchars((string)($c['company_name'] ?? ''), ENT_QUOTES); ?></div>
@@ -405,7 +413,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
             </tr></thead>
             <tbody>
               <?php foreach ($approvedCompanies as $c): ?>
-              <tr>
+              <tr data-search="<?php echo strtolower(htmlspecialchars((string)($c['company_name'] ?? '').' '.(string)($c['full_name'] ?? '').' '.(string)($c['email'] ?? '').' '.(string)($c['industry'] ?? ''), ENT_QUOTES)); ?>">
                 <td><div class="td-name"><?php echo htmlspecialchars((string)($c['company_name'] ?? ''), ENT_QUOTES); ?></div><div style="font-size:11px;color:var(--text-muted)"><?php echo htmlspecialchars((string)($c['full_name'] ?? ''), ENT_QUOTES); ?></div></td>
                 <td><?php echo htmlspecialchars((string)($c['email'] ?? ''), ENT_QUOTES); ?></td>
                 <td><?php echo htmlspecialchars((string)($c['industry'] ?? '—'), ENT_QUOTES); ?></td>
@@ -437,7 +445,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
             </tr></thead>
             <tbody>
               <?php foreach ($rejectedCompanies as $c): ?>
-              <tr>
+              <tr data-search="<?php echo strtolower(htmlspecialchars((string)($c['company_name'] ?? '').' '.(string)($c['full_name'] ?? '').' '.(string)($c['email'] ?? '').' '.(string)($c['industry'] ?? ''), ENT_QUOTES)); ?>">
                 <td><div class="td-name"><?php echo htmlspecialchars((string)($c['company_name'] ?? ''), ENT_QUOTES); ?></div><div style="font-size:11px;color:var(--text-muted)"><?php echo htmlspecialchars((string)($c['full_name'] ?? ''), ENT_QUOTES); ?></div></td>
                 <td><?php echo htmlspecialchars((string)($c['email'] ?? ''), ENT_QUOTES); ?></td>
                 <td><?php echo htmlspecialchars((string)($c['industry'] ?? '—'), ENT_QUOTES); ?></td>
@@ -487,7 +495,38 @@ async function adminAction(action, data) {
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-section').forEach(s => s.classList.toggle('active', s.id === 'tab-' + name));
+  filterCompanies(document.getElementById('companySearch').value);
 }
+
+function filterCompanies(q) {
+  q = q.toLowerCase().trim();
+  const activeSection = document.querySelector('.tab-section.active');
+  if (!activeSection) return;
+  const items = activeSection.querySelectorAll('[data-search]');
+  let visible = 0;
+  items.forEach(el => {
+    const match = !q || el.dataset.search.includes(q);
+    el.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  let noRes = activeSection.querySelector('.no-search-result');
+  if (!q || visible > 0) { if (noRes) noRes.remove(); }
+  else {
+    if (!noRes) {
+      noRes = document.createElement('div');
+      noRes.className = 'no-search-result';
+      noRes.style.cssText = 'text-align:center;padding:32px;color:var(--text-muted);font-size:14px;';
+      noRes.innerHTML = '<i class="fas fa-search" style="font-size:28px;margin-bottom:10px;display:block;opacity:0.4;"></i>No companies match your search.';
+      activeSection.appendChild(noRes);
+    }
+  }
+}
+
+// Switch to tab from URL param
+(function() {
+  const tab = new URLSearchParams(location.search).get('tab');
+  if (tab && ['pending','approved','rejected'].includes(tab)) switchTab(tab);
+})();
 
 async function approveCompany(userId, btn) {
   btn.disabled = true;

@@ -67,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $db->prepare("INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type) VALUES (?,?,'offer',?,?,'application')")
                        ->execute([$row['seeker_id'], $uid, $notifContent, $appId]);
 
+                    logActivity($row['seeker_id'], $uid, 'application_status_changed', 'application', $appId, "Status changed to Offered for job \"{$row['job_title']}\".");
                     $db->commit();
                     echo json_encode(['ok'=>true,'status'=>'Offered']); exit;
                 } catch (Exception $e) {
@@ -77,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
 
             $db->prepare("UPDATE applications SET status=?,reviewed_at=NOW() WHERE id=?")->execute([$newS,$appId]);
+            logActivity($row['seeker_id'], $uid, 'application_status_changed', 'application', $appId, "Status changed to {$newS} for job \"{$row['job_title']}\".");
 
             // Notify seeker of status change
             $statusMessages = [
@@ -169,6 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
 
             $db->prepare("UPDATE applications SET status='Shortlisted',reviewed_at=NOW() WHERE id=? AND status IN ('Pending','Reviewed')")->execute([$appId]);
+            logActivity($row['seeker_id'], (int)$_SESSION['user_id'], 'application_status_changed', 'application', $appId, "Shortlisted via interview scheduling for job \"{$row['job_title']}\".");
 
             // Notify seeker of interview scheduling + shortlist
             if (in_array($row['current_status'] ?? '', ['Pending', 'Reviewed'], true)) {

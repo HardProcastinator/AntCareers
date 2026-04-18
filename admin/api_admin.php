@@ -95,6 +95,12 @@ if ($action === 'approve_company') {
             "Your company account ({$cName}) has been approved. You can now log in and post jobs.",
             $userId, 'user');
 
+        // Mark the pending approval notification as read for all admins
+        $db->prepare(
+            "UPDATE notifications SET is_read = 1
+             WHERE type = 'company_approval_request' AND reference_id = :uid AND reference_type = 'user'"
+        )->execute([':uid' => $userId]);
+
         logActivity($userId, $adminId, 'company_approved', 'user', $userId,
             "Admin approved company account: {$cName} (user #{$userId}).");
 
@@ -138,6 +144,12 @@ if ($action === 'reject_company') {
         }
         $notify($userId, $adminId, 'general', $msg, $userId, 'user');
 
+        // Mark the pending approval notification as read for all admins
+        $db->prepare(
+            "UPDATE notifications SET is_read = 1
+             WHERE type = 'company_approval_request' AND reference_id = :uid AND reference_type = 'user'"
+        )->execute([':uid' => $userId]);
+
         logActivity($userId, $adminId, 'company_rejected', 'user', $userId,
             "Admin rejected company account: {$cName} (user #{$userId}). Reason: {$reason}");
 
@@ -175,6 +187,12 @@ if ($action === 'approve_job') {
                 "Your job post \"{$j['title']}\" has been approved and is now live.",
                 $jobId, 'job');
         }
+
+        // Mark the job approval request notification as read for all admins
+        $db->prepare(
+            "UPDATE notifications SET is_read = 1
+             WHERE type = 'job_approval_request' AND reference_id = :jid AND reference_type = 'job'"
+        )->execute([':jid' => $jobId]);
 
         logActivity(
             $j ? (int)$j['employer_id'] : null,
@@ -216,6 +234,12 @@ if ($action === 'reject_job') {
             }
             $notify((int)$j['employer_id'], $adminId, 'general', $msg, $jobId, 'job');
         }
+
+        // Mark the job approval request notification as read for all admins
+        $db->prepare(
+            "UPDATE notifications SET is_read = 1
+             WHERE type = 'job_approval_request' AND reference_id = :jid AND reference_type = 'job'"
+        )->execute([':jid' => $jobId]);
 
         logActivity(
             $j ? (int)$j['employer_id'] : null,
@@ -376,6 +400,31 @@ if ($action === 'unsuspend_user' || $action === 'unban_user') {
         exit(json_encode(['success' => true, 'message' => "{$uName}'s account has been reinstated."]));
     } catch (Throwable $e) {
         error_log('[AntCareers] admin unsuspend/unban: ' . $e->getMessage());
+        exit(json_encode(['success' => false, 'message' => 'Database error.']));
+    }
+}
+
+/* ── force_password_reset ── */
+if ($action === 'force_password_reset') {
+    $userId = (int)($body['user_id'] ?? 0);
+    if ($userId <= 0) {
+        exit(json_encode(['success' => false, 'message' => 'Invalid user ID.']));
+    }
+    if ($userId === $adminId) {
+        exit(json_encode(['success' => false, 'message' => 'You cannot reset your own password this way.']));
+    }
+    try {
+        $db->prepare("UPDATE users SET must_change_password = 1 WHERE id = :uid")
+           ->execute([':uid' => $userId]);
+        $uRow = $db->prepare("SELECT full_name FROM users WHERE id = :uid LIMIT 1");
+        $uRow->execute([':uid' => $userId]);
+        $u = $uRow->fetch();
+        $uName = $u ? (string)$u['full_name'] : "User #{$userId}";
+        logActivity($userId, $adminId, 'force_password_reset', 'user', $userId,
+            "Admin forced password reset for {$uName} (#{$userId}).");
+        exit(json_encode(['success' => true, 'message' => "{$uName} will be prompted to reset their password on next login."]));
+    } catch (Throwable $e) {
+        error_log('[AntCareers] admin force_password_reset: ' . $e->getMessage());
         exit(json_encode(['success' => false, 'message' => 'Database error.']));
     }
 }
