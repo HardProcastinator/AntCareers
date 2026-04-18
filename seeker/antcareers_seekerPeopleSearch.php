@@ -328,7 +328,7 @@ foreach ($industryKeys as $ind) {
     .ms-trigger .ms-arrow { font-size:8px; color:var(--text-muted); transition:transform 0.2s; flex-shrink:0; }
     .ms-wrap.open .ms-trigger .ms-arrow { transform:rotate(180deg); }
     .ms-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .ms-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:20; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+    .ms-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:1050; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
     .ms-wrap.open .ms-panel { display:block; }
     .ms-item { display:flex; align-items:center; gap:8px; padding:7px 12px; font-size:13px; color:var(--text-mid); cursor:pointer; transition:background-color 0.12s; user-select:none; }
     .ms-item:hover { background:var(--soil-hover); }

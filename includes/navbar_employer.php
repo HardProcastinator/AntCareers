@@ -74,7 +74,7 @@ function navHref(string $page): string {
       <button class="notif-btn-nav" id="navMsgBtn"
               onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();}else{this.classList.toggle('active');}">
         <i class="fas fa-envelope"></i>
-        <span class="badge msg-badge-count" style="display:none">0</span>
+        <span class="badge msg-badge-count" style="visibility:hidden;opacity:0">0</span>
       </button>
       <?php endif; ?>
 
@@ -82,7 +82,7 @@ function navHref(string $page): string {
       <button class="notif-btn-nav" id="navNotifBtn"
               onclick="if(typeof openNotifSidebar==='function'){openNotifSidebar();}else{this.classList.toggle('active');}">
         <i class="fas fa-bell"></i>
-        <span class="badge notif-badge-count" style="display:none">0</span>
+        <span class="badge notif-badge-count" style="visibility:hidden;opacity:0">0</span>
       </button>
       <?php endif; ?>
 
@@ -377,8 +377,8 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
         if (!data.success) return;
         var mb = document.querySelector('.msg-badge-count');
         var nb = document.querySelector('.notif-badge-count');
-        if (mb) { mb.textContent = data.messages || 0; mb.style.display = data.messages > 0 ? '' : 'none'; }
-        if (nb) { nb.textContent = data.notifications || 0; nb.style.display = data.notifications > 0 ? '' : 'none'; }
+        if (mb) { mb.textContent = data.messages || 0; mb.style.visibility = data.messages > 0 ? 'visible' : 'hidden'; mb.style.opacity = data.messages > 0 ? '1' : '0'; }
+        if (nb) { nb.textContent = data.notifications || 0; nb.style.visibility = data.notifications > 0 ? 'visible' : 'hidden'; nb.style.opacity = data.notifications > 0 ? '1' : '0'; }
       }).catch(function() {});
   }
   window.updateEmpBadges = updateEmpBadges;

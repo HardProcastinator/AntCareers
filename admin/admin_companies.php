@@ -13,6 +13,7 @@ $initials  = count($nameParts) >= 2
     ? strtoupper(substr($nameParts[0],0,1).substr($nameParts[1],0,1))
     : strtoupper(substr($fullName,0,2));
 $db = getDB();
+require_once dirname(__DIR__) . '/includes/admin_notif_panel.php';
 
 try {
     $pendingCompanies = $db->query(
@@ -254,18 +255,17 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     <div class="nav-links">
       <a class="nav-link" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
       <a class="nav-link" href="admin_users.php"><i class="fas fa-users"></i> Users</a>
-      <a class="nav-link active" href="admin_companies.php"><i class="fas fa-building"></i> Companies</a>
-      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs</a>
+      <a class="nav-link active" href="admin_companies.php"><i class="fas fa-building"></i> Companies<?php if($adminPendingCompanies>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingCompanies; ?></span><?php endif; ?></a>
+      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminPendingJobs>0): ?> <span style="background:var(--amber);color:#1A0A09;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingJobs; ?></span><?php endif; ?></a>
       <a class="nav-link" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
       <a class="nav-link" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
     </div>
     <div class="nav-right">
       <button class="theme-btn" id="themeToggle"><i class="fas fa-moon"></i></button>
-      <a class="notif-btn-nav" href="admin_notifications.php" title="Notifications">
+      <button class="notif-btn-nav" id="navNotifBtn" onclick="toggleAdminNotifPanel()" title="Notifications">
         <i class="fas fa-bell"></i>
-        <?php if($unread > 0): ?><span class="badge"><?php echo $unread; ?></span><?php endif; ?>
-      </a>
-      <span class="admin-pill"><i class="fas fa-shield-alt"></i> Admin</span>
+        <?php if ($adminUnreadCount > 0): ?><span class="badge" id="adminNotifBadge"><?php echo $adminUnreadCount; ?></span><?php endif; ?>
+      </button>
       <div class="profile-wrap" id="profileWrap">
         <button class="profile-btn" id="profileToggle">
           <div class="profile-avatar"><?php echo htmlspecialchars($initials, ENT_QUOTES); ?></div>
@@ -301,15 +301,16 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
 
     <!-- MAIN -->
     <main class="anim">
-      <!-- SEARCH -->
-      <div style="margin-bottom:16px;position:relative;max-width:420px;">
-        <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;"></i>
-        <input id="companySearch" type="text" placeholder="Search companies, email, industry…"
-          style="width:100%;padding:9px 12px 9px 36px;border-radius:8px;border:1px solid var(--soil-line);background:var(--soil-hover);color:#F5F0EE;font-family:var(--font-body);font-size:14px;outline:none;box-sizing:border-box;"
-          oninput="filterCompanies(this.value)">
-      </div>
-      <!-- TABS -->
-      <div class="tab-bar">
+      <!-- SEARCH + TABS ROW -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;position:relative;">
+          <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;"></i>
+          <input id="companySearch" type="text" placeholder="Search companies, email, industry…"
+            style="width:100%;padding:9px 12px 9px 36px;border-radius:8px;border:1px solid var(--soil-line);background:var(--soil-hover);color:#F5F0EE;font-family:var(--font-body);font-size:14px;outline:none;box-sizing:border-box;"
+            oninput="filterCompanies(this.value)">
+        </div>
+        <!-- TABS -->
+        <div class="tab-bar" style="margin-bottom:0;flex-shrink:0;">
         <button class="tab-btn active" data-tab="pending" onclick="switchTab('pending')">
           <i class="fas fa-hourglass-half"></i> Pending
           <span class="tab-count" id="pending-count-badge"><?php echo $pendingCount; ?></span>
@@ -323,6 +324,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
           <span class="tab-count amber"><?php echo $rejectedCount; ?></span>
         </button>
       </div>
+      </div><!-- /search+tabs row -->
 
       <!-- PENDING TAB -->
       <div class="tab-section active" id="tab-pending">
@@ -433,6 +435,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
   </div>
 </div>
 
+<?php renderAdminNotifPanel(); ?>
 <?php require_once dirname(__DIR__) . '/includes/toast.php'; ?>
 
 <script>
@@ -524,6 +527,8 @@ async function submitReject() {
     if (row) { row.style.opacity = '0'; row.style.transition = '0.3s'; setTimeout(() => row.remove(), 320); }
     let cnt = parseInt(document.getElementById('pending-count-badge').textContent, 10) - 1;
     document.getElementById('pending-count-badge').textContent = Math.max(0, cnt);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-times"></i> Confirm Reject';
     closeRejectModal();
     showToast(r.message || 'Company rejected.', 'fa-times-circle');
   } else {

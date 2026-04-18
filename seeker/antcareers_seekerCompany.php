@@ -2,7 +2,6 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
-require_once dirname(__DIR__) . '/includes/job_titles.php';
 requireLogin('seeker');
 $user = getUser();
 // Convenience aliases for page templates that use the old variable names
@@ -86,20 +85,68 @@ if (!empty($companiesList)) {
     }
 }
 
-$companyIndustryValues = array_values(array_filter(array_unique(array_map(
-  static fn(array $company): string => trim((string)($company['industry'] ?? '')),
-  $companiesList
-))));
-$sharedIndustryValues = array_column(getIndustryFilterOptions(), 'value');
-$industryFilterValues = array_values(array_unique(array_merge($sharedIndustryValues, $companyIndustryValues)));
+$industryKeys = [
+  'Accounting','Administration & Office Support','Advertising, Arts & Media',
+  'Banking & Financial Services','Call Centre & Customer Service','CEO & General Management',
+  'Community Services & Development','Construction','Consulting & Strategy',
+  'Design & Architecture','Education & Training','Engineering',
+  'Farming, Animals & Conservation','Government & Defence','Healthcare & Medical',
+  'Hospitality & Tourism','Human Resources & Recruitment',
+  'Information & Communication Technology','Insurance & Superannuation','Legal',
+  'Manufacturing, Transport & Logistics','Marketing & Communications',
+  'Mining, Resources & Energy','Real Estate & Property','Retail & Consumer Products',
+  'Sales','Science & Technology','Self Employment','Sports & Recreation','Trades & Services',
+];
 $industryCheckboxesHtml = '';
-foreach ($industryFilterValues as $industryValue) {
+foreach ($industryKeys as $industryValue) {
   $escIndustry = htmlspecialchars((string)$industryValue, ENT_QUOTES, 'UTF-8');
   $industryCheckboxesHtml .= '<label class="ms-item"><input type="checkbox" value="' . $escIndustry . '"><span>' . $escIndustry . '</span></label>';
 }
 
 $companiesJson = json_encode($companiesList, JSON_HEX_TAG | JSON_HEX_AMP);
+
+/* ── Platform Highlight stats ── */
+$statCompanies  = 0;
+$statOpenRoles  = 0;
+$statIndustries = 0;
+try {
+    $db = $db ?? getDB();
+    $statCompanies = (int)$db->query("
+        SELECT COUNT(DISTINCT cp.user_id)
+        FROM company_profiles cp
+        JOIN users u ON u.id = cp.user_id AND u.account_type = 'employer'
+    ")->fetchColumn();
+
+    $statOpenRoles = (int)$db->query("
+        SELECT COUNT(*)
+        FROM jobs
+        WHERE status = 'Active'
+          AND approval_status = 'approved'
+          AND (deadline IS NULL OR deadline >= CURDATE())
+    ")->fetchColumn();
+
+    $statIndustries = (int)$db->query("
+        SELECT COUNT(DISTINCT industry)
+        FROM company_profiles
+        WHERE industry IS NOT NULL AND industry <> ''
+    ")->fetchColumn();
+} catch (\Throwable $e) {
+    error_log('[AntCareers] platform stats: ' . $e->getMessage());
+}
+
+/* Format a number: e.g. 2400 → "2.4k", 500 → "500" */
+$fmtStat = static function(int $n): string {
+    if ($n >= 1000) {
+        $k = $n / 1000;
+        return (floor($k * 10) === $k * 10 ? number_format($k, 1) : number_format(floor($k * 10) / 10, 1)) . 'k';
+    }
+    return (string)$n;
+};
+$dispCompanies  = $fmtStat($statCompanies);
+$dispOpenRoles  = $fmtStat($statOpenRoles);
+$dispIndustries = $fmtStat($statIndustries);
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -168,11 +215,13 @@ $companiesJson = json_encode($companiesList, JSON_HEX_TAG | JSON_HEX_AMP);
     .ms-trigger .ms-arrow { font-size:8px; color:var(--text-muted); transition:transform 0.2s; flex-shrink:0; }
     .ms-wrap.open .ms-trigger .ms-arrow { transform:rotate(180deg); }
     .ms-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .ms-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:20; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+    .ms-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:1050; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
     .ms-wrap.open .ms-panel { display:block; }
     .ms-item { display:flex; align-items:center; gap:8px; padding:7px 12px; font-size:13px; color:var(--text-mid); cursor:pointer; transition:background-color 0.12s; user-select:none; }
     .ms-item:hover { background:var(--soil-hover); }
     .ms-item input[type="checkbox"] { width:14px; height:14px; accent-color:var(--red-vivid); cursor:pointer; flex-shrink:0; }
+    .ms-clear { width:100%; padding:7px 12px; border:none; border-top:1px solid var(--soil-line); background:var(--soil-card); color:var(--text-muted); font-family:var(--font-body); font-size:12px; font-weight:600; cursor:pointer; text-align:center; transition:color 0.15s, background 0.15s; position:sticky; bottom:0; }
+    .ms-clear:hover { color:var(--red-bright); background:var(--soil-hover); }
 
     /* ── SEARCH ROW ── */
     .search-row { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; position:relative; z-index:10; }
@@ -186,11 +235,11 @@ $companiesJson = json_encode($companiesList, JSON_HEX_TAG | JSON_HEX_AMP);
     .search-btn { padding:13px 24px; border-radius:10px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.2s; white-space:nowrap; display:flex; align-items:center; gap:7px; }
     .search-btn:hover { background:var(--red-bright); transform:translateY(-1px); }
     /* Search row multi-select */
-    .search-row .ms-wrap { flex-shrink:0; min-width:170px; }
-    .search-row .ms-trigger { padding:13px 16px; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; font-size:13px; color:var(--text-mid); }
+    .search-row .ms-wrap { flex-shrink:0; position:relative; }
+    .search-row .ms-trigger { padding:13px 16px; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; font-size:13px; color:var(--text-mid); white-space:nowrap; }
     .search-row .ms-trigger:hover { border-color:var(--red-mid); background-color:var(--soil-hover); }
     .search-row .ms-wrap.open .ms-trigger { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.12); }
-    .search-row .ms-panel { min-width:260px; z-index:50; }
+    .search-row .ms-panel { width:100%; z-index:50; }
 
     /* ── FILTER PILLS ── */
     .filter-pills { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:28px; }
@@ -212,7 +261,7 @@ $companiesJson = json_encode($companiesList, JSON_HEX_TAG | JSON_HEX_AMP);
     .company-card:hover { border-color:rgba(209,61,44,0.45); transform:translateY(-3px); box-shadow:0 16px 40px rgba(0,0,0,0.35); }
     .cc-banner { height:72px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
     .cc-body { padding:20px; }
-    .cc-logo { width:52px; height:52px; border-radius:12px; background:var(--soil-dark); border:2px solid var(--soil-line); display:flex; align-items:center; justify-content:center; font-size:22px; margin-top:-38px; margin-bottom:12px; position:relative; z-index:1; }
+    .cc-logo { width:52px; height:52px; border-radius:12px; background:var(--soil-dark); border:2px solid var(--soil-line); display:flex; align-items:center; justify-content:center; font-size:22px; margin-top:-38px; margin-bottom:12px; position:relative; z-index:1; overflow:hidden; }
     .cc-name { font-family:var(--font-display); font-size:16px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
     .cc-industry { font-size:12px; color:var(--red-pale); font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
     .cc-industry i { font-size:10px; }
@@ -302,13 +351,13 @@ $companiesJson = json_encode($companiesList, JSON_HEX_TAG | JSON_HEX_AMP);
   <div class="featured-banner anim anim-d1">
     <div>
       <div class="fb-label"><i class="fas fa-star"></i> Platform Highlights</div>
-      <div class="fb-title">500+ Companies Hiring Now</div>
+      <div class="fb-title"><?= htmlspecialchars($dispCompanies, ENT_QUOTES, 'UTF-8') ?> Companies Hiring Now</div>
       <div class="fb-sub">From startups to Fortune 500 — find your next employer on AntCareers.</div>
     </div>
     <div class="fb-stats">
-      <div class="fb-stat"><div class="fb-stat-num">500+</div><div class="fb-stat-lbl">Companies</div></div>
-      <div class="fb-stat"><div class="fb-stat-num">2.4k</div><div class="fb-stat-lbl">Open Roles</div></div>
-      <div class="fb-stat"><div class="fb-stat-num">120+</div><div class="fb-stat-lbl">Industries</div></div>
+      <div class="fb-stat"><div class="fb-stat-num"><?= htmlspecialchars($dispCompanies, ENT_QUOTES, 'UTF-8') ?></div><div class="fb-stat-lbl">Companies</div></div>
+      <div class="fb-stat"><div class="fb-stat-num"><?= htmlspecialchars($dispOpenRoles, ENT_QUOTES, 'UTF-8') ?></div><div class="fb-stat-lbl">Open Roles</div></div>
+      <div class="fb-stat"><div class="fb-stat-num"><?= htmlspecialchars($dispIndustries, ENT_QUOTES, 'UTF-8') ?></div><div class="fb-stat-lbl">Industries</div></div>
     </div>
   </div>
 
@@ -325,6 +374,7 @@ $companiesJson = json_encode($companiesList, JSON_HEX_TAG | JSON_HEX_AMP);
       <button class="ms-trigger" type="button"><span class="ms-text">All Industries</span><i class="fas fa-chevron-down ms-arrow"></i></button>
       <div class="ms-panel">
         <?= $industryCheckboxesHtml ?>
+        <button type="button" class="ms-clear">Clear</button>
       </div>
     </div>
     <select class="filter-select" id="sizeFilter">
@@ -439,7 +489,7 @@ $companiesJson = json_encode($companiesList, JSON_HEX_TAG | JSON_HEX_AMP);
           '</button>' +
         '</div>' +
         '<div class="cc-body">' +
-          '<div class="cc-logo">' + (c.logo ? '<img src="' + c.logo + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML=\'' + c.emoji + '\'">' : c.emoji) + '</div>' +
+          '<div class="cc-logo">' + (c.logo ? '<img src="' + c.logo + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'' + c.emoji + '\'">' : c.emoji) + '</div>' +
           '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
             '<div class="cc-name">' + c.name + '</div>' +
             (c.verified ? '<span style="font-size:10px;color:#6ccf8a;background:rgba(76,175,112,0.12);border:1px solid rgba(76,175,112,0.25);padding:2px 7px;border-radius:3px;font-weight:700;white-space:nowrap;flex-shrink:0;">✓ Verified</span>' : '') +
@@ -491,6 +541,30 @@ $companiesJson = json_encode($companiesList, JSON_HEX_TAG | JSON_HEX_AMP);
       updateMsLabel(cb.closest('.ms-wrap'));
       window.filterCompanies();
     });
+  });
+  document.querySelectorAll('.ms-clear').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var wrap = btn.closest('.ms-wrap');
+      wrap.querySelectorAll('input:checked').forEach(function(cb){ cb.checked = false; });
+      updateMsLabel(wrap);
+      window.filterCompanies();
+    });
+  });
+
+  // Sync multi-select trigger width to dropdown panel width
+  document.querySelectorAll('.search-row .ms-wrap').forEach(function(wrap) {
+    var panel = wrap.querySelector('.ms-panel');
+    panel.style.display = 'block';
+    panel.style.visibility = 'hidden';
+    panel.style.position = 'absolute';
+    panel.style.width = 'max-content';
+    var pw = panel.scrollWidth;
+    panel.style.display = '';
+    panel.style.visibility = '';
+    panel.style.position = '';
+    panel.style.width = '';
+    if (pw > wrap.offsetWidth) wrap.style.minWidth = pw + 'px';
   });
 
   // INIT

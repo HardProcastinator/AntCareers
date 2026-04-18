@@ -32,7 +32,7 @@ try {
         JOIN users u ON u.id = j.employer_id
         LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
         WHERE j.status = 'Active'
-          AND (j.approval_status IS NULL OR j.approval_status = 'approved')
+          AND j.approval_status = 'approved'
           AND (j.deadline IS NULL OR j.deadline >= CURDATE())
         ORDER BY j.created_at DESC
         LIMIT 100
@@ -68,9 +68,9 @@ try {
 foreach ($dbJobs as $r) {
     $salMin = (float)($r['salary_min'] ?? 0);
     $salMax = (float)($r['salary_max'] ?? 0);
-    $cur    = ($r['salary_currency'] ?? 'PHP') === 'PHP' ? '₱' : ($r['salary_currency'] ?? '');
-    if ($salMin && $salMax)      $salary = $cur . number_format($salMin/1000,0) . 'k – ' . $cur . number_format($salMax/1000,0) . 'k';
-    elseif ($salMin)             $salary = $cur . number_format($salMin/1000,0) . 'k+';
+    $cur    = currencySymbol($r['salary_currency'] ?? 'PHP');
+    if ($salMin && $salMax)      $salary = $cur . number_format($salMin) . ' – ' . $cur . number_format($salMax);
+    elseif ($salMin)             $salary = $cur . number_format($salMin) . '+';
     else                         $salary = 'Not disclosed';
 
     $tags = array_filter(array_map('trim', explode(',', (string)($r['skills_required'] ?? ''))));
@@ -205,7 +205,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
     .ms-trigger .ms-arrow{font-size:8px;color:var(--text-muted);transition:transform 0.2s;flex-shrink:0;}
     .ms-wrap.open .ms-trigger .ms-arrow{transform:rotate(180deg);}
     .ms-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:7px;max-height:200px;overflow-y:auto;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+    .ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:7px;max-height:200px;overflow-y:auto;z-index:1050;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
     .ms-wrap.open .ms-panel{display:block;}
     .role-section{display:block;margin-top:8px;}
     .role-section-label{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin:10px 0 6px;display:block;}

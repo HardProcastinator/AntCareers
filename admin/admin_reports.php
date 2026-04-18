@@ -15,6 +15,7 @@ $initials  = count($nameParts) >= 2
     ? strtoupper(substr($nameParts[0],0,1).substr($nameParts[1],0,1))
     : strtoupper(substr($fullName,0,2));
 $db = getDB();
+require_once dirname(__DIR__) . '/includes/admin_notif_panel.php';
 
 $safe = static function (string $sql, PDO $db): int|float|string {
     try { return $db->query($sql)->fetchColumn(); } catch (Throwable) { return 0; }
@@ -23,6 +24,7 @@ $safe = static function (string $sql, PDO $db): int|float|string {
 // ── CSV export ────────────────────────────────────────────────
 $exportType = $_GET['export'] ?? '';
 if ($exportType === 'users') {
+    ob_clean();
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="antcareers_users_' . date('Ymd') . '.csv"');
     $out = fopen('php://output', 'w');
@@ -30,48 +32,51 @@ if ($exportType === 'users') {
     try {
         $rows = $db->query("SELECT id,full_name,email,account_type,COALESCE(account_status,'active'),created_at FROM users ORDER BY created_at DESC")->fetchAll(PDO::FETCH_NUM);
         foreach ($rows as $r) fputcsv($out, $r);
-    } catch (Throwable) {}
+    } catch (Throwable $e) { error_log('[AntCareers] CSV export users: ' . $e->getMessage()); }
     fclose($out); exit;
 }
 if ($exportType === 'jobs') {
+    ob_clean();
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="antcareers_jobs_' . date('Ymd') . '.csv"');
     $out = fopen('php://output', 'w');
     fputcsv($out, ['ID','Title','Company','Location','Type','Status','Approval','Posted']);
     try {
-        $rows = $db->query("SELECT j.id,j.title,u.company_name,j.location,j.type,j.status,j.approval_status,j.created_at FROM jobs j JOIN users u ON u.id=j.employer_id ORDER BY j.created_at DESC")->fetchAll(PDO::FETCH_NUM);
+        $rows = $db->query("SELECT j.id,j.title,COALESCE(u.company_name,'—'),j.location,j.job_type,j.status,j.approval_status,j.created_at FROM jobs j LEFT JOIN users u ON u.id=j.employer_id ORDER BY j.created_at DESC")->fetchAll(PDO::FETCH_NUM);
         foreach ($rows as $r) fputcsv($out, $r);
-    } catch (Throwable) {}
+    } catch (Throwable $e) { error_log('[AntCareers] CSV export jobs: ' . $e->getMessage()); }
     fclose($out); exit;
 }
 if ($exportType === 'applications') {
+    ob_clean();
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="antcareers_applications_' . date('Ymd') . '.csv"');
     $out = fopen('php://output', 'w');
     fputcsv($out, ['ID','Job Title','Company','Applicant','Status','Applied']);
     try {
-        $rows = $db->query("SELECT a.id,j.title,u2.company_name,u.full_name,a.status,a.created_at FROM applications a JOIN jobs j ON j.id=a.job_id JOIN users u ON u.id=a.user_id JOIN users u2 ON u2.id=j.employer_id ORDER BY a.created_at DESC")->fetchAll(PDO::FETCH_NUM);
+        $rows = $db->query("SELECT a.id,j.title,COALESCE(u2.company_name,'—'),COALESCE(u.full_name,'—'),a.status,a.applied_at FROM applications a LEFT JOIN jobs j ON j.id=a.job_id LEFT JOIN users u ON u.id=a.seeker_id LEFT JOIN users u2 ON u2.id=j.employer_id ORDER BY a.applied_at DESC")->fetchAll(PDO::FETCH_NUM);
         foreach ($rows as $r) fputcsv($out, $r);
-    } catch (Throwable) {}
+    } catch (Throwable $e) { error_log('[AntCareers] CSV export applications: ' . $e->getMessage()); }
     fclose($out); exit;
 }
 if ($exportType === 'hirings') {
+    ob_clean();
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="antcareers_hirings_' . date('Ymd') . '.csv"');
     $out = fopen('php://output', 'w');
     fputcsv($out, ['Application ID','Job Title','Company','Applicant','Email','Hired Date']);
     try {
         $rows = $db->query(
-            "SELECT a.id, j.title, u2.company_name, u.full_name, u.email, a.updated_at
+            "SELECT a.id, COALESCE(j.title,'—'), COALESCE(u2.company_name,'—'), COALESCE(u.full_name,'—'), COALESCE(u.email,'—'), a.updated_at
              FROM applications a
-             JOIN jobs j ON j.id = a.job_id
-             JOIN users u ON u.id = a.user_id
-             JOIN users u2 ON u2.id = j.employer_id
+             LEFT JOIN jobs j ON j.id = a.job_id
+             LEFT JOIN users u ON u.id = a.seeker_id
+             LEFT JOIN users u2 ON u2.id = j.employer_id
              WHERE a.status = 'Accepted'
              ORDER BY a.updated_at DESC"
         )->fetchAll(PDO::FETCH_NUM);
         foreach ($rows as $r) fputcsv($out, $r);
-    } catch (Throwable) {}
+    } catch (Throwable $e) { error_log('[AntCareers] CSV export hirings: ' . $e->getMessage()); }
     fclose($out); exit;
 }
 
@@ -91,7 +96,6 @@ $totalJobs     = (int)$safe("SELECT COUNT(*) FROM jobs", $db);
 $activeJobs    = (int)$safe("SELECT COUNT(*) FROM jobs WHERE status='Active' AND (deadline IS NULL OR deadline>=CURDATE())", $db);
 $pendingJobs   = (int)$safe("SELECT COUNT(*) FROM jobs WHERE approval_status='pending'", $db);
 $totalApps     = (int)$safe("SELECT COUNT(*) FROM applications", $db);
-$unreadNotifs  = (int)$safe("SELECT COUNT(*) FROM notifications WHERE user_id={$adminId} AND is_read=0", $db);
 
 // User growth by month
 $userGrowth = [];
@@ -306,7 +310,14 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
       .report-card,.stat-card,.perf-item{border:1px solid #ccc!important;background:#fff!important;break-inside:avoid}
       .stat-num,.perf-value{color:#000!important}
       .stat-lbl,.perf-label,.bar-lbl{color:#555!important}
-      .bar-fill-v{background:#333!important}
+      .bar-fill-v{background:#D13D2C!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+      .bar-fill-v.amber{background:#D4943A!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+      .bar-fill-v.blue{background:#4A90D9!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+      .bar-fill-v.green{background:#4CAF70!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+      .hbar-fill.green{background:#4CAF70!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+      .hbar-fill.amber{background:#D4943A!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+      .hbar-fill.red{background:#D13D2C!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+      .hbar-fill.blue{background:#4A90D9!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     }
 
     /* Light theme */
@@ -340,18 +351,17 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
     <div class="nav-links">
       <a class="nav-link" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
       <a class="nav-link" href="admin_users.php"><i class="fas fa-users"></i> Users</a>
-      <a class="nav-link" href="admin_companies.php"><i class="fas fa-building"></i> Companies</a>
-      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs</a>
+      <a class="nav-link" href="admin_companies.php"><i class="fas fa-building"></i> Companies<?php if($adminPendingCompanies>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingCompanies; ?></span><?php endif; ?></a>
+      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminPendingJobs>0): ?> <span style="background:var(--amber);color:#1A0A09;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingJobs; ?></span><?php endif; ?></a>
       <a class="nav-link" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
       <a class="nav-link active" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
     </div>
     <div class="nav-right">
       <button class="theme-btn" id="themeToggle"><i class="fas fa-moon"></i></button>
-      <a class="notif-btn-nav" href="admin_notifications.php" title="Notifications">
+      <button class="notif-btn-nav" id="navNotifBtn" onclick="toggleAdminNotifPanel()" title="Notifications">
         <i class="fas fa-bell"></i>
-        <?php if($unreadNotifs > 0): ?><span class="badge"><?php echo $unreadNotifs; ?></span><?php endif; ?>
-      </a>
-      <span class="admin-pill"><i class="fas fa-shield-alt"></i> Admin</span>
+        <?php if ($adminUnreadCount > 0): ?><span class="badge" id="adminNotifBadge"><?php echo $adminUnreadCount; ?></span><?php endif; ?>
+      </button>
       <div class="profile-wrap">
         <button class="profile-btn" id="profileToggle">
           <div class="profile-avatar"><?php echo htmlspecialchars($initials, ENT_QUOTES); ?></div>
@@ -624,7 +634,21 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
     if(!document.getElementById('profileToggle').contains(e.target))
       document.getElementById('profileDropdown').classList.remove('open');
   });
+
+  window.addEventListener('beforeprint', function() {
+    document.querySelectorAll('.bar-fill-v, .hbar-fill').forEach(function(el) {
+      el.style.transition = 'none';
+      if (el.classList.contains('bar-fill-v')) {
+        var h = el.style.height || (el.offsetHeight + 'px');
+        el.style.height = h;
+      } else {
+        var w = el.style.width || (el.offsetWidth / el.parentElement.offsetWidth * 100 + '%');
+        el.style.width = w;
+      }
+    });
+  });
 </script>
+<?php renderAdminNotifPanel(); ?>
 <?php require_once dirname(__DIR__) . '/includes/toast.php'; ?>
 </body>
 </html>

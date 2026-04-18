@@ -18,6 +18,7 @@ $initials  = count($nameParts) >= 2
     : strtoupper(substr($firstName,0,2));
 
 $db = getDB();
+require_once dirname(__DIR__) . '/includes/admin_notif_panel.php';
 $countValue = static function (string $sql) use ($db): int {
   try {
     return (int)$db->query($sql)->fetchColumn();
@@ -37,7 +38,6 @@ $adminStats = [
   'pending_companies' => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type)='employer' AND account_status='pending_approval'"),
   'pending_jobs'      => $countValue("SELECT COUNT(*) FROM jobs WHERE approval_status='pending' AND status='Active'"),
   'recruiters'        => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type)='recruiter'"),
-  'unread_notifs'     => $countValue("SELECT COUNT(*) FROM notifications WHERE user_id={$adminId} AND is_read=0"),
 ];
 
 // Recent activity logs — defensive (table created by migration)
@@ -56,7 +56,7 @@ try {
 $recentUsers = [];
 try {
   $stmt = $db->query(
-    "SELECT id, full_name, email, account_type, account_status, avatar_url, created_at
+    "SELECT id, full_name, email, account_type, account_status, avatar_url, contact, company_name, created_at
      FROM users
      WHERE LOWER(account_type) != 'admin'
      ORDER BY created_at DESC LIMIT 5"
@@ -68,8 +68,9 @@ try {
 $recentJobs = [];
 try {
   $stmt = $db->query(
-    "SELECT j.id, j.title, j.status, j.approval_status, j.job_type, j.created_at,
-            u.company_name, u.full_name AS employer_name
+    "SELECT j.id, j.title, j.status, j.approval_status, j.job_type, j.location, j.setup,
+            j.salary_min, j.salary_max, j.salary_currency, j.experience_level, j.deadline, j.created_at,
+            u.company_name, u.full_name AS employer_name, u.email AS employer_email
      FROM jobs j
      LEFT JOIN users u ON u.id = j.employer_id
      ORDER BY j.created_at DESC LIMIT 5"
@@ -446,11 +447,10 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     </div>
     <div class="nav-right">
       <button class="theme-btn" id="themeToggle"><i class="fas fa-sun"></i></button>
-      <a class="notif-btn-nav" href="admin_notifications.php" title="Admin Notifications">
+      <button class="notif-btn-nav" id="navNotifBtn" onclick="toggleAdminNotifPanel()" title="Admin Notifications">
         <i class="fas fa-bell"></i>
-        <?php if($adminStats['unread_notifs']>0): ?><span class="badge"><?php echo $adminStats['unread_notifs']; ?></span><?php endif; ?>
-      </a>
-      <span class="admin-pill"><i class="fas fa-shield-alt"></i> Admin</span>
+        <?php if ($adminUnreadCount > 0): ?><span class="badge" id="adminNotifBadge"><?php echo $adminUnreadCount; ?></span><?php endif; ?>
+      </button>
       <div class="profile-wrap" id="profileWrap">
         <button class="profile-btn" id="profileToggle">
           <div class="profile-avatar"><?php echo htmlspecialchars($initials, ENT_QUOTES); ?></div>
@@ -502,22 +502,6 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     <div class="search-greeting">Welcome back, <span><?php echo htmlspecialchars($firstName, ENT_QUOTES); ?>.</span></div>
     <div class="search-sub"><?php echo $adminStats['pending_jobs']; ?> job post<?php echo $adminStats['pending_jobs']!==1?'s':''; ?> pending approval&nbsp;·&nbsp;<?php echo $adminStats['pending_companies']; ?> company account<?php echo $adminStats['pending_companies']!==1?'s':''; ?> awaiting review.</div>
 
-    <div class="search-bar">
-      <span class="si"><i class="fas fa-search"></i></span>
-      <input type="text" id="searchInput" placeholder="Search users, jobs, employers, or reports…">
-      <div class="search-divider"></div>
-      <button class="search-btn" id="searchBtn"><i class="fas fa-arrow-right"></i> Search</button>
-    </div>
-
-    <!-- Quick action pills -->
-    <div class="quick-filters">
-      <span class="qf-pill" id="pill-pending" onclick="pillClick('pending')"><i class="fas fa-hourglass-half"></i> Pending Approvals</span>
-      <span class="qf-pill" id="pill-flagged" onclick="pillClick('flagged')"><i class="fas fa-flag"></i> Flagged Accounts</span>
-      <span class="qf-pill" id="pill-seekers" onclick="pillClick('seekers')"><i class="fas fa-user-search"></i> Job Seekers Only</span>
-      <span class="qf-pill" id="pill-employers" onclick="pillClick('employers')"><i class="fas fa-building"></i> Employers Only</span>
-      <span class="qf-pill" id="pill-reports" onclick="pillClick('reports')"><i class="fas fa-chart-bar"></i> View Reports</span>
-      <span class="qf-pill" id="pill-masterdata" onclick="pillClick('masterdata')"><i class="fas fa-database"></i> Master Data</span>
-    </div>
   </div>
 
   <div class="content-layout">
@@ -539,10 +523,10 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
       <div id="section-masterdata" class="anim anim-d1">
         <div class="sec-header">
           <div class="sec-title"><i class="fas fa-database"></i> Master Data</div>
-          <button class="see-more" onclick="showToast('Manage all master data','fa-database')">Manage all <i class="fas fa-arrow-right"></i></button>
+          <button class="see-more" onclick="window.location.href='admin_settings.php'">Manage all <i class="fas fa-arrow-right"></i></button>
         </div>
         <div class="featured-scroll">
-          <div class="featured-card" onclick="showToast('Manage Industries','fa-tags')">
+          <div class="featured-card" onclick="window.location.href='admin_settings.php'" style="cursor:pointer">
             <div class="fc-badge"><i class="fas fa-tags"></i> Master Data</div>
             <div class="fc-icon"><i class="fas fa-tags"></i></div>
             <div class="fc-title">Industries</div>
@@ -553,7 +537,7 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
               <button class="fc-action">View</button>
             </div>
           </div>
-          <div class="featured-card" onclick="showToast('Manage Job Types','fa-briefcase')">
+          <div class="featured-card" onclick="window.location.href='admin_settings.php'" style="cursor:pointer">
             <div class="fc-badge"><i class="fas fa-briefcase"></i> Master Data</div>
             <div class="fc-icon"><i class="fas fa-briefcase"></i></div>
             <div class="fc-title">Job Types</div>
@@ -564,7 +548,7 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
               <button class="fc-action">View</button>
             </div>
           </div>
-          <div class="featured-card" onclick="showToast('Manage Locations','fa-map-marker-alt')">
+          <div class="featured-card" onclick="window.location.href='admin_settings.php'" style="cursor:pointer">
             <div class="fc-badge"><i class="fas fa-map-marker-alt"></i> Master Data</div>
             <div class="fc-icon"><i class="fas fa-map-marker-alt"></i></div>
             <div class="fc-title">Locations</div>
@@ -575,7 +559,7 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
               <button class="fc-action">View</button>
             </div>
           </div>
-          <div class="featured-card" onclick="showToast('Manage Experience Levels','fa-layer-group')">
+          <div class="featured-card" onclick="window.location.href='admin_settings.php'" style="cursor:pointer">
             <div class="fc-badge"><i class="fas fa-layer-group"></i> Master Data</div>
             <div class="fc-icon"><i class="fas fa-layer-group"></i></div>
             <div class="fc-title">Experience Levels</div>
@@ -683,8 +667,11 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
         'color'    => $colors[$role] ?? 'linear-gradient(135deg,#D13D2C,#7A1515)',
         'role'     => $role,
         'email'    => $u['email'],
-        'date'     => date('M d', strtotime($u['created_at'])),
+        'contact'  => $u['contact'] ?? '',
+        'company'  => $u['company_name'] ?? '',
+        'date'     => date('M d, Y', strtotime($u['created_at'])),
         'status'   => $status === 'active' ? 'active' : ($status === 'suspended' ? 'flagged' : ($status === 'banned' ? 'inactive' : $status)),
+        'rawStatus'=> $status,
       ];
     }
     echo json_encode($jsUsers, JSON_HEX_TAG | JSON_HEX_APOS);
@@ -698,13 +685,27 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
       if (!empty($j['approval_status'])) $tags[] = ucfirst($j['approval_status']);
       $status = strtolower($j['approval_status'] ?? 'approved');
       if ($status === 'approved' && strtolower($j['status']) === 'active') $status = 'active';
+      $salaryMin = $j['salary_min'] ? number_format((float)$j['salary_min'], 0) : null;
+      $salaryMax = $j['salary_max'] ? number_format((float)$j['salary_max'], 0) : null;
+      $cur = currencySymbol($j['salary_currency'] ?? 'PHP');
+      $salary = $salaryMin && $salaryMax
+        ? $cur . $salaryMin . ' – ' . $salaryMax
+        : ($salaryMin ? $cur . $salaryMin . '+' : '');
       $jsJobs[] = [
-        'id'      => (int)$j['id'],
-        'title'   => $j['title'],
-        'company' => $j['company_name'] ?: ($j['employer_name'] ?: 'Unknown'),
-        'date'    => date('M d', strtotime($j['created_at'])),
-        'status'  => $status,
-        'tags'    => $tags,
+        'id'       => (int)$j['id'],
+        'title'    => $j['title'],
+        'company'  => $j['company_name'] ?: ($j['employer_name'] ?: 'Unknown'),
+        'employer' => $j['employer_name'] ?: '',
+        'empEmail' => $j['employer_email'] ?? '',
+        'date'     => date('M d, Y', strtotime($j['created_at'])),
+        'deadline' => $j['deadline'] ? date('M d, Y', strtotime($j['deadline'])) : '',
+        'status'   => $status,
+        'location' => $j['location'] ?? '',
+        'setup'    => $j['setup'] ?? '',
+        'jobType'  => $j['job_type'] ?? '',
+        'expLevel' => $j['experience_level'] ?? '',
+        'salary'   => $salary,
+        'tags'     => $tags,
       ];
     }
     echo json_encode($jsJobs, JSON_HEX_TAG | JSON_HEX_APOS);
@@ -734,9 +735,9 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
         </div>
         <div class="job-row-right">
           <div class="jr-actions">
-            <button class="jr-btn" onclick="showToast('View ${u.name}','fa-user')">View</button>
-            <button class="jr-btn a" onclick="showToast('Suspended ${u.name}','fa-ban')">Suspend</button>
-            <button class="jr-btn r" onclick="showToast('Deleted ${u.name}','fa-trash')">Delete</button>
+            <button class="jr-btn" onclick="viewUser(${u.id})">View</button>
+            <button class="jr-btn a" onclick="suspendUser(${u.id}, this)">Suspend</button>
+            <button class="jr-btn r" onclick="deleteUser(${u.id}, this)">Delete</button>
           </div>
         </div>
       </div>`).join('');
@@ -762,15 +763,120 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
         </div>
         <div class="job-row-right">
           <div class="jr-actions">
-            <button class="jr-btn" onclick="showToast('View ${j.title}','fa-eye')">View</button>
-            ${j.status==='pending'?`<button class="jr-apply" onclick="showToast('Approved!','fa-check')">Approve</button>`:''}
-            <button class="jr-btn r" onclick="showToast('Removed','fa-trash')">Remove</button>
+            <button class="jr-btn" onclick="viewJob(${j.id})">View</button>
+            ${j.status==='pending'?`<button class="jr-apply" onclick="approveJob(${j.id}, this)">Approve</button>`:''}
+            <button class="jr-btn r" onclick="removeJob(${j.id}, this)">Remove</button>
           </div>
         </div>
       </div>`).join('');
   }
 
   // ── SEARCH ──
+  const CSRF = '<?php echo htmlspecialchars($_SESSION["csrf_token"] ?? "", ENT_QUOTES); ?>';
+  async function adminAction(action, data) {
+    const res = await fetch('api_admin.php', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action, csrf_token: CSRF, ...data })
+    });
+    return res.json();
+  }
+  function viewUser(id) {
+    const u = usersData.find(x => x.id === id);
+    if (!u) return;
+    const roleLabel = { seeker:'Job Seeker', employer:'Employer', recruiter:'Recruiter', admin:'Admin' };
+    const roleColor = { seeker:'#4A90D9', employer:'#D4943A', recruiter:'#9C27B0', admin:'#D13D2C' };
+    const statusColor = { active:'#4CAF70', flagged:'#D13D2C', inactive:'#927C7A', suspended:'#D13D2C', banned:'#927C7A' };
+    const statusLabel = { active:'Active', flagged:'Suspended', inactive:'Banned', suspended:'Suspended', banned:'Banned' };
+    document.getElementById('modalBody').innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-right:24px;">
+        <div style="width:56px;height:56px;border-radius:50%;background:${u.color};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;">${u.initials}</div>
+        <div>
+          <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:#F5F0EE;">${u.name}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+            <span style="background:${roleColor[u.role]||'#D13D2C'}22;color:${roleColor[u.role]||'#D13D2C'};border:1px solid ${roleColor[u.role]||'#D13D2C'}44;border-radius:20px;padding:2px 10px;font-weight:700;">${roleLabel[u.role]||u.role}</span>
+            &nbsp;
+            <span style="background:${statusColor[u.rawStatus]||'#927C7A'}22;color:${statusColor[u.rawStatus]||'#927C7A'};border:1px solid ${statusColor[u.rawStatus]||'#927C7A'}44;border-radius:20px;padding:2px 10px;font-weight:700;">${statusLabel[u.rawStatus]||u.rawStatus}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        ${infoRow('fa-envelope','Email',u.email)}
+        ${infoRow('fa-phone','Contact',u.contact||'—')}
+        ${u.company ? infoRow('fa-building','Company',u.company) : ''}
+        ${infoRow('fa-calendar-plus','Joined',u.date)}
+        ${infoRow('fa-id-badge','User ID','#'+u.id)}
+        ${infoRow('fa-user-tag','Account Type',roleLabel[u.role]||u.role)}
+      </div>
+      <div style="margin-top:20px;display:flex;gap:8px;justify-content:flex-end;">
+        <a href="admin_users.php" style="padding:8px 16px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-mid);font-size:13px;font-weight:600;text-decoration:none;">All Users</a>
+      </div>`;
+    document.getElementById('jobModal').classList.add('open');
+  }
+  function viewJob(id) {
+    const j = jobPostsData.find(x => x.id === id);
+    if (!j) return;
+    const statusColor = { active:'#4CAF70', pending:'#D4943A', approved:'#4CAF70', rejected:'#D13D2C' };
+    const statusLabel = { active:'Active', pending:'Pending', approved:'Approved', rejected:'Rejected' };
+    const sc = statusColor[j.status]||'#927C7A';
+    document.getElementById('modalBody').innerHTML = `
+      <div style="padding-right:24px;margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Job Post</div>
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:#F5F0EE;margin-bottom:8px;">${j.title}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span style="background:${sc}22;color:${sc};border:1px solid ${sc}44;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">${statusLabel[j.status]||j.status}</span>
+          ${j.jobType?`<span style="background:rgba(74,144,217,.15);color:#7ab8f0;border:1px solid rgba(74,144,217,.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">${j.jobType}</span>`:''}
+          ${j.setup?`<span style="background:rgba(76,175,112,.12);color:#6ccf8a;border:1px solid rgba(76,175,112,.25);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">${j.setup}</span>`:''}
+          ${j.expLevel?`<span style="background:rgba(156,39,176,.12);color:#ce93d8;border:1px solid rgba(156,39,176,.25);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">${j.expLevel}</span>`:''}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        ${infoRow('fa-building','Company',j.company)}
+        ${j.empEmail?infoRow('fa-envelope','Employer Email',j.empEmail):''}
+        ${j.location?infoRow('fa-map-marker-alt','Location',j.location):''}
+        ${j.salary?infoRow('fa-money-bill-wave','Salary',j.salary):''}
+        ${infoRow('fa-calendar-plus','Posted',j.date)}
+        ${j.deadline?infoRow('fa-calendar-times','Deadline',j.deadline):''}
+        ${infoRow('fa-id-badge','Job ID','#'+j.id)}
+      </div>
+      <div style="margin-top:20px;display:flex;gap:8px;justify-content:flex-end;">
+        <a href="admin_jobs.php" style="padding:8px 16px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-mid);font-size:13px;font-weight:600;text-decoration:none;">All Jobs</a>
+      </div>`;
+    document.getElementById('jobModal').classList.add('open');
+  }
+  function infoRow(icon, label, val) {
+    return `<div style="background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:10px 14px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;"><i class="fas ${icon}" style="margin-right:4px;"></i>${label}</div>
+      <div style="font-size:13px;color:#F5F0EE;word-break:break-all;">${val||'—'}</div>
+    </div>`;
+  }
+  async function suspendUser(id, btn) {
+    if (!confirm('Suspend this user?')) return;
+    const r = await adminAction('suspend_user', { user_id: id });
+    if (r.success) { showToast('User suspended', 'fa-ban'); btn.closest('.job-row').remove(); }
+    else showToast(r.message || 'Action failed', 'fa-exclamation-triangle');
+  }
+  async function deleteUser(id, btn) {
+    if (!confirm('Ban this user?')) return;
+    const r = await adminAction('ban_user', { user_id: id });
+    if (r.success) { showToast('User banned', 'fa-trash'); btn.closest('.job-row').remove(); }
+    else showToast(r.message || 'Action failed', 'fa-exclamation-triangle');
+  }
+  async function approveJob(id, btn) {
+    const r = await adminAction('approve_job', { job_id: id });
+    if (r.success) {
+      showToast('Job approved', 'fa-check');
+      const row = btn.closest('.job-row');
+      row.querySelector('.jr-new.amber')?.classList.replace('amber','green');
+      row.querySelector('.jr-new.amber, .jr-new.green') && (row.querySelector('.jr-new.green').textContent = 'Active');
+      btn.remove();
+    } else showToast(r.message || 'Action failed', 'fa-exclamation-triangle');
+  }
+  async function removeJob(id, btn) {
+    if (!confirm('Remove this job post?')) return;
+    const r = await adminAction('remove_job', { job_id: id });
+    if (r.success) { showToast('Job removed', 'fa-trash'); btn.closest('.job-row').remove(); }
+    else showToast(r.message || 'Action failed', 'fa-exclamation-triangle');
+  }
   let activeFilter = null;
   function pillClick(id) {
     const pill = document.getElementById('pill-'+id);
@@ -788,16 +894,6 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     else if (id==='reports') { document.getElementById('section-reports').scrollIntoView({behavior:'smooth'}); }
     else if (id==='masterdata') { document.getElementById('section-masterdata').scrollIntoView({behavior:'smooth'}); }
   }
-
-  document.getElementById('searchBtn').addEventListener('click', () => {
-    const kw = document.getElementById('searchInput').value.trim().toLowerCase();
-    if (!kw) { renderUsers(usersData); renderJobs(jobPostsData); return; }
-    renderUsers(usersData.filter(u => u.name.toLowerCase().includes(kw) || u.email.toLowerCase().includes(kw) || u.role.includes(kw)));
-    renderJobs(jobPostsData.filter(j => j.title.toLowerCase().includes(kw) || j.company.toLowerCase().includes(kw)));
-  });
-  document.getElementById('searchInput').addEventListener('keyup', e => {
-    if (e.key==='Enter') document.getElementById('searchBtn').click();
-  });
 
   // ── THEME ──
   function setTheme(t) {
@@ -846,6 +942,7 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
   renderUsers(usersData);
   renderJobs(jobPostsData);
 </script>
+<?php renderAdminNotifPanel(); ?>
 <?php require_once dirname(__DIR__) . '/includes/toast.php'; ?>
 </body>
 </html>

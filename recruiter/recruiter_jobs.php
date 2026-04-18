@@ -624,10 +624,10 @@ $jobsJson = json_encode($jobs ?: []);
     $asc = strtolower($j['approval_status'] ?? 'pending');
     $sal  = '';
     if ($j['salary_min'] || $j['salary_max']) {
-        $cur = $j['salary_currency'] ?? 'PHP';
+        $cur = currencySymbol($j['salary_currency'] ?? 'PHP');
         $mn  = $j['salary_min'] ? number_format((float)$j['salary_min']) : '';
         $mx  = $j['salary_max'] ? number_format((float)$j['salary_max']) : '';
-        $sal  = $mn && $mx ? "{$cur} {$mn}–{$mx}" : ($mn ? "{$cur} {$mn}+" : "{$cur} up to {$mx}");
+        $sal  = $mn && $mx ? "{$cur}{$mn}–{$mx}" : ($mn ? "{$cur}{$mn}+" : "{$cur}up to {$mx}");
     }
     $pd = date('M j, Y', strtotime($j['created_at']));
   ?>

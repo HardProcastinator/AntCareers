@@ -43,9 +43,11 @@ $password = (string)($body['password'] ?? '');
 $remember = (bool)($body['remember'] ?? false);
 $csrf     = (string)($body['csrf_token'] ?? '');
 
-$respondError = static function (string $message, int $status = 200) use ($isJsonRequest): void {
+$respondError = static function (string $message, int $status = 200, string $errorType = '') use ($isJsonRequest): void {
     if ($isJsonRequest) {
-        jsonResponse(['success' => false, 'message' => $message], $status);
+        $resp = ['success' => false, 'message' => $message];
+        if ($errorType !== '') $resp['error_type'] = $errorType;
+        jsonResponse($resp, $status);
     }
 
     $_SESSION['login_error'] = $message;
@@ -110,7 +112,7 @@ if (!$passwordOk && $user !== false
     && (string)($user['account_status'] ?? '') === 'pending_approval'
     && password_verify($password, $user['password_hash'])) {
     recordLoginAttempt($email, $ip, false);
-    $respondError('Your account is pending admin approval. You will be notified once it is reviewed.');
+    $respondError('Your account is pending admin approval. You will be notified once it is reviewed.', 200, 'pending');
 }
 
 recordLoginAttempt($email, $ip, $passwordOk);
@@ -123,7 +125,7 @@ if (!$passwordOk) {
 $accountStatus = (string)($user['account_status'] ?? 'active');
 
 if ($accountStatus === 'pending_approval') {
-    $respondError('Your account is pending admin approval. You will be notified once it is reviewed.');
+    $respondError('Your account is pending admin approval. You will be notified once it is reviewed.', 200, 'pending');
 }
 
 if ($accountStatus === 'suspended') {
@@ -136,7 +138,7 @@ if ($accountStatus === 'suspended') {
     if ($expiresAt !== null) {
         $msg .= ' Suspension lifts on: ' . date('M j, Y g:i A', strtotime($expiresAt));
     }
-    $respondError($msg);
+    $respondError($msg, 200, 'suspended');
 }
 
 if ($accountStatus === 'banned') {
@@ -145,7 +147,7 @@ if ($accountStatus === 'banned') {
     if ($reason !== '') {
         $msg .= ' Reason: ' . $reason;
     }
-    $respondError($msg);
+    $respondError($msg, 200, 'banned');
 }
 
 // Rehash if needed

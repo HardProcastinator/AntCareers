@@ -17,7 +17,7 @@ try {
         JOIN users u ON u.id = j.employer_id
         LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
         WHERE j.status = 'Active'
-          AND (j.approval_status IS NULL OR j.approval_status = 'approved')
+          AND j.approval_status = 'approved'
           AND (j.deadline IS NULL OR j.deadline >= CURDATE())
         ORDER BY j.created_at DESC LIMIT 50
     ");
@@ -27,9 +27,9 @@ try {
     foreach ($rows as $r) {
         $salMin = (float)($r['salary_min'] ?? 0);
         $salMax = (float)($r['salary_max'] ?? 0);
-        $cur = ($r['salary_currency'] ?? 'PHP') === 'PHP' ? '₱' : ($r['salary_currency'] ?? '');
-        if ($salMin && $salMax)      $salary = $cur . number_format($salMin/1000,0) . 'k – ' . $cur . number_format($salMax/1000,0) . 'k';
-        elseif ($salMin)             $salary = $cur . number_format($salMin/1000,0) . 'k+';
+        $cur = currencySymbol($r['salary_currency'] ?? 'PHP');
+        if ($salMin && $salMax)      $salary = $cur . number_format($salMin) . ' – ' . $cur . number_format($salMax);
+        elseif ($salMin)             $salary = $cur . number_format($salMin) . '+';
         else                         $salary = 'Not disclosed';
 
         $tags = array_filter(array_map('trim', explode(',', (string)($r['skills_required'] ?? ''))));
@@ -45,8 +45,8 @@ try {
             'experience'  => $r['experience_level'] ?? '',
             'industry'    => $r['industry'] ?? '',
             'salary'      => $salary,
-            'salaryMin'   => (int)($salMin / 1000),
-            'salaryMax'   => (int)($salMax / 1000),
+            'salaryMin'   => (int)$salMin,
+            'salaryMax'   => (int)$salMax,
             'description' => $r['description'] ?? '',
             'featured'    => $isFeatured,
             'tags'        => array_values(array_slice($tags, 0, 5)),
@@ -69,7 +69,7 @@ try {
         JOIN users u ON u.id = j.employer_id
         LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
         WHERE j.status = 'Active'
-          AND (j.approval_status IS NULL OR j.approval_status = 'approved')
+          AND j.approval_status = 'approved'
           AND (j.deadline IS NULL OR j.deadline >= CURDATE())
         GROUP BY j.employer_id
         ORDER BY open_roles DESC LIMIT 6
@@ -457,7 +457,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 7px;
     }
     .fs-title i { color: var(--red-bright); }
-    .fs-section { }
     .fs-section-label {
       font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--text-muted); margin-bottom: 10px;
@@ -600,7 +599,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     .cp-logo img { width: 100%; height: 100%; object-fit: cover; }
     .cp-name { font-size: 14px; font-weight: 700; color: var(--text-light); line-height: 1.25; }
     .cp-industry { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-    .cp-bio { font-size: 12px; color: var(--text-mid); line-height: 1.5; padding: 0 20px 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .cp-bio { font-size: 12px; color: var(--text-mid); line-height: 1.5; padding: 0 20px 14px; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .cp-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-top: 1px solid var(--soil-line); }
     .cp-roles { font-size: 12px; color: var(--amber); font-weight: 600; }
     .cp-view { font-size: 11px; color: var(--red-pale); font-weight: 600; display: flex; align-items: center; gap: 4px; }
@@ -913,7 +912,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     .ms-trigger .ms-arrow { font-size:8px; color:var(--text-muted); transition:transform 0.2s; flex-shrink:0; }
     .ms-wrap.open .ms-trigger .ms-arrow { transform:rotate(180deg); }
     .ms-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .ms-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:20; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+    .ms-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:1050; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
     .ms-wrap.open .ms-panel { display:block; }
     .ms-item { display:flex; align-items:center; gap:8px; padding:7px 12px; font-size:13px; color:var(--text-mid); cursor:pointer; transition:background-color 0.12s; user-select:none; }
     .ms-item:hover { background:var(--soil-hover); }
@@ -1474,7 +1473,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
           let hi = nums.length >= 2 ? parseInt(nums[1]) : 0;
           if (sk.includes('k') || lo < 1000) lo *= 1000;
           if (hi && (sk.includes('k') || hi < 1000)) hi *= 1000;
-          lo = lo / 1000; hi = hi ? hi / 1000 : 0;
           if (hi && j.salaryMax && j.salaryMax < lo) return false;
           if (hi && j.salaryMin && j.salaryMin > hi) return false;
           if (!hi && j.salaryMax && j.salaryMax < lo) return false;
