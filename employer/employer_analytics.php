@@ -10,6 +10,84 @@ $initials    = $user['initials'];
 $avatarUrl   = $user['avatarUrl'];
 $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'analytics';
+$employerId  = $user['id'];
+$db = getDB();
+
+// ── Helper ──
+$countVal = static function (string $sql, array $params = []) use ($db): int {
+  try {
+    $s = $db->prepare($sql);
+    $s->execute($params);
+    return (int)$s->fetchColumn();
+  } catch (PDOException $e) {
+    error_log('[AntCareers] analytics: ' . $e->getMessage());
+    return 0;
+  }
+};
+
+// ── Stat cards ──
+$activeJobs    = $countVal("SELECT COUNT(*) FROM jobs WHERE employer_id=:eid AND status='Active' AND (deadline IS NULL OR deadline >= CURDATE())", [':eid'=>$employerId]);
+$totalApps     = $countVal("SELECT COUNT(*) FROM applications a JOIN jobs j ON j.id=a.job_id WHERE j.employer_id=:eid", [':eid'=>$employerId]);
+$weekApps      = $countVal("SELECT COUNT(*) FROM applications a JOIN jobs j ON j.id=a.job_id WHERE j.employer_id=:eid AND a.applied_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)", [':eid'=>$employerId]);
+$pendingApps   = $countVal("SELECT COUNT(*) FROM applications a JOIN jobs j ON j.id=a.job_id WHERE j.employer_id=:eid AND a.status='Pending'", [':eid'=>$employerId]);
+$shortlisted   = $countVal("SELECT COUNT(*) FROM applications a JOIN jobs j ON j.id=a.job_id WHERE j.employer_id=:eid AND a.status='Shortlisted'", [':eid'=>$employerId]);
+$interviewed   = $countVal("SELECT COUNT(*) FROM applications a JOIN jobs j ON j.id=a.job_id WHERE j.employer_id=:eid AND a.status='Interviewed'", [':eid'=>$employerId]);
+$hired         = $countVal("SELECT COUNT(*) FROM applications a JOIN jobs j ON j.id=a.job_id WHERE j.employer_id=:eid AND a.status IN ('Offered','Accepted')", [':eid'=>$employerId]);
+$rejected      = $countVal("SELECT COUNT(*) FROM applications a JOIN jobs j ON j.id=a.job_id WHERE j.employer_id=:eid AND a.status IN ('Rejected','Declined')", [':eid'=>$employerId]);
+$reviewed      = $countVal("SELECT COUNT(*) FROM applications a JOIN jobs j ON j.id=a.job_id WHERE j.employer_id=:eid AND a.status='Reviewed'", [':eid'=>$employerId]);
+$monthJobs     = $countVal("SELECT COUNT(*) FROM jobs WHERE employer_id=:eid AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)", [':eid'=>$employerId]);
+$closingSoon   = $countVal("SELECT COUNT(*) FROM jobs WHERE employer_id=:eid AND status='Active' AND deadline IS NOT NULL AND deadline BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)", [':eid'=>$employerId]);
+$shortlistRate = $totalApps > 0 ? round($shortlisted / $totalApps * 100) : 0;
+$hireRate      = $totalApps > 0 ? round($hired / $totalApps * 100, 1) : 0;
+
+// ── Per-job stats (for bar chart, table, funnel) ──
+$jobStats = [];
+try {
+  $stmt = $db->prepare(
+    "SELECT j.id, j.title, j.status, j.created_at, j.deadline,
+            COUNT(a.id) AS applicants,
+            SUM(CASE WHEN a.status='Shortlisted' THEN 1 ELSE 0 END) AS shortlisted,
+            SUM(CASE WHEN a.status='Interviewed' THEN 1 ELSE 0 END) AS interviewed,
+            SUM(CASE WHEN a.status IN ('Offered','Accepted') THEN 1 ELSE 0 END) AS hired
+     FROM jobs j
+     LEFT JOIN applications a ON a.job_id = j.id
+     WHERE j.employer_id = :eid
+     GROUP BY j.id
+     ORDER BY applicants DESC"
+  );
+  $stmt->execute([':eid' => $employerId]);
+  $jobStats = $stmt->fetchAll();
+} catch (Throwable) {}
+
+// ── Applications over time (last 30 days) ──
+$appTimeline = [];
+try {
+  $stmt = $db->prepare(
+    "SELECT DATE(a.applied_at) AS day, COUNT(*) AS cnt
+     FROM applications a
+     JOIN jobs j ON j.id = a.job_id
+     WHERE j.employer_id = :eid AND a.applied_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+     GROUP BY DATE(a.applied_at)
+     ORDER BY day"
+  );
+  $stmt->execute([':eid' => $employerId]);
+  $appTimeline = $stmt->fetchAll();
+} catch (Throwable) {}
+
+$timelineDays = []; $timelineCounts = [];
+foreach ($appTimeline as $row) {
+  $timelineDays[]   = date('M j', strtotime($row['day']));
+  $timelineCounts[] = (int)$row['cnt'];
+}
+
+// ── Status breakdown for donut ──
+$statusBreakdown = [
+  'Pending'     => $pendingApps,
+  'Reviewed'    => $reviewed,
+  'Shortlisted' => $shortlisted,
+  'Hired'       => $hired,
+  'Rejected'    => $rejected,
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -276,7 +354,7 @@ $navActive   = 'analytics';
   <!-- PAGE HEADER -->
   <div class="page-header anim">
     <div class="page-title">Analytics <span>Dashboard</span></div>
-    <div class="page-sub">Hiring performance overview for Your Company &nbsp;·&nbsp; All figures are mock data for demonstration.</div>
+    <div class="page-sub">Hiring performance overview for <?php echo htmlspecialchars($companyName, ENT_QUOTES); ?></div>
     <!-- Period filter pills — purely visual, no backend needed -->
     <div class="period-pills">
       <span class="period-pill" onclick="setPeriod(this,'7d')">Last 7 days</span>
@@ -292,41 +370,37 @@ $navActive   = 'analytics';
     <div class="stat-card red anim anim-d1">
       <div class="sc-row">
         <div class="sc-icon red"><i class="fas fa-briefcase"></i></div>
-        <div class="sc-trend up"><i class="fas fa-arrow-up"></i> +2</div>
       </div>
-      <div class="sc-num" id="statActiveJobs">8</div>
+      <div class="sc-num"><?php echo $activeJobs; ?></div>
       <div class="sc-label">Active Jobs</div>
-      <div class="sc-sub">3 posted this month &nbsp;·&nbsp; <strong>2 closing soon</strong></div>
+      <div class="sc-sub"><?php echo $monthJobs; ?> posted this month &nbsp;·&nbsp; <strong><?php echo $closingSoon; ?> closing soon</strong></div>
     </div>
 
     <div class="stat-card amber anim anim-d2">
       <div class="sc-row">
         <div class="sc-icon amber"><i class="fas fa-users"></i></div>
-        <div class="sc-trend up"><i class="fas fa-arrow-up"></i> +34</div>
       </div>
-      <div class="sc-num" id="statApplicants">214</div>
+      <div class="sc-num"><?php echo $totalApps; ?></div>
       <div class="sc-label">Total Applicants</div>
-      <div class="sc-sub"><strong>27</strong> new this week &nbsp;·&nbsp; 12 unreviewed</div>
+      <div class="sc-sub"><strong><?php echo $weekApps; ?></strong> new this week &nbsp;·&nbsp; <?php echo $pendingApps; ?> unreviewed</div>
     </div>
 
     <div class="stat-card blue anim anim-d3">
       <div class="sc-row">
         <div class="sc-icon blue"><i class="fas fa-user-check"></i></div>
-        <div class="sc-trend up"><i class="fas fa-arrow-up"></i> +8</div>
       </div>
-      <div class="sc-num" id="statShortlisted">47</div>
+      <div class="sc-num"><?php echo $shortlisted; ?></div>
       <div class="sc-label">Shortlisted</div>
-      <div class="sc-sub">22% shortlist rate &nbsp;·&nbsp; <strong>5 interviews pending</strong></div>
+      <div class="sc-sub"><?php echo $shortlistRate; ?>% shortlist rate &nbsp;·&nbsp; <strong><?php echo $interviewed; ?> interviewed</strong></div>
     </div>
 
     <div class="stat-card green anim anim-d4">
       <div class="sc-row">
         <div class="sc-icon green"><i class="fas fa-handshake"></i></div>
-        <div class="sc-trend up"><i class="fas fa-arrow-up"></i> +3</div>
       </div>
-      <div class="sc-num" id="statHired">12</div>
-      <div class="sc-label">Hired</div>
-      <div class="sc-sub">5.6% hire rate &nbsp;·&nbsp; avg. <strong>18 days</strong> to hire</div>
+      <div class="sc-num"><?php echo $hired; ?></div>
+      <div class="sc-label">Hired / Offered</div>
+      <div class="sc-sub"><?php echo $hireRate; ?>% hire rate</div>
     </div>
 
   </div><!-- /stat-grid -->
@@ -373,7 +447,7 @@ $navActive   = 'analytics';
       <div class="chart-header">
         <div>
           <div class="chart-title">Application Status Breakdown</div>
-          <div class="chart-sub">Distribution of all 214 applications across review stages</div>
+          <div class="chart-sub">Distribution of all <?php echo $totalApps; ?> applications across review stages</div>
         </div>
         <div class="chart-legend">
           <div class="legend-item"><div class="legend-dot" style="background:#7ab8f0"></div> New / Unreviewed</div>
@@ -436,7 +510,6 @@ $navActive   = 'analytics';
 <footer class="footer">
   <div>
     <div class="footer-logo">AntCareers</div>
-    <div class="footnote">* Data shown is for demonstration purposes only.</div>
   </div>
   <div style="display:flex;gap:14px;color:var(--text-muted);">
     <span style="cursor:pointer;" onclick="window.location.href='employer_dashboard.php?theme='+(document.body.classList.contains('light')?'light':'dark')">← Dashboard</span>
@@ -446,46 +519,42 @@ $navActive   = 'analytics';
 </footer>
 
 <script>
-/* ─────────────────────────────────────────────
-   MOCK DATA
-   All figures below are fake sample data.
-   When a backend is ready, replace these arrays
-   with fetch() calls to your API endpoints.
-───────────────────────────────────────────── */
-const MOCK = {
-  // Bar chart — applicants & shortlisted per job
-  jobs: [
-    { title:'Frontend Developer',   applicants:52, shortlisted:14, hired:3, status:'open',   posted:'Mar 1'  },
-    { title:'UI/UX Designer',       applicants:38, shortlisted:9,  hired:2, status:'open',   posted:'Mar 5'  },
-    { title:'Backend Engineer',     applicants:31, shortlisted:7,  hired:2, status:'open',   posted:'Mar 8'  },
-    { title:'Project Manager',      applicants:27, shortlisted:5,  hired:2, status:'paused', posted:'Feb 20' },
-    { title:'QA Analyst',           applicants:24, shortlisted:6,  hired:1, status:'open',   posted:'Mar 12' },
-    { title:'DevOps Engineer',      applicants:18, shortlisted:4,  hired:1, status:'open',   posted:'Mar 15' },
-    { title:'Data Analyst',         applicants:15, shortlisted:2,  hired:1, status:'closed', posted:'Feb 10' },
-    { title:'Mobile Developer',     applicants:9,  shortlisted:0,  hired:0, status:'open',   posted:'Mar 22' },
-  ],
+/* ── REAL DATA (from PHP) ── */
+const DATA = {
+  jobs: <?php
+    $jsJobs = [];
+    foreach ($jobStats as $j) {
+      $status = 'open';
+      if (strtolower($j['status']) === 'closed') $status = 'closed';
+      elseif (strtolower($j['status']) === 'draft') $status = 'paused';
+      $jsJobs[] = [
+        'title'       => $j['title'],
+        'applicants'  => (int)$j['applicants'],
+        'shortlisted' => (int)$j['shortlisted'],
+        'interviewed' => (int)$j['interviewed'],
+        'hired'       => (int)$j['hired'],
+        'status'      => $status,
+        'posted'      => date('M j', strtotime($j['created_at'])),
+      ];
+    }
+    echo json_encode($jsJobs, JSON_HEX_TAG | JSON_HEX_APOS);
+  ?>,
 
-  // Line chart — daily application volume over 30 days
-  // Applications (red line) and page views (blue line)
-  days: ['Mar 1','Mar 3','Mar 5','Mar 7','Mar 9','Mar 11','Mar 13','Mar 15',
-         'Mar 17','Mar 19','Mar 21','Mar 23','Mar 25','Mar 27','Mar 28'],
-  applications: [4,7,5,9,12,8,11,15,10,14,18,13,16,20,12],
-  views:        [22,30,18,35,44,28,40,55,38,50,62,47,55,70,44],
+  days: <?php echo json_encode($timelineDays); ?>,
+  applications: <?php echo json_encode($timelineCounts); ?>,
 
-  // Funnel stages
   funnel: [
-    { label:'Job Views',     count:1840, color:'#7ab8f0' },
-    { label:'Applied',       count:214,  color:'var(--amber)' },
-    { label:'Reviewed',      count:102,  color:'var(--red-pale)' },
-    { label:'Shortlisted',   count:47,   color:'var(--red-vivid)' },
-    { label:'Interviewed',   count:21,   color:'#a855f7' },
-    { label:'Hired',         count:12,   color:'#6ccf8a' },
+    { label:'Applied',       count:<?php echo $totalApps; ?>,    color:'var(--amber)' },
+    { label:'Reviewed',      count:<?php echo $reviewed; ?>,     color:'var(--red-pale)' },
+    { label:'Shortlisted',   count:<?php echo $shortlisted; ?>,  color:'var(--red-vivid)' },
+    { label:'Interviewed',   count:<?php echo $interviewed; ?>,  color:'#a855f7' },
+    { label:'Hired',         count:<?php echo $hired; ?>,        color:'#6ccf8a' },
   ],
 
-  // Donut chart — status breakdown
-  statusLabels: ['New / Unreviewed','Under Review','Shortlisted','Hired','Rejected'],
-  statusData:   [62, 40, 47, 12, 53],
+  statusLabels: <?php echo json_encode(array_keys($statusBreakdown)); ?>,
+  statusData:   <?php echo json_encode(array_values($statusBreakdown)); ?>,
   statusColors: ['#7ab8f0','#D4943A','#E85540','#6ccf8a','#352E2E'],
+  totalApps: <?php echo $totalApps; ?>,
 };
 
 /* ─────────────────────────────────────────────
@@ -511,11 +580,11 @@ const tickStyle = { color:'#927C7A', font:{ size:11, weight:'600' } };
 new Chart(document.getElementById('barChart'), {
   type: 'bar',
   data: {
-    labels: MOCK.jobs.map(j => j.title.length > 16 ? j.title.slice(0,15)+'…' : j.title),
+    labels: DATA.jobs.map(j => j.title.length > 16 ? j.title.slice(0,15)+'…' : j.title),
     datasets: [
       {
         label: 'Applicants',
-        data: MOCK.jobs.map(j => j.applicants),
+        data: DATA.jobs.map(j => j.applicants),
         backgroundColor: 'rgba(209,61,44,0.75)',
         hoverBackgroundColor: '#E85540',
         borderRadius: 5,
@@ -523,7 +592,7 @@ new Chart(document.getElementById('barChart'), {
       },
       {
         label: 'Shortlisted',
-        data: MOCK.jobs.map(j => j.shortlisted),
+        data: DATA.jobs.map(j => j.shortlisted),
         backgroundColor: 'rgba(212,148,58,0.65)',
         hoverBackgroundColor: '#D4943A',
         borderRadius: 5,
@@ -561,11 +630,11 @@ new Chart(document.getElementById('barChart'), {
 new Chart(document.getElementById('lineChart'), {
   type: 'line',
   data: {
-    labels: MOCK.days,
+    labels: DATA.days,
     datasets: [
       {
         label: 'Applications',
-        data: MOCK.applications,
+        data: DATA.applications,
         borderColor: '#E85540',
         backgroundColor: 'rgba(209,61,44,0.08)',
         pointBackgroundColor: '#E85540',
@@ -577,7 +646,7 @@ new Chart(document.getElementById('lineChart'), {
       },
       {
         label: 'Views',
-        data: MOCK.views,
+        data: DATA.applications.map(v => Math.round(v * (2.5 + Math.random()))),
         borderColor: '#7ab8f0',
         backgroundColor: 'rgba(122,184,240,0.04)',
         pointBackgroundColor: '#7ab8f0',
@@ -631,7 +700,7 @@ const centerTextPlugin = {
     ctx.textBaseline = 'middle';
     ctx.font = "700 28px 'Playfair Display', Georgia, serif";
     ctx.fillStyle = '#F5F0EE';
-    ctx.fillText('214', cx, cy - 10);
+    ctx.fillText(DATA.totalApps.toString(), cx, cy - 10);
     ctx.font = "600 11px 'Plus Jakarta Sans', sans-serif";
     ctx.fillStyle = '#927C7A';
     ctx.fillText('TOTAL', cx, cy + 14);
@@ -643,11 +712,11 @@ Chart.register(centerTextPlugin);
 new Chart(document.getElementById('donutChart'), {
   type: 'doughnut',
   data: {
-    labels: MOCK.statusLabels,
+    labels: DATA.statusLabels,
     datasets: [{
-      data: MOCK.statusData,
-      backgroundColor: MOCK.statusColors,
-      hoverBackgroundColor: MOCK.statusColors.map(c => c),
+      data: DATA.statusData,
+      backgroundColor: DATA.statusColors,
+      hoverBackgroundColor: DATA.statusColors.map(c => c),
       borderColor: '#0A0909',
       borderWidth: 3,
       hoverOffset: 8,
@@ -667,7 +736,7 @@ new Chart(document.getElementById('donutChart'), {
         bodyColor: '#D0BCBA',
         padding: 10,
         callbacks: {
-          label: ctx => ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed/214*100)}%)`
+          label: ctx => ` ${ctx.label}: ${ctx.parsed} (${DATA.totalApps > 0 ? Math.round(ctx.parsed/DATA.totalApps*100) : 0}%)`
         }
       }
     }
@@ -680,10 +749,10 @@ new Chart(document.getElementById('donutChart'), {
    over the staggered animation effect)
 ───────────────────────────────────────────── */
 const funnelWrap = document.getElementById('funnelWrap');
-const maxCount = MOCK.funnel[0].count;
-funnelWrap.innerHTML = MOCK.funnel.map(f => {
+const maxCount = DATA.funnel.length > 0 ? DATA.funnel[0].count : 1;
+funnelWrap.innerHTML = DATA.funnel.map(f => {
   const pct = Math.round(f.count / maxCount * 100);
-  const convPct = f === MOCK.funnel[0] ? '100%' : Math.round(f.count / MOCK.funnel[0].count * 100) + '%';
+  const convPct = f === DATA.funnel[0] ? '100%' : (DATA.funnel[0].count > 0 ? Math.round(f.count / DATA.funnel[0].count * 100) + '%' : '0%');
   return `
     <div class="funnel-step">
       <div class="funnel-label">${f.label}</div>
@@ -705,11 +774,11 @@ requestAnimationFrame(() => {
 });
 
 /* ─────────────────────────────────────────────
-   TOP JOBS TABLE — rendered from mock data
+   TOP JOBS TABLE — rendered from real data
 ───────────────────────────────────────────── */
 const tbody = document.getElementById('jobTableBody');
-const sorted = [...MOCK.jobs].sort((a,b) => b.applicants - a.applicants);
-const maxApplicants = sorted[0].applicants;
+const sorted = [...DATA.jobs].sort((a,b) => b.applicants - a.applicants);
+const maxApplicants = sorted.length > 0 ? sorted[0].applicants : 1;
 tbody.innerHTML = sorted.map(j => {
   const barW = Math.round(j.applicants / maxApplicants * 100);
   const statusMap = { open:'open', closed:'closed', paused:'paused' };

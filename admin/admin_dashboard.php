@@ -51,6 +51,43 @@ try {
   );
   $recentActivity = $stmt ? $stmt->fetchAll() : [];
 } catch (Throwable) {}
+
+// ── Recent users (latest 5) ──
+$recentUsers = [];
+try {
+  $stmt = $db->query(
+    "SELECT id, full_name, email, account_type, account_status, avatar_url, created_at
+     FROM users
+     WHERE LOWER(account_type) != 'admin'
+     ORDER BY created_at DESC LIMIT 5"
+  );
+  $recentUsers = $stmt ? $stmt->fetchAll() : [];
+} catch (Throwable) {}
+
+// ── Recent jobs (latest 5) ──
+$recentJobs = [];
+try {
+  $stmt = $db->query(
+    "SELECT j.id, j.title, j.status, j.approval_status, j.job_type, j.created_at,
+            u.company_name, u.full_name AS employer_name
+     FROM jobs j
+     LEFT JOIN users u ON u.id = j.employer_id
+     ORDER BY j.created_at DESC LIMIT 5"
+  );
+  $recentJobs = $stmt ? $stmt->fetchAll() : [];
+} catch (Throwable) {}
+
+// ── Analytics: weekly stats ──
+$weeklyUsers = $countValue("SELECT COUNT(*) FROM users WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$weeklyJobs  = $countValue("SELECT COUNT(*) FROM jobs WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$weeklyApps  = $countValue("SELECT COUNT(*) FROM applications WHERE applied_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHERE status='Active' AND (deadline IS NULL OR deadline >= CURDATE())");
+
+// ── Master data counts ──
+$mdCategories = $countValue("SELECT COUNT(DISTINCT industry) FROM jobs WHERE industry IS NOT NULL AND industry != ''");
+$mdLocations  = $countValue("SELECT COUNT(DISTINCT location) FROM jobs WHERE location IS NOT NULL AND location != ''");
+$mdExpLevels  = $countValue("SELECT COUNT(DISTINCT experience_level) FROM jobs WHERE experience_level IS NOT NULL");
+$mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -563,26 +600,26 @@ try {
           <button class="see-more" onclick="showToast('Manage all master data','fa-database')">Manage all <i class="fas fa-arrow-right"></i></button>
         </div>
         <div class="featured-scroll">
-          <div class="featured-card" onclick="showToast('Manage Categories','fa-tags')">
+          <div class="featured-card" onclick="showToast('Manage Industries','fa-tags')">
             <div class="fc-badge"><i class="fas fa-tags"></i> Master Data</div>
             <div class="fc-icon"><i class="fas fa-tags"></i></div>
-            <div class="fc-title">Categories</div>
+            <div class="fc-title">Industries</div>
             <div class="fc-sub">Job classification groups</div>
-            <div class="fc-num">12</div>
+            <div class="fc-num"><?php echo $mdCategories; ?></div>
             <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">Last updated today</span>
-              <button class="fc-action">Manage</button>
+              <span style="font-size:11px;color:var(--text-muted);">From job posts</span>
+              <button class="fc-action">View</button>
             </div>
           </div>
-          <div class="featured-card" onclick="showToast('Manage Industries','fa-industry')">
-            <div class="fc-badge"><i class="fas fa-industry"></i> Master Data</div>
-            <div class="fc-icon"><i class="fas fa-industry"></i></div>
-            <div class="fc-title">Industries</div>
-            <div class="fc-sub">Sector classifications</div>
-            <div class="fc-num">18</div>
+          <div class="featured-card" onclick="showToast('Manage Job Types','fa-briefcase')">
+            <div class="fc-badge"><i class="fas fa-briefcase"></i> Master Data</div>
+            <div class="fc-icon"><i class="fas fa-briefcase"></i></div>
+            <div class="fc-title">Job Types</div>
+            <div class="fc-sub">Employment types</div>
+            <div class="fc-num"><?php echo $mdJobTypes; ?></div>
             <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">Last updated Mar 19</span>
-              <button class="fc-action">Manage</button>
+              <span style="font-size:11px;color:var(--text-muted);">System-defined</span>
+              <button class="fc-action">View</button>
             </div>
           </div>
           <div class="featured-card" onclick="showToast('Manage Locations','fa-map-marker-alt')">
@@ -590,10 +627,10 @@ try {
             <div class="fc-icon"><i class="fas fa-map-marker-alt"></i></div>
             <div class="fc-title">Locations</div>
             <div class="fc-sub">Cities and regions</div>
-            <div class="fc-num">47</div>
+            <div class="fc-num"><?php echo $mdLocations; ?></div>
             <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">Last updated Mar 18</span>
-              <button class="fc-action">Manage</button>
+              <span style="font-size:11px;color:var(--text-muted);">From job posts</span>
+              <button class="fc-action">View</button>
             </div>
           </div>
           <div class="featured-card" onclick="showToast('Manage Experience Levels','fa-layer-group')">
@@ -601,10 +638,10 @@ try {
             <div class="fc-icon"><i class="fas fa-layer-group"></i></div>
             <div class="fc-title">Experience Levels</div>
             <div class="fc-sub">Seniority tiers</div>
-            <div class="fc-num">5</div>
+            <div class="fc-num"><?php echo $mdExpLevels; ?></div>
             <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">Stable</span>
-              <button class="fc-action">Manage</button>
+              <span style="font-size:11px;color:var(--text-muted);">System-defined</span>
+              <button class="fc-action">View</button>
             </div>
           </div>
         </div>
@@ -640,16 +677,21 @@ try {
         <div class="analytics-card">
           <div class="analytics-col">
             <div>
-              <div class="aitem"><div class="a-row"><span class="a-key">Users Over Time (this week)</span><span class="a-val">+48</span></div><div class="bar-track"><div class="bar-fill blue" style="width:72%"></div></div></div>
-              <div class="aitem"><div class="a-row"><span class="a-key">Jobs Posted Over Time</span><span class="a-val">+18</span></div><div class="bar-track"><div class="bar-fill amber" style="width:40%"></div></div></div>
+              <?php $userBar = $adminStats['users'] > 0 ? min(100, round($weeklyUsers / max($adminStats['users'], 1) * 100)) : 0; ?>
+              <div class="aitem"><div class="a-row"><span class="a-key">New Users (this week)</span><span class="a-val">+<?php echo $weeklyUsers; ?></span></div><div class="bar-track"><div class="bar-fill blue" style="width:<?php echo max($userBar, 5); ?>%"></div></div></div>
+              <?php $jobBar = $adminStats['jobs'] > 0 ? min(100, round($weeklyJobs / max($adminStats['jobs'], 1) * 100)) : 0; ?>
+              <div class="aitem"><div class="a-row"><span class="a-key">Jobs Posted (this week)</span><span class="a-val">+<?php echo $weeklyJobs; ?></span></div><div class="bar-track"><div class="bar-fill amber" style="width:<?php echo max($jobBar, 5); ?>%"></div></div></div>
             </div>
             <div>
-              <div class="aitem"><div class="a-row"><span class="a-key">Applications Over Time</span><span class="a-val">+231</span></div><div class="bar-track"><div class="bar-fill red" style="width:88%"></div></div></div>
-              <div class="aitem"><div class="a-row"><span class="a-key">Active Employers</span><span class="a-val">94 / 120</span></div><div class="bar-track"><div class="bar-fill green" style="width:78%"></div></div></div>
+              <?php $appBar = $adminStats['applications'] > 0 ? min(100, round($weeklyApps / max($adminStats['applications'], 1) * 100)) : 0; ?>
+              <div class="aitem"><div class="a-row"><span class="a-key">Applications (this week)</span><span class="a-val">+<?php echo $weeklyApps; ?></span></div><div class="bar-track"><div class="bar-fill red" style="width:<?php echo max($appBar, 5); ?>%"></div></div></div>
+              <?php $empBar = $adminStats['employers'] > 0 ? min(100, round($activeEmployers / max($adminStats['employers'], 1) * 100)) : 0; ?>
+              <div class="aitem"><div class="a-row"><span class="a-key">Active Employers</span><span class="a-val"><?php echo $activeEmployers; ?> / <?php echo $adminStats['employers']; ?></span></div><div class="bar-track"><div class="bar-fill green" style="width:<?php echo max($empBar, 5); ?>%"></div></div></div>
             </div>
           </div>
           <div class="analytics-note">
-            <strong style="color:var(--red-pale);">System Performance:</strong> All services operational · Most active employer: TechPH Inc. · Most applied job: Frontend Developer · Full chart visualization integrates with the backend in Week 4.
+            <strong style="color:var(--red-pale);">Platform Summary:</strong>
+            <?php echo $adminStats['users']; ?> total users · <?php echo $adminStats['active_jobs']; ?> active jobs · <?php echo $adminStats['applications']; ?> total applications · <?php echo $adminStats['pending_jobs']; ?> jobs pending approval.
           </div>
         </div>
       </div>
@@ -676,22 +718,55 @@ try {
 </div>
 
 <script>
-  // ── DATA ──
-  const usersData = [
-    { id:1, name:"Juan Santos", initials:"JS", color:"linear-gradient(135deg,#D13D2C,#7A1515)", role:"seeker", email:"juan@email.com", date:"Mar 20", status:"active" },
-    { id:2, name:"Maria Admin", initials:"MA", color:"linear-gradient(135deg,#D4943A,#a06020)", role:"employer", email:"maria@techph.com", date:"Mar 18", status:"active" },
-    { id:3, name:"Pedro Cruz", initials:"PC", color:"linear-gradient(135deg,#4CAF70,#2A7040)", role:"seeker", email:"pedro@email.com", date:"Mar 17", status:"flagged" },
-    { id:4, name:"Ana Lim", initials:"AL", color:"linear-gradient(135deg,#4A90D9,#2A6090)", role:"seeker", email:"ana@email.com", date:"Mar 15", status:"active" },
-    { id:5, name:"DataBridge Corp", initials:"DB", color:"linear-gradient(135deg,#9C27B0,#5A1070)", role:"employer", email:"hr@databridge.com", date:"Mar 14", status:"inactive" },
-  ];
+  // ── DATA (from DB) ──
+  const usersData = <?php
+    $jsUsers = [];
+    $colors = [
+      'seeker'    => 'linear-gradient(135deg,#4A90D9,#2A6090)',
+      'employer'  => 'linear-gradient(135deg,#D4943A,#a06020)',
+      'recruiter' => 'linear-gradient(135deg,#9C27B0,#5A1070)',
+    ];
+    foreach ($recentUsers as $u) {
+      $name = $u['full_name'] ?: 'Unknown';
+      $parts = preg_split('/\s+/', $name);
+      $initials = count($parts) >= 2
+        ? strtoupper(substr($parts[0],0,1).substr($parts[1],0,1))
+        : strtoupper(substr($name,0,2));
+      $role = strtolower($u['account_type']);
+      $status = strtolower($u['account_status'] ?? 'active');
+      $jsUsers[] = [
+        'id'       => (int)$u['id'],
+        'name'     => $name,
+        'initials' => $initials,
+        'color'    => $colors[$role] ?? 'linear-gradient(135deg,#D13D2C,#7A1515)',
+        'role'     => $role,
+        'email'    => $u['email'],
+        'date'     => date('M d', strtotime($u['created_at'])),
+        'status'   => $status === 'active' ? 'active' : ($status === 'suspended' ? 'flagged' : ($status === 'banned' ? 'inactive' : $status)),
+      ];
+    }
+    echo json_encode($jsUsers, JSON_HEX_TAG | JSON_HEX_APOS);
+  ?>;
 
-  const jobPostsData = [
-    { id:1, title:"Senior React Developer", company:"AppWorks PH", date:"Mar 21", status:"pending", tags:["React","TypeScript"] },
-    { id:2, title:"Cloud Infrastructure Engineer", company:"CloudServe Inc.", date:"Mar 21", status:"pending", tags:["AWS","Kubernetes"] },
-    { id:3, title:"Content Writer (Remote)", company:"MediaPH", date:"Mar 20", status:"pending", tags:["Writing","SEO"] },
-    { id:4, title:"Business Analyst Intern", company:"FinancePH", date:"Mar 20", status:"pending", tags:["Excel","Finance"] },
-    { id:5, title:"Frontend Developer", company:"TechPH Inc.", date:"Mar 18", status:"active", tags:["React","CSS"] },
-  ];
+  const jobPostsData = <?php
+    $jsJobs = [];
+    foreach ($recentJobs as $j) {
+      $tags = [];
+      if (!empty($j['job_type'])) $tags[] = $j['job_type'];
+      if (!empty($j['approval_status'])) $tags[] = ucfirst($j['approval_status']);
+      $status = strtolower($j['approval_status'] ?? 'approved');
+      if ($status === 'approved' && strtolower($j['status']) === 'active') $status = 'active';
+      $jsJobs[] = [
+        'id'      => (int)$j['id'],
+        'title'   => $j['title'],
+        'company' => $j['company_name'] ?: ($j['employer_name'] ?: 'Unknown'),
+        'date'    => date('M d', strtotime($j['created_at'])),
+        'status'  => $status,
+        'tags'    => $tags,
+      ];
+    }
+    echo json_encode($jsJobs, JSON_HEX_TAG | JSON_HEX_APOS);
+  ?>;
 
   // ── RENDER USERS ──
   function renderUsers(data) {
