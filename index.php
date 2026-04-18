@@ -366,7 +366,8 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       border-color: var(--red-vivid);
       box-shadow: 0 0 0 3px rgba(200,57,42,0.12), 0 4px 20px rgba(0,0,0,0.25);
     }
-    .search-bar i { padding: 0 14px; color: var(--text-muted); font-size: 14px; flex-shrink: 0; }
+    .search-bar > i { padding: 0 14px; color: var(--text-muted); font-size: 14px; flex-shrink: 0; }
+    .search-bar button i { color: inherit; }
     .search-bar input {
       flex: 1; padding: 14px 0; min-width: 0;
       background: none; border: none; outline: none;

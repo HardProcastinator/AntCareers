@@ -38,20 +38,29 @@ $db->exec("CREATE TABLE IF NOT EXISTS user_preferences (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+settings_ensure_column($db, 'user_preferences', 'notif_job_invitation', 'TINYINT(1) NOT NULL DEFAULT 1');
+settings_ensure_column($db, 'user_preferences', 'notif_job_offer', 'TINYINT(1) NOT NULL DEFAULT 1');
+settings_ensure_column($db, 'user_preferences', 'notif_relevant_jobs', 'TINYINT(1) NOT NULL DEFAULT 1');
 
 $notificationPrefs = [
   'email_new_message' => 1,
   'email_application_status' => 1,
   'email_interview_invite' => 1,
+  'notif_job_invitation' => 1,
+  'notif_job_offer' => 1,
+  'notif_relevant_jobs' => 1,
 ];
 $profileVisibility = 1;
 
-$prefStmt = $db->prepare('SELECT email_new_message, email_application_status, email_interview_invite FROM user_preferences WHERE user_id = ? LIMIT 1');
+$prefStmt = $db->prepare('SELECT email_new_message, email_application_status, email_interview_invite, notif_job_invitation, notif_job_offer, notif_relevant_jobs FROM user_preferences WHERE user_id = ? LIMIT 1');
 $prefStmt->execute([(int)$user['id']]);
 if ($prefRow = $prefStmt->fetch(PDO::FETCH_ASSOC)) {
   $notificationPrefs['email_new_message'] = (int)($prefRow['email_new_message'] ?? 1);
   $notificationPrefs['email_application_status'] = (int)($prefRow['email_application_status'] ?? 1);
   $notificationPrefs['email_interview_invite'] = (int)($prefRow['email_interview_invite'] ?? 1);
+  $notificationPrefs['notif_job_invitation'] = (int)($prefRow['notif_job_invitation'] ?? 1);
+  $notificationPrefs['notif_job_offer'] = (int)($prefRow['notif_job_offer'] ?? 1);
+  $notificationPrefs['notif_relevant_jobs'] = (int)($prefRow['notif_relevant_jobs'] ?? 1);
 }
 
 $visStmt = $db->prepare('SELECT show_in_people_search FROM seeker_profiles WHERE user_id = ? LIMIT 1');
@@ -98,16 +107,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $emailNewMessage = isset($_POST['email_new_message']) ? 1 : 0;
     $emailAppStatus = isset($_POST['email_application_status']) ? 1 : 0;
     $emailInterviewInvite = isset($_POST['email_interview_invite']) ? 1 : 0;
+    $notifJobInvitation = isset($_POST['notif_job_invitation']) ? 1 : 0;
+    $notifJobOffer = isset($_POST['notif_job_offer']) ? 1 : 0;
+    $notifRelevantJobs = isset($_POST['notif_relevant_jobs']) ? 1 : 0;
     $showInPeopleSearch = isset($_POST['show_in_people_search']) ? 1 : 0;
 
-    $prefUpsert = $db->prepare("INSERT INTO user_preferences (user_id, email_new_message, email_application_status, email_interview_invite)
-      VALUES (:uid, :msg, :app, :int)
-      ON DUPLICATE KEY UPDATE email_new_message = VALUES(email_new_message), email_application_status = VALUES(email_application_status), email_interview_invite = VALUES(email_interview_invite), updated_at = CURRENT_TIMESTAMP");
+    $prefUpsert = $db->prepare("INSERT INTO user_preferences (user_id, email_new_message, email_application_status, email_interview_invite, notif_job_invitation, notif_job_offer, notif_relevant_jobs)
+      VALUES (:uid, :msg, :app, :int, :inv, :off, :rel)
+      ON DUPLICATE KEY UPDATE email_new_message = VALUES(email_new_message), email_application_status = VALUES(email_application_status), email_interview_invite = VALUES(email_interview_invite), notif_job_invitation = VALUES(notif_job_invitation), notif_job_offer = VALUES(notif_job_offer), notif_relevant_jobs = VALUES(notif_relevant_jobs), updated_at = CURRENT_TIMESTAMP");
     $prefUpsert->execute([
       ':uid' => (int)$user['id'],
       ':msg' => $emailNewMessage,
       ':app' => $emailAppStatus,
       ':int' => $emailInterviewInvite,
+      ':inv' => $notifJobInvitation,
+      ':off' => $notifJobOffer,
+      ':rel' => $notifRelevantJobs,
     ]);
 
     $visUpdate = $db->prepare('UPDATE seeker_profiles SET show_in_people_search = :show WHERE user_id = :uid');
@@ -285,6 +300,9 @@ if (isset($_GET['pw'])) {
     .success-notice i { font-size:13px; }
 
     /* Toggle switch (dark mode) */
+    .pref-group-label { font-size:11px; font-weight:700; color:var(--red-bright); text-transform:uppercase; letter-spacing:0.08em; padding:18px 0 6px; display:flex; align-items:center; gap:7px; }
+    .pref-group-label i { font-size:10px; }
+    .pref-group-label:first-child { padding-top:0; }
     .pref-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--soil-line); }
     .pref-row:last-child { border-bottom:none; padding-bottom:0; }
     .pref-row:first-child { padding-top:0; }
@@ -534,7 +552,9 @@ if (isset($_GET['pw'])) {
         </div>
         <form class="section-body" method="post" action="antcareers_seekerSettings.php">
           <input type="hidden" name="action" value="save_preferences">
-          <!-- Dark mode toggle — wired to the existing theme system -->
+
+          <!-- Appearance -->
+          <div class="pref-group-label"><i class="fas fa-palette"></i> Appearance</div>
           <div class="pref-row">
             <div class="pref-info">
               <div class="pref-label">Dark Mode</div>
@@ -545,10 +565,13 @@ if (isset($_GET['pw'])) {
               <span class="toggle-track"></span>
             </label>
           </div>
+
+          <!-- Notification Preferences -->
+          <div class="pref-group-label"><i class="fas fa-bell"></i> Notification Preferences</div>
           <div class="pref-row">
             <div class="pref-info">
-              <div class="pref-label">Email me when I get a new message</div>
-              <div class="pref-desc">Receive an email when an employer or recruiter messages you</div>
+              <div class="pref-label">New messages</div>
+              <div class="pref-desc">Notify me when an employer or recruiter messages me</div>
             </div>
             <label class="toggle-switch" aria-label="Toggle message emails">
               <input type="checkbox" name="email_new_message" <?= !empty($notificationPrefs['email_new_message']) ? 'checked' : '' ?>>
@@ -557,8 +580,8 @@ if (isset($_GET['pw'])) {
           </div>
           <div class="pref-row">
             <div class="pref-info">
-              <div class="pref-label">Email me when my application status changes</div>
-              <div class="pref-desc">Stay informed when employers review or update your applications</div>
+              <div class="pref-label">Application status updates</div>
+              <div class="pref-desc">Notify me when employers review or update my applications</div>
             </div>
             <label class="toggle-switch" aria-label="Toggle application emails">
               <input type="checkbox" name="email_application_status" <?= !empty($notificationPrefs['email_application_status']) ? 'checked' : '' ?>>
@@ -567,8 +590,8 @@ if (isset($_GET['pw'])) {
           </div>
           <div class="pref-row">
             <div class="pref-info">
-              <div class="pref-label">Email me when I get an interview invite</div>
-              <div class="pref-desc">Get notified when interview schedules are created</div>
+              <div class="pref-label">Interview invitations</div>
+              <div class="pref-desc">Notify me when an interview schedule is created for me</div>
             </div>
             <label class="toggle-switch" aria-label="Toggle interview emails">
               <input type="checkbox" name="email_interview_invite" <?= !empty($notificationPrefs['email_interview_invite']) ? 'checked' : '' ?>>
@@ -577,8 +600,41 @@ if (isset($_GET['pw'])) {
           </div>
           <div class="pref-row">
             <div class="pref-info">
-              <div class="pref-label">Allow companies to find me in People Search</div>
-              <div class="pref-desc">Hide or show your seeker profile in search results</div>
+              <div class="pref-label">Job invitations</div>
+              <div class="pref-desc">Notify me when a recruiter invites me to apply for a job</div>
+            </div>
+            <label class="toggle-switch" aria-label="Toggle job invitation notifications">
+              <input type="checkbox" name="notif_job_invitation" <?= !empty($notificationPrefs['notif_job_invitation']) ? 'checked' : '' ?>>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="pref-row">
+            <div class="pref-info">
+              <div class="pref-label">Job offers</div>
+              <div class="pref-desc">Notify me when I receive an offer from an employer</div>
+            </div>
+            <label class="toggle-switch" aria-label="Toggle job offer notifications">
+              <input type="checkbox" name="notif_job_offer" <?= !empty($notificationPrefs['notif_job_offer']) ? 'checked' : '' ?>>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="pref-row">
+            <div class="pref-info">
+              <div class="pref-label">Relevant job postings</div>
+              <div class="pref-desc">Notify me when a new job matching my profile or skills is posted</div>
+            </div>
+            <label class="toggle-switch" aria-label="Toggle relevant job notifications">
+              <input type="checkbox" name="notif_relevant_jobs" <?= !empty($notificationPrefs['notif_relevant_jobs']) ? 'checked' : '' ?>>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <!-- Privacy -->
+          <div class="pref-group-label"><i class="fas fa-eye"></i> Privacy</div>
+          <div class="pref-row">
+            <div class="pref-info">
+              <div class="pref-label">Show in People Search</div>
+              <div class="pref-desc">Allow employers and recruiters to find my profile in search results</div>
             </div>
             <label class="toggle-switch" aria-label="Toggle people search visibility">
               <input type="checkbox" name="show_in_people_search" <?= !empty($profileVisibility) ? 'checked' : '' ?>>

@@ -76,6 +76,13 @@ if ($exportType === 'hirings') {
 }
 
 // ── Stats ─────────────────────────────────────────────────────
+// Time-period filter for charts
+$validPeriods = ['1' => 1, '3' => 3, '6' => 6, '12' => 12];
+$periodKey = (string)($_GET['period'] ?? '6');
+if (!isset($validPeriods[$periodKey])) $periodKey = '6';
+$periodMonths = $validPeriods[$periodKey];
+$periodInterval = "INTERVAL {$periodMonths} MONTH";
+
 $totalUsers    = (int)$safe("SELECT COUNT(*) FROM users", $db);
 $totalSeekers  = (int)$safe("SELECT COUNT(*) FROM users WHERE LOWER(account_type)='seeker'", $db);
 $totalEmployers= (int)$safe("SELECT COUNT(*) FROM users WHERE LOWER(account_type)='employer'", $db);
@@ -86,35 +93,37 @@ $pendingJobs   = (int)$safe("SELECT COUNT(*) FROM jobs WHERE approval_status='pe
 $totalApps     = (int)$safe("SELECT COUNT(*) FROM applications", $db);
 $unreadNotifs  = (int)$safe("SELECT COUNT(*) FROM notifications WHERE user_id={$adminId} AND is_read=0", $db);
 
-// User growth by month (last 6 months)
+// User growth by month
 $userGrowth = [];
 try {
     $rows = $db->query(
         "SELECT DATE_FORMAT(created_at,'%Y-%m') AS month, COUNT(*) AS cnt
          FROM users
-         WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+         WHERE created_at >= DATE_SUB(NOW(), {$periodInterval})
          GROUP BY month ORDER BY month"
     )->fetchAll();
     foreach ($rows as $r) $userGrowth[$r['month']] = (int)$r['cnt'];
 } catch (Throwable) {}
 
-// Job post trends by month (last 6 months)
+// Job post trends by month
 $jobTrends = [];
 try {
     $rows = $db->query(
         "SELECT DATE_FORMAT(created_at,'%Y-%m') AS month, COUNT(*) AS cnt
          FROM jobs
-         WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+         WHERE created_at >= DATE_SUB(NOW(), {$periodInterval})
          GROUP BY month ORDER BY month"
     )->fetchAll();
     foreach ($rows as $r) $jobTrends[$r['month']] = (int)$r['cnt'];
 } catch (Throwable) {}
 
-// Application status breakdown
+// Application status breakdown (filtered by period)
 $appStatuses = [];
 try {
     $rows = $db->query(
-        "SELECT status, COUNT(*) AS cnt FROM applications GROUP BY status"
+        "SELECT status, COUNT(*) AS cnt FROM applications
+         WHERE created_at >= DATE_SUB(NOW(), {$periodInterval})
+         GROUP BY status"
     )->fetchAll();
     foreach ($rows as $r) $appStatuses[$r['status']] = (int)$r['cnt'];
 } catch (Throwable) {}
@@ -125,7 +134,7 @@ try {
     $rows = $db->query(
         "SELECT DATE_FORMAT(created_at,'%Y-%m') AS month, COUNT(*) AS cnt
          FROM applications
-         WHERE status = 'Accepted' AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+         WHERE status = 'Accepted' AND created_at >= DATE_SUB(NOW(), {$periodInterval})
          GROUP BY month ORDER BY month"
     )->fetchAll();
     foreach ($rows as $r) $hiringTrends[$r['month']] = (int)$r['cnt'];
@@ -151,7 +160,7 @@ function lastNMonths(int $n): array {
     }
     return $months;
 }
-$months6 = lastNMonths(6);
+$months6 = lastNMonths($periodMonths);
 
 // Max values for bar scaling
 $maxUserGrowth = max(array_values($userGrowth) ?: [1]);
@@ -221,27 +230,6 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
     /* LAYOUT */
     .page-shell{max-width:1380px;margin:0 auto;padding:0 24px 80px}
     .content-layout{display:block}
-    .sidebar{display:none}
-
-    /* SIDEBAR */
-    .sidebar{position:sticky;top:72px;max-height:calc(100vh - 88px);overflow-y:auto;scrollbar-width:none}
-    .sidebar::-webkit-scrollbar{display:none}
-    .sidebar-card{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;overflow:hidden}
-    .sidebar-head{padding:16px 18px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--soil-line)}
-    .sidebar-title{font-size:12px;font-weight:700;color:#F5F0EE;display:flex;align-items:center;gap:7px;letter-spacing:0.07em;text-transform:uppercase}
-    .sidebar-title i{color:var(--red-bright);font-size:11px}
-    .sidebar-stats{padding:14px 16px;border-bottom:1px solid var(--soil-line);display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .sb-stat{background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:7px;padding:10px 12px}
-    .sb-stat-num{font-family:var(--font-display);font-size:20px;font-weight:700;color:#F5F0EE;line-height:1}
-    .sb-stat-lbl{font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-top:3px}
-    .sb-nav-item{display:flex;align-items:center;gap:10px;padding:11px 18px;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;transition:0.18s;border:none;background:none;font-family:var(--font-body);width:100%;text-align:left;border-bottom:1px solid var(--soil-line);text-decoration:none}
-    .sb-nav-item:last-child{border-bottom:none}
-    .sb-nav-item:hover{color:#F5F0EE;background:var(--soil-hover)}
-    .sb-nav-item.active{color:var(--red-pale);background:rgba(209,61,44,0.08);border-right:2px solid var(--red-vivid)}
-    .sb-nav-item i{width:16px;text-align:center;font-size:12px;color:var(--red-bright)}
-    .sb-badge{margin-left:auto;background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 7px}
-    .sb-badge.amber{background:var(--amber);color:#1A0A09}
-    .sb-badge.blue{background:#4A90D9;color:#fff}
 
     /* PAGE HEADER */
     .page-header{padding:32px 0 24px}
@@ -326,10 +314,17 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
     body.light .navbar{background:rgba(255,253,252,0.98);border-bottom-color:#D4B0AB}
     body.light .report-card,.body.light .stat-card{background:#fff;border-color:#E0CECA}
 
+    /* Period pills */
+    .period-pills { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; }
+    .period-pill { padding:6px 14px; border-radius:100px; font-size:12px; font-weight:600; border:1px solid var(--soil-line); background:var(--soil-hover); color:var(--text-muted); cursor:pointer; transition:all 0.18s; }
+    .period-pill:hover { border-color:rgba(209,61,44,0.4); color:var(--red-pale); }
+    .period-pill.active { background:rgba(209,61,44,0.12); border-color:rgba(209,61,44,0.45); color:var(--red-pale); }
+    body.light .period-pill { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .period-pill.active { background:rgba(209,61,44,0.08); border-color:rgba(209,61,44,0.3); color:var(--red-mid,#B83525); }
+
     ::-webkit-scrollbar{width:5px}
     ::-webkit-scrollbar-track{background:var(--soil-dark)}
     ::-webkit-scrollbar-thumb{background:var(--soil-line);border-radius:3px}
-    @media(max-width:1060px){.content-layout{grid-template-columns:1fr}.sidebar{position:static}}
     @media(max-width:760px){.stats-grid{grid-template-columns:1fr 1fr}.perf-grid{grid-template-columns:1fr 1fr}.nav-links{display:none}.page-shell{padding:0 16px 60px}.bar-chart{height:100px}}
   </style>
 </head>
@@ -372,6 +367,7 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
             <div class="pdh-sub"><i class="fas fa-shield-alt" style="margin-right:4px;"></i>Administrator</div>
           </div>
           <a class="pd-item" href="admin_notifications.php"><i class="fas fa-bell"></i> Notifications</a>
+          <a class="pd-item" href="admin_settings.php"><i class="fas fa-cog"></i> Settings</a>
           <div class="pd-divider"></div>
           <a class="pd-item danger" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
         </div>
@@ -387,33 +383,6 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
   </div>
 
   <div class="content-layout">
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="sidebar-card">
-        <div class="sidebar-head">
-          <div class="sidebar-title"><i class="fas fa-shield-alt"></i> Admin Panel</div>
-        </div>
-        <div class="sidebar-stats">
-          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($totalUsers); ?></div><div class="sb-stat-lbl">Total Users</div></div>
-          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($totalJobs); ?></div><div class="sb-stat-lbl">Job Posts</div></div>
-          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($totalEmployers); ?></div><div class="sb-stat-lbl">Employers</div></div>
-          <div class="sb-stat"><div class="sb-stat-num"><?php echo number_format($totalApps); ?></div><div class="sb-stat-lbl">Applications</div></div>
-        </div>
-        <a class="sb-nav-item" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
-        <a class="sb-nav-item" href="admin_users.php"><i class="fas fa-users"></i> User Accounts</a>
-        <?php
-          $pc = (int)$safe("SELECT COUNT(*) FROM users WHERE LOWER(account_type)='employer' AND account_status='pending_approval'", $db);
-          $pj = (int)$safe("SELECT COUNT(*) FROM jobs WHERE approval_status='pending' AND status='Active'", $db);
-        ?>
-        <a class="sb-nav-item" href="admin_companies.php"><i class="fas fa-building"></i> Company Approval <?php if($pc>0):?><span class="sb-badge"><?php echo $pc;?></span><?php endif;?></a>
-        <a class="sb-nav-item" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Job Moderation <?php if($pj>0):?><span class="sb-badge amber"><?php echo $pj;?></span><?php endif;?></a>
-        <a class="sb-nav-item" href="admin_activity.php"><i class="fas fa-history"></i> Activity Logs</a>
-        <a class="sb-nav-item" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
-        <a class="sb-nav-item active" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports &amp; Analytics</a>
-        <a class="sb-nav-item" href="admin_notifications.php"><i class="fas fa-bell"></i> Notifications <?php if($unreadNotifs>0):?><span class="sb-badge"><?php echo $unreadNotifs;?></span><?php endif;?></a>
-      </div>
-    </aside>
 
     <!-- MAIN -->
     <main>
@@ -451,11 +420,19 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
         </div>
       </div>
 
+      <!-- Period Filter -->
+      <div class="period-pills">
+        <span class="period-pill<?= $periodKey==='1'?' active':'' ?>" onclick="window.location.search='?period=1'">Last 1 month</span>
+        <span class="period-pill<?= $periodKey==='3'?' active':'' ?>" onclick="window.location.search='?period=3'">Last 3 months</span>
+        <span class="period-pill<?= $periodKey==='6'?' active':'' ?>" onclick="window.location.search='?period=6'">Last 6 months</span>
+        <span class="period-pill<?= $periodKey==='12'?' active':'' ?>" onclick="window.location.search='?period=12'">Last 12 months</span>
+      </div>
+
       <!-- 1. USER GROWTH -->
       <div class="sec-section">
         <div class="sec-header">
           <div class="sec-title"><i class="fas fa-user-plus"></i> User Growth</div>
-          <span style="font-size:12px;color:var(--text-muted);">Last 6 months</span>
+          <span style="font-size:12px;color:var(--text-muted);">Last <?= $periodMonths ?> month<?= $periodMonths>1?'s':'' ?></span>
         </div>
         <div class="report-card">
           <?php if(empty($userGrowth)): ?>
@@ -488,7 +465,7 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
       <div class="sec-section">
         <div class="sec-header">
           <div class="sec-title"><i class="fas fa-briefcase"></i> Job Post Trends</div>
-          <span style="font-size:12px;color:var(--text-muted);">Last 6 months</span>
+          <span style="font-size:12px;color:var(--text-muted);">Last <?= $periodMonths ?> month<?= $periodMonths>1?'s':'' ?></span>
         </div>
         <div class="report-card">
           <?php if(empty($jobTrends)): ?>

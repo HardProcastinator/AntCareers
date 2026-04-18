@@ -283,11 +283,11 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
     .jr-meta i{font-size:10px;color:var(--red-bright);}
     .jr-company{color:var(--red-pale);font-weight:600;}
     .jr-chips{display:flex;gap:5px;flex-wrap:wrap;}
-    .job-row-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+    .job-row-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0;min-width:120px;}
     .jr-salary{font-family:var(--font-body);font-size:14px;font-weight:700;color:#F5F0EE;white-space:nowrap;letter-spacing:-0.01em;}
-    .jr-actions{display:flex;gap:7px;align-items:center;}
-    .jr-view{padding:7px 16px;border-radius:6px;background:var(--red-vivid);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:0.2s;letter-spacing:0.02em;}
-    .jr-view:hover{background:var(--red-bright);}
+    .jr-actions{display:flex;gap:8px;align-items:center;}
+    .jr-view{padding:7px 16px;border-radius:8px;background:var(--red-vivid);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:background 0.18s, transform 0.14s;letter-spacing:0.02em;white-space:nowrap;}
+    .jr-view:hover{background:var(--red-bright);transform:translateY(-1px);}
 
     /* Modal */
     .modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.82);backdrop-filter:blur(8px);align-items:center;justify-content:center;}

@@ -178,7 +178,7 @@ if ($action === 'approve_job') {
              WHERE id = :jid"
         )->execute([':admin' => $adminId, ':jid' => $jobId]);
 
-        $jRow = $db->prepare("SELECT j.title, j.employer_id, u.full_name FROM jobs j JOIN users u ON u.id = j.employer_id WHERE j.id = :jid LIMIT 1");
+        $jRow = $db->prepare("SELECT j.title, j.employer_id, j.industry, j.skills_required, u.full_name, COALESCE(cp.company_name, u.company_name, u.full_name, 'A company') AS company_label FROM jobs j JOIN users u ON u.id = j.employer_id LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id WHERE j.id = :jid LIMIT 1");
         $jRow->execute([':jid' => $jobId]);
         $j = $jRow->fetch();
 
@@ -186,6 +186,66 @@ if ($action === 'approve_job') {
             $notify((int)$j['employer_id'], $adminId, 'general',
                 "Your job post \"{$j['title']}\" has been approved and is now live.",
                 $jobId, 'job');
+
+            // ── Notify matching seekers ──────────────────────────────
+            try {
+                $jobIndustry = trim((string)($j['industry'] ?? ''));
+                $jobSkills   = array_filter(array_map('trim', explode(',', (string)($j['skills_required'] ?? ''))));
+                $companyLabel = (string)($j['company_label'] ?? 'A company');
+
+                // Build query: match seekers whose nr_classification starts with the job industry
+                // OR who have any skill matching the job's skills_required
+                // Exclude seekers who already applied, and respect notif_relevant_jobs preference
+                $matchedSeekers = [];
+
+                if ($jobIndustry !== '') {
+                    $indStmt = $db->prepare("
+                        SELECT DISTINCT u.id
+                        FROM users u
+                        JOIN seeker_profiles sp ON sp.user_id = u.id
+                        LEFT JOIN user_preferences up ON up.user_id = u.id
+                        WHERE u.account_type = 'seeker' AND u.is_active = 1
+                          AND sp.nr_classification LIKE CONCAT(:industry, '%')
+                          AND COALESCE(up.notif_relevant_jobs, 1) = 1
+                          AND u.id NOT IN (SELECT seeker_id FROM applications WHERE job_id = :jid)
+                    ");
+                    $indStmt->execute([':industry' => $jobIndustry, ':jid' => $jobId]);
+                    foreach ($indStmt->fetchAll(PDO::FETCH_COLUMN) as $sid) {
+                        $matchedSeekers[(int)$sid] = true;
+                    }
+                }
+
+                if (!empty($jobSkills)) {
+                    // Match seekers who have any overlapping skill
+                    $placeholders = implode(',', array_fill(0, count($jobSkills), '?'));
+                    $skillStmt = $db->prepare("
+                        SELECT DISTINCT u.id
+                        FROM users u
+                        JOIN seeker_skills ss ON ss.user_id = u.id
+                        LEFT JOIN user_preferences up ON up.user_id = u.id
+                        WHERE u.account_type = 'seeker' AND u.is_active = 1
+                          AND ss.skill_name IN ({$placeholders})
+                          AND COALESCE(up.notif_relevant_jobs, 1) = 1
+                          AND u.id NOT IN (SELECT seeker_id FROM applications WHERE job_id = ?)
+                    ");
+                    $params = array_values($jobSkills);
+                    $params[] = $jobId;
+                    $skillStmt->execute($params);
+                    foreach ($skillStmt->fetchAll(PDO::FETCH_COLUMN) as $sid) {
+                        $matchedSeekers[(int)$sid] = true;
+                    }
+                }
+
+                // Send notifications to matched seekers (cap at 200 to avoid overload)
+                $notifContent = "A new job matching your profile has been posted: \"{$j['title']}\" at {$companyLabel}.";
+                $count = 0;
+                foreach (array_keys($matchedSeekers) as $seekerId) {
+                    if (++$count > 200) break;
+                    $notify($seekerId, $adminId, 'relevant_job', $notifContent, $jobId, 'job');
+                }
+            } catch (Throwable $matchErr) {
+                error_log('[AntCareers] relevant job notification matching: ' . $matchErr->getMessage());
+            }
         }
 
         // Mark the job approval request notification as read for all admins

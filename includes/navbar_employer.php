@@ -114,11 +114,11 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
           <div class="pd-item" onclick="<?= navHref('../employer/employer_manageJobs.php') ?>">
             <i class="fas fa-briefcase"></i> Manage Jobs
           </div>
-          <div class="pd-item" onclick="<?= navHref('../employer/employer_settings.php') ?>">
-            <i class="fas fa-cog"></i> Settings
-          </div>
           <div class="pd-item" onclick="<?= navHref('../employer/employer_messages.php') ?>">
             <i class="fas fa-comments"></i> Messages
+          </div>
+          <div class="pd-item" onclick="<?= navHref('../employer/employer_settings.php') ?>">
+            <i class="fas fa-cog"></i> Settings
           </div>
           <div class="pd-divider"></div>
           <div class="pd-item danger" onclick="window.location.href='../auth/logout.php'">
