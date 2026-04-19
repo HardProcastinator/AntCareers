@@ -4,6 +4,7 @@ require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
 require_once dirname(__DIR__) . '/includes/auth_helpers.php';
 require_once dirname(__DIR__) . '/includes/job_titles.php';
+require_once dirname(__DIR__) . '/includes/countries.php';
 requireLogin('seeker');
 $user = getUser();
 $fullName  = $user['fullName'];
@@ -49,6 +50,24 @@ try {
 $spStmt = $db->prepare("SELECT * FROM seeker_profiles WHERE user_id = :uid LIMIT 1");
 $spStmt->execute([':uid' => $userId]);
 $sp = $spStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+// Country → currency map (used for dropdown and profile default)
+$_CURRENCY_MAP = ['AF'=>'AFN','AL'=>'ALL','DZ'=>'DZD','AD'=>'EUR','AO'=>'AOA','AG'=>'XCD','AR'=>'ARS','AM'=>'AMD','AU'=>'AUD','AT'=>'EUR','AZ'=>'AZN','BS'=>'BSD','BH'=>'BHD','BD'=>'BDT','BB'=>'BBD','BY'=>'BYN','BE'=>'EUR','BZ'=>'BZD','BJ'=>'XOF','BT'=>'BTN','BO'=>'BOB','BA'=>'BAM','BW'=>'BWP','BR'=>'BRL','BN'=>'BND','BG'=>'BGN','BF'=>'XOF','BI'=>'BIF','KH'=>'KHR','CM'=>'XAF','CA'=>'CAD','CV'=>'CVE','CF'=>'XAF','TD'=>'XAF','CL'=>'CLP','CN'=>'CNY','CO'=>'COP','KM'=>'KMF','CG'=>'XAF','CR'=>'CRC','HR'=>'EUR','CU'=>'CUP','CY'=>'EUR','CZ'=>'CZK','DK'=>'DKK','DJ'=>'DJF','DM'=>'XCD','DO'=>'DOP','EC'=>'USD','EG'=>'EGP','SV'=>'USD','GQ'=>'XAF','ER'=>'ERN','EE'=>'EUR','ET'=>'ETB','FJ'=>'FJD','FI'=>'EUR','FR'=>'EUR','GA'=>'XAF','GM'=>'GMD','GE'=>'GEL','DE'=>'EUR','GH'=>'GHS','GR'=>'EUR','GD'=>'XCD','GT'=>'GTQ','GN'=>'GNF','GW'=>'XOF','GY'=>'GYD','HT'=>'HTG','HN'=>'HNL','HU'=>'HUF','IS'=>'ISK','IN'=>'INR','ID'=>'IDR','IR'=>'IRR','IQ'=>'IQD','IE'=>'EUR','IL'=>'ILS','IT'=>'EUR','JM'=>'JMD','JP'=>'JPY','JO'=>'JOD','KZ'=>'KZT','KE'=>'KES','KI'=>'AUD','KW'=>'KWD','KG'=>'KGS','LA'=>'LAK','LV'=>'EUR','LB'=>'LBP','LS'=>'LSL','LR'=>'LRD','LY'=>'LYD','LI'=>'CHF','LT'=>'EUR','LU'=>'EUR','MG'=>'MGA','MW'=>'MWK','MY'=>'MYR','MV'=>'MVR','ML'=>'XOF','MT'=>'EUR','MH'=>'USD','MR'=>'MRU','MU'=>'MUR','MX'=>'MXN','FM'=>'USD','MD'=>'MDL','MC'=>'EUR','MN'=>'MNT','ME'=>'EUR','MA'=>'MAD','MZ'=>'MZN','MM'=>'MMK','NA'=>'NAD','NR'=>'AUD','NP'=>'NPR','NL'=>'EUR','NZ'=>'NZD','NI'=>'NIO','NE'=>'XOF','NG'=>'NGN','KP'=>'KPW','MK'=>'MKD','NO'=>'NOK','OM'=>'OMR','PK'=>'PKR','PW'=>'USD','PS'=>'ILS','PA'=>'PAB','PG'=>'PGK','PY'=>'PYG','PE'=>'PEN','PH'=>'PHP','PL'=>'PLN','PT'=>'EUR','QA'=>'QAR','RO'=>'RON','RU'=>'RUB','RW'=>'RWF','KN'=>'XCD','LC'=>'XCD','VC'=>'XCD','WS'=>'WST','SM'=>'EUR','ST'=>'STN','SA'=>'SAR','SN'=>'XOF','RS'=>'RSD','SC'=>'SCR','SL'=>'SLL','SG'=>'SGD','SK'=>'EUR','SI'=>'EUR','SB'=>'SBD','SO'=>'SOS','ZA'=>'ZAR','KR'=>'KRW','SS'=>'SSP','ES'=>'EUR','LK'=>'LKR','SD'=>'SDG','SR'=>'SRD','SE'=>'SEK','CH'=>'CHF','SY'=>'SYP','TW'=>'TWD','TJ'=>'TJS','TZ'=>'TZS','TH'=>'THB','TL'=>'USD','TG'=>'XOF','TO'=>'TOP','TT'=>'TTD','TN'=>'TND','TR'=>'TRY','TM'=>'TMT','TV'=>'AUD','UG'=>'UGX','UA'=>'UAH','AE'=>'AED','GB'=>'GBP','US'=>'USD','UY'=>'UYU','UZ'=>'UZS','VU'=>'VUV','VA'=>'EUR','VE'=>'VES','VN'=>'VND','YE'=>'YER','ZM'=>'ZMW','ZW'=>'ZWL','HK'=>'HKD'];
+$_allSalaryCurrencies = array_unique(array_values($_CURRENCY_MAP));
+sort($_allSalaryCurrencies);
+
+// Derive salary currency: prefer saved value, then country default, then PHP
+$_profileCountryName = $sp['country_name'] ?? '';
+$_countryDerivedCurrency = 'PHP';
+if ($_profileCountryName) {
+    foreach (getCountries() as $_c) {
+        if ($_c['name'] === $_profileCountryName) {
+            $_countryDerivedCurrency = $_CURRENCY_MAP[$_c['code']] ?? 'PHP';
+            break;
+        }
+    }
+}
+$_profileCurrencyCode = $sp['nr_salary_currency'] ?? $_countryDerivedCurrency;
 
 // skills
 $skStmt = $db->prepare("SELECT skill_name FROM seeker_skills WHERE user_id = :uid ORDER BY sort_order");
@@ -142,9 +161,10 @@ $jsProfile = json_encode([
         'workTypes'      => ($sp['nr_work_types'] ?? '') ? explode(',', $sp['nr_work_types']) : [],
         'locations'      => $sp['nr_locations']      ?? '',
         'rightToWork'    => $sp['nr_right_to_work']  ?? '',
-        'salary'         => $sp['nr_salary']         ?? '',
-        'salaryPeriod'   => $sp['nr_salary_period']  ?? 'per month',
-        'classification' => $sp['nr_classification'] ?? '',
+        'salary'         => $sp['nr_salary']          ?? '',
+        'salaryPeriod'   => $sp['nr_salary_period']   ?? 'per month',
+        'salaryCurrency' => $sp['nr_salary_currency'] ?? $_profileCurrencyCode,
+        'classification' => $sp['nr_classification']  ?? '',
         'approachability'=> $sp['nr_approachability']?? '',
     ],
 ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
@@ -483,7 +503,7 @@ try {
     .nr-loc-tag .remove-loc:hover { color:var(--red-vivid); }
     /* Salary row */
     .nr-salary-row { display:flex; gap:8px; align-items:stretch; }
-    .nr-salary-currency { padding:10px 14px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px 0 0 8px; font-size:13px; color:var(--text-muted); font-weight:700; display:flex; align-items:center; border-right:none; }
+    .nr-salary-currency { padding:10px 12px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px 0 0 8px; font-size:13px; color:var(--text-muted); font-weight:700; border-right:none; cursor:pointer; flex-shrink:0; appearance:none; -webkit-appearance:none; min-width:74px; }
     .nr-salary-input { flex:1; border-radius:0 8px 8px 0 !important; }
     .nr-salary-note { font-size:11px; color:var(--amber); margin-top:8px; display:flex; align-items:center; gap:6px; }
     .nr-salary-note i { font-size:12px; }
@@ -875,17 +895,157 @@ try {
       <input class="form-input" type="text" id="editLocation" placeholder="e.g. San Rafael Bulacan">
     </div>
     <div class="form-group">
+      <label class="form-label">Country</label>
+      <select class="form-input" id="editCountry">
+        <option value="">— Select country —</option>
+        <?php foreach (getCountries() as $_c): ?>
+        <option value="<?= htmlspecialchars($_c['name'], ENT_QUOTES) ?>"<?= ($_c['name'] === $_profileCountryName) ? ' selected' : '' ?>><?= htmlspecialchars($_c['name']) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div class="form-group">
       <label class="form-label">Phone number <span style="font-weight:400;text-transform:none;letter-spacing:0;font-style:italic;color:var(--text-muted);">(recommended)</span></label>
       <div class="form-row">
         <div>
           <select class="form-input" id="editPhoneCountry">
-            <option value="+63">Philippines (+63)</option>
-            <option value="+1">United States (+1)</option>
-            <option value="+65">Singapore (+65)</option>
+            <option value="+93">Afghanistan (+93)</option>
+            <option value="+355">Albania (+355)</option>
+            <option value="+213">Algeria (+213)</option>
+            <option value="+376">Andorra (+376)</option>
+            <option value="+244">Angola (+244)</option>
+            <option value="+54">Argentina (+54)</option>
+            <option value="+374">Armenia (+374)</option>
             <option value="+61">Australia (+61)</option>
-            <option value="+81">Japan (+81)</option>
-            <option value="+44">United Kingdom (+44)</option>
+            <option value="+43">Austria (+43)</option>
+            <option value="+994">Azerbaijan (+994)</option>
+            <option value="+973">Bahrain (+973)</option>
+            <option value="+880">Bangladesh (+880)</option>
+            <option value="+375">Belarus (+375)</option>
+            <option value="+32">Belgium (+32)</option>
+            <option value="+501">Belize (+501)</option>
+            <option value="+229">Benin (+229)</option>
+            <option value="+591">Bolivia (+591)</option>
+            <option value="+387">Bosnia and Herzegovina (+387)</option>
+            <option value="+267">Botswana (+267)</option>
+            <option value="+55">Brazil (+55)</option>
+            <option value="+673">Brunei (+673)</option>
+            <option value="+359">Bulgaria (+359)</option>
+            <option value="+226">Burkina Faso (+226)</option>
+            <option value="+855">Cambodia (+855)</option>
+            <option value="+237">Cameroon (+237)</option>
+            <option value="+1">Canada (+1)</option>
+            <option value="+56">Chile (+56)</option>
+            <option value="+86">China (+86)</option>
+            <option value="+57">Colombia (+57)</option>
+            <option value="+242">Congo (+242)</option>
+            <option value="+506">Costa Rica (+506)</option>
+            <option value="+385">Croatia (+385)</option>
+            <option value="+53">Cuba (+53)</option>
+            <option value="+357">Cyprus (+357)</option>
+            <option value="+420">Czech Republic (+420)</option>
+            <option value="+45">Denmark (+45)</option>
+            <option value="+1-809">Dominican Republic (+1-809)</option>
+            <option value="+593">Ecuador (+593)</option>
+            <option value="+20">Egypt (+20)</option>
+            <option value="+503">El Salvador (+503)</option>
+            <option value="+251">Ethiopia (+251)</option>
+            <option value="+358">Finland (+358)</option>
+            <option value="+33">France (+33)</option>
+            <option value="+241">Gabon (+241)</option>
+            <option value="+995">Georgia (+995)</option>
+            <option value="+49">Germany (+49)</option>
+            <option value="+233">Ghana (+233)</option>
+            <option value="+30">Greece (+30)</option>
+            <option value="+502">Guatemala (+502)</option>
+            <option value="+224">Guinea (+224)</option>
+            <option value="+509">Haiti (+509)</option>
+            <option value="+504">Honduras (+504)</option>
+            <option value="+852">Hong Kong (+852)</option>
+            <option value="+36">Hungary (+36)</option>
+            <option value="+354">Iceland (+354)</option>
             <option value="+91">India (+91)</option>
+            <option value="+62">Indonesia (+62)</option>
+            <option value="+98">Iran (+98)</option>
+            <option value="+964">Iraq (+964)</option>
+            <option value="+353">Ireland (+353)</option>
+            <option value="+972">Israel (+972)</option>
+            <option value="+39">Italy (+39)</option>
+            <option value="+1-876">Jamaica (+1-876)</option>
+            <option value="+81">Japan (+81)</option>
+            <option value="+962">Jordan (+962)</option>
+            <option value="+7">Kazakhstan (+7)</option>
+            <option value="+254">Kenya (+254)</option>
+            <option value="+965">Kuwait (+965)</option>
+            <option value="+996">Kyrgyzstan (+996)</option>
+            <option value="+856">Laos (+856)</option>
+            <option value="+961">Lebanon (+961)</option>
+            <option value="+218">Libya (+218)</option>
+            <option value="+60">Malaysia (+60)</option>
+            <option value="+960">Maldives (+960)</option>
+            <option value="+52">Mexico (+52)</option>
+            <option value="+373">Moldova (+373)</option>
+            <option value="+976">Mongolia (+976)</option>
+            <option value="+212">Morocco (+212)</option>
+            <option value="+258">Mozambique (+258)</option>
+            <option value="+95">Myanmar (+95)</option>
+            <option value="+264">Namibia (+264)</option>
+            <option value="+977">Nepal (+977)</option>
+            <option value="+31">Netherlands (+31)</option>
+            <option value="+64">New Zealand (+64)</option>
+            <option value="+505">Nicaragua (+505)</option>
+            <option value="+234">Nigeria (+234)</option>
+            <option value="+47">Norway (+47)</option>
+            <option value="+968">Oman (+968)</option>
+            <option value="+92">Pakistan (+92)</option>
+            <option value="+970">Palestine (+970)</option>
+            <option value="+507">Panama (+507)</option>
+            <option value="+675">Papua New Guinea (+675)</option>
+            <option value="+595">Paraguay (+595)</option>
+            <option value="+51">Peru (+51)</option>
+            <option value="+63">Philippines (+63)</option>
+            <option value="+48">Poland (+48)</option>
+            <option value="+351">Portugal (+351)</option>
+            <option value="+974">Qatar (+974)</option>
+            <option value="+40">Romania (+40)</option>
+            <option value="+7">Russia (+7)</option>
+            <option value="+250">Rwanda (+250)</option>
+            <option value="+966">Saudi Arabia (+966)</option>
+            <option value="+221">Senegal (+221)</option>
+            <option value="+381">Serbia (+381)</option>
+            <option value="+65">Singapore (+65)</option>
+            <option value="+421">Slovakia (+421)</option>
+            <option value="+386">Slovenia (+386)</option>
+            <option value="+252">Somalia (+252)</option>
+            <option value="+27">South Africa (+27)</option>
+            <option value="+82">South Korea (+82)</option>
+            <option value="+211">South Sudan (+211)</option>
+            <option value="+34">Spain (+34)</option>
+            <option value="+94">Sri Lanka (+94)</option>
+            <option value="+249">Sudan (+249)</option>
+            <option value="+46">Sweden (+46)</option>
+            <option value="+41">Switzerland (+41)</option>
+            <option value="+963">Syria (+963)</option>
+            <option value="+886">Taiwan (+886)</option>
+            <option value="+992">Tajikistan (+992)</option>
+            <option value="+255">Tanzania (+255)</option>
+            <option value="+66">Thailand (+66)</option>
+            <option value="+228">Togo (+228)</option>
+            <option value="+1-868">Trinidad and Tobago (+1-868)</option>
+            <option value="+216">Tunisia (+216)</option>
+            <option value="+90">Turkey (+90)</option>
+            <option value="+993">Turkmenistan (+993)</option>
+            <option value="+256">Uganda (+256)</option>
+            <option value="+380">Ukraine (+380)</option>
+            <option value="+971">United Arab Emirates (+971)</option>
+            <option value="+44">United Kingdom (+44)</option>
+            <option value="+1">United States (+1)</option>
+            <option value="+598">Uruguay (+598)</option>
+            <option value="+998">Uzbekistan (+998)</option>
+            <option value="+58">Venezuela (+58)</option>
+            <option value="+84">Vietnam (+84)</option>
+            <option value="+967">Yemen (+967)</option>
+            <option value="+260">Zambia (+260)</option>
+            <option value="+263">Zimbabwe (+263)</option>
           </select>
         </div>
         <div>
@@ -1263,7 +1423,11 @@ try {
     <div class="form-group">
       <label class="form-label">Amount</label>
       <div class="nr-salary-row">
-        <div class="nr-salary-currency">PHP</div>
+        <select class="nr-salary-currency" id="nrSalaryCurrency">
+          <?php foreach ($_allSalaryCurrencies as $_curr): ?>
+          <option value="<?= $_curr ?>"<?= $_curr === $_profileCurrencyCode ? ' selected' : '' ?>><?= $_curr ?></option>
+          <?php endforeach; ?>
+        </select>
         <input class="form-input nr-salary-input" type="text" id="nrSalaryInput" placeholder="Enter amount">
       </div>
     </div>
@@ -1524,6 +1688,7 @@ try {
     fd.append('nr_right_to_work',   profile.nextRole.rightToWork     || '');
     fd.append('nr_salary',          profile.nextRole.salary          || '');
     fd.append('nr_salary_period',   profile.nextRole.salaryPeriod    || 'per month');
+    fd.append('nr_salary_currency', profile.nextRole.salaryCurrency  || 'PHP');
     fd.append('nr_classification',  profile.nextRole.classification  || '');
     fd.append('nr_approachability', profile.nextRole.approachability || '');
 
@@ -1546,6 +1711,12 @@ try {
     profile.title    = document.getElementById('editTitle').value.trim();
     profile.city     = document.getElementById('editLocation').value.trim();
     profile.expLevel = document.getElementById('editExpLevel').value;
+    const newCountry = document.getElementById('editCountry').value;
+    if (newCountry !== undefined) {
+      profile.country = newCountry;
+      updateSalaryCurrencyDisplay(newCountry);
+      syncPhoneCountryWithSelectedCountry(newCountry);
+    }
     profile.contact.phone = (document.getElementById('editPhoneCountry').value + ' ' + document.getElementById('editPhone').value.trim()).trim();
     // Update hero
     if (fullName) document.querySelector('.hero-name').textContent = fullName;
@@ -1558,6 +1729,49 @@ try {
     await saveToDb();
     showToast('Profile updated!', 'fa-check');
   }
+
+  // Country-name → currency code map (mirrors PHP COUNTRY_CURRENCIES)
+  const _SEEKER_CC = <?= json_encode(array_combine(
+    array_column(getCountries(), 'name'),
+    array_map(fn($c) => (['AF'=>'AFN','AL'=>'ALL','DZ'=>'DZD','AD'=>'EUR','AO'=>'AOA','AG'=>'XCD','AR'=>'ARS','AM'=>'AMD','AU'=>'AUD','AT'=>'EUR','AZ'=>'AZN','BS'=>'BSD','BH'=>'BHD','BD'=>'BDT','BB'=>'BBD','BY'=>'BYN','BE'=>'EUR','BZ'=>'BZD','BJ'=>'XOF','BT'=>'BTN','BO'=>'BOB','BA'=>'BAM','BW'=>'BWP','BR'=>'BRL','BN'=>'BND','BG'=>'BGN','BF'=>'XOF','BI'=>'BIF','KH'=>'KHR','CM'=>'XAF','CA'=>'CAD','CV'=>'CVE','CF'=>'XAF','TD'=>'XAF','CL'=>'CLP','CN'=>'CNY','CO'=>'COP','KM'=>'KMF','CG'=>'XAF','CR'=>'CRC','HR'=>'EUR','CU'=>'CUP','CY'=>'EUR','CZ'=>'CZK','DK'=>'DKK','DJ'=>'DJF','DM'=>'XCD','DO'=>'DOP','EC'=>'USD','EG'=>'EGP','SV'=>'USD','GQ'=>'XAF','ER'=>'ERN','EE'=>'EUR','ET'=>'ETB','FJ'=>'FJD','FI'=>'EUR','FR'=>'EUR','GA'=>'XAF','GM'=>'GMD','GE'=>'GEL','DE'=>'EUR','GH'=>'GHS','GR'=>'EUR','GD'=>'XCD','GT'=>'GTQ','GN'=>'GNF','GW'=>'XOF','GY'=>'GYD','HT'=>'HTG','HN'=>'HNL','HU'=>'HUF','IS'=>'ISK','IN'=>'INR','ID'=>'IDR','IR'=>'IRR','IQ'=>'IQD','IE'=>'EUR','IL'=>'ILS','IT'=>'EUR','JM'=>'JMD','JP'=>'JPY','JO'=>'JOD','KZ'=>'KZT','KE'=>'KES','KI'=>'AUD','KW'=>'KWD','KG'=>'KGS','LA'=>'LAK','LV'=>'EUR','LB'=>'LBP','LS'=>'LSL','LR'=>'LRD','LY'=>'LYD','LI'=>'CHF','LT'=>'EUR','LU'=>'EUR','MG'=>'MGA','MW'=>'MWK','MY'=>'MYR','MV'=>'MVR','ML'=>'XOF','MT'=>'EUR','MH'=>'USD','MR'=>'MRU','MU'=>'MUR','MX'=>'MXN','FM'=>'USD','MD'=>'MDL','MC'=>'EUR','MN'=>'MNT','ME'=>'EUR','MA'=>'MAD','MZ'=>'MZN','MM'=>'MMK','NA'=>'NAD','NR'=>'AUD','NP'=>'NPR','NL'=>'EUR','NZ'=>'NZD','NI'=>'NIO','NE'=>'XOF','NG'=>'NGN','KP'=>'KPW','MK'=>'MKD','NO'=>'NOK','OM'=>'OMR','PK'=>'PKR','PW'=>'USD','PS'=>'ILS','PA'=>'PAB','PG'=>'PGK','PY'=>'PYG','PE'=>'PEN','PH'=>'PHP','PL'=>'PLN','PT'=>'EUR','QA'=>'QAR','RO'=>'RON','RU'=>'RUB','RW'=>'RWF','KN'=>'XCD','LC'=>'XCD','VC'=>'XCD','WS'=>'WST','SM'=>'EUR','ST'=>'STN','SA'=>'SAR','SN'=>'XOF','RS'=>'RSD','SC'=>'SCR','SL'=>'SLL','SG'=>'SGD','SK'=>'EUR','SI'=>'EUR','SB'=>'SBD','SO'=>'SOS','ZA'=>'ZAR','KR'=>'KRW','SS'=>'SSP','ES'=>'EUR','LK'=>'LKR','SD'=>'SDG','SR'=>'SRD','SE'=>'SEK','CH'=>'CHF','SY'=>'SYP','TW'=>'TWD','TJ'=>'TJS','TZ'=>'TZS','TH'=>'THB','TL'=>'USD','TG'=>'XOF','TO'=>'TOP','TT'=>'TTD','TN'=>'TND','TR'=>'TRY','TM'=>'TMT','TV'=>'AUD','UG'=>'UGX','UA'=>'UAH','AE'=>'AED','GB'=>'GBP','US'=>'USD','UY'=>'UYU','UZ'=>'UZS','VU'=>'VUV','VA'=>'EUR','VE'=>'VES','VN'=>'VND','YE'=>'YER','ZM'=>'ZMW','ZW'=>'ZWL','HK'=>'HKD'])[$c['code']] ?? 'PHP',
+    getCountries())
+  ), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+  function updateSalaryCurrencyDisplay(countryName) {
+    var code = _SEEKER_CC[countryName] || 'PHP';
+    var el = document.getElementById('nrSalaryCurrency');
+    if (el) el.value = code;
+    profile.nextRole.salaryCurrency = code;
+  }
+
+  function syncPhoneCountryWithSelectedCountry(countryName) {
+    if (!countryName) return;
+    var phoneSelect = document.getElementById('editPhoneCountry');
+    var codeDisplay = document.getElementById('phoneCodeDisplay');
+    if (!phoneSelect) return;
+
+    var targetCode = '';
+    for (var i = 0; i < phoneSelect.options.length; i++) {
+      var opt = phoneSelect.options[i];
+      var label = (opt.textContent || '').trim();
+      var idx = label.lastIndexOf(' (');
+      var optCountry = idx > 0 ? label.slice(0, idx).trim() : label;
+      if (optCountry.toLowerCase() === countryName.toLowerCase()) {
+        targetCode = opt.value;
+        break;
+      }
+    }
+
+    if (targetCode) {
+      phoneSelect.value = targetCode;
+      if (codeDisplay) codeDisplay.textContent = targetCode;
+    }
+  }
+
+  document.getElementById('editCountry')?.addEventListener('change', function() {
+    syncPhoneCountryWithSelectedCountry(this.value);
+    updateSalaryCurrencyDisplay(this.value);
+  });
 
   // Phone country code sync
   document.getElementById('editPhoneCountry')?.addEventListener('change', function() {
@@ -1982,8 +2196,10 @@ try {
   async function saveNrSalary() {
     const amount = document.getElementById('nrSalaryInput').value.trim();
     const period = document.getElementById('nrSalaryPeriod').value;
+    const currency = document.getElementById('nrSalaryCurrency').value || 'PHP';
     profile.nextRole.salary = amount;
     profile.nextRole.salaryPeriod = period;
+    profile.nextRole.salaryCurrency = currency;
     renderNextRole();
     closeModal('nrSalaryModal');
     updateCompleteness();
@@ -2086,7 +2302,7 @@ try {
     set('nrWorkTypes', nr.workTypes.length ? nr.workTypes.join(', ') : '');
     set('nrLocations', nr.locations);
     set('nrRightToWork', nr.rightToWork);
-    set('nrSalary', nr.salary ? ('₱' + nr.salary + ' ' + nr.salaryPeriod) : '');
+    set('nrSalary', nr.salary ? ((nr.salaryCurrency || 'PHP') + ' ' + nr.salary + ' ' + nr.salaryPeriod) : '');
     set('nrClassification', nr.classification);
     set('nrApproachability', nr.approachability);
   }
@@ -2140,6 +2356,12 @@ try {
     if(editLocation && profile.city) editLocation.value = profile.city;
     const editExpLevel = document.getElementById('editExpLevel');
     if(editExpLevel && profile.expLevel) editExpLevel.value = profile.expLevel;
+    const editCountry = document.getElementById('editCountry');
+    if(editCountry && profile.country) {
+      editCountry.value = profile.country;
+      syncPhoneCountryWithSelectedCountry(profile.country);
+      updateSalaryCurrencyDisplay(profile.country);
+    }
     // Pre-fill phone
     if(profile.contact.phone) {
       const parts = profile.contact.phone.match(/^(\+\d+)\s+(.*)$/);
@@ -2186,6 +2408,8 @@ try {
     // Salary
     const nrSal = document.getElementById('nrSalaryInput');
     if(nrSal && profile.nextRole.salary) nrSal.value = profile.nextRole.salary;
+    const nrSalCur = document.getElementById('nrSalaryCurrency');
+    if(nrSalCur && profile.nextRole.salaryCurrency) nrSalCur.value = profile.nextRole.salaryCurrency;
     const nrSalP = document.getElementById('nrSalaryPeriod');
     if(nrSalP && profile.nextRole.salaryPeriod) nrSalP.value = profile.nextRole.salaryPeriod;
     // Classification

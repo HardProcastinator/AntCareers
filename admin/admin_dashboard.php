@@ -84,12 +84,6 @@ $weeklyUsers = $countValue("SELECT COUNT(*) FROM users WHERE created_at >= DATE_
 $weeklyJobs  = $countValue("SELECT COUNT(*) FROM jobs WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
 $weeklyApps  = $countValue("SELECT COUNT(*) FROM applications WHERE applied_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
 $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHERE status='Active' AND (deadline IS NULL OR deadline >= CURDATE())");
-
-// ── Master data counts ──
-$mdCategories = $countValue("SELECT COUNT(DISTINCT industry) FROM jobs WHERE industry IS NOT NULL AND industry != ''");
-$mdLocations  = $countValue("SELECT COUNT(DISTINCT location) FROM jobs WHERE location IS NOT NULL AND location != ''");
-$mdExpLevels  = $countValue("SELECT COUNT(DISTINCT experience_level) FROM jobs WHERE experience_level IS NOT NULL");
-$mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -233,7 +227,6 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     .sc-btn { padding:6px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:11px; font-weight:700; cursor:pointer; transition:0.18s; width:100%; text-decoration:none; display:block; text-align:center; }
     .sc-btn:hover { background:var(--soil-hover); border-color:var(--red-vivid); color:var(--red-pale); }
 
-    /* ── FEATURED CARDS (for master data + analytics) ── */
     .featured-scroll { display:flex; gap:14px; overflow-x:auto; padding:8px 6px 24px 6px; margin:-8px -6px 32px -6px; scrollbar-width:none; }
     .featured-scroll::-webkit-scrollbar { display:none; }
     .featured-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:14px; padding:22px; min-width:220px; max-width:220px; cursor:pointer; transition:all 0.25s; position:relative; overflow:hidden; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
@@ -583,60 +576,6 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
         <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-user-tie"></i></div><div class="sc-num"><?php echo number_format($adminStats['recruiters']); ?></div></div><div class="sc-label">Recruiters</div><a class="sc-btn" href="admin_recruiters.php">View Recruiters</a></div>
       </div>
 
-      <!-- MASTER DATA (featured-card scroll) -->
-      <div id="section-masterdata" class="anim anim-d1">
-        <div class="sec-header">
-          <div class="sec-title"><i class="fas fa-database"></i> Master Data</div>
-          <button class="see-more" onclick="window.location.href='admin_settings.php'">Manage all <i class="fas fa-arrow-right"></i></button>
-        </div>
-        <div class="featured-scroll">
-          <div class="featured-card" onclick="window.location.href='admin_settings.php'" style="cursor:pointer">
-            <div class="fc-badge"><i class="fas fa-tags"></i> Master Data</div>
-            <div class="fc-icon"><i class="fas fa-tags"></i></div>
-            <div class="fc-title">Industries</div>
-            <div class="fc-sub">Job classification groups</div>
-            <div class="fc-num"><?php echo $mdCategories; ?></div>
-            <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">From job posts</span>
-              <button class="fc-action">View</button>
-            </div>
-          </div>
-          <div class="featured-card" onclick="window.location.href='admin_settings.php'" style="cursor:pointer">
-            <div class="fc-badge"><i class="fas fa-briefcase"></i> Master Data</div>
-            <div class="fc-icon"><i class="fas fa-briefcase"></i></div>
-            <div class="fc-title">Job Types</div>
-            <div class="fc-sub">Employment types</div>
-            <div class="fc-num"><?php echo $mdJobTypes; ?></div>
-            <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">System-defined</span>
-              <button class="fc-action">View</button>
-            </div>
-          </div>
-          <div class="featured-card" onclick="window.location.href='admin_settings.php'" style="cursor:pointer">
-            <div class="fc-badge"><i class="fas fa-map-marker-alt"></i> Master Data</div>
-            <div class="fc-icon"><i class="fas fa-map-marker-alt"></i></div>
-            <div class="fc-title">Locations</div>
-            <div class="fc-sub">Cities and regions</div>
-            <div class="fc-num"><?php echo $mdLocations; ?></div>
-            <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">From job posts</span>
-              <button class="fc-action">View</button>
-            </div>
-          </div>
-          <div class="featured-card" onclick="window.location.href='admin_settings.php'" style="cursor:pointer">
-            <div class="fc-badge"><i class="fas fa-layer-group"></i> Master Data</div>
-            <div class="fc-icon"><i class="fas fa-layer-group"></i></div>
-            <div class="fc-title">Experience Levels</div>
-            <div class="fc-sub">Seniority tiers</div>
-            <div class="fc-num"><?php echo $mdExpLevels; ?></div>
-            <div class="fc-footer">
-              <span style="font-size:11px;color:var(--text-muted);">System-defined</span>
-              <button class="fc-action">View</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- RECENT REGISTRATIONS -->
       <div id="section-users" class="anim anim-d1" style="margin-bottom:40px;">
         <div class="sec-header">
@@ -975,7 +914,6 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     else if (id==='seekers') { renderUsers(usersData.filter(u=>u.role==='seeker')); renderJobs(jobPostsData); }
     else if (id==='employers') { renderUsers(usersData.filter(u=>u.role==='employer')); renderJobs(jobPostsData); }
     else if (id==='reports') { document.getElementById('section-reports').scrollIntoView({behavior:'smooth'}); }
-    else if (id==='masterdata') { document.getElementById('section-masterdata').scrollIntoView({behavior:'smooth'}); }
   }
 
   // ── THEME ──
@@ -991,8 +929,20 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
   // ── HAMBURGER ──
   const hamburger = document.getElementById('hamburger');
   const mobileMenu = document.getElementById('mobileMenu');
+  function syncMobileMenuPosition() {
+    const nav = document.getElementById('mainNavbar') || document.querySelector('.navbar');
+    if (!mobileMenu || !nav) return;
+    const rect = nav.getBoundingClientRect();
+    const top = Math.max(0, Math.round(rect.bottom));
+    mobileMenu.style.top = top + 'px';
+    mobileMenu.style.maxHeight = `calc(100dvh - ${top}px)`;
+  }
+  window.addEventListener('scroll', syncMobileMenuPosition, { passive: true });
+  window.addEventListener('resize', syncMobileMenuPosition);
+  syncMobileMenuPosition();
   hamburger.addEventListener('click', e => {
     e.stopPropagation();
+    syncMobileMenuPosition();
     const open = mobileMenu.classList.toggle('open');
     hamburger.querySelector('i').className = open ? 'fas fa-times' : 'fas fa-bars';
   });

@@ -1395,8 +1395,20 @@ $isLoggedIn = isset($_SESSION['user_id']);
   // ── HAMBURGER ──
   const hamburger = document.getElementById('hamburger');
   const mobileMenu = document.getElementById('mobileMenu');
+  function syncMobileMenuPosition() {
+    const nav = document.getElementById('mainNavbar') || document.querySelector('.navbar');
+    if (!mobileMenu || !nav) return;
+    const rect = nav.getBoundingClientRect();
+    const top = Math.max(0, Math.round(rect.bottom));
+    mobileMenu.style.top = top + 'px';
+    mobileMenu.style.maxHeight = `calc(100dvh - ${top}px)`;
+  }
+  window.addEventListener('scroll', syncMobileMenuPosition, { passive: true });
+  window.addEventListener('resize', syncMobileMenuPosition);
+  syncMobileMenuPosition();
   hamburger.addEventListener('click', e => {
     e.stopPropagation();
+    syncMobileMenuPosition();
     const open = mobileMenu.classList.toggle('open');
     hamburger.querySelector('i').className = open ? 'fas fa-times' : 'fas fa-bars';
   });

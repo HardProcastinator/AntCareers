@@ -760,8 +760,19 @@ if (isset($_GET['pw'])) {
   // ── Hamburger ──
   var hamburger = document.getElementById('hamburger');
   var mobileMenu = document.getElementById('mobileMenu');
+  function syncMobileMenuPosition() {
+    var nav = document.getElementById('mainNavbar') || document.querySelector('.navbar');
+    if (!mobileMenu || !nav) return;
+    var rect = nav.getBoundingClientRect();
+    var top = Math.max(0, Math.round(rect.bottom));
+    mobileMenu.style.top = top + 'px';
+    mobileMenu.style.maxHeight = 'calc(100dvh - ' + top + 'px)';
+  }
+  window.addEventListener('scroll', syncMobileMenuPosition, { passive: true });
+  window.addEventListener('resize', syncMobileMenuPosition);
+  syncMobileMenuPosition();
   if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function() { mobileMenu.classList.toggle('open'); });
+    hamburger.addEventListener('click', function() { syncMobileMenuPosition(); mobileMenu.classList.toggle('open'); });
   }
 
   // ── Password visibility ──

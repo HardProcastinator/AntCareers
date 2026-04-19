@@ -428,7 +428,7 @@ $maxApps       = max(array_values($appStatuses)  ?: [1]);
   <div class="mobile-divider"></div>
   <a class="mobile-link" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
 </div>
-<script>(function(){var h=document.getElementById('hamburger'),m=document.getElementById('mobileMenu');if(h&&m){h.addEventListener('click',function(e){e.stopPropagation();var o=m.classList.toggle('open');h.querySelector('i').className=o?'fas fa-times':'fas fa-bars';});document.addEventListener('click',function(e){if(!m.contains(e.target)&&e.target!==h){m.classList.remove('open');h.querySelector('i').className='fas fa-bars';}});}})();</script>
+<script>(function(){var h=document.getElementById('hamburger'),m=document.getElementById('mobileMenu');function syncMobileMenuPosition(){var nav=document.getElementById('mainNavbar')||document.querySelector('.navbar');if(!m||!nav)return;var rect=nav.getBoundingClientRect();var top=Math.max(0,Math.round(rect.bottom));m.style.top=top+'px';m.style.maxHeight='calc(100dvh - '+top+'px)';}window.addEventListener('scroll',syncMobileMenuPosition,{passive:true});window.addEventListener('resize',syncMobileMenuPosition);syncMobileMenuPosition();if(h&&m){h.addEventListener('click',function(e){e.stopPropagation();syncMobileMenuPosition();var o=m.classList.toggle('open');h.querySelector('i').className=o?'fas fa-times':'fas fa-bars';});document.addEventListener('click',function(e){if(!m.contains(e.target)&&e.target!==h){m.classList.remove('open');h.querySelector('i').className='fas fa-bars';}});}})();</script>
 
 <div class="page-shell">
   <div class="page-header">
