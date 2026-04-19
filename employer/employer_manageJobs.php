@@ -390,7 +390,21 @@ $jobsJson = json_encode($jobs ?: []);
       .page-shell,.content-layout{max-width:100%;overflow-x:hidden}
       table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
       .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
-      .job-card{padding:14px}
+      /* Stat pills — equal 2-column grid on mobile */
+      .stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+      .stat-pill{flex-direction:row;align-items:center;gap:8px;padding:10px 15px;text-align:left;min-height:auto;width:auto;box-sizing:border-box;min-width:0}
+      .sp-label{font-size:12px;flex:1;min-width:0}
+      .sp-count{font-size:17px;flex-shrink:0}
+      /* Job card — stack vertically, show actions below */
+      .job-card{padding:14px;flex-direction:column;gap:10px}
+      .job-icon{display:none}
+      .job-body{width:100%}
+      .job-right{display:flex!important;flex-direction:row;align-items:center;width:100%;gap:10px;border-top:1px solid var(--soil-line);padding-top:10px}
+      .app-badge{flex-direction:column;gap:2px;padding:7px 12px;min-width:auto;flex-shrink:0;align-items:center}
+      .app-badge>i{margin-bottom:0;font-size:12px}
+      .app-count{font-size:16px}
+      .app-count-lbl{font-size:9px;display:block}
+      .job-actions{flex:1;justify-content:flex-end;flex-wrap:wrap;gap:5px}
       .chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
       .chips::-webkit-scrollbar{display:none}
       .chips .chip,.chips .tag{flex-shrink:0}
@@ -444,17 +458,22 @@ $jobsJson = json_encode($jobs ?: []);
     body.light .stat-pill{background:#fff;border-color:#E0CECA;}
     body.light .sp-count{color:#1A0A09;}
 
-    /* ── Toolbar ── */
-    .filter-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
-    .filter-toolbar .search-wrap{flex:1;min-width:200px;position:relative;}
+    /* ── Filter Bar (Admin-style) ── */
+    .filter-toolbar{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;padding:16px 18px;margin-bottom:18px;}
+    .filter-form{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;}
+    .filter-group{display:flex;flex-direction:column;gap:5px;min-width:0;}
+    .filter-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;}
+    .filter-toolbar .search-wrap{flex:1;min-width:220px;position:relative;}
     .filter-toolbar .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;}
-    .filter-toolbar .search-wrap input{width:100%;padding:9px 13px 9px 34px;border-radius:7px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
-    .filter-toolbar .search-wrap input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
-    body.light .filter-toolbar .search-wrap input{background:#fff;border-color:#E0CECA;color:#1A0A09;}
-    .filter-toolbar select{padding:9px 13px;border-radius:7px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;cursor:pointer;transition:.2s;}
-    .filter-toolbar select:focus{border-color:var(--red-vivid);}
-    body.light .filter-toolbar select{background:#fff;border-color:#E0CECA;color:#1A0A09;}
-    body.light .filter-toolbar select option{background:#fff;color:#1A0A09;}
+    .filter-toolbar .search-input{width:100%;padding:8px 13px 8px 34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
+    .filter-toolbar .search-input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
+    .filter-toolbar .stats-row{margin-bottom:0;}
+    .filter-toolbar .stat-pill{padding:5px 12px;border-radius:100px;background:var(--soil-hover);}
+    .filter-toolbar .sp-label{font-size:12px;}
+    .filter-toolbar .sp-count{font-size:12px;font-family:var(--font-body);font-weight:700;line-height:1;}
+    body.light .filter-toolbar{background:#FFFFFF;border-color:#E0CECA;}
+    body.light .filter-toolbar .stat-pill{background:#F5EEEC;border-color:#E0CECA;}
+    body.light .filter-toolbar .search-input{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
 
     /* ── Job list ── */
     .job-list{display:flex;flex-direction:column;gap:10px;}
@@ -499,7 +518,6 @@ $jobsJson = json_encode($jobs ?: []);
     .app-count-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
     body.light .app-count{color:#1A0A09;}
     .job-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
-    @media(max-width:620px){.job-right{display:none;}}
 
     /* ── Buttons ── */
     .btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:.18s;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
@@ -678,60 +696,57 @@ $jobsJson = json_encode($jobs ?: []);
   <div class="db-warn"><i class="fas fa-exclamation-triangle"></i> Could not load job data — please check your database connection.</div>
   <?php endif; ?>
 
-  <!-- Stats Row -->
-  <div class="stats-row">
-    <div class="stat-pill active" data-filter="all" onclick="filterJobs('all',this)">
-      <i class="fas fa-briefcase sp-icon" style="color:var(--red-pale)"></i>
-      <span class="sp-label">Total Jobs</span>
-      <span class="sp-count" id="cntTotal"><?= $counts['total'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="active" onclick="filterJobs('active',this)">
-      <i class="fas fa-check-circle sp-icon" style="color:#6ccf8a"></i>
-      <span class="sp-label">Active</span>
-      <span class="sp-count" id="cntActive"><?= $counts['Active'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="pending" onclick="filterJobs('pending',this)">
-      <i class="fas fa-clock sp-icon" style="color:var(--amber)"></i>
-      <span class="sp-label">Pending Approval</span>
-      <span class="sp-count" id="cntPending"><?= $counts['pending'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="closed" onclick="filterJobs('closed',this)">
-      <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
-      <span class="sp-label">Closed</span>
-      <span class="sp-count" id="cntClosed"><?= $counts['Closed'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="draft" onclick="filterJobs('draft',this)">
-      <i class="fas fa-pencil-alt sp-icon" style="color:var(--text-muted)"></i>
-      <span class="sp-label">Drafts</span>
-      <span class="sp-count" id="cntDraft"><?= $counts['Draft'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="deleted" onclick="filterJobs('deleted',this)">
-      <i class="fas fa-trash-alt sp-icon" style="color:var(--red-pale)"></i>
-      <span class="sp-label">Trash</span>
-      <span class="sp-count" id="cntDeleted"><?= $counts['deleted'] ?></span>
-    </div>
-    <div class="stat-pill" style="cursor:default;">
-      <i class="fas fa-users sp-icon" style="color:var(--amber)"></i>
-      <span class="sp-label">Applicants</span>
-      <span class="sp-count"><?= array_sum(array_column($jobs, 'app_count')) ?></span>
-    </div>
-  </div>
-
   <!-- Toolbar -->
   <div class="filter-toolbar">
-    <div class="search-wrap">
-      <i class="fas fa-search"></i>
-      <input type="text" id="searchInput" placeholder="Search jobs by title, location, skills…" oninput="applyFilters()">
+    <div class="filter-form">
+      <div class="filter-group">
+        <div class="filter-label">Status</div>
+        <div class="stats-row" id="statsRow">
+          <div class="stat-pill active" data-filter="all" onclick="filterJobs('all',this)">
+            <i class="fas fa-briefcase sp-icon" style="color:var(--red-pale)"></i>
+            <span class="sp-label">Total Jobs</span>
+            <span class="sp-count" id="cntTotal"><?= $counts['total'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="active" onclick="filterJobs('active',this)">
+            <i class="fas fa-check-circle sp-icon" style="color:#6ccf8a"></i>
+            <span class="sp-label">Active</span>
+            <span class="sp-count" id="cntActive"><?= $counts['Active'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="pending" onclick="filterJobs('pending',this)">
+            <i class="fas fa-clock sp-icon" style="color:var(--amber)"></i>
+            <span class="sp-label">Pending Approval</span>
+            <span class="sp-count" id="cntPending"><?= $counts['pending'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="closed" onclick="filterJobs('closed',this)">
+            <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
+            <span class="sp-label">Closed</span>
+            <span class="sp-count" id="cntClosed"><?= $counts['Closed'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="draft" onclick="filterJobs('draft',this)">
+            <i class="fas fa-pencil-alt sp-icon" style="color:var(--text-muted)"></i>
+            <span class="sp-label">Drafts</span>
+            <span class="sp-count" id="cntDraft"><?= $counts['Draft'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="deleted" onclick="filterJobs('deleted',this)">
+            <i class="fas fa-trash-alt sp-icon" style="color:var(--red-pale)"></i>
+            <span class="sp-label">Trash</span>
+            <span class="sp-count" id="cntDeleted"><?= $counts['deleted'] ?></span>
+          </div>
+          <div class="stat-pill" style="cursor:default;">
+            <i class="fas fa-users sp-icon" style="color:var(--amber)"></i>
+            <span class="sp-label">Applicants</span>
+            <span class="sp-count"><?= array_sum(array_column($jobs, 'app_count')) ?></span>
+          </div>
+        </div>
+      </div>
+      <div class="filter-group" style="flex:1;min-width:220px;">
+        <div class="filter-label">Search</div>
+        <div class="search-wrap">
+          <i class="fas fa-search"></i>
+          <input class="search-input" type="text" id="searchInput" placeholder="Search jobs by title, location, skills…" oninput="applyFilters()">
+        </div>
+      </div>
     </div>
-    <select id="statusFilter" onchange="applyFilters()">
-      <option value="all">All Statuses</option>
-      <option value="active">Active</option>
-      <option value="closed">Closed</option>
-      <option value="draft">Draft</option>
-      <option value="deleted">Trash</option>
-      <option value="pending">Pending Approval</option>
-      <option value="rejected">Rejected</option>
-    </select>
   </div>
 
   <!-- Job list -->
@@ -1066,21 +1081,13 @@ function filterJobs(type, el) {
   document.querySelectorAll('.stat-pill').forEach(function(p){ p.classList.remove('active'); });
   if (el) el.classList.add('active');
 
-  var sel = document.getElementById('statusFilter');
-  if (type === 'all')     sel.value = 'all';
-  else if (type === 'active')  sel.value = 'active';
-  else if (type === 'closed')  sel.value = 'closed';
-  else if (type === 'pending') sel.value = 'pending';
-  else if (type === 'draft')   sel.value = 'draft';
-  else if (type === 'deleted') sel.value = 'deleted';
-
   currentFilter = type;
   applyFilters();
 }
 
 function applyFilters() {
   var search = document.getElementById('searchInput').value.trim().toLowerCase();
-  var status = document.getElementById('statusFilter').value;
+  var status = currentFilter;
   var cards  = document.querySelectorAll('.job-card');
   var visible = 0;
 

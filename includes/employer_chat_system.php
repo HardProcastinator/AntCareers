@@ -184,7 +184,8 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
 
 <style>
 /* ── OVERLAY BG ─────────────────────────────────────────────────────── */
-.chat-overlay-bg { display:none; }
+.chat-overlay-bg { display:none; position:fixed; inset:0; z-index:499; background:rgba(0,0,0,0.35); backdrop-filter:blur(2px); }
+.chat-overlay-bg.visible { display:block; }
 
 
 /* ── MESSAGE SIDEBAR ────────────────────────────────────────────────── */
@@ -369,6 +370,7 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
 
 /* Light theme overrides */
 body.light .msg-sidebar, body.light .notif-sidebar { background:#FFFFFF; border-color:#E0CECA; box-shadow:-8px 0 32px rgba(0,0,0,0.1); }
+body.light .chat-overlay-bg { background:rgba(0,0,0,0.15); }
 body.light .fs-chat-container { background:#FFFFFF; border-color:#E0CECA; }
 body.light .sb-bubble-recv, body.light .fs-bubble-recv { background:#F5EEEC; color:#1A0A09; }
 body.light .msg-sb-search-bar, body.light .fs-search-bar, body.light .msg-sb-input-row, body.light .fs-input-row { background:#F5EEEC; border-color:#E0CECA; }
@@ -397,7 +399,6 @@ body.light .fs-tf { border-color:#E0CECA; color:#7A5555; }
 body.light .fs-tf.active, body.light .fs-tf:hover { color:var(--red-bright); background:rgba(209,61,44,0.08); }
 
 @media(max-width:768px) {
-  .msg-sidebar, .notif-sidebar { width:100%; max-width:100%; }
   .fs-chat-container { width:100vw; height:100vh; border-radius:0; }
   .fs-chat-body { grid-template-columns:1fr; }
   .fs-thread-panel { display:none; }
@@ -417,26 +418,44 @@ let _sbActivePartner = null;
 let _fsActivePartner = null;
 let _pollTimer = null;
 let _msgPollTimer = null;
+const _chatOverlay = document.getElementById('chatOverlayBg');
+
+function syncChatOverlay() {
+    if (!_chatOverlay) return;
+    const msgOpen = document.getElementById('msgSidebar').classList.contains('open');
+    const notifOpen = document.getElementById('notifSidebar').classList.contains('open');
+    if (msgOpen || notifOpen) {
+        _chatOverlay.classList.add('visible');
+        _chatOverlay.setAttribute('aria-hidden', 'false');
+    } else {
+        _chatOverlay.classList.remove('visible');
+        _chatOverlay.setAttribute('aria-hidden', 'true');
+    }
+}
 
 // ── SIDEBAR CONTROLS ──────────────────────────────────────────────────
 function openMsgSidebar() {
     closeSidebars();
     document.getElementById('msgSidebar').classList.add('open');
+    syncChatOverlay();
     sbBackToThreads();
     loadThreads();
 }
 function closeMsgSidebar() {
     document.getElementById('msgSidebar').classList.remove('open');
+    syncChatOverlay();
     _sbActivePartner = null;
     stopMsgPoll();
 }
 function openNotifSidebar() {
     closeSidebars();
     document.getElementById('notifSidebar').classList.add('open');
+    syncChatOverlay();
     loadNotifications();
 }
 function closeNotifSidebar() {
     document.getElementById('notifSidebar').classList.remove('open');
+    syncChatOverlay();
 }
 function closeSidebars() {
     closeMsgSidebar();

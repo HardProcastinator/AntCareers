@@ -70,7 +70,8 @@ try {
   $stmt = $db->query(
     "SELECT j.id, j.title, j.status, j.approval_status, j.job_type, j.location, j.setup,
             j.salary_min, j.salary_max, j.salary_currency, j.experience_level, j.deadline, j.created_at,
-            u.company_name, u.full_name AS employer_name, u.email AS employer_email
+            u.company_name, u.full_name AS employer_name, u.email AS employer_email,
+            (SELECT COUNT(*) FROM applications a WHERE a.job_id = j.id) AS app_count
      FROM jobs j
      LEFT JOIN users u ON u.id = j.employer_id
      ORDER BY j.created_at DESC LIMIT 5"
@@ -164,7 +165,7 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     .profile-dropdown-head { padding:12px 14px 10px; border-bottom:1px solid var(--soil-line); margin-bottom:4px; }
     .pdh-name { font-size:14px; font-weight:700; color:#F5F0EE; }
     .pdh-sub { font-size:11px; color:var(--red-pale); margin-top:2px; font-weight:600; }
-    .pd-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:6px; font-size:13px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); }
+    .pd-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:6px; font-size:13px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); text-decoration:none; }
     .pd-item i { color:var(--text-muted); width:16px; text-align:center; font-size:12px; }
     .pd-item:hover { background:var(--soil-hover); color:#F5F0EE; }
     .pd-item:hover i { color:var(--red-bright); }
@@ -177,7 +178,7 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     .hamburger { display:none; width:34px; height:34px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); align-items:center; justify-content:center; cursor:pointer; font-size:14px; flex-shrink:0; margin-left:8px; }
     .mobile-menu { display:none; position:fixed; top:64px; left:0; right:0; background:rgba(10,9,9,0.97); backdrop-filter:blur(20px); border-bottom:1px solid var(--soil-line); padding:12px 20px 16px; z-index:190; flex-direction:column; gap:2px; }
     .mobile-menu.open { display:flex; }
-    .mobile-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:7px; font-size:14px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); }
+    .mobile-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:7px; font-size:14px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); text-decoration:none; }
     .mobile-link i { color:var(--red-mid); width:16px; text-align:center; }
     .mobile-link:hover { background:var(--soil-hover); color:#F5F0EE; }
     .mobile-divider { height:1px; background:var(--soil-line); margin:6px 0; }
@@ -213,23 +214,23 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     .sec-title { font-family:var(--font-display); font-size:20px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:10px; letter-spacing:0.01em; }
     .sec-title i { color:var(--red-bright); font-size:16px; }
     .sec-count { font-size:11px; font-weight:600; color:var(--text-muted); background:var(--soil-hover); padding:2px 9px; border-radius:4px; letter-spacing:0.04em; }
-    .see-more { font-size:12px; font-weight:600; color:var(--red-pale); cursor:pointer; background:none; border:none; font-family:var(--font-body); display:flex; align-items:center; gap:4px; transition:0.15s; letter-spacing:0.02em; }
+    .see-more { font-size:12px; font-weight:600; color:var(--red-pale); cursor:pointer; background:none; border:none; font-family:var(--font-body); display:flex; align-items:center; gap:4px; transition:0.15s; letter-spacing:0.02em; text-decoration:none; }
     .see-more:hover { color:var(--red-bright); }
 
     /* ── SUMMARY CARDS ── */
     .cards-row { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:32px; }
-    .sum-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:18px; display:flex; flex-direction:column; gap:10px; transition:all 0.2s; }
+    .sum-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:22px; display:flex; flex-direction:column; gap:12px; transition:all 0.2s; }
     .sum-card:hover { border-color:rgba(209,61,44,0.4); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.25); }
     .sc-top { display:flex; align-items:center; justify-content:space-between; }
-    .sc-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; }
+    .sc-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; }
     .sc-icon.r { background:rgba(209,61,44,.12); color:var(--red-pale); }
     .sc-icon.a { background:rgba(212,148,58,.12); color:var(--amber); }
     .sc-icon.b { background:rgba(74,144,217,.1); color:#7ab8f0; }
     .sc-icon.g { background:rgba(76,175,112,.1); color:#6ccf8a; }
     .sc-icon.p { background:rgba(156,39,176,.1); color:#cf8ae0; }
-    .sc-num { font-family:var(--font-display); font-size:24px; font-weight:700; color:#F5F0EE; line-height:1; }
-    .sc-label { font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
-    .sc-btn { padding:6px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:10px; font-weight:700; cursor:pointer; transition:0.18s; width:100%; }
+    .sc-num { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; line-height:1; }
+    .sc-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+    .sc-btn { padding:6px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:11px; font-weight:700; cursor:pointer; transition:0.18s; width:100%; text-decoration:none; display:block; text-align:center; }
     .sc-btn:hover { background:var(--soil-hover); border-color:var(--red-vivid); color:var(--red-pale); }
 
     /* ── FEATURED CARDS (for master data + analytics) ── */
@@ -354,12 +355,14 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
       --text-light:#1A0A09; --text-mid:#4A2828; --text-muted:#7A5555;
       --amber-dim:#FFF4E0; --amber:#B8620A;
     }
-    body.light .navbar { background:rgba(255,253,252,0.98); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }
+    body.light .navbar { background:rgba(249,245,244,0.97); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }
     body.light .logo-text { color:#1A0A09; }
     body.light .logo-text span { color:var(--red-vivid); }
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
     body.light .theme-btn { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .notif-btn-nav { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .notif-btn-nav .badge { border-color:#F9F5F4; }
     body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
     body.light .profile-name { color:#1A0A09; }
     body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; }
@@ -379,9 +382,52 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     body.light .chip.green,.chip.amber,.chip.red,.chip.blue { opacity:1; }
     body.light .job-row { background:#FFFFFF; border-color:#E0CECA; }
     body.light .job-row:hover { background:#FEF0EE; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+    body.light .reg-card { background:#fff; border-color:#E0CECA; }
+    body.light .reg-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.08); }
+    body.light .reg-name { color:#1A0A09; }
+    body.light .jpost { background:#fff; border-color:#E0CECA; }
+    body.light .jpost:hover { box-shadow:0 8px 24px rgba(0,0,0,.08); }
+    body.light .jpost-ttl { color:#1A0A09; }
+    body.light .jpost-badge-num { color:#1A0A09; }
     body.light .jr-title { color:#1A0A09; }
     body.light .jr-meta { color:#7A5555; }
     body.light .activity-panel { background:#FFFFFF; border-color:#E0CECA; }
+
+    /* ── Registration cards (applicant-style) ── */
+    .reg-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; overflow:hidden; transition:border-color 0.2s,box-shadow 0.2s; }
+    .reg-card:hover { border-color:rgba(209,61,44,.4); box-shadow:0 6px 24px rgba(0,0,0,.3); }
+    .reg-main { display:grid; grid-template-columns:44px 1fr auto; gap:14px; padding:16px 18px; align-items:start; }
+    .reg-av { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+    .reg-av img { width:100%; height:100%; object-fit:cover; }
+    .reg-info { min-width:0; }
+    .reg-name { font-family:var(--font-display); font-size:15px; font-weight:700; color:#F5F0EE; margin-bottom:4px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+    .reg-sub { font-size:12px; color:var(--text-muted); margin-bottom:6px; }
+    .reg-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--text-muted); }
+    .reg-meta i { color:var(--red-bright); font-size:10px; }
+    .reg-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0; }
+    .reg-acts { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+    /* ── Job post cards (manage-jobs style) ── */
+    .jpost { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:14px; padding:20px 22px; display:flex; align-items:start; gap:16px; transition:all 0.25s; }
+    .jpost:hover { border-color:rgba(209,61,44,.4); box-shadow:0 8px 32px rgba(0,0,0,.3); transform:translateY(-1px); }
+    .jpost-icon { width:42px; height:42px; border-radius:10px; background:rgba(209,61,44,.1); border:1px solid rgba(209,61,44,.2); display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--red-bright); flex-shrink:0; }
+    .jpost-body { flex:1; min-width:0; }
+    .jpost-ttl { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; margin-bottom:6px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+    .jpost-meta { display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--text-muted); margin-bottom:8px; }
+    .jpost-meta i { font-size:10px; color:var(--red-bright); }
+    .jpost-right { display:flex; flex-direction:column; align-items:flex-end; gap:10px; flex-shrink:0; }
+    .jpost-badge { display:flex; flex-direction:column; align-items:center; gap:2px; background:rgba(212,148,58,.06); border:1px solid rgba(212,148,58,.15); border-radius:10px; padding:10px 16px; min-width:72px; }
+    .jpost-badge > i { font-size:14px; color:var(--amber); margin-bottom:2px; }
+    .jpost-badge-num { font-family:var(--font-display); font-size:22px; font-weight:700; color:#F5F0EE; text-align:center; }
+    .jpost-badge-lbl { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+    .jpost-acts { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+    /* ── Status badges ── */
+    .sbadge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.04em; white-space:nowrap; }
+    .sbadge.green { color:#6ccf8a; background:rgba(76,175,112,.1); border:1px solid rgba(76,175,112,.2); }
+    .sbadge.amber { color:var(--amber); background:rgba(212,148,58,.1); border:1px solid rgba(212,148,58,.2); }
+    .sbadge.red { color:#ff8080; background:rgba(220,53,69,.1); border:1px solid rgba(220,53,69,.2); }
+    .sbadge.blue { color:#7ab8f0; background:rgba(74,144,217,.1); border:1px solid rgba(74,144,217,.2); }
+    .sbadge.purple { color:#cf8ae0; background:rgba(156,39,176,.1); border:1px solid rgba(156,39,176,.2); }
+    .sbadge.muted { color:var(--text-muted); background:var(--soil-hover); border:1px solid var(--soil-line); }
     body.light .ap-title { color:#1A0A09; }
     body.light .ap-item { border-color:#E0CECA; }
     body.light .a-dot.read { background:#E0CECA; }
@@ -393,7 +439,7 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     body.light .pd-item { color:#4A2828; }
     body.light .pd-item:hover { background:#FEF0EE; color:#1A0A09; }
     body.light .pdh-name { color:#1A0A09; }
-    body.light .mobile-menu { background:rgba(255,253,252,0.97); border-color:#E0CECA; }
+    body.light .mobile-menu { background:rgba(249,245,244,0.97); border-color:#E0CECA; }
     body.light .mobile-link { color:#4A2828; }
     body.light .mobile-link:hover { background:#FEF0EE; color:#1A0A09; }
 
@@ -405,12 +451,26 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
       .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .nav-links{display:none} .hamburger{display:flex}
       .page-shell{padding:0 16px 60px} .nav-inner{padding:0 10px}
-      .profile-name,.profile-role{display:none} .profile-btn{padding:6px 8px}
-      .job-row{grid-template-columns:1fr;gap:10px}
-      .job-row-right{flex-direction:row;align-items:center;justify-content:space-between}
+      .profile-wrap{display:none}
+      .theme-btn,.notif-btn-nav{width:30px;height:30px;font-size:12px} .nav-right{gap:6px}
+      .job-row{grid-template-columns:1fr auto;gap:8px;padding:14px 16px}
+      .job-row-right{flex-direction:column;align-items:flex-end;gap:4px;justify-content:flex-start}
+      .jr-actions{flex-direction:column;align-items:flex-end;gap:4px}
+      .jr-btn{padding:5px 10px;font-size:11px}
+      .jr-apply{padding:5px 10px;font-size:11px}
       .activity-panel{width:100%;max-width:100%}
+      .reg-main{grid-template-columns:38px 1fr;gap:10px;padding:14px 16px}
+      .reg-right{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;border-top:1px solid var(--soil-line);padding-top:10px}
+      .reg-acts{justify-content:flex-start;flex-wrap:wrap}
+      .jpost{flex-wrap:wrap;gap:10px;padding:14px 16px}
+      .jpost-right{flex-direction:row;align-items:center;width:100%;justify-content:space-between}
+      .jpost-badge{flex-direction:row;gap:8px;align-items:center;padding:8px 12px;min-width:unset}
+      .jpost-badge-num{font-size:18px}
+      .jpost-acts{gap:4px}
       .footer{flex-direction:column;text-align:center;padding:20px 16px}
       .cards-row{grid-template-columns:repeat(2,1fr);}
+      .featured-scroll{scroll-snap-type:x mandatory;padding-left:0;padding-right:0;margin-left:0;margin-right:0}
+      .featured-card{min-width:calc(100vw - 32px);max-width:calc(100vw - 32px);scroll-snap-align:start}
     }
   </style>
 </head>
@@ -442,10 +502,10 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
       <span class="logo-text">Ant<span>Careers</span></span>
     </a>
     <div class="nav-links">
-      <a class="nav-link active" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+      <a class="nav-link active" href="admin_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
       <a class="nav-link" href="admin_users.php"><i class="fas fa-users"></i> Users</a>
       <a class="nav-link" href="admin_companies.php"><i class="fas fa-building"></i> Companies<?php if($adminStats['pending_companies']>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_companies']; ?></span><?php endif; ?></a>
-      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminStats['pending_jobs']>0): ?> <span style="background:var(--amber);color:#1A0A09;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_jobs']; ?></span><?php endif; ?></a>
+      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminStats['pending_jobs']>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_jobs']; ?></span><?php endif; ?></a>
       <a class="nav-link" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
       <a class="nav-link" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
     </div>
@@ -483,7 +543,7 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
 
 <!-- Mobile menu -->
 <div class="mobile-menu" id="mobileMenu">
-  <a class="mobile-link" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+  <a class="mobile-link" href="admin_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
   <a class="mobile-link" href="admin_users.php"><i class="fas fa-users"></i> User Accounts</a>
   <a class="mobile-link" href="admin_companies.php"><i class="fas fa-building"></i> Company Approval</a>
   <a class="mobile-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Job Moderation</a>
@@ -517,7 +577,7 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
       <div class="cards-row anim">
         <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-users"></i></div><div class="sc-num"><?php echo number_format($adminStats['users']); ?></div></div><div class="sc-label">Total Users</div><a class="sc-btn" href="admin_users.php">Manage Users</a></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon a"><i class="fas fa-building"></i></div><div class="sc-num"><?php echo number_format($adminStats['employers']); ?></div></div><div class="sc-label">Employers<?php if($adminStats['pending_companies']>0): ?> <span style="font-size:10px;font-weight:700;background:var(--red-vivid);color:#fff;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_companies']; ?> pending</span><?php endif; ?></div><a class="sc-btn" href="admin_companies.php<?php echo $adminStats['pending_companies']>0?'?tab=pending':''; ?>">Review Companies</a></div>
-        <div class="sum-card"><div class="sc-top"><div class="sc-icon r"><i class="fas fa-briefcase"></i></div><div class="sc-num"><?php echo number_format($adminStats['jobs']); ?></div></div><div class="sc-label">Job Posts<?php if($adminStats['pending_jobs']>0): ?> <span style="font-size:10px;font-weight:700;background:var(--amber);color:#1A0A09;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_jobs']; ?> pending</span><?php endif; ?></div><a class="sc-btn" href="admin_jobs.php<?php echo $adminStats['pending_jobs']>0?'?tab=pending':''; ?>">Moderate Jobs</a></div>
+        <div class="sum-card"><div class="sc-top"><div class="sc-icon r"><i class="fas fa-briefcase"></i></div><div class="sc-num"><?php echo number_format($adminStats['jobs']); ?></div></div><div class="sc-label">Job Posts<?php if($adminStats['pending_jobs']>0): ?> <span style="font-size:10px;font-weight:700;background:var(--red-vivid);color:#fff;border-radius:8px;padding:1px 6px;"><?php echo $adminStats['pending_jobs']; ?> pending</span><?php endif; ?></div><a class="sc-btn" href="admin_jobs.php<?php echo $adminStats['pending_jobs']>0?'?tab=pending':''; ?>">Moderate Jobs</a></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon p"><i class="fas fa-paper-plane"></i></div><div class="sc-num"><?php echo number_format($adminStats['applications']); ?></div></div><div class="sc-label">Applications</div><a class="sc-btn" href="admin_reports.php">View Reports</a></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon g"><i class="fas fa-check-circle"></i></div><div class="sc-num"><?php echo number_format($adminStats['active_jobs']); ?></div></div><div class="sc-label">Active Jobs</div><a class="sc-btn" href="admin_jobs.php">View Active</a></div>
         <div class="sum-card"><div class="sc-top"><div class="sc-icon b"><i class="fas fa-user-tie"></i></div><div class="sc-num"><?php echo number_format($adminStats['recruiters']); ?></div></div><div class="sc-label">Recruiters</div><a class="sc-btn" href="admin_recruiters.php">View Recruiters</a></div>
@@ -676,6 +736,7 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
         'date'     => date('M d, Y', strtotime($u['created_at'])),
         'status'   => $status === 'active' ? 'active' : ($status === 'suspended' ? 'flagged' : ($status === 'banned' ? 'inactive' : $status)),
         'rawStatus'=> $status,
+        'avatar'   => $u['avatar_url'] ?? '',
       ];
     }
     echo json_encode($jsUsers, JSON_HEX_TAG | JSON_HEX_APOS);
@@ -710,6 +771,7 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
         'expLevel' => $j['experience_level'] ?? '',
         'salary'   => $salary,
         'tags'     => $tags,
+        'appCount' => (int)($j['app_count'] ?? 0),
       ];
     }
     echo json_encode($jsJobs, JSON_HEX_TAG | JSON_HEX_APOS);
@@ -720,31 +782,36 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     const c = document.getElementById('usersContainer');
     document.getElementById('userCount').textContent = `${data.length} user${data.length!==1?'s':''}`;
     if (!data.length) { c.innerHTML = `<div class="empty-state"><i class="fas fa-search"></i><p>No users match.</p></div>`; return; }
-    const roleLabel = { seeker:'Job Seeker', employer:'Employer', admin:'Admin' };
-    const roleClass = { seeker:'blue', employer:'amber', admin:'red' };
+    const roleLabel = { seeker:'Job Seeker', employer:'Employer', recruiter:'Recruiter', admin:'Admin' };
+    const roleClass = { seeker:'blue', employer:'amber', recruiter:'purple', admin:'red' };
     const statusClass = { active:'green', inactive:'muted', flagged:'red' };
-    c.innerHTML = data.map((u,i) => `
-      <div class="job-row" style="animation:fadeUp 0.3s ${i*0.04}s both ease;">
-        <div class="job-row-left">
-          <div class="jr-top">
-            <div style="width:34px;height:34px;border-radius:50%;background:${u.color};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;">${u.initials}</div>
-            <div class="jr-title" style="font-size:14px;">${u.name}</div>
-            <span class="jr-new ${roleClass[u.role]||''}">${roleLabel[u.role]||u.role}</span>
-            <span class="jr-new ${statusClass[u.status]||'muted'}">${u.status.charAt(0).toUpperCase()+u.status.slice(1)}</span>
+    c.innerHTML = data.map((u,i) => {
+      const avatarHtml = u.avatar ? `<img src="../${u.avatar}" alt="">` : u.initials;
+      return `
+      <div class="reg-card" style="animation:fadeUp 0.3s ${i*0.04}s both ease;">
+        <div class="reg-main">
+          <div class="reg-av" style="background:${u.color};">${avatarHtml}</div>
+          <div class="reg-info">
+            <div class="reg-name">
+              ${u.name}
+              <span class="sbadge ${statusClass[u.status]||'muted'}">${u.status.charAt(0).toUpperCase()+u.status.slice(1)}</span>
+            </div>
+            <div class="reg-sub">${u.email}</div>
+            <div class="reg-meta">
+              <span><i class="fas fa-user"></i> ${roleLabel[u.role]||u.role}</span>
+              <span><i class="fas fa-calendar"></i> Joined ${u.date}</span>
+            </div>
           </div>
-          <div class="jr-meta">
-            <span><i class="fas fa-envelope"></i> ${u.email}</span>
-            <span><i class="fas fa-calendar"></i> Joined ${u.date}</span>
+          <div class="reg-right">
+            <div class="reg-acts">
+              <button class="jr-btn" onclick="viewUser(${u.id})">View Profile</button>
+              <button class="jr-btn a" onclick="suspendUser(${u.id}, this)">Suspend</button>
+              <button class="jr-btn r" onclick="deleteUser(${u.id}, this)">Delete</button>
+            </div>
           </div>
         </div>
-        <div class="job-row-right">
-          <div class="jr-actions">
-            <button class="jr-btn" onclick="viewUser(${u.id})">View</button>
-            <button class="jr-btn a" onclick="suspendUser(${u.id}, this)">Suspend</button>
-            <button class="jr-btn r" onclick="deleteUser(${u.id}, this)">Delete</button>
-          </div>
-        </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   // ── RENDER JOB POSTS ──
@@ -752,27 +819,39 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
     const c = document.getElementById('jobsContainer');
     document.getElementById('jobCount').textContent = `${data.length} post${data.length!==1?'s':''}`;
     if (!data.length) { c.innerHTML = `<div class="empty-state"><i class="fas fa-search"></i><p>No job posts match.</p></div>`; return; }
-    c.innerHTML = data.map((j,i) => `
-      <div class="job-row" style="animation:fadeUp 0.3s ${i*0.04}s both ease;">
-        <div class="job-row-left">
-          <div class="jr-top">
-            <div class="jr-title">${j.title}</div>
-            <span class="jr-new ${j.status==='pending'?'amber':j.status==='active'?'green':'muted'}">${j.status.charAt(0).toUpperCase()+j.status.slice(1)}</span>
+    c.innerHTML = data.map((j,i) => {
+      const stCls = j.status==='active'?'green':j.status==='pending'?'amber':'muted';
+      const stLbl = j.status.charAt(0).toUpperCase()+j.status.slice(1);
+      return `
+      <div class="jpost" style="animation:fadeUp 0.3s ${i*0.04}s both ease;">
+        <div class="jpost-icon"><i class="fas fa-briefcase"></i></div>
+        <div class="jpost-body">
+          <div class="jpost-ttl">
+            ${j.title}
+            <span class="sbadge ${stCls}">${stLbl}</span>
           </div>
-          <div class="jr-meta">
-            <span class="jr-company"><i class="fas fa-building"></i> ${j.company}</span>
+          <div class="jpost-meta">
+            <span><i class="fas fa-building"></i> ${j.company}</span>
+            ${j.jobType?`<span><i class="fas fa-tag"></i> ${j.jobType}</span>`:''}
+            ${j.setup?`<span><i class="fas fa-laptop-house"></i> ${j.setup}</span>`:''}
             <span><i class="fas fa-calendar"></i> Posted ${j.date}</span>
           </div>
-          <div class="jr-chips">${j.tags.map(t=>`<span class="chip">${t}</span>`).join('')}</div>
+          <div class="jr-chips">${j.tags.filter(t=>t!==j.jobType).map(t=>`<span class="chip">${t}</span>`).join('')}</div>
         </div>
-        <div class="job-row-right">
-          <div class="jr-actions">
+        <div class="jpost-right">
+          <div class="jpost-badge">
+            <i class="fas fa-users"></i>
+            <div class="jpost-badge-num">${j.appCount}</div>
+            <div class="jpost-badge-lbl">Applicants</div>
+          </div>
+          <div class="jpost-acts">
             <button class="jr-btn" onclick="viewJob(${j.id})">View</button>
             ${j.status==='pending'?`<button class="jr-apply" onclick="approveJob(${j.id}, this)">Approve</button>`:''}
             <button class="jr-btn r" onclick="removeJob(${j.id}, this)">Remove</button>
           </div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   // ── SEARCH ──
@@ -856,29 +935,29 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
   async function suspendUser(id, btn) {
     if (!confirm('Suspend this user?')) return;
     const r = await adminAction('suspend_user', { user_id: id });
-    if (r.success) { showToast('User suspended', 'fa-ban'); btn.closest('.job-row').remove(); }
+    if (r.success) { showToast('User suspended', 'fa-ban'); btn.closest('.job-row,.reg-card').remove(); }
     else showToast(r.message || 'Action failed', 'fa-exclamation-triangle');
   }
   async function deleteUser(id, btn) {
     if (!confirm('Ban this user?')) return;
     const r = await adminAction('ban_user', { user_id: id });
-    if (r.success) { showToast('User banned', 'fa-trash'); btn.closest('.job-row').remove(); }
+    if (r.success) { showToast('User banned', 'fa-trash'); btn.closest('.job-row,.reg-card').remove(); }
     else showToast(r.message || 'Action failed', 'fa-exclamation-triangle');
   }
   async function approveJob(id, btn) {
     const r = await adminAction('approve_job', { job_id: id });
     if (r.success) {
       showToast('Job approved', 'fa-check');
-      const row = btn.closest('.job-row');
-      row.querySelector('.jr-new.amber')?.classList.replace('amber','green');
-      row.querySelector('.jr-new.amber, .jr-new.green') && (row.querySelector('.jr-new.green').textContent = 'Active');
+      const row = btn.closest('.job-row,.jpost');
+      row.querySelector('.jr-new.amber,.sbadge.amber')?.classList.replace('amber','green');
+      const stBadge = row.querySelector('.jr-new.green,.sbadge.green'); if(stBadge) stBadge.textContent='Active';
       btn.remove();
     } else showToast(r.message || 'Action failed', 'fa-exclamation-triangle');
   }
   async function removeJob(id, btn) {
     if (!confirm('Remove this job post?')) return;
     const r = await adminAction('remove_job', { job_id: id });
-    if (r.success) { showToast('Job removed', 'fa-trash'); btn.closest('.job-row').remove(); }
+    if (r.success) { showToast('Job removed', 'fa-trash'); btn.closest('.job-row,.jpost').remove(); }
     else showToast(r.message || 'Action failed', 'fa-exclamation-triangle');
   }
   let activeFilter = null;

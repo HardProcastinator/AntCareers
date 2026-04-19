@@ -51,6 +51,7 @@ function renderAdminNotifPanel(): void {
   <div class="anp-head">
     <div class="anp-title"><i class="fas fa-bell"></i> Notifications</div>
     <div style="display:flex;gap:6px;align-items:center;">
+      <button class="anp-close-btn" id="anpClearAll" title="Clear all"><i class="fas fa-trash-alt"></i></button>
       <button class="anp-close-btn" id="anpMarkAll" title="Mark all as read"><i class="fas fa-check-double"></i></button>
       <button class="anp-close-btn" id="anpClose"><i class="fas fa-times"></i></button>
     </div>
@@ -90,7 +91,7 @@ function renderAdminNotifPanel(): void {
   .anp-content{flex:1;min-width:0}
   .anp-text{font-size:13px;color:var(--text-mid,#D0BCBA);line-height:1.55;margin-bottom:3px}
   .anp-time{font-size:11px;color:var(--text-muted,#927C7A);font-weight:600}
-  @media(max-width:760px){.admin-notif-panel{width:100%;max-width:100%}}
+  @media(max-width:760px){.admin-notif-panel{width:92vw;max-width:380px;}}
   body.light .admin-notif-panel{background:#FFFFFF;border-color:#E0CECA;box-shadow:-8px 0 32px rgba(0,0,0,0.1)}
   body.light .anp-title{color:#1A0A09}
   body.light .anp-item{border-color:#F0E0DC}
@@ -133,6 +134,21 @@ function renderAdminNotifPanel(): void {
   };
 
   document.getElementById('anpClose').addEventListener('click', closeAdminNotifPanel);
+
+  document.getElementById('anpClearAll').addEventListener('click', function() {
+    fetch('api_admin.php', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action:'delete_all_notifications', csrf_token:CSRF})
+    }).then(function(r){return r.json();}).then(function(d){
+      if (d.success) {
+        document.getElementById('anpBody').innerHTML = '<div class="anp-empty"><i class="fas fa-bell-slash"></i><div>No unread notifications.</div></div>';
+        var badge = document.getElementById('adminNotifBadge');
+        if (badge) badge.remove();
+        if (typeof showToast === 'function') showToast('All notifications cleared.','fa-trash-alt');
+      }
+    }).catch(function(){});
+  });
 
   document.getElementById('anpMarkAll').addEventListener('click', function() {
     fetch('api_admin.php', {

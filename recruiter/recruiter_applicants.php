@@ -315,13 +315,14 @@ $jobsListJson   = json_encode($jobsList ?: []);
     .sp-count { font-size:17px; font-weight:800; color:#F5F0EE; font-family:var(--font-display); }
 
     /* ── TOOLBAR ── */
-    .toolbar { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
-    .search-bar { display:flex; align-items:center; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; flex:1; min-width:200px; transition:0.25s; }
+    .toolbar { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+    .search-bar { display:flex; align-items:center; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; width:100%; transition:0.25s; }
     .search-bar:focus-within { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.1); }
     .search-bar .si { padding:0 14px; color:var(--text-muted); font-size:14px; }
     .search-bar input { flex:1; padding:13px 0; background:none; border:none; outline:none; font-family:var(--font-body); font-size:14px; color:#F5F0EE; }
     .search-bar input::placeholder { color:var(--text-muted); }
-    select.fsel { padding:13px 13px; border-radius:8px; background:var(--soil-card); border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; cursor:pointer; outline:none; }
+    .filter-row { display:flex; gap:10px; }
+    select.fsel { padding:13px 13px; border-radius:8px; background:var(--soil-card); border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; cursor:pointer; outline:none; flex:1; }
     select.fsel:focus { border-color:var(--red-vivid); }
 
     /* ── APPLICANT CARDS ── */
@@ -481,7 +482,10 @@ $jobsListJson   = json_encode($jobsList ?: []);
       .profile-name,.profile-role { display:none; }
       .profile-btn { padding:6px 8px; }
       .exp-grid { grid-template-columns:1fr; }
-      .app-right { display:none; }
+      .app-main { grid-template-columns:44px 1fr; }
+      .app-right { display:flex; flex-direction:row; flex-wrap:wrap; justify-content:flex-start; gap:6px; grid-column:1/-1; align-items:center; border-top:1px solid var(--soil-line); padding-top:10px; }
+      .app-date { display:none; }
+      .app-actions { flex-wrap:wrap; justify-content:flex-start; width:100%; }
       .person-skill-row{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
       .person-skill-row::-webkit-scrollbar{display:none}
       .footer { flex-direction:column; text-align:center; padding:16px; }
@@ -492,7 +496,6 @@ $jobsListJson   = json_encode($jobsList ?: []);
     @media(max-width:480px) {
       .stats-row { gap:6px; }
       .stat-pill { padding:8px 10px; }
-      .toolbar { flex-direction:column; }
     }
   </style>
 </head>
@@ -561,6 +564,7 @@ $jobsListJson   = json_encode($jobsList ?: []);
       <i class="fas fa-search si"></i>
       <input type="text" id="searchInput" placeholder="Search name, email or job title…">
     </div>
+    <div class="filter-row">
     <select class="fsel" id="filterJob">
       <option value="">All Jobs</option>
       <?php foreach($jobsList as $j): ?>
@@ -578,6 +582,7 @@ $jobsListJson   = json_encode($jobsList ?: []);
       <option value="Declined">Declined</option>
       <option value="Rejected">Rejected</option>
     </select>
+    </div>
   </div>
 
   <!-- APPLICANT CARDS -->
@@ -857,7 +862,8 @@ $jobsListJson   = json_encode($jobsList ?: []);
       document.getElementById('iNotes').value = existingData.notes||'';
     } else {
       var nd = new Date(); nd.setDate(nd.getDate()+1); nd.setHours(10,0,0,0);
-      document.getElementById('iDate').value = nd.toISOString().slice(0,16);
+      var _p=function(n){return String(n).padStart(2,'0');};
+      document.getElementById('iDate').value = nd.getFullYear()+'-'+_p(nd.getMonth()+1)+'-'+_p(nd.getDate())+'T'+_p(nd.getHours())+':'+_p(nd.getMinutes());
       document.getElementById('iType').value = 'Online';
       document.getElementById('iLink').value = '';
       document.getElementById('iVenue').value = '';
@@ -867,6 +873,8 @@ $jobsListJson   = json_encode($jobsList ?: []);
       document.getElementById('iContactPerson').value = '';
       document.getElementById('iNotes').value = '';
     }
+    var _now=new Date(),_p2=function(n){return String(n).padStart(2,'0');};
+    document.getElementById('iDate').min=_now.getFullYear()+'-'+_p2(_now.getMonth()+1)+'-'+_p2(_now.getDate())+'T'+_p2(_now.getHours())+':'+_p2(_now.getMinutes());
     onIvTypeChange();
     document.getElementById('iModal').classList.add('open');
   };

@@ -388,6 +388,10 @@ foreach ($industryKeys as $ind) {
     body.light .pc-footer { border-color:#E0CECA; }
     body.light .pc-btn:hover { color:#1A0A09; background:#F0E4E2; }
     body.light .pc-btn.primary:hover { color:#fff; }
+    /* Mobile filter toggle button */
+    .mobile-filter-toggle{display:none;align-items:center;justify-content:center;gap:8px;background:var(--soil-hover);border:1px solid var(--red-vivid);color:var(--text-light);font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;margin-bottom:14px;width:100%;}
+    body.light .mobile-filter-toggle{background:#F5EEEC;border-color:var(--red-vivid);color:#1A0A09}
+    @media(min-width:761px){.mobile-filter-toggle{display:none!important}.filter-sidebar{display:block!important}}
     @media(max-width:1060px) { .layout{grid-template-columns:1fr} .filter-sidebar{position:static} }
     @media(max-width:760px){
       html,body{overflow-x:hidden;max-width:100vw}
@@ -397,9 +401,9 @@ foreach ($industryKeys as $ind) {
       .nav-links{display:none} .hamburger{display:flex}
       .profile-name,.profile-role{display:none} .profile-btn{padding:6px 8px}
       .nav-inner{padding:0 10px}
-      .mobile-filter-toggle{display:flex;align-items:center;gap:8px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;width:100%}
-      .filter-sidebar{display:none;flex-direction:column}
-      .filter-sidebar.mobile-open{display:flex}
+      .mobile-filter-toggle{display:flex!important}
+      .filter-sidebar{display:none!important}
+      .filter-sidebar.mobile-open{display:flex!important;flex-direction:column}
       .person-skill-row{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
       .person-skill-row::-webkit-scrollbar{display:none}
     }
@@ -446,12 +450,14 @@ foreach ($industryKeys as $ind) {
     <button class="search-btn" onclick="filterPeople()"><i class="fas fa-search"></i> Search</button>
   </div>
 
+  <!-- MOBILE FILTER TOGGLE -->
+  <button class="mobile-filter-toggle anim anim-d1" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
+    <i class="fas fa-sliders-h"></i> Filters
+  </button>
+
   <div class="layout">
 
     <!-- FILTER SIDEBAR -->
-    <button class="mobile-filter-toggle" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
-      <i class="fas fa-sliders-h"></i> Filters
-    </button>
     <aside class="filter-sidebar anim anim-d2" id="filterSidebar">
       <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
 
@@ -774,7 +780,6 @@ foreach ($industryKeys as $ind) {
           <div class="pc-footer">
             <div class="pc-mutual">${p.mutual>0?`<i class="fas fa-users"></i> ${p.mutual} mutual follower${p.mutual!==1?'s':''}`:``}</div>
             <div class="pc-actions">
-              <button class="pc-btn" onclick="event.stopPropagation();openPersonMessage(${p.id});">Message</button>
               <button class="pc-btn primary" onclick="event.stopPropagation();openPersonView(${p.id})">View</button>
             </div>
           </div>

@@ -142,6 +142,8 @@ function _recActive(string $key, string $active): string {
   /* Notifications panel */
   .notif-panel-side{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:100vw;background:var(--soil-card);border-left:1px solid var(--soil-line);z-index:500;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,0.4)}
   .notif-panel-side.open{transform:translateX(0)}
+  .sidepanel-overlay{display:none;position:fixed;inset:0;z-index:499;background:rgba(0,0,0,0.35);backdrop-filter:blur(2px)}
+  .sidepanel-overlay.visible{display:block}
   .notif-panel-head{padding:20px 20px 16px;border-bottom:1px solid var(--soil-line);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
   .notif-panel-title{font-family:var(--font-display);font-size:17px;font-weight:700;color:#F5F0EE;display:flex;align-items:center;gap:8px}
   .notif-panel-title i{color:var(--red-bright)}
@@ -162,6 +164,7 @@ function _recActive(string $key, string $active): string {
   body.light .n-time{color:#7A5555}
   body.light .notif-close{background:#F0E4E2;border-color:#E0CECA;color:#7A5555}
   body.light .n-dot.read{background:#E0CECA}
+  body.light .sidepanel-overlay{background:rgba(0,0,0,0.15)}
 
   /* Conversation slide-over */
   #msgConvoView{position:absolute;inset:0;background:var(--soil-card);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:1}
@@ -228,13 +231,11 @@ function _recActive(string $key, string $active): string {
   @media(max-width:760px){
     .nav-links{display:none}
     .hamburger{display:flex}
-    .profile-name,.profile-role-lbl{display:none}
-    .profile-chevron{display:none}
-    .profile-btn{padding:5px 8px;gap:6px}
+    .profile-wrap{display:none}
     .nav-inner{padding:0 10px;gap:4px}
     .nav-right{gap:6px;flex-shrink:0}
     .theme-btn,.msg-btn-nav,.notif-btn-nav{width:30px;height:30px;font-size:12px}
-    .notif-panel-side{width:100%;max-width:100%}
+    .notif-panel-side{width:380px;max-width:calc(100vw - 16px)}
   }
 </style>
 
@@ -399,6 +400,7 @@ function _recActive(string $key, string $active): string {
     </div>
   </div>
 </div>
+<div class="sidepanel-overlay" id="sidePanelOverlay" aria-hidden="true"></div>
 
 <!-- ═══════════ SHARED NAVBAR SCRIPTS ═══════════ -->
 <script>
@@ -446,8 +448,21 @@ function _recActive(string $key, string $active): string {
 
   /* ── NOTIFICATIONS PANEL ── */
   var notifPanel = document.getElementById('notifPanel');
-  window.openNotif = function(){ closeMsgPanel(); notifPanel.classList.add('open'); notifPanel.setAttribute('aria-hidden','false'); loadRecNotifications(); };
-  window.closeNotif = function(){ notifPanel.classList.remove('open'); notifPanel.setAttribute('aria-hidden','true'); };
+  var sidePanelOverlay = document.getElementById('sidePanelOverlay');
+
+  function syncSidePanelOverlay(){
+    if(!sidePanelOverlay) return;
+    if(notifPanel.classList.contains('open') || msgPanel.classList.contains('open')){
+      sidePanelOverlay.classList.add('visible');
+      sidePanelOverlay.setAttribute('aria-hidden','false');
+    } else {
+      sidePanelOverlay.classList.remove('visible');
+      sidePanelOverlay.setAttribute('aria-hidden','true');
+    }
+  }
+
+  window.openNotif = function(){ closeMsgPanel(); notifPanel.classList.add('open'); notifPanel.setAttribute('aria-hidden','false'); syncSidePanelOverlay(); loadRecNotifications(); };
+  window.closeNotif = function(){ notifPanel.classList.remove('open'); notifPanel.setAttribute('aria-hidden','true'); syncSidePanelOverlay(); };
   window.openNotifSidebar = window.openNotif;
   document.getElementById('notifClose').addEventListener('click',closeNotif);
   document.getElementById('notifToggle').addEventListener('click',function(e){
@@ -486,12 +501,21 @@ function _recActive(string $key, string $active): string {
   window.openMsgPanel = function(){
     closeNotif();
     msgPanel.classList.add('open'); msgPanel.setAttribute('aria-hidden','false');
+    syncSidePanelOverlay();
     showRecThreadView(); loadRecThreads(); refreshRecFullMessageLinks();
   };
   window.closeMsgPanel = function(){
     msgPanel.classList.remove('open'); msgPanel.setAttribute('aria-hidden','true');
+    syncSidePanelOverlay();
   };
   window.openMsgSidebar = window.openMsgPanel;
+
+  if(sidePanelOverlay){
+    sidePanelOverlay.addEventListener('click', function(){
+      closeNotif();
+      closeMsgPanel();
+    });
+  }
 
   function showRecThreadView(){ msgConvoView.classList.remove('open'); _recCurrentPartner = null; refreshRecFullMessageLinks(); }
   function showRecConvoView(){ msgConvoView.classList.add('open'); }

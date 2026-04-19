@@ -225,18 +225,18 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
 
     /* ── SUMMARY CARDS ROW ── */
     .cards-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
-    .sum-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:22px; display:flex; flex-direction:column; gap:12px; transition:all 0.2s; cursor:default; }
+    .sum-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:28px; display:flex; flex-direction:column; gap:14px; transition:all 0.2s; cursor:default; min-height:170px; }
     .sum-card:hover { border-color:rgba(209,61,44,0.4); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.25); }
     .sc-top { display:flex; align-items:center; justify-content:space-between; }
-    .sc-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; }
+    .sc-icon { width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
     .sc-icon.r { background:rgba(209,61,44,.12); color:var(--red-pale); }
     .sc-icon.a { background:rgba(212,148,58,.12); color:var(--amber); }
     .sc-icon.b { background:rgba(74,144,217,.1); color:#7ab8f0; }
     .sc-icon.g { background:rgba(76,175,112,.1); color:#6ccf8a; }
     .sc-icon.p { background:rgba(156,39,176,.1); color:#cf8ae0; }
-    .sc-num { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; line-height:1; }
-    .sc-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
-    .sc-btn { padding:6px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:11px; font-weight:700; cursor:pointer; transition:0.18s; width:100%; display:block; text-align:center; text-decoration:none; }
+    .sc-num { font-family:var(--font-display); font-size:32px; font-weight:700; color:#F5F0EE; line-height:1; }
+    .sc-label { font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+    .sc-btn { padding:8px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; transition:0.18s; width:100%; display:block; text-align:center; text-decoration:none; }
     .sc-btn:hover { background:var(--soil-hover); border-color:var(--red-vivid); color:var(--red-pale); }
 
     /* ── JOB ROWS ── */
@@ -362,11 +362,12 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
       .job-row-right { flex-direction:row; align-items:center; justify-content:space-between; }
       .job-description-preview,.card-description{display:none}
       .featured-scroll{-webkit-overflow-scrolling:touch}
-      .featured-card{min-width:230px;max-width:230px}
+      .featured-card{min-width:calc(100vw - 48px);max-width:calc(100vw - 48px)}
       .footer { flex-direction:column; text-align:center; padding:16px; }
-      .cards-row { grid-template-columns:1fr 1fr; }
+      .cards-row { grid-template-columns:1fr 1fr; gap:12px; }
+      .sum-card { padding:20px 16px; min-height:150px; }
+      .sc-num { font-size:26px; }
     }
-    @media(max-width:480px) { .cards-row { grid-template-columns:1fr; } }
   </style>
 </head>
 <body id="pageBody">
@@ -527,8 +528,10 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
         </div>
         <div class="job-row-right">
           <div class="jr-actions">
-            <a class="jr-btn" href="recruiter_jobs.php#job-${j.id}">View</a>
-            <a class="jr-btn" href="recruiter_jobs.php?edit=${j.id}">Edit</a>
+            <a class="jr-btn" href="recruiter_jobs.php#job-${j.id}" style="text-decoration:none;">View</a>
+            <a class="jr-btn" href="recruiter_jobs.php?edit=${j.id}" style="text-decoration:none;">Edit</a>
+            ${j.status==='Active'?`<button class="jr-btn a" onclick="event.stopPropagation();closeJob(${j.id},this)">Close</button>`:''}
+            <button class="jr-btn r" onclick="event.stopPropagation();deleteJob(${j.id},this)">Delete</button>
           </div>
         </div>
       </div>`;
@@ -562,9 +565,10 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
         </div>
         <div class="job-row-right">
           <div class="jr-actions" id="appActions_${a.id}">
-            <a class="jr-btn b" href="recruiter_applicants.php?view=${a.id}">View</a>
+            <a class="jr-btn" href="recruiter_applicants.php?view=${a.id}" style="text-decoration:none;">View Profile</a>
             ${a.status !== 'Shortlisted' && a.status !== 'Rejected' && a.status !== 'Offered' ? `<button class="jr-btn g" onclick="updateAppStatus(${a.id},'Shortlisted',this)">Shortlist</button>` : ''}
             ${a.status !== 'Rejected' && a.status !== 'Offered' ? `<button class="jr-btn r" onclick="updateAppStatus(${a.id},'Rejected',this)">Reject</button>` : ''}
+            <a class="jr-btn b" href="recruiter_messages.php?user_id=${a.seekerId}" style="text-decoration:none;">Message</a>
           </div>
         </div>
       </div>`).join('');
@@ -656,6 +660,51 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
         btn.disabled = false;
         btn.textContent = newStatus === 'Shortlisted' ? 'Shortlist' : 'Reject';
       });
+  }
+
+  // ── CLOSE JOB ──
+  function closeJob(jobId, btn) {
+    if (!confirm('Close this job posting? It will no longer be visible to applicants.')) return;
+    btn.disabled = true; btn.textContent = '…';
+    var fd = new FormData();
+    fd.append('action', 'toggle_status');
+    fd.append('job_id', jobId);
+    fetch('recruiter_jobs.php', { method:'POST', body:fd })
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          jobsData.forEach(function(j){ if (j.id===jobId) j.status = d.status; });
+          renderJobs(jobsData);
+          showToast('Job ' + (d.status==='Closed'?'closed':'reopened') + '!', 'fa-check-circle');
+        } else {
+          showToast(d.msg || 'Failed to update job', 'fa-exclamation-circle');
+          btn.disabled = false; btn.textContent = 'Close';
+        }
+      })
+      .catch(function(){ showToast('Network error','fa-wifi'); btn.disabled=false; btn.textContent='Close'; });
+  }
+
+  // ── DELETE JOB ──
+  function deleteJob(jobId, btn) {
+    if (!confirm('Are you sure you want to permanently delete this job? This cannot be undone.')) return;
+    btn.disabled = true; btn.textContent = '…';
+    var fd = new FormData();
+    fd.append('action', 'delete_job');
+    fd.append('job_id', jobId);
+    fetch('recruiter_jobs.php', { method:'POST', body:fd })
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          var idx = jobsData.findIndex(function(j){ return j.id===jobId; });
+          if (idx > -1) jobsData.splice(idx, 1);
+          renderJobs(jobsData);
+          showToast('Job deleted', 'fa-trash');
+        } else {
+          showToast(d.msg || 'Failed to delete job', 'fa-exclamation-circle');
+          btn.disabled = false; btn.textContent = 'Delete';
+        }
+      })
+      .catch(function(){ showToast('Network error','fa-wifi'); btn.disabled=false; btn.textContent='Delete'; });
   }
 
   // ── INIT RENDER ──

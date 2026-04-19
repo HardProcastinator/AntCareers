@@ -161,6 +161,8 @@ function _navHref(string $file): string {
   /* Notifications panel */
   .notif-panel { position:fixed; top:0; right:0; bottom:0; width:380px; max-width:100vw; background:var(--soil-card); border-left:1px solid var(--soil-line); z-index:500; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.4); }
   .notif-panel.open { transform:translateX(0); }
+  .sidepanel-overlay { display:none; position:fixed; inset:0; z-index:499; background:rgba(0,0,0,0.35); backdrop-filter:blur(2px); }
+  .sidepanel-overlay.visible { display:block; }
   .notif-panel-head { padding:20px 20px 16px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
   .notif-panel-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:8px; }
   .notif-panel-title i { color:var(--red-bright); }
@@ -204,6 +206,7 @@ function _navHref(string $file): string {
   body.light .n-time { color:#7A5555; }
   body.light .notif-close { background:#F0E4E2; border-color:#E0CECA; color:#7A5555; }
   body.light .n-dot.read { background:#E0CECA; }
+  body.light .sidepanel-overlay { background:rgba(0,0,0,0.15); }
 
   /* Conversation slide-over — mirrors employer .msg-sb-chat */
   #msgConvoView {
@@ -257,11 +260,11 @@ function _navHref(string $file): string {
     .hamburger { display:flex; }
     .profile-name, .profile-role-lbl { display:none; }
     .profile-chevron { display:none; }
-    .profile-btn { padding:5px 8px; gap:6px; }
+    .profile-btn { padding:4px; gap:0; }
     .nav-inner { padding:0 10px; gap:4px; }
     .nav-right { gap:6px; flex-shrink:0; }
     .theme-btn, .msg-btn-nav, .notif-btn-nav { width:30px; height:30px; font-size:12px; }
-    .notif-panel { width:100%; max-width:100%; }
+    .profile-wrap { display:none; }
   }
 </style>
 
@@ -445,6 +448,7 @@ function _navHref(string $file): string {
     </div>
   </div>
 </div>
+<div class="sidepanel-overlay" id="sidePanelOverlay" aria-hidden="true"></div>
 
 <!-- ═══════════ SHARED NAVBAR SCRIPTS ═══════════
      Placed right after the markup so IDs are already in the DOM.
@@ -499,9 +503,21 @@ function _navHref(string $file): string {
 
   // ── NOTIFICATIONS PANEL ────────────────────────────────────────────────────
   const notifPanel = document.getElementById('notifPanel');
+  const sidePanelOverlay = document.getElementById('sidePanelOverlay');
 
-  window.openNotif  = function () { closeMsgPanel(); notifPanel.classList.add('open'); notifPanel.setAttribute('aria-hidden', 'false'); loadNotifications(); };
-  window.closeNotif = function () { notifPanel.classList.remove('open'); notifPanel.setAttribute('aria-hidden', 'true'); };
+  function syncSidePanelOverlay() {
+    if (!sidePanelOverlay) return;
+    if (notifPanel.classList.contains('open') || msgPanel.classList.contains('open')) {
+      sidePanelOverlay.classList.add('visible');
+      sidePanelOverlay.setAttribute('aria-hidden', 'false');
+    } else {
+      sidePanelOverlay.classList.remove('visible');
+      sidePanelOverlay.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  window.openNotif  = function () { closeMsgPanel(); notifPanel.classList.add('open'); notifPanel.setAttribute('aria-hidden', 'false'); syncSidePanelOverlay(); loadNotifications(); };
+  window.closeNotif = function () { notifPanel.classList.remove('open'); notifPanel.setAttribute('aria-hidden', 'true'); syncSidePanelOverlay(); };
 
   document.getElementById('notifClose').addEventListener('click', closeNotif);
   document.getElementById('notifToggle').addEventListener('click', function (e) {
@@ -554,6 +570,7 @@ function _navHref(string $file): string {
     closeNotif();
     msgPanel.classList.add('open');
     msgPanel.setAttribute('aria-hidden', 'false');
+    syncSidePanelOverlay();
     showThreadView();
     loadSeekerThreads();
     refreshFullMessageLinks();
@@ -561,6 +578,7 @@ function _navHref(string $file): string {
   window.closeMsgPanel = function () {
     msgPanel.classList.remove('open');
     msgPanel.setAttribute('aria-hidden', 'true');
+    syncSidePanelOverlay();
   };
 
   function showThreadView() {
@@ -860,6 +878,13 @@ function _navHref(string $file): string {
   // Backward-compatible shared entrypoints for contextual actions on seeker pages.
   window.openMsgSidebar = function () { openMsgPanel(); };
   window.openNotifSidebar = function () { openNotif(); };
+
+  if (sidePanelOverlay) {
+    sidePanelOverlay.addEventListener('click', function () {
+      closeNotif();
+      closeMsgPanel();
+    });
+  }
 
   // Allow any seeker page to open sidebar conversation without redirect.
   window.addEventListener('seeker:openMessageSidebar', function (evt) {

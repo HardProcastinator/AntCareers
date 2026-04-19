@@ -289,8 +289,9 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
     .page-sub { font-size:13px; color:var(--text-muted); margin-top:4px; }
 
     /* TABS */
-    .tabs { display:flex; gap:4px; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:6px; margin-bottom:18px; }
-    .tab { flex:1; padding:9px 12px; border-radius:7px; border:none; background:transparent; font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:0.18s; display:flex; align-items:center; justify-content:center; gap:7px; }
+    .tabs { display:flex; gap:4px; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:6px; margin-bottom:18px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+    .tabs::-webkit-scrollbar { display:none; }
+    .tab { flex:1; min-width:max-content; padding:9px 12px; border-radius:7px; border:none; background:transparent; font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:0.18s; display:flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap; }
     .tab:hover { color:var(--text-light); background:var(--soil-hover); }
     .tab.active { background:var(--red-vivid); color:#fff; box-shadow:0 2px 10px rgba(209,61,44,0.35); }
     .tab-count { background:rgba(255,255,255,0.2); border-radius:10px; padding:1px 7px; font-size:10px; font-weight:700; }
@@ -403,6 +404,9 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
     body.light .sb-nav-item.active { color:var(--red-mid); }
     body.light .tab { color:#6A4040; }
     body.light .tab:hover { color:#1A0A09; background:#F0E4E2; }
+    body.light .tab.active { background:#FDE8E4; color:var(--red-vivid); border:1px solid #E6B7AF; box-shadow:none; }
+    body.light .tab.active .tab-count { background:rgba(209,61,44,0.14); color:var(--red-vivid); }
+    body.light .tab:not(.active) .tab-count { background:#F0E4E2; color:#7A5555; }
     body.light .app-card:hover { background:#FFF5F4; border-color:#D4B0AB; }
     body.light .app-icon { background:rgba(184,53,37,0.08); }
     body.light .ts-dot { background:#F5EDEC; }
@@ -417,13 +421,32 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
     @keyframes fadeUp { to { opacity:1; transform:none; } }
     @media(max-width:760px) {
       html,body{overflow-x:hidden;max-width:100vw}
-      .page-shell,.main-content{max-width:100%;overflow-x:hidden}
+      .main-wrap{padding:14px 14px 40px;overflow-x:hidden;}
       table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
       .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
-      .app-card{padding:14px}
+      /* Filters/tabs: fully visible on mobile (no cut-off) */
+      .tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px;overflow:visible}
+      .tab{min-width:0;justify-content:flex-start;font-size:12px;padding:9px 10px}
+      .tab-count{margin-left:auto}
+      /* Card layout: icon+info on row 1, status row on row 2 */
+      .app-card{padding:14px;flex-wrap:wrap;width:100%;box-sizing:border-box;}
+      .app-icon{flex-shrink:0;}
+      .app-info{flex:1;min-width:0;overflow:hidden;}
+      .app-title{word-break:break-word;}
+      .app-meta{display:flex;flex-wrap:wrap;gap:5px 8px;margin-top:6px;}
+      .app-meta-item{font-size:11px;max-width:100%;}
+      .app-right{flex-direction:row;align-items:center;width:100%;justify-content:space-between;padding-top:10px;border-top:1px solid var(--soil-line);margin-top:8px;}
+      /* Timeline: vertical stack for mobile readability */
+      .timeline-strip{display:flex;flex-direction:column;gap:8px;position:relative;overflow:visible;padding-left:14px;margin-top:10px;}
+      .timeline-strip::before{top:11px;bottom:11px;left:10px;right:auto;width:2px;height:auto;}
+      .ts-step{flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;min-width:0;}
+      .ts-dot{flex-shrink:0;}
+      .ts-label{font-size:11px;white-space:normal;line-height:1.2;text-align:left;}
+      /* Action buttons wrap cleanly */
+      .app-actions{flex-wrap:wrap;gap:6px;}
+      .btn-app{flex-shrink:0;}
       .app-card .job-description-preview,.app-card .card-description{display:none}
     }
-    @media(max-width:700px) { .app-card { flex-wrap:wrap; } .app-right { flex-direction:row; align-items:center; width:100%; justify-content:space-between; } }
   </style>
 </head>
 <body>

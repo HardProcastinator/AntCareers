@@ -384,9 +384,14 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
       .jr-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
       .jr-chips::-webkit-scrollbar{display:none}
       .jr-chips .chip{flex-shrink:0}
-      .job-row{grid-template-columns:1fr;gap:10px}
+      .job-row{flex-direction:column;padding:16px;gap:0}
       .jr-icon{display:none}
-      .job-row-right{flex-direction:row;align-items:center;justify-content:space-between}
+      .jr-left{flex:none;width:100%}
+      .jr-meta{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+      .jr-meta::-webkit-scrollbar{display:none}
+      .job-row-right{flex-direction:row;align-items:center;width:100%;min-width:0;margin-top:10px}
+      .jr-salary{flex:1;font-size:13px;white-space:normal}
+      .jr-actions{margin-left:auto;flex-shrink:0}
       .job-description-preview,.card-description{display:none}
       .featured-scroll{-webkit-overflow-scrolling:touch}
       .featured-card{min-width:230px;max-width:230px}
@@ -438,7 +443,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
   <div class="content-layout">
 
     <!-- SIDEBAR FILTERS -->
-    <button class="mobile-filter-toggle" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
+    <button class="mobile-filter-toggle anim anim-d1" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
       <i class="fas fa-sliders-h"></i> Filters
     </button>
     <aside class="filter-sidebar anim anim-d1" id="filterSidebar">

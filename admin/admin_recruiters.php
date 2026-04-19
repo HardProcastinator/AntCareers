@@ -123,14 +123,16 @@ try { $pendingJobs = (int)$db->query("SELECT COUNT(*) FROM jobs WHERE approval_s
 
     .content-layout { display:block; }
 
-    /* Search bar */
-    .search-bar-wrap { margin-bottom:20px; }
-    .search-form { display:flex; gap:8px; }
-    .search-input { flex:1; padding:10px 14px; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:8px; color:#F5F0EE; font-family:var(--font-body); font-size:13px; outline:none; transition:0.2s; }
+    /* Filter bar */
+    .filter-bar { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:16px 18px; margin-bottom:20px; }
+    .filter-form { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
+    .filter-group { display:flex; flex-direction:column; gap:5px; }
+    .filter-label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; }
+    .search-input { padding:8px 13px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:7px; color:#F5F0EE; font-family:var(--font-body); font-size:13px; outline:none; transition:0.2s; min-width:220px; }
     .search-input:focus { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.12); }
     .search-input::placeholder { color:var(--text-muted); }
-    .search-submit { padding:10px 18px; border-radius:8px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.18s; }
-    .search-submit:hover { background:var(--red-bright); }
+    .filter-submit { padding:8px 18px; border-radius:7px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.18s; white-space:nowrap; align-self:flex-end; }
+    .filter-submit:hover { background:var(--red-bright); }
 
     /* Recruiter rows */
     .user-list { display:flex; flex-direction:column; gap:8px; }
@@ -186,13 +188,21 @@ try { $pendingJobs = (int)$db->query("SELECT COUNT(*) FROM jobs WHERE approval_s
     ::-webkit-scrollbar-thumb { background:var(--soil-line); border-radius:3px; }
 
     body.light { --soil-dark:#F9F5F4; --soil-card:#FFFFFF; --soil-hover:#FEF0EE; --soil-line:#E0CECA; --text-light:#1A0A09; --text-mid:#4A2828; --text-muted:#7A5555; --amber-dim:#FFF4E0; --amber:#B8620A; }
-    body.light .navbar { background:rgba(255,253,252,0.98); border-bottom-color:#D4B0AB; }
+    body.light .navbar { background:rgba(249,245,244,0.97); border-bottom-color:#D4B0AB; }
     body.light .logo-text { color:#1A0A09; }
+    body.light .logo-text span { color:var(--red-vivid); }
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
+    body.light .theme-btn { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .notif-btn-nav { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .notif-btn-nav .badge { border-color:#F9F5F4; }
+    body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
     body.light .profile-name { color:#1A0A09; }
+    body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .page-title { color:#1A0A09; }
     body.light .user-row { background:#FFFFFF; border-color:#E0CECA; }
-    body.light .search-input { background:#FFFFFF; border-color:#E0CECA; color:#1A0A09; }
+    body.light .filter-bar { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .search-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .ur-name { color:#1A0A09; }
     body.light .user-row:hover { background:#FEF0EE; }
     body.light .modal-box { background:#FFFFFF; border-color:#E0CECA; }
@@ -203,7 +213,17 @@ try { $pendingJobs = (int)$db->query("SELECT COUNT(*) FROM jobs WHERE approval_s
     body.light .pd-item { color:#4A2828; }
     body.light .pd-item:hover { background:#FEF0EE; }
 
-    @media(max-width:760px) { .nav-links{display:none} .page-shell{padding:0 16px 60px} .user-row{grid-template-columns:1fr;gap:10px} }
+    .hamburger { display:none; width:34px; height:34px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); align-items:center; justify-content:center; cursor:pointer; font-size:14px; flex-shrink:0; margin-left:8px; }
+    .mobile-menu { display:none; position:fixed; top:64px; left:0; right:0; background:rgba(10,9,9,0.97); backdrop-filter:blur(20px); border-bottom:1px solid var(--soil-line); padding:12px 20px 16px; z-index:190; flex-direction:column; gap:2px; }
+    .mobile-menu.open { display:flex; }
+    .mobile-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:7px; font-size:14px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); text-decoration:none; }
+    .mobile-link i { color:var(--red-mid); width:16px; text-align:center; }
+    .mobile-link:hover,.mobile-link.active { background:var(--soil-hover); color:#F5F0EE; }
+    .mobile-divider { height:1px; background:var(--soil-line); margin:6px 0; }
+    body.light .mobile-menu { background:rgba(249,245,244,0.97); border-color:#E0CECA; }
+    body.light .mobile-link { color:#4A2828; }
+    body.light .mobile-link:hover,body.light .mobile-link.active { background:#FEF0EE; color:#1A0A09; }
+    @media(max-width:760px) { .nav-links{display:none} .hamburger{display:flex} .profile-wrap{display:none} .nav-inner{padding:0 10px} .page-shell{padding:0 16px 60px} .theme-btn,.notif-btn-nav{width:30px;height:30px;font-size:12px} .nav-right{gap:6px} .user-row{grid-template-columns:1fr;gap:10px} }
   </style>
 </head>
 <body>
@@ -227,10 +247,10 @@ try { $pendingJobs = (int)$db->query("SELECT COUNT(*) FROM jobs WHERE approval_s
       <span class="logo-text">Ant<span>Careers</span></span>
     </a>
     <div class="nav-links">
-      <a class="nav-link" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+      <a class="nav-link" href="admin_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
       <a class="nav-link" href="admin_users.php"><i class="fas fa-users"></i> Users</a>
       <a class="nav-link" href="admin_companies.php"><i class="fas fa-building"></i> Companies<?php if($adminPendingCompanies>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingCompanies; ?></span><?php endif; ?></a>
-      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminPendingJobs>0): ?> <span style="background:var(--amber);color:#1A0A09;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingJobs; ?></span><?php endif; ?></a>
+      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminPendingJobs>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingJobs; ?></span><?php endif; ?></a>
       <a class="nav-link active" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
       <a class="nav-link" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
     </div>
@@ -261,13 +281,28 @@ try { $pendingJobs = (int)$db->query("SELECT COUNT(*) FROM jobs WHERE approval_s
           <a class="pd-item danger" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
         </div>
       </div>
+      <button class="hamburger" id="hamburger"><i class="fas fa-bars"></i></button>
     </div>
   </div>
 </nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a class="mobile-link" href="admin_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
+  <a class="mobile-link" href="admin_users.php"><i class="fas fa-users"></i> User Accounts</a>
+  <a class="mobile-link" href="admin_companies.php"><i class="fas fa-building"></i> Company Approval</a>
+  <a class="mobile-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Job Moderation</a>
+  <div class="mobile-divider"></div>
+  <a class="mobile-link" href="admin_activity.php"><i class="fas fa-history"></i> Activity Logs</a>
+  <a class="mobile-link active" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
+  <a class="mobile-link" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
+  <a class="mobile-link" href="admin_notifications.php"><i class="fas fa-bell"></i> Notifications</a>
+  <div class="mobile-divider"></div>
+  <a class="mobile-link" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
+</div>
+<script>(function(){var h=document.getElementById('hamburger'),m=document.getElementById('mobileMenu');if(h&&m){h.addEventListener('click',function(e){e.stopPropagation();var o=m.classList.toggle('open');h.querySelector('i').className=o?'fas fa-times':'fas fa-bars';});document.addEventListener('click',function(e){if(!m.contains(e.target)&&e.target!==h){m.classList.remove('open');h.querySelector('i').className='fas fa-bars';}});}})();</script>
 
 <div class="page-shell">
   <div class="page-header anim">
-    <div class="page-title"><i class="fas fa-user-tie" style="color:var(--red-bright);font-size:22px;vertical-align:middle;margin-right:8px;"></i><span>Recruiters</span></div>
+    <div class="page-title"><i class="fas fa-user-tie" style="color:var(--red-bright);font-size:22px;vertical-align:middle;margin-right:8px;"></i>Manage <span>Recruiters</span></div>
     <div class="page-sub"><?php echo $total; ?> recruiter<?php echo $total !== 1 ? 's' : ''; ?> found across all companies.</div>
   </div>
 
@@ -275,11 +310,17 @@ try { $pendingJobs = (int)$db->query("SELECT COUNT(*) FROM jobs WHERE approval_s
 
     <!-- MAIN -->
     <main class="anim">
-      <!-- SEARCH -->
-      <form class="search-bar-wrap" method="GET" action="">
-        <div class="search-form">
-          <input class="search-input" type="text" name="q" value="<?php echo htmlspecialchars($search, ENT_QUOTES); ?>" placeholder="Search by name, email, or company…">
-          <button class="search-submit" type="submit"><i class="fas fa-search"></i> Search</button>
+      <!-- FILTER BAR -->
+      <form class="filter-bar" method="GET" action="">
+        <div class="filter-form">
+          <div class="filter-group" style="flex:1;min-width:220px;">
+            <div class="filter-label">Search</div>
+            <div style="position:relative;">
+              <i class="fas fa-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none;"></i>
+              <input class="search-input" type="text" name="q" value="<?php echo htmlspecialchars($search, ENT_QUOTES); ?>" placeholder="Search by name, email, or company…" style="padding-left:32px;width:100%;">
+            </div>
+          </div>
+          <button class="filter-submit" type="submit"><i class="fas fa-search"></i> Search</button>
         </div>
       </form>
 

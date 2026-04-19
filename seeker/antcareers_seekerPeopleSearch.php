@@ -444,7 +444,7 @@ foreach ($industryKeys as $ind) {
   <div class="layout">
 
     <!-- FILTER SIDEBAR -->
-    <button class="mobile-filter-toggle" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
+    <button class="mobile-filter-toggle anim anim-d1" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
       <i class="fas fa-sliders-h"></i> Filters
     </button>
     <aside class="filter-sidebar anim anim-d2" id="filterSidebar">

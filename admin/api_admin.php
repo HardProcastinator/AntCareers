@@ -542,6 +542,17 @@ if ($action === 'mark_all_notifications_read') {
     }
 }
 
+/* ── delete_all_notifications ── */
+if ($action === 'delete_all_notifications') {
+    try {
+        $db->prepare("DELETE FROM notifications WHERE user_id = :uid")
+           ->execute([':uid' => $adminId]);
+        exit(json_encode(['success' => true]));
+    } catch (Throwable) {
+        exit(json_encode(['success' => false, 'message' => 'Database error.']));
+    }
+}
+
 // Unknown action
 http_response_code(400);
 exit(json_encode(['success' => false, 'message' => 'Unknown action.']));

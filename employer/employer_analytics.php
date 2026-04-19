@@ -330,6 +330,12 @@ $statusBreakdown = [
       .profile-btn { padding:6px 8px; }
       .stat-grid { grid-template-columns:1fr 1fr; gap:10px; }
       .sc-num { font-size:26px; }
+      .bottom-grid { grid-template-columns:1fr; }
+      .chart-card { padding:16px; overflow:hidden; }
+      .funnel-label { width:75px; }
+      .funnel-count { width:28px; }
+      .funnel-pct { width:30px; }
+      .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
       .footer { flex-direction:column; text-align:center; padding:20px 16px; }
     }
     @media(max-width:480px) {

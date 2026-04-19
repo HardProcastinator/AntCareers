@@ -172,6 +172,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     }
 
+    /* ── restore_job ── */
+    if ($action === 'restore_job') {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        try {
+            $st = $db->prepare("UPDATE jobs SET deleted_at=NULL, status='Draft', approval_status='pending', updated_at=NOW() WHERE id=? AND recruiter_id=? AND deleted_at IS NOT NULL");
+            $st->execute([$jobId, $uid]);
+            if ($st->rowCount() === 0) {
+                echo json_encode(['ok' => false, 'msg' => 'Job not found or not in Trash']);
+            } else {
+                echo json_encode(['ok' => true]);
+            }
+        } catch (Exception $e) {
+            error_log('[AntCareers] recruiter restore_job: ' . $e->getMessage());
+            echo json_encode(['ok' => false, 'msg' => 'DB error']);
+        }
+        exit;
+    }
+
     /* ── post_draft (publish a draft → Active + pending approval) ── */
     if ($action === 'post_draft') {
         $jobId = (int)($_POST['job_id'] ?? 0);
@@ -236,7 +254,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
    FETCH JOBS & COUNTS
    ══════════════════════════════════════════════════════════════ */
 $jobs   = [];
-$counts = ['total' => 0, 'Active' => 0, 'Closed' => 0, 'pending' => 0, 'Draft' => 0];
+$deletedJobs = [];
+$counts = ['total' => 0, 'Active' => 0, 'Closed' => 0, 'pending' => 0, 'Draft' => 0, 'deleted' => 0];
 $dbErr  = false;
 $perPage   = 20;
 $page      = max(1, (int)($_GET['page'] ?? 1));
@@ -275,6 +294,21 @@ try {
     $st->bindValue(':offset',  $offset,  PDO::PARAM_INT);
     $st->execute();
     $jobs = $st->fetchAll(PDO::FETCH_ASSOC);
+
+    /* Deleted jobs */
+    $dc = $db->prepare("SELECT COUNT(*) FROM jobs WHERE recruiter_id=? AND deleted_at IS NOT NULL");
+    $dc->execute([$uid]);
+    $counts['deleted'] = (int)$dc->fetchColumn();
+    if ($counts['deleted'] > 0) {
+        $ds = $db->prepare("
+            SELECT j.*, 0 AS app_count
+            FROM jobs j
+            WHERE j.recruiter_id = ? AND j.deleted_at IS NOT NULL
+            ORDER BY j.deleted_at DESC
+        ");
+        $ds->execute([$uid]);
+        $deletedJobs = $ds->fetchAll(PDO::FETCH_ASSOC);
+    }
 } catch (Exception $e) {
     $dbErr = true;
     error_log('[AntCareers] recruiter_jobs fetch: ' . $e->getMessage());
@@ -387,13 +421,14 @@ $jobsJson = json_encode($jobs ?: []);
       .page-shell,.main-content{max-width:100%;overflow-x:hidden}
       table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
       .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
-      .job-card{grid-template-columns:1fr;gap:8px}
-      .job-right{display:none}
+      .job-card{flex-direction:column;gap:10px}
+      .job-right{display:flex;flex-direction:column;width:100%;align-items:flex-end;gap:8px;border-top:1px solid var(--soil-line);padding-top:12px}
+      .job-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}
       .chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
       .chips::-webkit-scrollbar{display:none}
       .job-description-preview,.card-description{display:none}
     }
-    @media(max-width:620px){.job-right{display:none;}}
+    @media(max-width:620px){}
 
     /* ── Buttons ── */
     .btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:.18s;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
@@ -603,6 +638,11 @@ $jobsJson = json_encode($jobs ?: []);
       <span class="sp-label">Drafts</span>
       <span class="sp-count" id="cntDraft"><?= $counts['Draft'] ?></span>
     </div>
+    <div class="stat-pill" data-filter="deleted" onclick="filterJobs('deleted',this)">
+      <i class="fas fa-trash-alt sp-icon" style="color:var(--red-pale)"></i>
+      <span class="sp-label">Trash</span>
+      <span class="sp-count" id="cntDeleted"><?= $counts['deleted'] ?></span>
+    </div>
     <div class="stat-pill" style="cursor:default;">
       <i class="fas fa-users sp-icon" style="color:var(--amber)"></i>
       <span class="sp-label">Applicants</span>
@@ -621,6 +661,7 @@ $jobsJson = json_encode($jobs ?: []);
       <option value="active">Active</option>
       <option value="closed">Closed</option>
       <option value="draft">Draft</option>
+      <option value="deleted">Trash</option>
       <option value="pending">Pending Approval</option>
       <option value="rejected">Rejected</option>
     </select>
@@ -648,7 +689,8 @@ $jobsJson = json_encode($jobs ?: []);
        data-location="<?= htmlspecialchars(strtolower($j['location'] ?? ''), ENT_QUOTES) ?>"
        data-skills="<?= htmlspecialchars(strtolower($j['skills_required'] ?? ''), ENT_QUOTES) ?>"
        data-status="<?= $sc ?>"
-       data-approval="<?= $asc ?>">
+       data-approval="<?= $asc ?>"
+       data-deleted="0">
     <div class="job-icon"><i class="fas fa-briefcase"></i></div>
     <div class="job-body">
       <div class="job-title"><?= htmlspecialchars($j['title']) ?></div>
@@ -691,6 +733,33 @@ $jobsJson = json_encode($jobs ?: []);
     </div>
   </div>
   <?php endforeach; endif; ?>
+  <?php foreach ($deletedJobs as $j):
+    $pd = date('M j, Y', strtotime($j['deleted_at']));
+  ?>
+  <div class="job-card"
+       id="jc-<?= $j['id'] ?>"
+       data-title="<?= htmlspecialchars(strtolower($j['title']), ENT_QUOTES) ?>"
+       data-location="<?= htmlspecialchars(strtolower($j['location'] ?? ''), ENT_QUOTES) ?>"
+       data-skills="<?= htmlspecialchars(strtolower($j['skills_required'] ?? ''), ENT_QUOTES) ?>"
+       data-status="closed"
+       data-approval="n/a"
+       data-deleted="1"
+       style="opacity:0.65;border-color:rgba(146,124,122,0.25);">
+    <div class="job-icon" style="opacity:0.5"><i class="fas fa-briefcase"></i></div>
+    <div class="job-body">
+      <div class="job-title"><?= htmlspecialchars($j['title']) ?></div>
+      <div class="job-meta">
+        <?php if ($j['location']): ?><span><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($j['location']) ?></span><?php endif; ?>
+        <span style="color:var(--red-pale)"><i class="fas fa-trash-alt"></i> Moved to Trash <?= $pd ?></span>
+      </div>
+    </div>
+    <div class="job-right">
+      <div class="job-actions">
+        <button class="btn grn" onclick="restoreJob(<?= $j['id'] ?>,'<?= htmlspecialchars($j['title'], ENT_QUOTES) ?>')"><i class="fas fa-trash-restore"></i> Restore</button>
+      </div>
+    </div>
+  </div>
+  <?php endforeach; ?>
   </div>
 
   <div class="empty" id="noResults" style="display:none;"><i class="fas fa-search"></i><p>No jobs match your search or filter.</p></div>
@@ -951,6 +1020,7 @@ function filterJobs(type, el) {
   else if (type === 'closed')  sel.value = 'closed';
   else if (type === 'pending') sel.value = 'pending';
   else if (type === 'draft')   sel.value = 'draft';
+  else if (type === 'deleted') sel.value = 'deleted';
 
   currentFilter = type;
   applyFilters();
@@ -965,20 +1035,25 @@ function applyFilters() {
   cards.forEach(function(c) {
     var cStatus   = c.getAttribute('data-status');
     var cApproval = c.getAttribute('data-approval');
+    var cDeleted  = c.getAttribute('data-deleted') === '1';
     var cTitle    = c.getAttribute('data-title') || '';
     var cLoc      = c.getAttribute('data-location') || '';
     var cSkills   = c.getAttribute('data-skills') || '';
 
     var show = true;
 
-    /* Status/approval filter */
-    if (status !== 'all') {
-      if (status === 'pending') {
-        if (cApproval !== 'pending') show = false;
-      } else if (status === 'rejected') {
-        if (cApproval !== 'rejected') show = false;
-      } else {
-        if (cStatus !== status) show = false;
+    if (status === 'deleted') {
+      if (!cDeleted) show = false;
+    } else {
+      if (cDeleted) show = false;
+      if (show && status !== 'all') {
+        if (status === 'pending') {
+          if (cApproval !== 'pending') show = false;
+        } else if (status === 'rejected') {
+          if (cApproval !== 'rejected') show = false;
+        } else {
+          if (cStatus !== status) show = false;
+        }
       }
     }
 
@@ -1195,7 +1270,18 @@ function doDelete() {
         c.style.transition = '.35s';
         setTimeout(function(){ c.remove(); applyFilters(); }, 350);
       }
-      toast('Draft deleted', 'ok');
+      toast('Job moved to Trash', 'ok');
+      setTimeout(function(){ location.reload(); }, 700);
+    } else { toast(d.msg || 'Error', 'err'); }
+  });
+}
+
+function restoreJob(id, title) {
+  if (!confirm('Restore "' + title + '" as a Draft?')) return;
+  doPost({ action: 'restore_job', job_id: id }, function(d) {
+    if (d.ok) {
+      toast('Job restored to Drafts', 'ok');
+      setTimeout(function(){ location.reload(); }, 700);
     } else { toast(d.msg || 'Error', 'err'); }
   });
 }
