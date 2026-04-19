@@ -415,6 +415,14 @@ $appsJson = json_encode($applications, JSON_HEX_TAG | JSON_HEX_AMP);
     .anim { opacity:0; transform:translateY(14px); animation:fadeUp 0.42s cubic-bezier(0.4,0,0.2,1) forwards; }
     .anim-d1 { animation-delay:0.05s; } .anim-d2 { animation-delay:0.12s; }
     @keyframes fadeUp { to { opacity:1; transform:none; } }
+    @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .app-card{padding:14px}
+      .app-card .job-description-preview,.app-card .card-description{display:none}
+    }
     @media(max-width:700px) { .app-card { flex-wrap:wrap; } .app-right { flex-direction:row; align-items:center; width:100%; justify-content:space-between; } }
   </style>
 </head>

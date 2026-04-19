@@ -166,6 +166,7 @@ $platformStats = getPublicPlatformStats();
     .signup-link a { color:var(--red-vivid); font-weight:600; text-decoration:none; }
     .signup-link a:hover { color:var(--red-bright); }
 
+    @media(max-width:760px){html,body{overflow-x:hidden;max-width:100vw}.page,.right-panel{max-width:100%;overflow-x:hidden}}
     @media(max-width:860px) { .page{grid-template-columns:1fr} .left-panel{display:none} .right-panel{padding:70px 24px 40px;min-height:100vh} .right-back-home{left:20px;top:20px} }
   </style>
 </head>

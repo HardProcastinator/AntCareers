@@ -385,6 +385,17 @@ $jobsJson = json_encode($jobs ?: []);
     .mobile-link:hover{background:var(--soil-hover);color:#F5F0EE;}
     .mobile-divider{height:1px;background:var(--soil-line);margin:6px 0;}
     @media(max-width:880px){.nav-links{display:none;}.hamburger{display:flex;}}
+    @media(max-width:760px){
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.content-layout{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .job-card{padding:14px}
+      .chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .chips::-webkit-scrollbar{display:none}
+      .chips .chip,.chips .tag{flex-shrink:0}
+      .job-description-preview,.card-description{display:none}
+    }
     body.light .navbar{background:rgba(249,245,244,0.97);border-bottom-color:#D4B0AB;box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08);}
     body.light .logo-text{color:#1A0A09;}
     body.light .logo-text span{color:var(--red-vivid);}

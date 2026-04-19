@@ -269,6 +269,7 @@ try {
     body.light .mobile-link { color:#4A2828; }
     body.light .mobile-link:hover { background:#FEF0EE; color:#1A0A09; }
 
+    @media(max-width:760px){html,body{overflow-x:hidden;max-width:100vw}.page-shell,.main-content{max-width:100%;overflow-x:hidden}}
     @media(max-width:768px) {
       .msg-layout { grid-template-columns:1fr; height:auto; }
       .chat-panel { display:none; }

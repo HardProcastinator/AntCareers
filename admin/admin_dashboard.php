@@ -399,8 +399,12 @@ $mdJobTypes   = $countValue("SELECT COUNT(DISTINCT job_type) FROM jobs");
 
     @media(max-width:1200px) { .cards-row{grid-template-columns:repeat(3,1fr);} }
     @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .nav-links{display:none} .hamburger{display:flex}
-      .page-shell{padding:0 16px 60px} .nav-inner{padding:0 16px}
+      .page-shell{padding:0 16px 60px} .nav-inner{padding:0 10px}
       .profile-name,.profile-role{display:none} .profile-btn{padding:6px 8px}
       .job-row{grid-template-columns:1fr;gap:10px}
       .job-row-right{flex-direction:row;align-items:center;justify-content:space-between}

@@ -294,6 +294,19 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     .anim { opacity:0; transform:translateY(14px); animation:fadeUp 0.42s cubic-bezier(0.4,0,0.2,1) forwards; }
     .anim-d1 { animation-delay:0.05s; } .anim-d2 { animation-delay:0.12s; }
     @keyframes fadeUp { to { opacity:1; transform:none; } }
+    @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .job-row{grid-template-columns:1fr;gap:10px}
+      .jr-icon{display:none}
+      .jr-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .jr-chips::-webkit-scrollbar{display:none}
+      .jr-chips .chip{flex-shrink:0}
+      .job-row-right{flex-direction:row;align-items:center;justify-content:space-between}
+      .job-description-preview,.card-description{display:none}
+    }
     @media(max-width:640px) { .jobs-grid{grid-template-columns:1fr} }
 </style>
 </head>

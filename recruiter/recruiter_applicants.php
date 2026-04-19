@@ -472,12 +472,18 @@ $jobsListJson   = json_encode($jobsList ?: []);
     /* ── RESPONSIVE ── */
     @media(max-width:880px) { .nav-links { display:none; } .hamburger { display:flex; } }
     @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .page-shell { padding:20px 16px 40px; }
-      .nav-inner { padding:0 16px; }
+      .nav-inner { padding:0 10px; }
       .profile-name,.profile-role { display:none; }
       .profile-btn { padding:6px 8px; }
       .exp-grid { grid-template-columns:1fr; }
       .app-right { display:none; }
+      .person-skill-row{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .person-skill-row::-webkit-scrollbar{display:none}
       .footer { flex-direction:column; text-align:center; padding:16px; }
       .frow { grid-template-columns:1fr; }
       .pm-section-grid { grid-template-columns:1fr; }

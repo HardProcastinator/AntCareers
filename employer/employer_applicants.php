@@ -342,6 +342,21 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     .mobile-link:hover{background:var(--soil-hover);color:#F5F0EE;}
     .mobile-divider{height:1px;background:var(--soil-line);margin:6px 0;}
     @media(max-width:880px){.nav-links{display:none;}.hamburger{display:flex;}}
+    @media(max-width:760px){
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.content-layout{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .mobile-filter-toggle{display:flex;align-items:center;gap:8px;background:var(--soil-hover);border:1px solid var(--red-vivid);color:var(--text-light);font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;margin-bottom:14px;width:100%;justify-content:center}
+      body.light .mobile-filter-toggle{background:#F5EEEC;border-color:var(--red-vivid);color:#1A0A09}
+      .filter-sidebar{display:none;margin-bottom:16px}
+      .filter-sidebar.mobile-open{display:block}
+      .app-card{padding:14px}
+      .person-skill-row{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .person-skill-row::-webkit-scrollbar{display:none}
+      .person-skill-row .skill-tag{flex-shrink:0}
+    }
+    @media(min-width:761px){.mobile-filter-toggle{display:none!important}.filter-sidebar{display:block!important}}
     body.light{background:#FAF7F5;color:#1A0A09;--soil-dark:#F9F5F4;--soil-card:#FFFFFF;--soil-hover:#FEF0EE;--soil-line:#E0CECA;--text-light:#1A0A09;--text-mid:#4A2828;--text-muted:#7A5555;--amber-dim:#FFF4E0;--amber:#B8620A;}
     body.light .navbar{background:rgba(255,253,252,0.98);border-bottom-color:#D4B0AB;box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08);}
     body.light .logo-text{color:#1A0A09;}

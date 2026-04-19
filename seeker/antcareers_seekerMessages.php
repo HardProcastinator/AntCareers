@@ -155,6 +155,7 @@ $navActive = 'messages';
     body.light .footer{border-top-color:#E0CECA;color:#7A5555;}
 
     /* Responsive */
+    @media(max-width:760px){html,body{overflow-x:hidden;max-width:100vw}.page-shell,.main-content{max-width:100%;overflow-x:hidden}}
     @media(max-width:800px){.msg-layout{grid-template-columns:1fr;height:auto;min-height:72vh}.thread-list{display:none}.thread-list.mobile-show{display:flex}}
     @media(max-width:600px){.page-shell{padding:16px 16px 40px}}
 

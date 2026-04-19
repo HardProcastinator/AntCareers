@@ -389,6 +389,20 @@ foreach ($industryKeys as $ind) {
     body.light .pc-btn:hover { color:#1A0A09; background:#F0E4E2; }
     body.light .pc-btn.primary:hover { color:#fff; }
     @media(max-width:1060px) { .layout{grid-template-columns:1fr} .filter-sidebar{position:static} }
+    @media(max-width:760px){
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.layout,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .nav-links{display:none} .hamburger{display:flex}
+      .profile-name,.profile-role{display:none} .profile-btn{padding:6px 8px}
+      .nav-inner{padding:0 10px}
+      .mobile-filter-toggle{display:flex;align-items:center;gap:8px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;width:100%}
+      .filter-sidebar{display:none;flex-direction:column}
+      .filter-sidebar.mobile-open{display:flex}
+      .person-skill-row{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .person-skill-row::-webkit-scrollbar{display:none}
+    }
     @media(max-width:640px) { .people-grid{grid-template-columns:1fr} .search-row{flex-direction:column} .nav-links{display:none} .hamburger{display:flex} }
 </style>
 </head>
@@ -435,7 +449,10 @@ foreach ($industryKeys as $ind) {
   <div class="layout">
 
     <!-- FILTER SIDEBAR -->
-    <aside class="filter-sidebar anim anim-d2">
+    <button class="mobile-filter-toggle" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
+      <i class="fas fa-sliders-h"></i> Filters
+    </button>
+    <aside class="filter-sidebar anim anim-d2" id="filterSidebar">
       <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
 
       <!-- Open to Work Toggle -->

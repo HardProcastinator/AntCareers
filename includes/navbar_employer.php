@@ -210,6 +210,17 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   body.light .mobile-divider { background:#E0CECA; }
   body.light .btn-nav-red { box-shadow:0 2px 8px rgba(209,61,44,0.2); }
   body.light .glow-orb { display:none; }
+  @media(max-width:760px){
+    .nav-links{display:none}
+    .hamburger{display:flex}
+    .profile-name,.profile-role{display:none}
+    .profile-chevron{display:none}
+    .profile-btn{padding:5px 8px;gap:6px}
+    .nav-inner{padding:0 10px;gap:4px}
+    .nav-right{gap:6px;flex-shrink:0}
+    .theme-btn,.msg-btn-nav,.notif-btn-nav{width:30px;height:30px;font-size:12px}
+    .notif-panel{width:100%;max-width:100%}
+  }
 </style>
 
 <!-- Employer shared theme + interactions script -->

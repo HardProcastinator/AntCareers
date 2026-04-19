@@ -364,7 +364,27 @@ $savedJobIdsJson = json_encode($savedJobIds);
     body.light .fc-title{color:#1A0A09;}
     body.light .featured-card:hover{box-shadow:0 12px 32px rgba(0,0,0,0.12);}
     @media(max-width:1060px){.cards-row{grid-template-columns:repeat(3,1fr)}}
-    @media(max-width:760px){.page-shell{padding:0 16px 40px}.cards-row{grid-template-columns:repeat(2,1fr)}.footer{flex-direction:column;text-align:center;padding:16px}}
+    @media(max-width:760px){
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.content-layout,.dashboard-grid{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .page-shell{padding:0 16px 40px}
+      .cards-row{grid-template-columns:repeat(2,1fr)}
+      .fc-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:5px;scrollbar-width:none;padding-bottom:4px}
+      .fc-chips::-webkit-scrollbar{display:none}
+      .fc-chips .chip{flex-shrink:0}
+      .featured-scroll{-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory}
+      .featured-card{min-width:230px;max-width:230px;scroll-snap-align:start}
+      .job-row{grid-template-columns:1fr;gap:10px}
+      .jr-icon{display:none}
+      .jr-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .jr-chips::-webkit-scrollbar{display:none}
+      .jr-chips .chip{flex-shrink:0}
+      .job-row-right{flex-direction:row;align-items:center;justify-content:space-between}
+      .job-description-preview,.card-description{display:none}
+      .footer{flex-direction:column;text-align:center;padding:16px}
+    }
     @media(max-width:480px){.cards-row{grid-template-columns:1fr 1fr}}
 </style>
 </head>

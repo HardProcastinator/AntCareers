@@ -382,6 +382,17 @@ $jobsJson = json_encode($jobs ?: []);
     .app-count-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
     body.light .app-count{color:#1A0A09;}
     .job-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+    @media(max-width:760px){
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .job-card{grid-template-columns:1fr;gap:8px}
+      .job-right{display:none}
+      .chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .chips::-webkit-scrollbar{display:none}
+      .job-description-preview,.card-description{display:none}
+    }
     @media(max-width:620px){.job-right{display:none;}}
 
     /* ── Buttons ── */

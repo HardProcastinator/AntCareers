@@ -381,7 +381,24 @@ foreach ($industryKeys as $ind) {
     body.light .pc-btn:hover { color:#1A0A09; background:#F0E4E2; }
     body.light .pc-btn.primary:hover { color:#fff; }
     @media(max-width:1060px) { .layout{grid-template-columns:1fr} .filter-sidebar{position:static} }
-    @media(max-width:640px) { .people-grid{grid-template-columns:1fr} .search-row{flex-direction:column} .nav-links{display:none} .hamburger{display:flex} }
+    @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.layout,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .nav-links{display:none}
+      .hamburger{display:flex}
+      .people-grid{grid-template-columns:1fr}
+      .search-row{flex-direction:column}
+      .mobile-filter-toggle{display:flex;align-items:center;gap:8px;background:var(--soil-hover);border:1px solid var(--red-vivid);color:var(--text-light);font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;margin-bottom:14px;width:100%;justify-content:center}
+      body.light .mobile-filter-toggle{background:#F5EEEC;border-color:var(--red-vivid);color:#1A0A09}
+      .filter-sidebar{display:none;margin-bottom:16px}
+      .filter-sidebar.mobile-open{display:block}
+      .person-skill-row{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding-bottom:4px;scrollbar-width:none}
+      .person-skill-row::-webkit-scrollbar{display:none}
+      .person-skill-row .skill-tag{flex-shrink:0}
+    }
+    @media(min-width:761px){.mobile-filter-toggle{display:none!important}.filter-sidebar{display:block!important}}
 </style>
 </head>
 <body>
@@ -427,7 +444,10 @@ foreach ($industryKeys as $ind) {
   <div class="layout">
 
     <!-- FILTER SIDEBAR -->
-    <aside class="filter-sidebar anim anim-d2">
+    <button class="mobile-filter-toggle" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
+      <i class="fas fa-sliders-h"></i> Filters
+    </button>
+    <aside class="filter-sidebar anim anim-d2" id="filterSidebar">
       <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
 
       <div class="fs-section">

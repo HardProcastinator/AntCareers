@@ -682,19 +682,34 @@ foreach ($industryKeys as $industryValue) {
     /* Responsive */
     @media(max-width:1060px) { .content-layout{grid-template-columns:1fr} .filter-sidebar{position:static} }
     @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.content-layout,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .nav-links{display:none}
       .page-shell{padding:0 16px 60px}
-      .profile-name { display:none; }
-      .job-row{ flex-wrap:wrap; }
-      .jr-icon { display:none; }
-      .job-row-right{flex-direction:row;align-items:center;justify-content:space-between;width:100%;min-width:unset;}
-      .companies-grid { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
+      .profile-name{display:none}
+      .mobile-filter-toggle{display:flex;align-items:center;gap:8px;background:var(--soil-hover);border:1px solid var(--red-vivid);color:var(--text-light);font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;margin-bottom:14px;width:100%;justify-content:center}
+      body.light .mobile-filter-toggle{background:#F5EEEC;border-color:var(--red-vivid);color:#1A0A09}
+      .filter-sidebar{display:none;margin-bottom:16px}
+      .filter-sidebar.mobile-open{display:block}
+      .job-row{flex-wrap:wrap}
+      .jr-icon{display:none}
+      .jr-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .jr-chips::-webkit-scrollbar{display:none}
+      .jr-chips .chip{flex-shrink:0}
+      .job-row-right{flex-direction:row;align-items:center;justify-content:space-between;width:100%;min-width:unset}
+      .job-description-preview,.card-description{display:none}
+      .companies-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
       .saved-panel{width:100%;max-width:100%}
       .footer{flex-direction:column;text-align:center;padding:20px 16px}
       .search-box{min-width:100%}
       .search-btn{flex:1;justify-content:center}
     }
-    @media(max-width:480px) { .featured-card{min-width:230px;max-width:230px} }
+    @media(min-width:761px){
+      .mobile-filter-toggle{display:none!important}
+      .filter-sidebar{display:block!important}
+    }
 </style>
 </head>
 <body>
@@ -739,7 +754,10 @@ foreach ($industryKeys as $industryValue) {
   <div class="content-layout">
 
     <!-- SIDEBAR FILTERS -->
-    <aside class="filter-sidebar anim anim-d1">
+    <button class="mobile-filter-toggle" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
+      <i class="fas fa-sliders-h"></i> Filters
+    </button>
+    <aside class="filter-sidebar anim anim-d1" id="filterSidebar">
       <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
 
       <div class="fs-section">

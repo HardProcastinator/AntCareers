@@ -347,11 +347,22 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
 
     @media(max-width:1060px) { .cards-row { grid-template-columns:repeat(2,1fr); } }
     @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.content-layout,.dashboard-grid{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .nav-links { display:none; } .hamburger { display:flex; }
-      .page-shell { padding:0 16px 40px; } .nav-inner { padding:0 16px; }
+      .page-shell { padding:0 16px 40px; } .nav-inner { padding:0 10px; }
       .profile-name,.profile-role { display:none; } .profile-btn { padding:6px 8px; }
       .job-row { grid-template-columns:1fr; gap:10px; }
+      .jr-icon { display:none; }
+      .jr-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .jr-chips::-webkit-scrollbar{display:none}
+      .jr-chips .chip{flex-shrink:0}
       .job-row-right { flex-direction:row; align-items:center; justify-content:space-between; }
+      .job-description-preview,.card-description{display:none}
+      .featured-scroll{-webkit-overflow-scrolling:touch}
+      .featured-card{min-width:230px;max-width:230px}
       .footer { flex-direction:column; text-align:center; padding:16px; }
       .cards-row { grid-template-columns:1fr 1fr; }
     }

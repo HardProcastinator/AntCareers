@@ -191,6 +191,7 @@ try {
     .footer-logo { font-family:var(--font-display); font-weight:700; font-size:16px; color:var(--text-mid); margin-bottom:4px; }
 
     /* RESPONSIVE */
+    @media(max-width:760px){html,body{overflow-x:hidden;max-width:100vw}.page-shell,.main-content{max-width:100%;overflow-x:hidden}}
     @media(max-width:768px) {
       .msg-layout { grid-template-columns:1fr; height:auto; }
       .chat-panel { display:none; }

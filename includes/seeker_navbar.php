@@ -256,7 +256,11 @@ function _navHref(string $file): string {
     .nav-links { display:none; }
     .hamburger { display:flex; }
     .profile-name, .profile-role-lbl { display:none; }
-    .profile-btn { padding:6px 8px; }
+    .profile-chevron { display:none; }
+    .profile-btn { padding:5px 8px; gap:6px; }
+    .nav-inner { padding:0 10px; gap:4px; }
+    .nav-right { gap:6px; flex-shrink:0; }
+    .theme-btn, .msg-btn-nav, .notif-btn-nav { width:30px; height:30px; font-size:12px; }
     .notif-panel { width:100%; max-width:100%; }
   }
 </style>
