@@ -20,23 +20,18 @@
  */
 
 declare(strict_types=1);
-
 // ── Database credentials ──────────────────────────────────────────────────────
-// XAMPP defaults — localhost with no password
-// DB_HOST : localhost (XAMPP default)
-// DB_NAME : antcareers (can be any name you created in phpMyAdmin)
-// DB_USER : root (XAMPP default user)
-// DB_PASS : '' (XAMPP default has no password)
-define('DB_HOST',    '127.0.0.1');
+// Hostinger credentials
+define('DB_HOST',    'srv482.hstgr.io');
 define('DB_PORT', '3306');
-define('DB_NAME',    'antcareers');
-define('DB_USER',    'root');
-define('DB_PASS',    '');
+define('DB_NAME',    'u696625122_AntCareers_wst');
+define('DB_USER',    'u696625122_fp_antcareers');
+define('DB_PASS',    'AntCareers46810');
 
 define('DB_CHARSET', 'utf8mb4');
 
 // ── Application settings ──────────────────────────────────────────────────────
-define('APP_URL',    'http://localhost/AntCareers'); // ← local XAMPP development
+define('APP_URL',    'https://antcareers.site/'); // Hostinger domain
 define('APP_NAME', 'AntCareers');
 
 // ── Auth / security constants ─────────────────────────────────────────────────
