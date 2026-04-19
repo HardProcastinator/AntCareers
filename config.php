@@ -31,7 +31,7 @@ define('DB_PASS',    'AntCareers46810');
 define('DB_CHARSET', 'utf8mb4');
 
 // ── Application settings ──────────────────────────────────────────────────────
-define('APP_URL',    'https://antcareers.site'); // Hostinger domain
+define('APP_URL',    'https://antcareers.site/'); // Hostinger domain
 define('APP_NAME', 'AntCareers');
 
 // ── Auth / security constants ─────────────────────────────────────────────────
@@ -182,8 +182,8 @@ function url(string $path, bool $withTheme = false): string
         $basePath = '/' . basename($projectRootFs);
     }
 
-    $basePath = '/' . trim($basePath, '/') . '/';
-    $full = $basePath . $path;
+    $basePath = trim($basePath, '/');
+    $full = '/' . ($basePath !== '' ? $basePath . '/' : '') . $path;
 
     if ($withTheme) {
         $theme = htmlspecialchars($_GET['theme'] ?? '', ENT_QUOTES, 'UTF-8');
