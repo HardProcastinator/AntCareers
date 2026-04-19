@@ -217,11 +217,11 @@ foreach ($industryKeys as $industryValue) {
     .cat-toggle .chevron { font-size:9px; transition:transform 0.22s ease; }
     .cat-toggle.active .chevron { transform:rotate(180deg); }
     .dropdown-menu {
-      position:absolute; top:calc(100% + 10px); left:0;
+      position:fixed; top:auto; left:0;
       background:var(--soil-card); border:1px solid var(--soil-line); border-top:2px solid var(--red-vivid);
       border-radius:10px; padding:6px; min-width:220px;
       opacity:0; visibility:hidden; transform:translateY(-6px);
-      transition:all 0.18s ease; z-index:300;
+      transition:all 0.18s ease; z-index:1000;
       box-shadow:0 24px 48px rgba(0,0,0,0.55);
     }
     .dropdown-menu.open { opacity:1; visibility:visible; transform:translateY(0); }
@@ -1343,6 +1343,15 @@ foreach ($industryKeys as $industryValue) {
   }
 
   // Multi-select dropdown behavior
+  function positionMsPanel(wrap) {
+    const trigger = wrap.querySelector('.ms-trigger');
+    const panel = wrap.querySelector('.ms-panel');
+    if (!trigger || !panel) return;
+    const rect = trigger.getBoundingClientRect();
+    panel.style.top = (rect.bottom + 4) + 'px';
+    panel.style.left = rect.left + 'px';
+    panel.style.width = rect.width + 'px';
+  }
   document.querySelectorAll('.ms-trigger').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -1350,7 +1359,14 @@ foreach ($industryKeys as $industryValue) {
       const wasOpen = wrap.classList.contains('open');
       document.querySelectorAll('.ms-wrap.open').forEach(w => w.classList.remove('open'));
       if (!wasOpen) wrap.classList.add('open');
+      if (!wasOpen) positionMsPanel(wrap);
     });
+  });
+  window.addEventListener('scroll', () => {
+    document.querySelectorAll('.ms-wrap.open').forEach(positionMsPanel);
+  }, { passive: true });
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('.ms-wrap.open').forEach(positionMsPanel);
   });
   document.addEventListener('click', e => {
     if (!e.target.closest('.ms-wrap')) document.querySelectorAll('.ms-wrap.open').forEach(w => w.classList.remove('open'));

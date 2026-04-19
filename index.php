@@ -570,14 +570,6 @@ $isLoggedIn = isset($_SESSION['user_id']);
       font-family: var(--font-body); font-size: 14px; font-weight: 700;
       color: var(--text-light); letter-spacing: -0.01em;
     }
-    .save-btn {
-      width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--soil-line);
-      background: var(--soil-hover); color: var(--text-muted); font-size: 12px;
-      display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
-    }
-    .save-btn:hover, .save-btn.saved {
-      border-color: var(--red-vivid); color: var(--red-pale); background: rgba(200,57,42,0.1);
-    }
 
     /* Companies */
     .companies-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-bottom: 40px; }
@@ -774,9 +766,6 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
     /* Section count badge */
     body.light .sec-count { background: #F5E8E6; color: #7A5555; }
-
-    /* Save btn */
-    body.light .save-btn { background: #F5E8E6; border-color: #DFC0BB; color: #9A7070; }
 
     /* Featured card icon */
     body.light .fc-icon { background: #F5E8E6; border-color: #DFC0BB; }
@@ -1002,7 +991,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
     .ms-trigger .ms-arrow { font-size:8px; color:var(--text-muted); transition:transform 0.2s; flex-shrink:0; }
     .ms-wrap.open .ms-trigger .ms-arrow { transform:rotate(180deg); }
     .ms-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .ms-panel { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:1050; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+    .ms-panel { display:none; position:fixed; top:auto; left:auto; right:auto; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; max-height:200px; overflow-y:auto; z-index:1050; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
     .ms-wrap.open .ms-panel { display:block; }
     .ms-item { display:flex; align-items:center; gap:8px; padding:7px 12px; font-size:13px; color:var(--text-mid); cursor:pointer; transition:background-color 0.12s; user-select:none; }
     .ms-item:hover { background:var(--soil-hover); }
@@ -1351,9 +1340,6 @@ $isLoggedIn = isset($_SESSION['user_id']);
   const jobsData = <?= $indexJobsJson ?>;
 
   const companies = <?= $indexCompaniesJson ?>;
-  const isLoggedIn = <?= $isLoggedIn ? 'true' : 'false' ?>;
-
-  let savedJobs = new Set();
 
   const featuredContainer = document.getElementById('featuredJobsContainer');
   const jobsContainer = document.getElementById('jobsContainer');
@@ -1503,6 +1489,15 @@ $isLoggedIn = isset($_SESSION['user_id']);
   }
 
   // ── MS-WRAP WIRING ────────────────────────────────────────────────────
+  function positionMsPanel(wrap) {
+    const trigger = wrap.querySelector('.ms-trigger');
+    const panel = wrap.querySelector('.ms-panel');
+    if (!trigger || !panel) return;
+    const rect = trigger.getBoundingClientRect();
+    panel.style.top = (rect.bottom + 4) + 'px';
+    panel.style.left = rect.left + 'px';
+    panel.style.width = rect.width + 'px';
+  }
   document.querySelectorAll('.ms-wrap').forEach(wrap => {
     const trigger = wrap.querySelector('.ms-trigger');
     if (!trigger) return;
@@ -1511,6 +1506,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
       const wasOpen = wrap.classList.contains('open');
       document.querySelectorAll('.ms-wrap.open').forEach(w => w.classList.remove('open'));
       if (!wasOpen) wrap.classList.add('open');
+      if (!wasOpen) positionMsPanel(wrap);
     });
     wrap.querySelectorAll('input[type=checkbox]').forEach(cb => {
       cb.addEventListener('change', () => {
@@ -1519,6 +1515,12 @@ $isLoggedIn = isset($_SESSION['user_id']);
         renderAllJobs();
       });
     });
+  });
+  window.addEventListener('scroll', () => {
+    document.querySelectorAll('.ms-wrap.open').forEach(positionMsPanel);
+  }, { passive: true });
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('.ms-wrap.open').forEach(positionMsPanel);
   });
   document.addEventListener('click', e => {
     document.querySelectorAll('.ms-wrap.open').forEach(w => {
@@ -1606,9 +1608,6 @@ $isLoggedIn = isset($_SESSION['user_id']);
         </div>
         <div class="fc-footer">
           <div class="fc-salary">${j.salary}</div>
-          <button class="save-btn ${savedJobs.has(j.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${j.id},this)">
-            <i class="fa${savedJobs.has(j.id)?'s':'r'} fa-heart"></i>
-          </button>
         </div>
       </div>`).join('');
   }
@@ -1684,28 +1683,11 @@ $isLoggedIn = isset($_SESSION['user_id']);
         <div class="job-row-right">
           <div class="jr-salary">${j.salary}</div>
           <div class="jr-actions">
-            <button class="save-btn ${savedJobs.has(j.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${j.id},this)">
-              <i class="fa${savedJobs.has(j.id)?'s':'r'} fa-heart"></i>
-            </button>
             <button class="jr-apply" onclick="event.stopPropagation();startApplication(${j.id})">Apply</button>
           </div>
         </div>
       </div>`).join('');
     if (filtering) document.getElementById('jobs').scrollIntoView({ behavior:'smooth', block:'start' });
-  }
-
-  function toggleSave(id, btn) {
-    if (!isLoggedIn) {
-      window.location.href = 'auth/antcareers_login.php?redirect=' + encodeURIComponent('index.php');
-      return;
-    }
-    if (savedJobs.has(id)) {
-      savedJobs.delete(id); btn.classList.remove('saved');
-      btn.innerHTML = '<i class="far fa-heart"></i>'; showToast('Removed from saved','fa-heart');
-    } else {
-      savedJobs.add(id); btn.classList.add('saved');
-      btn.innerHTML = '<i class="fas fa-heart"></i>'; showToast('Job saved!','fa-heart');
-    }
   }
 
   function filterByCompany(name) {

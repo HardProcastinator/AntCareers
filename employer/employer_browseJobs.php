@@ -205,7 +205,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
     .ms-trigger .ms-arrow{font-size:8px;color:var(--text-muted);transition:transform 0.2s;flex-shrink:0;}
     .ms-wrap.open .ms-trigger .ms-arrow{transform:rotate(180deg);}
     .ms-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:7px;max-height:200px;overflow-y:auto;z-index:1050;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+    .ms-panel{display:none;position:fixed;top:auto;left:auto;right:auto;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:7px;max-height:200px;overflow-y:auto;z-index:1050;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
     .ms-wrap.open .ms-panel{display:block;}
     .role-section{display:block;margin-top:8px;}
     .role-section-label{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin:10px 0 6px;display:block;}
@@ -885,12 +885,22 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
   // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
 
   /* ── MULTI-SELECT WIRING ── */
+  function positionMsPanel(wrap) {
+    const trigger = wrap.querySelector('.ms-trigger');
+    const panel = wrap.querySelector('.ms-panel');
+    if (!trigger || !panel) return;
+    const rect = trigger.getBoundingClientRect();
+    panel.style.top = (rect.bottom + 4) + 'px';
+    panel.style.left = rect.left + 'px';
+    panel.style.width = rect.width + 'px';
+  }
   document.querySelectorAll('.ms-wrap').forEach(wrap => {
     const trigger = wrap.querySelector('.ms-trigger');
     trigger.addEventListener('click', e => {
       e.stopPropagation();
       document.querySelectorAll('.ms-wrap.open').forEach(w => { if (w !== wrap) w.classList.remove('open'); });
       wrap.classList.toggle('open');
+      if (wrap.classList.contains('open')) positionMsPanel(wrap);
     });
     wrap.querySelectorAll('input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', () => {
@@ -899,6 +909,12 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
         renderAllJobs();
       });
     });
+  });
+  window.addEventListener('scroll', () => {
+    document.querySelectorAll('.ms-wrap.open').forEach(positionMsPanel);
+  }, { passive: true });
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('.ms-wrap.open').forEach(positionMsPanel);
   });
   document.addEventListener('click', e => {
     if (!e.target.closest('.ms-wrap')) document.querySelectorAll('.ms-wrap.open').forEach(w => w.classList.remove('open'));

@@ -746,10 +746,6 @@ $openJobCount      = count($companyJobs);
     <div class="jdm-cover-wrap" id="jdmCoverWrap">
       <div class="jdm-cover-label">Cover Letter <span style="color:var(--soil-line);font-weight:400;">(optional)</span></div>
       <textarea class="jdm-cover-ta" id="jdmCoverLetter" placeholder="Briefly introduce yourself..."></textarea>
-      <div class="jdm-cover-label" style="margin-top:12px;">Resume / CV</div>
-      <select id="jdmResumeSelect" style="width:100%;padding:10px 14px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:7px;font-family:var(--font-body);font-size:13px;color:var(--text-mid);outline:none;cursor:pointer;">
-        <option value="profile">Use resume from my profile</option>
-      </select>
     </div>
     <div class="jdm-footer" id="jdmFooter"></div>
   </div>
