@@ -227,7 +227,9 @@ $navActive   = 'manage-jobs';
       .profile-name,.profile-role{display:none} .profile-btn{padding:6px 8px}
       .stats-row { grid-template-columns:repeat(2,1fr); }
       .recruiter-row { grid-template-columns:auto 1fr; }
-      .rec-actions { grid-column:1/-1; justify-content:flex-end; }
+      .rec-actions { grid-column:1/-1; display:grid; grid-template-columns:repeat(2,1fr); gap:6px; }
+      .rec-action-btn { justify-content:center; min-width:0; width:100%; }
+      .rec-actions .rec-status { display:none; }
       .role-options { grid-template-columns:1fr; }
       .page-shell{padding:24px 16px 60px}
     }

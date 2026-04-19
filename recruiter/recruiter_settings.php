@@ -308,6 +308,12 @@ if (isset($_GET['pw'])) {
     body.light .btn-secondary { border-color:#D0BCBA; color:#4A2828; }
     body.light .btn-secondary:hover { background:#FEF0EE; }
 
+    @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.main-wrap{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+    }
     @media(max-width:600px) {
       .main-wrap { padding:16px 14px 48px; }
       .form-row { grid-template-columns:1fr; }

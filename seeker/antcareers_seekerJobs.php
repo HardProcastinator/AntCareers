@@ -682,19 +682,34 @@ foreach ($industryKeys as $industryValue) {
     /* Responsive */
     @media(max-width:1060px) { .content-layout{grid-template-columns:1fr} .filter-sidebar{position:static} }
     @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.content-layout,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .nav-links{display:none}
       .page-shell{padding:0 16px 60px}
-      .profile-name { display:none; }
-      .job-row{ flex-wrap:wrap; }
-      .jr-icon { display:none; }
-      .job-row-right{flex-direction:row;align-items:center;justify-content:space-between;width:100%;min-width:unset;}
-      .companies-grid { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
+      .profile-name{display:none}
+      .mobile-filter-toggle{display:flex;align-items:center;gap:8px;background:var(--soil-hover);border:1px solid var(--red-vivid);color:var(--text-light);font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;margin-bottom:14px;width:100%;justify-content:center}
+      body.light .mobile-filter-toggle{background:#F5EEEC;border-color:var(--red-vivid);color:#1A0A09}
+      .filter-sidebar{display:none;margin-bottom:16px}
+      .filter-sidebar.mobile-open{display:block}
+      .job-row{flex-wrap:wrap}
+      .jr-icon{display:none}
+      .jr-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .jr-chips::-webkit-scrollbar{display:none}
+      .jr-chips .chip{flex-shrink:0}
+      .job-row-right{flex-direction:row;align-items:center;justify-content:space-between;width:100%;min-width:unset}
+      .job-description-preview,.card-description{display:none}
+      .companies-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
       .saved-panel{width:100%;max-width:100%}
       .footer{flex-direction:column;text-align:center;padding:20px 16px}
       .search-box{min-width:100%}
       .search-btn{flex:1;justify-content:center}
     }
-    @media(max-width:480px) { .featured-card{min-width:230px;max-width:230px} }
+    @media(min-width:761px){
+      .mobile-filter-toggle{display:none!important}
+      .filter-sidebar{display:block!important}
+    }
 </style>
 </head>
 <body>
@@ -739,7 +754,10 @@ foreach ($industryKeys as $industryValue) {
   <div class="content-layout">
 
     <!-- SIDEBAR FILTERS -->
-    <aside class="filter-sidebar anim anim-d1">
+    <button class="mobile-filter-toggle anim anim-d1" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
+      <i class="fas fa-sliders-h"></i> Filters
+    </button>
+    <aside class="filter-sidebar anim anim-d1" id="filterSidebar">
       <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
 
       <div class="fs-section">
@@ -910,9 +928,10 @@ foreach ($industryKeys as $industryValue) {
 
 <script>
   // ── REAL DATA FROM PHP ───────────────────────────────────────────────────
-  const jobsData    = <?= $jobsJson ?>;
-  const appliedIds  = new Set(<?= $appliedJson ?>);
-  let   savedJobs   = new Set(<?= $savedJson ?>);
+  const jobsData        = <?= $jobsJson ?>;
+  const appliedIds      = new Set(<?= $appliedJson ?>);
+  let   savedJobs       = new Set(<?= $savedJson ?>);
+  const JOBS_CSRF_TOKEN = '<?= htmlspecialchars(csrfToken(), ENT_QUOTES) ?>';
 
   // ── HELPERS ──────────────────────────────────────────────────────────────
   function esc(s) {
@@ -1241,10 +1260,32 @@ foreach ($industryKeys as $industryValue) {
     currentApplyJobId = jobId;
     const j = jobsData.find(x => x.id === jobId);
     if (!j) return;
-    document.getElementById('quickApplyTitle').textContent = j.title;
-    document.getElementById('quickApplyInfo').innerHTML =
-      `<strong>${esc(j.company)}</strong> &mdash; ${esc(j.location)} &middot; ${esc(j.jobType)} &middot; ${esc(j.salary)}`;
-    document.getElementById('quickCoverLetter').value = '';
+    const initials = j.company.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const chip = (icon, text, accent) => text
+      ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:${accent?'rgba(209,61,44,0.08)':'var(--soil-hover)'};border:1px solid ${accent?'rgba(209,61,44,0.22)':'var(--soil-line)'};color:${accent?'var(--red-pale)':'var(--text-muted)'};white-space:nowrap;"><i class="fas ${icon}" style="font-size:10px;color:${accent?'var(--red-bright)':'var(--red-bright)'}"></i>${esc(text)}</span>`
+      : '';
+    const chips = [chip('fa-map-marker-alt',j.location,false),chip('fa-laptop-house',j.workSetup,false),chip('fa-briefcase',j.jobType,false),chip('fa-money-bill-wave',j.salary,true)].filter(Boolean).join('');
+    document.getElementById('quickApplyInner').innerHTML = `
+      <div style="height:3px;background:linear-gradient(90deg,var(--red-vivid),var(--red-bright));border-radius:14px 14px 0 0;margin:-28px -28px 24px;"></div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+          <div style="width:46px;height:46px;border-radius:12px;background:rgba(209,61,44,0.12);border:1px solid rgba(209,61,44,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--red-pale);flex-shrink:0;">${initials}</div>
+          <div style="min-width:0;">
+            <div style="font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--text-light);line-height:1.25;">${esc(j.title)}</div>
+            <div style="font-size:13px;color:var(--red-pale);font-weight:600;margin-top:2px;">${esc(j.company)}</div>
+          </div>
+        </div>
+        <button onclick="closeApplyModal()" style="width:30px;height:30px;border-radius:6px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:8px;"><i class="fas fa-times"></i></button>
+      </div>
+      ${chips ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;">${chips}</div>` : ''}
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Cover Letter <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+        <textarea id="quickCoverLetter" rows="5" placeholder="Tell the employer why you're a great fit..." style="width:100%;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:10px 12px;color:var(--text-light);font-family:var(--font-body);font-size:13px;resize:vertical;outline:none;transition:border-color 0.18s;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(209,61,44,0.5)'" onblur="this.style.borderColor='var(--soil-line)'"></textarea>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid var(--soil-line);">
+        <button onclick="closeApplyModal()" style="padding:9px 20px;border-radius:8px;background:transparent;border:1px solid var(--soil-line);color:var(--text-muted);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:border-color 0.18s,color 0.18s;" onmouseover="this.style.borderColor='rgba(209,61,44,0.5)';this.style.color='var(--red-pale)'" onmouseout="this.style.borderColor='var(--soil-line)';this.style.color='var(--text-muted)'">Cancel</button>
+        <button onclick="submitQuickApply()" style="padding:9px 22px;border-radius:8px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background 0.18s,transform 0.14s;" onmouseover="this.style.background='var(--red-bright)';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='var(--red-vivid)';this.style.transform='none'"><i class="fas fa-paper-plane"></i> Submit Application</button>
+      </div>`;
     document.getElementById('quickApplyModal').classList.add('open');
     document.getElementById('jobModal').classList.remove('open');
   }
@@ -1259,26 +1300,27 @@ foreach ($industryKeys as $industryValue) {
     const btn = document.querySelector('#quickApplyModal button[onclick="submitQuickApply()"]');
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…'; }
 
+    let data;
     try {
       const fd = new FormData();
-      fd.append('job_id',      currentApplyJobId);
-      fd.append('cover_letter', document.getElementById('quickCoverLetter').value);
-      fd.append('csrf_token', document.getElementById('quickCsrfToken').value);
-      const res  = await fetch('apply_job.php', { method:'POST', body:fd });
-      const data = await res.json();
-
-      if (data.success) {
-        appliedIds.add(currentApplyJobId);
-        closeApplyModal();
-        renderAllJobs();
-        renderFeatured();
-        showToast('Application submitted! 🎉', 'fa-check');
-      } else {
-        showToast(data.message || 'Could not apply. Try again.', 'fa-exclamation');
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Application'; }
-      }
+      fd.append('job_id',       currentApplyJobId);
+      fd.append('cover_letter', document.getElementById('quickCoverLetter')?.value ?? '');
+      fd.append('csrf_token',   JOBS_CSRF_TOKEN);
+      const res = await fetch('apply_job.php', { method:'POST', body:fd });
+      data = await res.json();
     } catch {
       showToast('Network error. Try again.', 'fa-exclamation');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Application'; }
+      return;
+    }
+
+    if (data.success) {
+      appliedIds.add(currentApplyJobId);
+      closeApplyModal();
+      renderAllJobs();
+      showToast('Application submitted! 🎉', 'fa-check');
+    } else {
+      showToast(data.message || 'Could not apply. Try again.', 'fa-exclamation');
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Application'; }
     }
   }
@@ -1358,29 +1400,8 @@ foreach ($industryKeys as $industryValue) {
 </script>
 
 <!-- QUICK APPLY MODAL -->
-<div id="quickApplyModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;visibility:hidden;transition:all 0.2s;">
-  <div style="background:var(--soil-card);border:1px solid var(--soil-line);border-radius:14px;padding:28px;width:100%;max-width:480px;transform:translateY(10px);transition:all 0.22s;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div style="font-size:17px;font-weight:700;color:var(--text-light);">Apply for <span id="quickApplyTitle" style="color:var(--red-pale);"></span></div>
-      <button onclick="closeApplyModal()" style="width:30px;height:30px;border-radius:6px;background:var(--soil-hover);border:none;color:var(--text-muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-times"></i></button>
-    </div>
-    <div id="quickApplyInfo" style="background:var(--soil-hover);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--text-mid);"></div>
-    <div style="margin-bottom:14px;">
-      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;">Cover Letter (optional)</label>
-      <textarea id="quickCoverLetter" rows="4" placeholder="Tell this employer why you're a great fit..." style="width:100%;padding:10px 14px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:7px;font-family:var(--font-body);font-size:13px;color:var(--text-light);outline:none;resize:vertical;"></textarea>
-    </div>
-    <div style="margin-bottom:14px;">
-      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;">Resume / CV</label>
-      <select id="quickResumeSelect" style="width:100%;padding:10px 14px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:7px;font-family:var(--font-body);font-size:13px;color:var(--text-mid);outline:none;cursor:pointer;">
-        <option value="profile">Use resume from my profile</option>
-      </select>
-    </div>
-    <input type="hidden" id="quickCsrfToken" value="<?= htmlspecialchars(csrfToken(), ENT_QUOTES) ?>">
-    <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid var(--soil-line);">
-      <button onclick="closeApplyModal()" style="padding:9px 18px;border-radius:7px;background:transparent;border:1px solid var(--soil-line);color:var(--text-mid);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
-      <button onclick="submitQuickApply()" style="padding:9px 22px;border-radius:7px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="fas fa-paper-plane"></i> Submit Application</button>
-    </div>
-  </div>
+<div id="quickApplyModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;visibility:hidden;transition:all 0.2s;">
+  <div id="quickApplyInner" style="background:var(--soil-card);border:1px solid var(--soil-line);border-radius:14px;padding:28px;width:100%;max-width:480px;transform:translateY(10px);transition:all 0.22s;overflow:hidden;"></div>
 </div>
 <script>
   const _qam = document.getElementById('quickApplyModal');

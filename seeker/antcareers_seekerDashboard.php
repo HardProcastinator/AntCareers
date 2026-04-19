@@ -364,8 +364,36 @@ $savedJobIdsJson = json_encode($savedJobIds);
     body.light .fc-title{color:#1A0A09;}
     body.light .featured-card:hover{box-shadow:0 12px 32px rgba(0,0,0,0.12);}
     @media(max-width:1060px){.cards-row{grid-template-columns:repeat(3,1fr)}}
-    @media(max-width:760px){.page-shell{padding:0 16px 40px}.cards-row{grid-template-columns:repeat(2,1fr)}.footer{flex-direction:column;text-align:center;padding:16px}}
-    @media(max-width:480px){.cards-row{grid-template-columns:1fr 1fr}}
+    @media(max-width:760px){
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.content-layout,.dashboard-grid{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .page-shell{padding:0 16px 40px}
+      /* Summary cards: 2-col grid, last card (Messages) spans full width */
+      .cards-row{grid-template-columns:repeat(2,1fr)}
+      .sum-card:last-child{grid-column:1/-1}
+      .fc-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:5px;scrollbar-width:none;padding-bottom:4px}
+      .fc-chips::-webkit-scrollbar{display:none}
+      .fc-chips .chip{flex-shrink:0}
+      /* Interview cards: full-width with scroll-snap */
+      .featured-scroll{-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory}
+      .featured-card{min-width:calc(100vw - 40px);max-width:calc(100vw - 40px);scroll-snap-align:start}
+      /* Job rows: column layout — content top, salary+actions row at bottom */
+      .job-row{flex-direction:column;padding:16px;gap:0}
+      .jr-icon{display:none}
+      .jr-left{flex:none;width:100%}
+      .jr-meta{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+      .jr-meta::-webkit-scrollbar{display:none}
+      .jr-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .jr-chips::-webkit-scrollbar{display:none}
+      .jr-chips .chip{flex-shrink:0}
+      .job-row-right{flex-direction:row;align-items:center;width:100%;min-width:0;margin-top:10px}
+      .jr-salary{flex:1;font-size:13px;white-space:normal}
+      .jr-actions{margin-left:auto;flex-shrink:0}
+      .job-description-preview,.card-description{display:none}
+      .footer{flex-direction:column;text-align:center;padding:16px}
+    }
 </style>
 </head>
 <body>
@@ -461,7 +489,7 @@ function escHtmlD(s){ if(!s) return ''; const d=document.createElement('div'); d
 function renderApplications() {
   const c = document.getElementById('appsContainer');
   document.getElementById('appCount').textContent = applicationsData.length + ' application' + (applicationsData.length !== 1 ? 's' : '');
-  c.innerHTML = applicationsData.map((a,i)=>`<div class="job-row" style="animation:fadeUp 0.3s ${i*0.04}s both ease;"><div><div class="jr-top"><div class="jr-title">${a.title}</div><span class="jr-new ${a.statusClass}">${a.status}</span></div><div class="jr-meta"><span class="jr-company"><i class="fas fa-building"></i> ${a.company}</span><span><i class="fas fa-calendar"></i> ${a.date}</span></div></div><div class="job-row-right"><div class="jr-actions"><button class="jr-btn" onclick="window.location.href='antcareers_seekerApplications.php'">View</button></div></div></div>`).join('');
+  c.innerHTML = applicationsData.map((a,i)=>`<div class="job-row" style="animation:fadeUp 0.3s ${i*0.04}s both ease;"><div class="jr-left"><div class="jr-top"><div class="jr-title">${a.title}</div><span class="jr-new ${a.statusClass}">${a.status}</span></div><div class="jr-meta"><span class="jr-company"><i class="fas fa-building"></i> ${a.company}</span><span><i class="fas fa-calendar"></i> ${a.date}</span></div></div><div class="job-row-right"><div class="jr-actions"><button class="jr-apply" onclick="window.location.href='antcareers_seekerApplications.php'">View</button></div></div></div>`).join('');
 }
 
 function renderInterviews(){document.getElementById('interviewsContainer').innerHTML=interviewsData.map(iv=>{
@@ -573,24 +601,32 @@ function openApplyModal(jobId) {
   const j = jobsData.find(x => x.id === jobId);
   if (!j) return;
 
+  const initials = j.company.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const chip = (icon, text, accent) => text
+    ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:${accent?'rgba(209,61,44,0.08)':'var(--soil-hover)'};border:1px solid ${accent?'rgba(209,61,44,0.22)':'var(--soil-line)'};color:${accent?'var(--red-pale)':'var(--text-muted)'};white-space:nowrap;"><i class="fas ${icon}" style="font-size:10px;color:var(--red-bright);"></i>${escHtmlD(text)}</span>`
+    : '';
+  const chips = [chip('fa-map-marker-alt',j.location,false),chip('fa-laptop-house',j.workSetup,false),chip('fa-briefcase',j.jobType,false),chip('fa-money-bill-wave',j.salary,true)].filter(Boolean).join('');
+
   document.getElementById('modalFooter').style.display = 'none';
   document.getElementById('modalBody').innerHTML = `
-    <div class="sec-title" style="font-size:22px;margin-bottom:10px;"><i class="fas fa-paper-plane"></i> Quick Apply</div>
-    <div style="font-size:16px;font-weight:700;color:var(--text-light);margin-bottom:6px;">${escHtmlD(j.title)}</div>
-    <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">${escHtmlD(j.company)} · ${escHtmlD(j.location)} · ${escHtmlD(j.workSetup)}</div>
-    <div style="margin-bottom:14px;">
-      <label style="display:block;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Cover Letter (Optional)</label>
-      <textarea id="dashApplyCover" rows="5" style="width:100%;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:10px 12px;color:var(--text-light);font-family:var(--font-body);font-size:13px;resize:vertical;outline:none;" placeholder="Tell the employer why you're a great fit..."></textarea>
+    <div style="height:3px;background:linear-gradient(90deg,var(--red-vivid),var(--red-bright));border-radius:4px 4px 0 0;margin:-28px -28px 24px;"></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+        <div style="width:46px;height:46px;border-radius:12px;background:rgba(209,61,44,0.12);border:1px solid rgba(209,61,44,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--red-pale);flex-shrink:0;">${initials}</div>
+        <div style="min-width:0;">
+          <div style="font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--text-light);line-height:1.25;">${escHtmlD(j.title)}</div>
+          <div style="font-size:13px;color:var(--red-pale);font-weight:600;margin-top:2px;">${escHtmlD(j.company)}</div>
+        </div>
+      </div>
     </div>
-    <div style="margin-bottom:14px;">
-      <label style="display:block;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Resume / CV</label>
-      <select style="width:100%;padding:10px 12px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;font-family:var(--font-body);font-size:13px;color:var(--text-mid);outline:none;cursor:pointer;">
-        <option value="profile">Use resume from my profile</option>
-      </select>
+    ${chips ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;">${chips}</div>` : ''}
+    <div style="margin-bottom:16px;">
+      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Cover Letter <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+      <textarea id="dashApplyCover" rows="5" placeholder="Tell the employer why you're a great fit..." style="width:100%;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:10px 12px;color:var(--text-light);font-family:var(--font-body);font-size:13px;resize:vertical;outline:none;transition:border-color 0.18s;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(209,61,44,0.5)'" onblur="this.style.borderColor='var(--soil-line)'"></textarea>
     </div>
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--soil-line);">
-      <button class="jr-btn" onclick="closeApplyModal()">Cancel</button>
-      <button class="jr-apply" id="dashApplySubmit" onclick="submitDashboardApply()"><i class="fas fa-paper-plane"></i> Submit Application</button>
+    <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid var(--soil-line);">
+      <button onclick="closeApplyModal()" style="padding:9px 20px;border-radius:8px;background:transparent;border:1px solid var(--soil-line);color:var(--text-muted);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:border-color 0.18s,color 0.18s;" onmouseover="this.style.borderColor='rgba(209,61,44,0.5)';this.style.color='var(--red-pale)'" onmouseout="this.style.borderColor='var(--soil-line)';this.style.color='var(--text-muted)'">Cancel</button>
+      <button id="dashApplySubmit" onclick="submitDashboardApply()" style="padding:9px 22px;border-radius:8px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background 0.18s,transform 0.14s;" onmouseover="this.style.background='var(--red-bright)';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='var(--red-vivid)';this.style.transform='none'"><i class="fas fa-paper-plane"></i> Submit Application</button>
     </div>`;
 
   document.getElementById('jobModal').classList.add('open');

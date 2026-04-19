@@ -284,6 +284,10 @@ $cpScore = min($cpScore, 100);
     body.light .company-logo { background:#F5EEEC; border-color:#E0CECA; }
 
     @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .nav-links{display:none} .hamburger{display:flex}
       .profile-name,.profile-role{display:none} .profile-btn{padding:6px 8px}
       .form-grid { grid-template-columns:1fr; }

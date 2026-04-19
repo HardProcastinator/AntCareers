@@ -139,16 +139,23 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .sec-title { font-family:var(--font-display); font-size:20px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:10px; }
     .sec-title i { color:var(--red-bright); font-size:16px; }
 
-    /* Tabs */
-    .tab-bar { display:flex; gap:6px; margin-bottom:24px; }
-    .tab-btn { padding:8px 18px; border-radius:7px; border:1px solid var(--soil-line); background:var(--soil-hover); color:var(--text-muted); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; transition:0.18s; display:flex; align-items:center; gap:7px; }
-    .tab-btn:hover { color:#F5F0EE; border-color:rgba(209,61,44,0.4); }
-    .tab-btn.active { background:rgba(209,61,44,0.12); border-color:rgba(209,61,44,0.4); color:var(--red-pale); }
+    /* Filter bar */
+    .filter-bar { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:16px 18px; margin-bottom:20px; }
+    .filter-form { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
+    .filter-group { display:flex; flex-direction:column; gap:5px; }
+    .filter-label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; }
+    .pill-group { display:flex; gap:4px; flex-wrap:wrap; }
+    .pill-opt { padding:5px 12px; border-radius:100px; border:1px solid var(--soil-line); background:var(--soil-hover); color:var(--text-muted); font-size:12px; font-weight:600; cursor:pointer; transition:0.18s; white-space:nowrap; display:flex; align-items:center; gap:6px; }
+    .pill-opt:hover { color:#F5F0EE; border-color:rgba(209,61,44,0.4); }
+    .pill-opt.active { background:rgba(209,61,44,0.12); border-color:rgba(209,61,44,0.4); color:var(--red-pale); }
     .tab-count { font-size:10px; font-weight:700; padding:1px 6px; border-radius:8px; background:rgba(209,61,44,0.18); color:var(--red-pale); }
     .tab-count.amber { background:rgba(212,148,58,0.18); color:var(--amber); }
     .tab-count.green { background:rgba(76,175,112,0.12); color:#6ccf8a; }
     .tab-section { display:none; }
     .tab-section.active { display:block; }
+    .search-input { padding:8px 13px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:7px; color:#F5F0EE; font-family:var(--font-body); font-size:13px; outline:none; transition:0.2s; min-width:220px; }
+    .search-input:focus { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.12); }
+    .search-input::placeholder { color:var(--text-muted); }
 
     /* Company cards */
     .company-list { display:flex; flex-direction:column; gap:10px; }
@@ -210,11 +217,18 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     ::-webkit-scrollbar-thumb { background:var(--soil-line); border-radius:3px; }
 
     body.light { --soil-dark:#F9F5F4; --soil-card:#FFFFFF; --soil-hover:#FEF0EE; --soil-line:#E0CECA; --text-light:#1A0A09; --text-mid:#4A2828; --text-muted:#7A5555; --amber-dim:#FFF4E0; --amber:#B8620A; }
-    body.light .navbar { background:rgba(255,253,252,0.98); border-bottom-color:#D4B0AB; }
+    body.light .navbar { background:rgba(249,245,244,0.97); border-bottom-color:#D4B0AB; }
     body.light .logo-text { color:#1A0A09; }
+    body.light .logo-text span { color:var(--red-vivid); }
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
+    body.light .theme-btn { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .notif-btn-nav { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .notif-btn-nav .badge { border-color:#F9F5F4; }
+    body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
     body.light .profile-name { color:#1A0A09; }
+    body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .page-title { color:#1A0A09; }
     body.light .company-card { background:#FFFFFF; border-color:#E0CECA; }
     body.light .company-card:hover { background:#FEF0EE; }
     body.light .cc-name { color:#1A0A09; }
@@ -226,8 +240,21 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     body.light .pd-item { color:#4A2828; }
     body.light .pd-item:hover { background:#FEF0EE; color:#1A0A09; }
     body.light .sec-title { color:#1A0A09; }
+    body.light .filter-bar { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .pill-opt { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .search-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
 
-    @media(max-width:760px) { .nav-links{display:none} .page-shell{padding:0 16px 60px} .cc-top{flex-direction:column} .cc-actions{flex-direction:row} }
+    .hamburger { display:none; width:34px; height:34px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); align-items:center; justify-content:center; cursor:pointer; font-size:14px; flex-shrink:0; margin-left:8px; }
+    .mobile-menu { display:none; position:fixed; top:64px; left:0; right:0; background:rgba(10,9,9,0.97); backdrop-filter:blur(20px); border-bottom:1px solid var(--soil-line); padding:12px 20px 16px; z-index:190; flex-direction:column; gap:2px; }
+    .mobile-menu.open { display:flex; }
+    .mobile-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:7px; font-size:14px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); text-decoration:none; }
+    .mobile-link i { color:var(--red-mid); width:16px; text-align:center; }
+    .mobile-link:hover,.mobile-link.active { background:var(--soil-hover); color:#F5F0EE; }
+    .mobile-divider { height:1px; background:var(--soil-line); margin:6px 0; }
+    body.light .mobile-menu { background:rgba(249,245,244,0.97); border-color:#E0CECA; }
+    body.light .mobile-link { color:#4A2828; }
+    body.light .mobile-link:hover,body.light .mobile-link.active { background:#FEF0EE; color:#1A0A09; }
+    @media(max-width:760px) { .nav-links{display:none} .hamburger{display:flex} .profile-wrap{display:none} .nav-inner{padding:0 10px} .page-shell{padding:0 16px 60px} .theme-btn,.notif-btn-nav{width:30px;height:30px;font-size:12px} .nav-right{gap:6px} .cc-top{flex-direction:column} .cc-actions{flex-direction:row} }
   </style>
 </head>
 <body>
@@ -253,10 +280,10 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
       <span class="logo-text">Ant<span>Careers</span></span>
     </a>
     <div class="nav-links">
-      <a class="nav-link" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+      <a class="nav-link" href="admin_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
       <a class="nav-link" href="admin_users.php"><i class="fas fa-users"></i> Users</a>
       <a class="nav-link active" href="admin_companies.php"><i class="fas fa-building"></i> Companies<?php if($adminPendingCompanies>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingCompanies; ?></span><?php endif; ?></a>
-      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminPendingJobs>0): ?> <span style="background:var(--amber);color:#1A0A09;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingJobs; ?></span><?php endif; ?></a>
+      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminPendingJobs>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingJobs; ?></span><?php endif; ?></a>
       <a class="nav-link" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
       <a class="nav-link" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
     </div>
@@ -287,9 +314,24 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
           <a class="pd-item danger" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
         </div>
       </div>
+      <button class="hamburger" id="hamburger"><i class="fas fa-bars"></i></button>
     </div>
   </div>
 </nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a class="mobile-link" href="admin_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
+  <a class="mobile-link" href="admin_users.php"><i class="fas fa-users"></i> User Accounts</a>
+  <a class="mobile-link active" href="admin_companies.php"><i class="fas fa-building"></i> Company Approval</a>
+  <a class="mobile-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Job Moderation</a>
+  <div class="mobile-divider"></div>
+  <a class="mobile-link" href="admin_activity.php"><i class="fas fa-history"></i> Activity Logs</a>
+  <a class="mobile-link" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
+  <a class="mobile-link" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
+  <a class="mobile-link" href="admin_notifications.php"><i class="fas fa-bell"></i> Notifications</a>
+  <div class="mobile-divider"></div>
+  <a class="mobile-link" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
+</div>
+<script>(function(){var h=document.getElementById('hamburger'),m=document.getElementById('mobileMenu');if(h&&m){h.addEventListener('click',function(e){e.stopPropagation();var o=m.classList.toggle('open');h.querySelector('i').className=o?'fas fa-times':'fas fa-bars';});document.addEventListener('click',function(e){if(!m.contains(e.target)&&e.target!==h){m.classList.remove('open');h.querySelector('i').className='fas fa-bars';}});}})();</script>
 
 <div class="page-shell">
   <div class="page-header anim">
@@ -301,30 +343,26 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
 
     <!-- MAIN -->
     <main class="anim">
-      <!-- SEARCH + TABS ROW -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:200px;position:relative;">
-          <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;"></i>
-          <input id="companySearch" type="text" placeholder="Search companies, email, industry…"
-            style="width:100%;padding:9px 12px 9px 36px;border-radius:8px;border:1px solid var(--soil-line);background:var(--soil-hover);color:#F5F0EE;font-family:var(--font-body);font-size:14px;outline:none;box-sizing:border-box;"
-            oninput="filterCompanies(this.value)">
+      <!-- FILTER BAR -->
+      <div class="filter-bar">
+        <div class="filter-form">
+          <div class="filter-group">
+            <div class="filter-label">Status</div>
+            <div class="pill-group">
+              <button class="pill-opt active" data-tab="pending" onclick="switchTab('pending')"><i class="fas fa-hourglass-half"></i> Pending <span class="tab-count" id="pending-count-badge"><?php echo $pendingCount; ?></span></button>
+              <button class="pill-opt" data-tab="approved" onclick="switchTab('approved')"><i class="fas fa-check-circle"></i> Approved <span class="tab-count green"><?php echo $approvedCount; ?></span></button>
+              <button class="pill-opt" data-tab="rejected" onclick="switchTab('rejected')"><i class="fas fa-times-circle"></i> Rejected <span class="tab-count amber"><?php echo $rejectedCount; ?></span></button>
+            </div>
+          </div>
+          <div class="filter-group" style="flex:1;min-width:220px;">
+            <div class="filter-label">Search</div>
+            <div style="position:relative;">
+              <i class="fas fa-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none;"></i>
+              <input class="search-input" id="companySearch" type="text" autocomplete="off" placeholder="Search companies, email, industry…" style="padding-left:32px;width:100%;" oninput="filterCompanies(this.value)">
+            </div>
+          </div>
         </div>
-        <!-- TABS -->
-        <div class="tab-bar" style="margin-bottom:0;flex-shrink:0;">
-        <button class="tab-btn active" data-tab="pending" onclick="switchTab('pending')">
-          <i class="fas fa-hourglass-half"></i> Pending
-          <span class="tab-count" id="pending-count-badge"><?php echo $pendingCount; ?></span>
-        </button>
-        <button class="tab-btn" data-tab="approved" onclick="switchTab('approved')">
-          <i class="fas fa-check-circle"></i> Approved
-          <span class="tab-count green"><?php echo $approvedCount; ?></span>
-        </button>
-        <button class="tab-btn" data-tab="rejected" onclick="switchTab('rejected')">
-          <i class="fas fa-times-circle"></i> Rejected
-          <span class="tab-count amber"><?php echo $rejectedCount; ?></span>
-        </button>
-      </div>
-      </div><!-- /search+tabs row -->
+      </div><!-- /filter-bar -->
 
       <!-- PENDING TAB -->
       <div class="tab-section active" id="tab-pending">
@@ -452,7 +490,7 @@ async function adminAction(action, data) {
 }
 
 function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-section').forEach(s => s.classList.toggle('active', s.id === 'tab-' + name));
   filterCompanies(document.getElementById('companySearch').value);
 }

@@ -342,7 +342,7 @@ if (isset($_GET['pw'])) {
       --text-light:#1A0A09; --text-mid:#4A2828; --text-muted:#7A5555;
       --amber-dim:#FFF4E0; --amber:#B8620A;
     }
-    body.light .navbar { background:rgba(255,253,252,0.98); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }
+    body.light .navbar { background:rgba(249,245,244,0.97); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }
     body.light .logo-text { color:#1A0A09; }
     body.light .logo-text span { color:var(--red-vivid); }
     body.light .nav-link { color:#5A4040; }
@@ -390,7 +390,8 @@ if (isset($_GET['pw'])) {
     @media(max-width:760px) {
       .nav-links{display:none} .hamburger{display:flex}
       .page-shell{padding:16px 16px 60px} .nav-inner{padding:0 16px}
-      .profile-name,.profile-role{display:none} .profile-btn{padding:6px 8px}
+      .profile-wrap{display:none}
+      .theme-btn,.notif-btn-nav{width:30px;height:30px;font-size:12px} .nav-right{gap:6px}
       .form-row { grid-template-columns:1fr; }
     }
   </style>
@@ -422,10 +423,10 @@ if (isset($_GET['pw'])) {
       <span class="logo-text">Ant<span>Careers</span></span>
     </a>
     <div class="nav-links">
-      <a class="nav-link" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+      <a class="nav-link" href="admin_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
       <a class="nav-link" href="admin_users.php"><i class="fas fa-users"></i> Users</a>
       <a class="nav-link" href="admin_companies.php"><i class="fas fa-building"></i> Companies<?php if($adminPendingCompanies>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingCompanies; ?></span><?php endif; ?></a>
-      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminPendingJobs>0): ?> <span style="background:var(--amber);color:#1A0A09;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingJobs; ?></span><?php endif; ?></a>
+      <a class="nav-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Jobs<?php if($adminPendingJobs>0): ?> <span style="background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;"><?php echo $adminPendingJobs; ?></span><?php endif; ?></a>
       <a class="nav-link" href="admin_recruiters.php"><i class="fas fa-user-tie"></i> Recruiters</a>
       <a class="nav-link" href="admin_reports.php"><i class="fas fa-chart-bar"></i> Reports</a>
     </div>
@@ -462,7 +463,7 @@ if (isset($_GET['pw'])) {
 
 <!-- Mobile menu -->
 <div class="mobile-menu" id="mobileMenu">
-  <a class="mobile-link" href="admin_dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+  <a class="mobile-link" href="admin_dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a>
   <a class="mobile-link" href="admin_users.php"><i class="fas fa-users"></i> User Accounts</a>
   <a class="mobile-link" href="admin_companies.php"><i class="fas fa-building"></i> Company Approval</a>
   <a class="mobile-link" href="admin_jobs.php"><i class="fas fa-briefcase"></i> Job Moderation</a>

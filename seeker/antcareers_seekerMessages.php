@@ -154,9 +154,29 @@ $navActive = 'messages';
     body.light .new-msg-search-bar input{color:#1A0A09;}
     body.light .footer{border-top-color:#E0CECA;color:#7A5555;}
 
+    /* Mobile back button */
+    .mobile-back-btn { display:none; align-items:center; gap:8px; padding:10px 16px; background:none; border:none; border-bottom:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; width:100%; text-align:left; transition:0.15s; }
+    .mobile-back-btn:hover { color:var(--text-light); background:var(--soil-hover); }
+    body.light .mobile-back-btn { color:#7A5555; border-bottom-color:#E0CECA; }
+    body.light .mobile-back-btn:hover { color:#1A0A09; background:#FEF0EE; }
+
     /* Responsive */
-    @media(max-width:800px){.msg-layout{grid-template-columns:1fr;height:auto;min-height:72vh}.thread-list{display:none}.thread-list.mobile-show{display:flex}}
-    @media(max-width:600px){.page-shell{padding:16px 16px 40px}}
+    @media(max-width:760px){
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell{overflow-x:hidden;max-width:100%;padding-left:14px;padding-right:14px;box-sizing:border-box;}
+      .main-content{max-width:100%;overflow-x:hidden}
+    }
+    @media(max-width:800px){
+      .msg-layout{grid-template-columns:1fr;height:calc(100vh - 180px);min-height:500px;border-radius:10px;width:100%;box-sizing:border-box;overflow-x:hidden;}
+      .thread-list{display:flex;flex-direction:column;border-right:none;height:100%;min-height:0;overflow-x:hidden;}
+      .thread-item{max-width:100%;box-sizing:border-box;}
+      .threads-scroll{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;}
+      .chat-area{display:none;flex-direction:column;height:100%;overflow-x:hidden;}
+      .mobile-back-btn{display:flex;flex-shrink:0;}
+      .msg-layout.chat-open .thread-list{display:none;}
+      .msg-layout.chat-open .chat-area{display:flex;}
+    }
+    @media(max-width:600px){.page-shell{padding:16px 14px 40px}}
 
     /* New message search panel */
     .new-msg-panel { padding:12px 16px; border-bottom:1px solid var(--soil-line); }
@@ -232,6 +252,7 @@ $navActive = 'messages';
 
     <!-- CHAT AREA -->
     <div class="chat-area" id="chatArea">
+      <button class="mobile-back-btn" onclick="mobileBackToThreads()"><i class="fas fa-arrow-left"></i> All Conversations</button>
       <div class="chat-empty" id="chatEmpty">
         <i class="fas fa-comments"></i>
         <div class="chat-empty-title">Select a conversation</div>
@@ -363,10 +384,21 @@ function openThread(partnerId) {
   activeThread = partnerId;
   renderThreads();
   loadConversation(partnerId);
+  // On mobile: switch to chat view
+  document.getElementById('msgLayout') && document.getElementById('msgLayout').classList.add('chat-open');
+  const layout = document.querySelector('.msg-layout');
+  if (layout) layout.classList.add('chat-open');
   if (typeof window.updateSeekerBadges === 'function') {
     window.updateSeekerBadges();
   }
   startMsgPoll(partnerId);
+}
+
+function mobileBackToThreads() {
+  const layout = document.querySelector('.msg-layout');
+  if (layout) layout.classList.remove('chat-open');
+  activeThread = null;
+  if (msgPollTimer) { clearInterval(msgPollTimer); msgPollTimer = null; }
 }
 
 function selectThread(partnerId) {
@@ -428,6 +460,7 @@ function loadConversation(partnerId) {
             }
 
             chatArea.innerHTML = `
+                <button class="mobile-back-btn" onclick="mobileBackToThreads()"><i class="fas fa-arrow-left"></i> All Conversations</button>
                 <div class="chat-header">
                     <div class="chat-header-avatar" style="background:${color}">${avatarUrl ? `<img src="../${avatarUrl}" alt="">` : esc(ini)}</div>
                     <div class="chat-header-info">

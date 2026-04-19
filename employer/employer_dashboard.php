@@ -501,13 +501,28 @@ try {
 
     @media(max-width:1060px) { .cards-row{grid-template-columns:repeat(3,1fr);} }
     @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.content-layout,.dashboard-grid{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .nav-links{display:none} .hamburger{display:flex}
-      .page-shell{padding:0 16px 40px} .nav-inner{padding:0 16px}
+      .page-shell{padding:0 16px 40px} .nav-inner{padding:0 10px}
       .profile-name,.profile-role{display:none} .profile-btn{padding:6px 8px}
       .job-row{grid-template-columns:1fr;gap:10px}
+      .jr-icon{display:none}
+      .jr-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .jr-chips::-webkit-scrollbar{display:none}
+      .jr-chips .chip{flex-shrink:0}
       .job-row-right{flex-direction:row;align-items:center;justify-content:space-between}
+      .job-description-preview,.card-description{display:none}
+      .fc-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:5px;scrollbar-width:none;padding-bottom:4px}
+      .fc-chips::-webkit-scrollbar{display:none}
+      .fc-chips .chip{flex-shrink:0}
+      .featured-scroll{-webkit-overflow-scrolling:touch}
+      .featured-card{min-width:calc(100vw - 48px);max-width:calc(100vw - 48px)}
       .footer{flex-direction:column;text-align:center;padding:16px}
-      .cards-row{grid-template-columns:repeat(2,1fr);}
+      .cards-row{grid-template-columns:repeat(2,1fr)}
+      .sum-card:last-child{grid-column:1/-1}
     }
   </style>
   <script>
@@ -695,47 +710,30 @@ try {
     const el = document.getElementById('interviewsContainer');
     if (!interviewsData.length) { el.innerHTML = `<div class="empty-state" style="padding:30px 20px;text-align:center;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;"><i class="fas fa-calendar-alt"></i><p>No upcoming interviews.</p></div>`; return; }
     el.innerHTML = interviewsData.map(iv => {
-      // Build type-specific detail chip
-      let detailChip = '';
-      if (iv.type === 'On-site') {
-        const mapUrl = iv.mapLink || '#';
-        detailChip = `<span class="chip"><i class="fas fa-map-marker-alt" style="margin-right:3px;color:#6ccf8a;"></i>${escapeHtml(iv.venueName || iv.link)}</span>`;
-        if (iv.fullAddress) detailChip += `<span class="chip" style="font-size:10px;"><i class="fas fa-road" style="margin-right:3px;"></i>${escapeHtml(iv.fullAddress)}</span>`;
-        if (iv.mapLink) detailChip += `<a href="${escapeHtml(iv.mapLink)}" target="_blank" class="chip" style="text-decoration:none;color:#7ab8f0;cursor:pointer;"><i class="fas fa-external-link-alt" style="margin-right:3px;"></i>Google Maps</a>`;
-      } else if (iv.type === 'Phone') {
-        detailChip = `<span class="chip"><i class="fas fa-phone" style="margin-right:3px;color:var(--amber);"></i>${escapeHtml(iv.phoneNumber || iv.link)}</span>`;
-        if (iv.contactPerson) detailChip += `<span class="chip"><i class="fas fa-user" style="margin-right:3px;"></i>${escapeHtml(iv.contactPerson)}</span>`;
-      } else {
-        const meetLink = iv.meetingLink || iv.link;
-        detailChip = meetLink && meetLink.startsWith('http')
-          ? `<a href="${escapeHtml(meetLink)}" target="_blank" class="chip" style="text-decoration:none;color:#7ab8f0;cursor:pointer;"><i class="fas fa-video" style="margin-right:3px;"></i>Join Meeting</a>`
-          : `<span class="chip"><i class="fas fa-video" style="margin-right:3px;"></i>${escapeHtml(meetLink)}</span>`;
-      }
-      // Type badge
-      const typeBadge = iv.type === 'On-site' ? '<span class="chip green">On-site</span>'
-        : iv.type === 'Phone' ? '<span class="chip amber">Phone Call</span>'
-        : '<span class="chip blue">Online</span>';
+      // Type color + icon (matching seeker style)
+      let typeColor = iv.type === 'On-site' ? '#6ccf8a' : iv.type === 'Phone' ? 'var(--amber)' : '#B07AFF';
+      let typeIcon  = iv.type === 'On-site' ? 'fa-building' : iv.type === 'Phone' ? 'fa-phone' : 'fa-video';
 
-      return `
-      <div class="featured-card" style="min-width:260px;max-width:260px;">
-        <div class="fc-badge"><i class="fas fa-calendar-check"></i> Scheduled</div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-          <div style="width:42px;height:42px;border-radius:50%;background:${iv.color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;">${iv.avatarUrl ? `<img src="${iv.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : iv.initials}</div>
-          <div>
-            <div class="fc-title" style="font-size:14px;">${escapeHtml(iv.name)}</div>
-            <div class="fc-company">${escapeHtml(iv.job)}</div>
-          </div>
-        </div>
-        <div style="background:rgba(209,61,44,0.08);border:1px solid rgba(209,61,44,0.18);border-radius:6px;padding:10px 14px;margin-bottom:12px;">
-          <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:#F5F0EE;line-height:1;">${iv.mon} ${iv.day}</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:2px;"><i class="fas fa-clock" style="color:var(--red-bright);margin-right:3px;"></i>${iv.time}</div>
-        </div>
-        <div class="fc-chips" style="flex-direction:column;gap:4px;">${typeBadge}${detailChip}</div>
-        <div class="fc-footer" style="margin-top:12px;">
-          <a class="jr-btn" style="font-size:11px;text-decoration:none;" href="employer_applicants.php?view=${iv.applicationId}&reschedule=1">Reschedule</a>
-          <a class="jr-apply" style="text-decoration:none;" href="employer_messages.php?user_id=${iv.seekerUid}">Message</a>
-        </div>
-      </div>`;
+      // Detail section below chips (matching seeker pattern)
+      let detail = '';
+      if (iv.type === 'Online') {
+        const meetLink = iv.meetingLink || iv.link;
+        if (meetLink && meetLink.startsWith('http'))
+          detail = `<div style="margin-top:6px;font-size:11px;"><a href="${escapeHtml(meetLink)}" target="_blank" style="color:#B07AFF;word-break:break-all;"><i class="fas fa-link" style="margin-right:3px;"></i>Join Meeting</a></div>`;
+      } else if (iv.type === 'On-site') {
+        let parts = [];
+        if (iv.venueName) parts.push(`<span><i class="fas fa-building" style="margin-right:3px;color:#6ccf8a;"></i>${escapeHtml(iv.venueName)}</span>`);
+        if (iv.fullAddress) parts.push(`<span style="color:var(--text-muted);">${escapeHtml(iv.fullAddress)}</span>`);
+        if (iv.mapLink) parts.push(`<a href="${escapeHtml(iv.mapLink)}" target="_blank" style="color:#7ab8f0;font-size:10px;display:inline-flex;align-items:center;gap:3px;margin-top:2px;"><i class="fas fa-external-link-alt"></i>Open in Google Maps</a>`);
+        if (parts.length) detail = `<div style="margin-top:6px;font-size:11px;display:flex;flex-direction:column;gap:2px;">${parts.join('')}</div>`;
+      } else if (iv.type === 'Phone') {
+        let parts = [];
+        if (iv.phoneNumber) parts.push(`<span><i class="fas fa-phone" style="margin-right:3px;color:var(--amber);"></i>${escapeHtml(iv.phoneNumber)}</span>`);
+        if (iv.contactPerson) parts.push(`<span style="color:var(--text-muted);">Contact: ${escapeHtml(iv.contactPerson)}</span>`);
+        if (parts.length) detail = `<div style="margin-top:6px;font-size:11px;display:flex;flex-direction:column;gap:2px;">${parts.join('')}</div>`;
+      }
+
+      return `<div class="featured-card"><div class="fc-badge green"><i class="fas fa-calendar-check"></i> Scheduled</div><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:36px;height:36px;border-radius:50%;background:${iv.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;">${iv.avatarUrl ? `<img src="${iv.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : iv.initials}</div><div><div class="fc-title" style="font-size:13px;">${escapeHtml(iv.name)}</div><div class="fc-company">${escapeHtml(iv.job)}</div></div></div><div style="background:rgba(209,61,44,0.08);border:1px solid rgba(209,61,44,0.18);border-radius:6px;padding:8px 12px;margin-bottom:8px;"><div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text-light);line-height:1;">${iv.mon} ${iv.day}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><i class="fas fa-clock" style="color:var(--red-bright);margin-right:3px;"></i>${iv.time}</div></div><div class="fc-chips"><span class="chip" style="border-color:${typeColor};"><i class="fas ${typeIcon}" style="margin-right:3px;color:${typeColor};"></i>${iv.type}</span></div>${detail}<div class="fc-footer"><a class="fc-action" style="background:transparent;border:1px solid var(--soil-line);color:var(--text-mid);text-decoration:none;" href="employer_applicants.php?view=${iv.applicationId}&reschedule=1">Reschedule</a><a class="fc-action" style="text-decoration:none;" href="employer_messages.php?user_id=${iv.seekerUid}">Message</a></div></div>`;
     }).join('');
   }
   function escapeHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }

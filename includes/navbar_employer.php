@@ -80,7 +80,7 @@ function navHref(string $page): string {
 
       <?php if ($navbarShowNotif): ?>
       <button class="notif-btn-nav" id="navNotifBtn"
-              onclick="if(typeof openNotifSidebar==='function'){openNotifSidebar();}else{this.classList.toggle('active');}">
+              onclick="if(document.getElementById('notifSidebar')&&typeof openNotifSidebar==='function'){openNotifSidebar();}else{var p=document.getElementById('notifPanel');if(p){p.classList.contains('open')?p.classList.remove('open'):p.classList.add('open');}}">
         <i class="fas fa-bell"></i>
         <span class="badge notif-badge-count" style="visibility:hidden;opacity:0">0</span>
       </button>
@@ -150,12 +150,15 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
     <!-- notifications loaded via JS -->
   </div>
 </div>
+<div class="notif-panel-overlay" id="notifPanelOverlay" aria-hidden="true"></div>
 
 <!-- Light mode overrides for employer navbar -->
 <style>
   /* Notifications panel */
   .notif-panel{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:100vw;background:var(--soil-card,#1A1110);border-left:1px solid var(--soil-line,#3A2A28);z-index:500;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,0.4)}
   .notif-panel.open{transform:translateX(0)}
+  .notif-panel-overlay{display:none;position:fixed;inset:0;z-index:499;background:rgba(0,0,0,0.35);backdrop-filter:blur(2px)}
+  .notif-panel-overlay.visible{display:block}
   .notif-panel-head{padding:20px 20px 16px;border-bottom:1px solid var(--soil-line,#3A2A28);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
   .notif-panel-title{font-family:var(--font-display,sans-serif);font-size:17px;font-weight:700;color:#F5F0EE;display:flex;align-items:center;gap:8px}
   .notif-panel-title i{color:var(--red-bright,#E04A3A)}
@@ -177,6 +180,7 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   body.light .n-time{color:#7A5555}
   body.light .notif-close{background:#F0E4E2;border-color:#E0CECA;color:#7A5555}
   body.light .n-dot.read{background:#E0CECA}
+  body.light .notif-panel-overlay{background:rgba(0,0,0,0.15)}
 
   body.light .navbar { background:rgba(249,245,244,0.97); border-bottom-color:#D4B0AB; box-shadow:0 1px 0 rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08); }
   body.light .logo-text { color:#1A0A09; }
@@ -203,13 +207,26 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   .mobile-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:7px;font-size:14px;font-weight:500;color:var(--text-mid);cursor:pointer;transition:0.15s;font-family:var(--font-body);text-decoration:none;}
   .mobile-link i{color:var(--red-mid);width:16px;text-align:center;}
   .mobile-link:hover{background:var(--soil-hover);color:#F5F0EE;}
+  .mobile-link.active{color:#F5F0EE;background:var(--soil-hover);}
   .mobile-divider{height:1px;background:var(--soil-line);margin:6px 0;}
   body.light .mobile-menu { background:rgba(249,245,244,0.97); border-color:#E0CECA; }
   body.light .mobile-link { color:#4A2828; }
   body.light .mobile-link:hover { background:#FEF0EE; color:#1A0A09; }
+  body.light .mobile-link.active { background:#FEF0EE; color:#1A0A09; }
   body.light .mobile-divider { background:#E0CECA; }
   body.light .btn-nav-red { box-shadow:0 2px 8px rgba(209,61,44,0.2); }
   body.light .glow-orb { display:none; }
+  @media(max-width:760px){
+    .nav-links{display:none}
+    .hamburger{display:flex}
+    .profile-name,.profile-role{display:none}
+    .profile-chevron{display:none}
+    .profile-btn{padding:5px 8px;gap:6px}
+    .nav-inner{padding:0 10px;gap:4px}
+    .nav-right{gap:6px;flex-shrink:0}
+    .theme-btn,.msg-btn-nav,.notif-btn-nav{width:30px;height:30px;font-size:12px}
+    .profile-wrap{display:none}
+  }
 </style>
 
 <!-- Employer shared theme + interactions script -->
@@ -244,11 +261,12 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
 
   // ── HAMBURGER ──
   var hamburger = document.getElementById('hamburger');
-  var mobileMenu = document.getElementById('mobileMenu');
-  if (hamburger && mobileMenu) {
+  if (hamburger) {
     hamburger.addEventListener('click', function(e) {
       e.stopPropagation();
-      var open = mobileMenu.classList.toggle('open');
+      var mm = document.getElementById('mobileMenu');
+      if (!mm) return;
+      var open = mm.classList.toggle('open');
       hamburger.querySelector('i').className = open ? 'fas fa-times' : 'fas fa-bars';
     });
   }
@@ -266,8 +284,9 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   document.addEventListener('click', function(e) {
     if (profileWrap && !profileWrap.contains(e.target) && profileDropdown)
       profileDropdown.classList.remove('open');
-    if (mobileMenu && hamburger && !mobileMenu.contains(e.target) && e.target !== hamburger) {
-      mobileMenu.classList.remove('open');
+    var mm = document.getElementById('mobileMenu');
+    if (mm && mm.classList.contains('open') && !mm.contains(e.target) && hamburger && !hamburger.contains(e.target)) {
+      mm.classList.remove('open');
       hamburger.querySelector('i').className = 'fas fa-bars';
     }
     // Close notification panel on outside click
@@ -280,6 +299,7 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
 
   // ── NOTIFICATIONS ──
   var notifPanel = document.getElementById('notifPanel');
+  var notifPanelOverlay = document.getElementById('notifPanelOverlay');
 
   function _esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 
@@ -299,18 +319,26 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
     if (typeof closeMsgSidebar === 'function') closeMsgSidebar();
     notifPanel.classList.add('open');
     notifPanel.setAttribute('aria-hidden', 'false');
+    if (notifPanelOverlay) {
+      notifPanelOverlay.classList.add('visible');
+      notifPanelOverlay.setAttribute('aria-hidden', 'false');
+    }
     loadEmpNotifications();
   };
   window.closeNotif = function() {
     notifPanel.classList.remove('open');
     notifPanel.setAttribute('aria-hidden', 'true');
+    if (notifPanelOverlay) {
+      notifPanelOverlay.classList.remove('visible');
+      notifPanelOverlay.setAttribute('aria-hidden', 'true');
+    }
   };
 
   document.getElementById('notifClose').addEventListener('click', closeNotif);
-  document.getElementById('navNotifBtn').addEventListener('click', function(e) {
-    e.stopPropagation();
-    notifPanel.classList.contains('open') ? closeNotif() : openNotif();
-  });
+  if (notifPanelOverlay) {
+    notifPanelOverlay.addEventListener('click', closeNotif);
+  }
+  // navNotifBtn click is handled via inline onclick to avoid double-firing with employer_chat_system
 
   // Mark all read
   document.getElementById('notifMarkAll').addEventListener('click', function() {
@@ -391,25 +419,25 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
 <!-- Mobile Menu -->
 <?php if ($navbarShowMobileMenu): ?>
 <div class="mobile-menu" id="mobileMenu">
-  <a class="mobile-link" href="employer_dashboard.php">
+  <a class="mobile-link <?= $navActive==='dashboard'?'active':'' ?>" href="employer_dashboard.php">
     <i class="fas fa-th-large"></i> Dashboard
   </a>
-  <a class="mobile-link" onclick="<?= navHref('../employer/employer_browseJobs.php') ?>">
+  <a class="mobile-link <?= $navActive==='browse'?'active':'' ?>" onclick="<?= navHref('../employer/employer_browseJobs.php') ?>">
     <i class="fas fa-search"></i> Browse Jobs
   </a>
-  <a class="mobile-link" onclick="<?= navHref('../employer/employer_manageJobs.php') ?>">
+  <a class="mobile-link <?= $navActive==='manage-jobs'?'active':'' ?>" onclick="<?= navHref('../employer/employer_manageJobs.php') ?>">
     <i class="fas fa-briefcase"></i> Manage Jobs
   </a>
-  <a class="mobile-link" onclick="<?= navHref('../employer/employer_applicants.php') ?>">
+  <a class="mobile-link <?= $navActive==='applicants'?'active':'' ?>" onclick="<?= navHref('../employer/employer_applicants.php') ?>">
     <i class="fas fa-users"></i> Applicants
   </a>
-  <a class="mobile-link" href="employer_manageRecruiters.php">
+  <a class="mobile-link <?= $navActive==='recruiters'?'active':'' ?>" href="employer_manageRecruiters.php">
     <i class="fas fa-user-tie"></i> Manage Recruiters
   </a>
-  <a class="mobile-link" href="employer_analytics.php">
+  <a class="mobile-link <?= $navActive==='analytics'?'active':'' ?>" href="employer_analytics.php">
     <i class="fas fa-chart-bar"></i> Analytics
   </a>
-  <a class="mobile-link" onclick="<?= navHref('../employer/employer_messages.php') ?>">
+  <a class="mobile-link <?= $navActive==='messages'?'active':'' ?>" onclick="<?= navHref('../employer/employer_messages.php') ?>">
     <i class="fas fa-envelope"></i> Messages
   </a>
   <div class="mobile-divider"></div>

@@ -174,8 +174,9 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
 
     /* SORT/FILTER BAR */
     .filter-bar { display:flex; gap:10px; align-items:center; margin-bottom:18px; flex-wrap:wrap; }
-    .filter-select { padding:8px 14px; border-radius:7px; background:var(--soil-card); border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; cursor:pointer; outline:none; transition:0.18s; }
+    .filter-select { padding:8px 14px; padding-right:32px; border-radius:7px; background:var(--soil-card); border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; cursor:pointer; outline:none; transition:0.18s; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23927C7A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
     .filter-select:focus, .filter-select:hover { border-color:var(--red-vivid); }
+    .filter-select option { background:var(--soil-card); color:var(--text-mid); }
     .filter-label { font-size:12px; font-weight:600; color:var(--text-muted); }
     .clear-btn { margin-left:auto; padding:8px 14px; border-radius:7px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:12px; font-weight:600; cursor:pointer; transition:0.18s; }
     .clear-btn:hover { border-color:#E05050; color:#E05050; }
@@ -225,7 +226,12 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     .form-textarea { resize:vertical; min-height:80px; line-height:1.5; }
     .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; padding-top:14px; border-top:1px solid var(--soil-line); }
     .btn-cancel { padding:9px 18px; border-radius:7px; background:transparent; border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; }
-    body.light { background:#F5EDEC; color:#1A0A09; }
+    body.light {
+      background:#F5EDEC; color:#1A0A09;
+      --soil-dark:#F9F5F4; --soil-card:#FFFFFF; --soil-hover:#FEF0EE; --soil-line:#E0CECA;
+      --text-light:#1A0A09; --text-mid:#4A2828; --text-muted:#7A5555;
+      --amber-dim:#FFF4E0; --amber:#B8620A;
+    }
     body.light .glow-orb { display:none; }
     body.light .sidebar-card { background:#FFFFFF; border-color:#E0CECA; }
     body.light .sidebar-title { color:#1A0A09; }
@@ -242,7 +248,8 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     body.light .card-title { color:#1A0A09; }
     body.light .salary-row { color:#1A0A09; }
     body.light .chip { background:#F0E4E2; border-color:#D0BCBA; }
-    body.light .filter-select { background:#FFFFFF; border-color:#D0BCBA; color:#3A2020; }
+    body.light .filter-select { background:#FFFFFF; border-color:#D0BCBA; color:#3A2020; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237A5555' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+    body.light .filter-select option { background:#FFFFFF; color:#3A2020; }
     body.light .empty-state { background:#FFFFFF; border-color:#E0CECA; color:#7A5555; }
     body.light .empty-title { color:#1A0A09; }
     body.light .modal { background:#FFFFFF; border-color:#E0CECA; }
@@ -294,7 +301,26 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     .anim { opacity:0; transform:translateY(14px); animation:fadeUp 0.42s cubic-bezier(0.4,0,0.2,1) forwards; }
     .anim-d1 { animation-delay:0.05s; } .anim-d2 { animation-delay:0.12s; }
     @keyframes fadeUp { to { opacity:1; transform:none; } }
-    @media(max-width:640px) { .jobs-grid{grid-template-columns:1fr} }
+    @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.main-content{max-width:100%;overflow-x:hidden}
+      .main-wrap{padding:14px 14px 40px}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .job-row{grid-template-columns:1fr;gap:10px}
+      .jr-icon{display:none}
+      .jr-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
+      .jr-chips::-webkit-scrollbar{display:none}
+      .jr-chips .chip{flex-shrink:0}
+      .job-row-right{flex-direction:row;align-items:center;justify-content:space-between}
+      .job-description-preview,.card-description{display:none}
+      .jobs-grid{grid-template-columns:1fr}
+      .filter-bar{flex-direction:column;align-items:stretch;gap:8px}
+      .filter-select{width:100%}
+      .filter-label{display:none}
+      .clear-btn{margin-left:0;width:100%;text-align:center}
+      .page-header{flex-direction:column;align-items:flex-start;gap:6px}
+    }
 </style>
 </head>
 <body>
@@ -359,30 +385,7 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
 
 <!-- APPLY MODAL -->
 <div class="modal-overlay" id="applyModal">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">Apply for <span id="applyJobTitle" style="color:var(--red-pale);"></span></div>
-      <button class="modal-close-btn" onclick="window.closeModal()"><i class="fas fa-times"></i></button>
-    </div>
-    <div id="applyJobInfo" style="background:var(--soil-hover);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--text-mid);"></div>
-    <div class="form-group">
-      <label class="form-label">Cover Letter (optional)</label>
-      <textarea class="form-input form-textarea" id="coverLetter" rows="5" placeholder="Tell this employer why you're a great fit for this role..."></textarea>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Resume / CV</label>
-      <select class="form-input" id="resumeSelect">
-        <option value="profile">Use resume from my profile</option>
-        <option value="upload">Upload a new resume</option>
-      </select>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="window.closeModal()">Cancel</button>
-      <button class="btn-primary" onclick="window.submitApplication()" style="padding:9px 22px;border-radius:7px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;">
-        <i class="fas fa-paper-plane"></i> Submit Application
-      </button>
-    </div>
-  </div>
+  <div class="modal" id="applyModalInner"></div>
 </div>
 
 <script>
@@ -512,14 +515,38 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     window._applyingJobId = id;
     var j = window._savedJobs.find(function(x){ return x.id === id; });
     if (!j) return;
-    document.getElementById("applyJobTitle").textContent = j.title;
-    document.getElementById("applyJobInfo").innerHTML =
-      "<strong style=\"color:#F5F0EE;\">" + j.company + "</strong>" +
-      " &nbsp;\u00b7&nbsp; " + j.location +
-      " &nbsp;\u00b7&nbsp; " + j.type +
-      " &nbsp;\u00b7&nbsp; <span style=\"color:var(--red-pale);\">" + j.salary + "</span>";
-    document.getElementById("coverLetter").value = "";
-    document.getElementById("applyModal").classList.add("open");
+    var initials = j.company.split(' ').map(function(w){ return w[0] || ''; }).join('').slice(0,2).toUpperCase();
+    function chip(icon, text, accent) {
+      if (!text) return '';
+      return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;' +
+        'background:' + (accent ? 'rgba(209,61,44,0.08)' : 'var(--soil-hover)') + ';' +
+        'border:1px solid ' + (accent ? 'rgba(209,61,44,0.22)' : 'var(--soil-line)') + ';' +
+        'color:' + (accent ? 'var(--red-pale)' : 'var(--text-muted)') + ';white-space:nowrap;">' +
+        '<i class="fas ' + icon + '" style="font-size:10px;color:var(--red-bright);"></i>' + esc(text) + '</span>';
+    }
+    var chips = [chip('fa-map-marker-alt', j.location, false), chip('fa-laptop-house', j.setup || j.workSetup, false), chip('fa-briefcase', j.type || j.jobType, false), chip('fa-money-bill-wave', j.salary, true)].filter(Boolean).join('');
+    document.getElementById('applyModalInner').innerHTML =
+      '<div style="height:3px;background:linear-gradient(90deg,var(--red-vivid),var(--red-bright));border-radius:14px 14px 0 0;margin:-28px -28px 24px;"></div>' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">' +
+        '<div style="display:flex;align-items:center;gap:12px;min-width:0;">' +
+          '<div style="width:46px;height:46px;border-radius:12px;background:rgba(209,61,44,0.12);border:1px solid rgba(209,61,44,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--red-pale);flex-shrink:0;">' + initials + '</div>' +
+          '<div style="min-width:0;">' +
+            '<div style="font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--text-light);line-height:1.25;">' + esc(j.title) + '</div>' +
+            '<div style="font-size:13px;color:var(--red-pale);font-weight:600;margin-top:2px;">' + esc(j.company) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<button onclick="window.closeModal()" style="width:30px;height:30px;border-radius:6px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:8px;"><i class="fas fa-times"></i></button>' +
+      '</div>' +
+      (chips ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;">' + chips + '</div>' : '') +
+      '<div style="margin-bottom:16px;">' +
+        '<label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Cover Letter <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>' +
+        '<textarea id="coverLetter" rows="5" placeholder="Tell the employer why you&#39;re a great fit..." style="width:100%;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:10px 12px;color:var(--text-light);font-family:var(--font-body);font-size:13px;resize:vertical;outline:none;transition:border-color 0.18s;box-sizing:border-box;" onfocus="this.style.borderColor=\'rgba(209,61,44,0.5)\'" onblur="this.style.borderColor=\'var(--soil-line)\'"></textarea>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid var(--soil-line);">' +
+        '<button onclick="window.closeModal()" style="padding:9px 20px;border-radius:8px;background:transparent;border:1px solid var(--soil-line);color:var(--text-muted);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:border-color 0.18s,color 0.18s;" onmouseover="this.style.borderColor=\'rgba(209,61,44,0.5)\';this.style.color=\'var(--red-pale)\'" onmouseout="this.style.borderColor=\'var(--soil-line)\';this.style.color=\'var(--text-muted)\'">Cancel</button>' +
+        '<button id="savedApplySubmit" onclick="window.submitApplication()" style="padding:9px 22px;border-radius:8px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background 0.18s,transform 0.14s;" onmouseover="this.style.background=\'var(--red-bright)\';this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.background=\'var(--red-vivid)\';this.style.transform=\'none\'"><i class="fas fa-paper-plane"></i> Submit Application</button>' +
+      '</div>';
+    document.getElementById('applyModal').classList.add('open');
   };
 
   window.closeModal = function() {
@@ -527,31 +554,33 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     window._applyingJobId = null;
   };
 
-  window.submitApplication = function() {
+  window.submitApplication = async function() {
     if (!window._applyingJobId) return;
     var j = window._savedJobs.find(function(x){ return x.id === window._applyingJobId; });
-    var btn = document.querySelector("#applyModal .btn-primary");
-    if (btn) { btn.disabled = true; btn.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i> Submitting..."; }
-    var cover = document.getElementById("coverLetter").value;
-    fetch('apply_job.php', {
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'},
-      body:'job_id=' + window._applyingJobId + '&cover_letter=' + encodeURIComponent(cover) + '&csrf_token=' + encodeURIComponent('<?= htmlspecialchars(csrfToken(), ENT_QUOTES) ?>')
-    }).then(function(r){ return r.json(); }).then(function(d){
-      window.closeModal();
-      if (btn) { btn.disabled = false; btn.innerHTML = "<i class=\"fas fa-paper-plane\"></i> Submit Application"; }
-      if (d.ok) {
-        window._appliedIds.add(window._applyingJobId);
-        window.renderSaved();
-        window.showToast("Application sent to " + (j ? j.company : "employer") + "! 🎉", "fa-check");
-      } else {
-        window.showToast(d.msg || "Could not apply", "fa-exclamation-circle");
-      }
-    }).catch(function(){
-      window.closeModal();
-      if (btn) { btn.disabled = false; btn.innerHTML = "<i class=\"fas fa-paper-plane\"></i> Submit Application"; }
-      window.showToast("Network error — try again", "fa-exclamation-circle");
-    });
+    var btn = document.getElementById('savedApplySubmit');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…'; }
+    var cover = document.getElementById('coverLetter')?.value ?? '';
+    var data;
+    try {
+      var fd = new FormData();
+      fd.append('job_id', String(window._applyingJobId));
+      fd.append('cover_letter', cover);
+      fd.append('csrf_token', '<?= htmlspecialchars(csrfToken(), ENT_QUOTES) ?>');
+      var res = await fetch('apply_job.php', { method:'POST', body:fd });
+      data = await res.json();
+    } catch {
+      window.showToast('Network error — try again', 'fa-exclamation-circle');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Application'; }
+      return;
+    }
+    window.closeModal();
+    if (data.success) {
+      window._appliedIds.add(window._applyingJobId);
+      window.renderSaved();
+      window.showToast('Application sent to ' + (j ? j.company : 'employer') + '! 🎉', 'fa-check');
+    } else {
+      window.showToast(data.message || 'Could not apply', 'fa-exclamation-circle');
+    }
   };
 
   // Close apply modal on overlay click

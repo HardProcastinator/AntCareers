@@ -528,6 +528,12 @@ try {
     @keyframes fadeUp { to { opacity:1; transform:none; } }
 
     @media(max-width:1060px) { .two-col{grid-template-columns:1fr} }
+    @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.profile-layout,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+    }
     @media(max-width:640px) { .form-row{grid-template-columns:1fr} .contact-grid{grid-template-columns:1fr} .hero-actions{flex-wrap:wrap} }
 
     /* Additional light-mode overrides */

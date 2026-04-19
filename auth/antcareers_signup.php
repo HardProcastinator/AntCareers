@@ -185,6 +185,7 @@ $platformStats = getPublicPlatformStats();
     .btn-success { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px 32px; background:var(--red-vivid); border:none; border-radius:8px; color:#fff; font-family:var(--font-body); font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; }
     .btn-success:hover { background:var(--red-bright); }
 
+    @media(max-width:760px){html,body{overflow-x:hidden;max-width:100vw}.page,.right-panel{max-width:100%;overflow-x:hidden}}
     @media(max-width:860px) { .page{grid-template-columns:1fr} .left-panel{display:none} .right-panel{padding:70px 24px 40px;min-height:100vh} .right-back-home{right:auto;left:20px;top:20px} }
     @media(max-width:480px) { .field-row{grid-template-columns:1fr} .type-cards{grid-template-columns:1fr} }
   </style>

@@ -101,6 +101,7 @@ $countrySidebarOptionsHtml .= '<option value="Remote">Remote</option>';
 
 $indexJobsJson = json_encode($indexJobs, JSON_HEX_TAG | JSON_HEX_AMP);
 $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
+$isLoggedIn = isset($_SESSION['user_id']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -869,39 +870,128 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
     /* Small tablet / large phone */
     @media (max-width: 760px) {
-      /* Nav: hide desktop links + right buttons (keep only logo + hamburger) */
+      /* GLOBAL MOBILE OVERFLOW GUARD */
+      html, body { overflow-x: hidden; max-width: 100vw; }
+      .page-shell, .content-layout, .main-content, section, .container { max-width: 100%; overflow-x: hidden; }
+      table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+      .modal, .modal-inner, .modal-box { width: 100% !important; max-width: 100vw !important; margin: 0 !important; border-radius: 12px 12px 0 0 !important; position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important; top: auto !important; max-height: 90vh; overflow-y: auto; }
+
+      /* Nav: hide desktop links, keep only logo + hamburger + theme toggle */
       .nav-links { display: none; }
       .btn-ghost { display: none; }
       .hamburger { display: flex; }
+      /* Task 1 & 2: chevron + nav-right overflow */
+      .profile-chevron { display: none; }
+      .profile-btn { padding: 5px 8px; gap: 6px; }
+      .nav-inner { padding: 0 10px; gap: 4px; }
+      .nav-right { gap: 6px; flex-shrink: 0; overflow: hidden; }
+      .theme-btn, .msg-btn-nav, .notif-btn-nav { width: 30px; height: 30px; font-size: 12px; }
+      /* Task 3: hide duplicate mobile theme toggle (JS still references both IDs) */
+      #themeToggleMobile { display: none !important; }
+      /* Task 4: re-show login button inside mobile menu */
+      .mobile-auth .btn-ghost { display: flex; }
 
       .page-shell { padding: 0 16px 60px; }
-      .nav-inner { padding: 0 16px; }
+      .nav-inner { padding: 0 10px; }
 
       .hero { padding: 40px 0 28px; }
       .hero-h1 { letter-spacing: -1px; }
       .hero-stats { gap: 16px; }
       .stat-sep { display: none; }
 
-      .companies-row { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+      /* Task 6: companies row horizontal scroll */
+      .companies-row {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+        gap: 10px;
+        padding-bottom: 6px;
+        scrollbar-width: none;
+      }
+      .companies-row::-webkit-scrollbar { display: none; }
+      .company-pill { min-width: calc(100% - 10px); flex-shrink: 0; scroll-snap-align: start; }
       .cp-top { padding: 14px 16px 10px; }
       .cp-bio { padding: 0 16px 10px; }
       .cp-footer { padding: 8px 16px; }
 
-      .job-row {
-        grid-template-columns: 1fr;
-        gap: 10px;
+      /* Task 5: filter sidebar toggle */
+      .mobile-filter-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--soil-hover);
+        border: 1px solid var(--red-vivid);
+        color: var(--text-light);
+        font-family: var(--font-body);
+        font-size: 13px;
+        font-weight: 600;
+        padding: 9px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-bottom: 14px;
+        width: 100%;
+        justify-content: center;
       }
+      body.light .mobile-filter-toggle { background: #F5EEEC; border-color: var(--red-vivid); color: #1A0A09; }
+      .filter-sidebar { display: none; margin-bottom: 16px; }
+      .filter-sidebar.mobile-open { display: block; }
+
+      /* Task 7: job card collapse */
+      .mini-job-card { padding: 14px; }
+      .job-row { grid-template-columns: 1fr; gap: 10px; }
       .job-row-right { flex-direction: row; align-items: center; justify-content: space-between; }
+      .job-description-preview, .card-description { display: none; }
+      .job-meta, .job-tags { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; padding-bottom: 4px; }
+      .job-meta::-webkit-scrollbar { display: none; }
+      .job-actions, .card-actions { flex-direction: row; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+      .job-actions .btn, .job-actions button, .card-actions .btn, .card-actions button { flex: 1; min-width: 80px; font-size: 12px; padding: 7px 10px; text-align: center; justify-content: center; }
 
       .footer { flex-direction: column; text-align: center; padding: 20px 16px; }
+
+      /* ── Mobile nav: hide Get Started, keep only theme toggle + hamburger ── */
+      #signupBtn { display: none !important; }
+
+      /* ── Filter sidebar: full-width inputs/selects/ms-wraps on mobile ── */
+      .filter-sidebar { padding: 20px 16px; }
+      .filter-sidebar .fs-section { display: flex; flex-direction: column; width: 100%; min-width: 0; box-sizing: border-box; margin-bottom: 18px; }
+      .filter-sidebar .fs-section-label { margin-bottom: 8px; margin-top: 4px; }
+      .filter-sidebar .fs-divider { margin: 4px 0 18px; }
+      .filter-sidebar .fs-select,
+      .filter-sidebar .fs-text-input { width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 13px; }
+      .filter-sidebar .ms-wrap,
+      .filter-sidebar .ms-trigger { width: 100%; box-sizing: border-box; }
+      .filter-sidebar .ms-trigger { padding: 11px 14px; font-size: 13px; }
+      .filter-sidebar .role-section { width: 100%; box-sizing: border-box; margin-top: 14px; }
+      .filter-sidebar .fs-reset { padding: 12px; font-size: 13px; margin-top: 6px; }
+
+      /* ── Featured cards: one card per view on mobile ── */
+      .featured-scroll { scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-bottom: 6px; padding-left: 0; margin-left: 0; }
+      .featured-card { scroll-snap-align: start; box-sizing: border-box; min-width: 100%; max-width: 100%; flex-shrink: 0; }
+
+      /* ── Company pills: one card per view on mobile ── */
+      .company-pill { min-width: calc(100% - 10px); flex-shrink: 0; scroll-snap-align: start; box-sizing: border-box; }
+
+      /* ── Box-sizing on key parent containers ── */
+      .page-shell, .content-layout, .sidebar, .filter-sidebar,
+      .hero, .hero-content, .search-wrap, .job-list, .job-row,
+      .featured-scroll, .companies-row { box-sizing: border-box; }
+    }
+
+    /* Desktop: always show filter sidebar, hide mobile toggle */
+    @media (min-width: 761px) {
+      .mobile-filter-toggle { display: none !important; }
+      .filter-sidebar { display: block !important; }
     }
 
     /* Phone */
     @media (max-width: 480px) {
       .btn-red { font-size: 12px; padding: 7px 12px; }
-      .hero-stats { flex-direction: column; gap: 10px; }
+      /* Keep Live Jobs + Companies side by side on phone */
+      .hero-stats { flex-direction: row; flex-wrap: wrap; gap: 12px; }
       .search-bar { border-radius: 12px; }
-      .featured-card { min-width: 230px; max-width: 230px; }
+      /* featured-card full-width handled by 760px block above */
     }
 
     /* === MS-WRAP MULTI-SELECT === */
@@ -1050,7 +1140,10 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
     <!-- SIDEBAR -->
     <aside class="sidebar anim anim-d1">
-      <div class="filter-sidebar">
+      <button class="mobile-filter-toggle anim anim-d1" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
+        <i class="fas fa-sliders-h"></i> Filters
+      </button>
+      <div class="filter-sidebar" id="filterSidebar">
         <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
 
         <div class="fs-section">
@@ -1164,7 +1257,11 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
             <option value="Monthly">Monthly</option>
             <option value="Hourly">Hourly</option>
           </select>
-          <input type="text" id="salaryKeyword" class="fs-text-input" placeholder="Enter salary range" style="margin-top:6px;">
+          <div style="display:flex;gap:6px;align-items:center;margin-top:6px;">
+            <input type="number" id="salaryMinFilter" class="fs-text-input" placeholder="Min" style="flex:1;" oninput="triggerFilter()">
+            <span style="color:var(--text-muted);font-size:11px;">–</span>
+            <input type="number" id="salaryMaxFilter" class="fs-text-input" placeholder="Max" style="flex:1;" oninput="triggerFilter()">
+          </div>
         </div>
 
         <div class="fs-divider"></div>
@@ -1254,6 +1351,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   const jobsData = <?= $indexJobsJson ?>;
 
   const companies = <?= $indexCompaniesJson ?>;
+  const isLoggedIn = <?= $isLoggedIn ? 'true' : 'false' ?>;
 
   let savedJobs = new Set();
 
@@ -1421,9 +1519,10 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     const kw = (keywordInput?.value || '').trim();
     const loc = (document.getElementById('locationKeyword')?.value || '').trim();
     const sLoc = document.getElementById('sidebarLocationFilter')?.value || '';
-    const salKw = (document.getElementById('salaryKeyword')?.value || '').trim();
     const salPer = document.getElementById('salaryPeriodFilter')?.value || '';
-    return !!(kw || loc || sLoc || salKw || salPer ||
+    const salMin = parseFloat(document.getElementById('salaryMinFilter')?.value) || 0;
+    const salMax = parseFloat(document.getElementById('salaryMaxFilter')?.value) || 0;
+    return !!(kw || loc || sLoc || salPer || salMin || salMax ||
       getMsValues('msIndustry').length || getMsValues('msJobRole').length ||
       getMsValues('msWorkType').length || getMsValues('msRemote').length ||
       getMsValues('msExperience').length || getMsValues('msListed').length);
@@ -1439,8 +1538,9 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     const kw  = (keywordInput?.value || '').trim().toLowerCase();
     const locKw = (document.getElementById('locationKeyword')?.value || '').trim().toLowerCase();
     const sLoc = document.getElementById('sidebarLocationFilter')?.value || '';
-    const salKw = (document.getElementById('salaryKeyword')?.value || '').trim();
     const salPer = document.getElementById('salaryPeriodFilter')?.value || '';
+    const salMin = parseFloat(document.getElementById('salaryMinFilter')?.value) || 0;
+    const salMax = parseFloat(document.getElementById('salaryMaxFilter')?.value) || 0;
     const industries = getMsValues('msIndustry');
     const roles      = getMsValues('msJobRole');
     const jobTypes   = getMsValues('msWorkType');
@@ -1465,19 +1565,8 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       if (setups.length && !setups.includes(j.workSetup)) return false;
       if (exps.length && !exps.includes(j.experience)) return false;
       if (salPer && j.salaryPeriod && j.salaryPeriod !== salPer) return false;
-      if (salKw) {
-        const sk = salKw.toLowerCase().replace(/[₱,\s]/g, '');
-        const nums = sk.match(/\d+/g);
-        if (nums && nums.length >= 1) {
-          let lo = parseInt(nums[0]);
-          let hi = nums.length >= 2 ? parseInt(nums[1]) : 0;
-          if (sk.includes('k') || lo < 1000) lo *= 1000;
-          if (hi && (sk.includes('k') || hi < 1000)) hi *= 1000;
-          if (hi && j.salaryMax && j.salaryMax < lo) return false;
-          if (hi && j.salaryMin && j.salaryMin > hi) return false;
-          if (!hi && j.salaryMax && j.salaryMax < lo) return false;
-        }
-      }
+      if (salMin && j.salaryMax && j.salaryMax < salMin) return false;
+      if (salMax && j.salaryMin && j.salaryMin > salMax) return false;
       if (dateDays.length) {
         const maxDays = Math.max(...dateDays.map(d => parseInt(d)));
         const posted = new Date(j.postedDate);
@@ -1594,6 +1683,10 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   }
 
   function toggleSave(id, btn) {
+    if (!isLoggedIn) {
+      window.location.href = 'auth/antcareers_login.php?redirect=' + encodeURIComponent('index.php');
+      return;
+    }
     if (savedJobs.has(id)) {
       savedJobs.delete(id); btn.classList.remove('saved');
       btn.innerHTML = '<i class="far fa-heart"></i>'; showToast('Removed from saved','fa-heart');
@@ -1721,7 +1814,8 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   keywordInput.addEventListener('keyup', e => { if (e.key==='Enter') renderAllJobs(); });
   document.getElementById('locationKeyword')?.addEventListener('input', renderAllJobs);
   document.getElementById('sidebarLocationFilter')?.addEventListener('change', renderAllJobs);
-  document.getElementById('salaryKeyword')?.addEventListener('input', renderAllJobs);
+  document.getElementById('salaryMinFilter')?.addEventListener('input', renderAllJobs);
+  document.getElementById('salaryMaxFilter')?.addEventListener('input', renderAllJobs);
   document.getElementById('salaryPeriodFilter')?.addEventListener('change', renderAllJobs);
   document.getElementById('resetFiltersBtn').addEventListener('click', () => {
     keywordInput.value = '';
@@ -1730,8 +1824,10 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     updateRolePicker([]);
     const locKw = document.getElementById('locationKeyword');
     if (locKw) locKw.value = '';
-    const salKw = document.getElementById('salaryKeyword');
-    if (salKw) salKw.value = '';
+    const salMin = document.getElementById('salaryMinFilter');
+    if (salMin) salMin.value = '';
+    const salMax = document.getElementById('salaryMaxFilter');
+    if (salMax) salMax.value = '';
     ['sidebarLocationFilter','salaryPeriodFilter'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
     renderAllJobs();
     document.querySelector('.hero').scrollIntoView({ behavior:'smooth', block:'start' });

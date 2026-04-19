@@ -313,7 +313,20 @@ $dispIndustries = $fmtStat($statIndustries);
     body.light .cc-logo { background:#F5EEEC; border-color:#E0CECA; }
     body.light .cc-name { color:#1A0A09; }
     body.light .cc-footer { border-color:#E0CECA; }
-    @media(max-width:760px) { .company-grid{grid-template-columns:1fr} .search-row{flex-direction:column} .nav-links{display:none} .hamburger{display:flex} .featured-banner{flex-direction:column;} }
+    @media(max-width:760px) {
+      html,body{overflow-x:hidden;max-width:100vw}
+      .page-shell,.content-layout,.main-content{max-width:100%;overflow-x:hidden}
+      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .nav-links{display:none}
+      .hamburger{display:flex}
+      .company-grid{grid-template-columns:1fr}
+      .search-row{flex-direction:column}
+      .featured-banner{flex-direction:column}
+      .company-pill-row,.tag-row{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:8px;padding-bottom:6px;scrollbar-width:none}
+      .company-pill-row::-webkit-scrollbar,.tag-row::-webkit-scrollbar{display:none}
+      .company-pill,.tag{flex-shrink:0}
+    }
 </style>
 </head>
 <body>
