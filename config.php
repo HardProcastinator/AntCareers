@@ -22,7 +22,7 @@
 declare(strict_types=1);
 // ── Database credentials ──────────────────────────────────────────────────────
 // Hostinger credentials
-define('DB_HOST',    'srv482.hstgr.io');
+define('DB_HOST', 'localhost');
 define('DB_PORT', '3306');
 define('DB_NAME',    'u696625122_AntCareers_wst');
 define('DB_USER',    'u696625122_fp_antcareers');
@@ -31,7 +31,7 @@ define('DB_PASS',    'AntCareers46810');
 define('DB_CHARSET', 'utf8mb4');
 
 // ── Application settings ──────────────────────────────────────────────────────
-define('APP_URL',    'https://antcareers.site/'); // Hostinger domain
+define('APP_URL',    'https://antcareers.site'); // Hostinger domain
 define('APP_NAME', 'AntCareers');
 
 // ── Auth / security constants ─────────────────────────────────────────────────

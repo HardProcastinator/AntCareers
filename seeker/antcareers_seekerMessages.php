@@ -32,16 +32,16 @@ $navActive = 'messages';
     .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
     .page-title{font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--text-light);}
     .page-sub{font-size:13px;color:var(--text-muted);margin-top:3px;}
-    .new-msg-btn{display:flex;align-items:center;gap:7px;padding:9px 18px;background:var(--red-vivid);border:none;border-radius:8px;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;transition:0.2s;}
-    .new-msg-btn:hover{background:var(--red-bright);}
+    .new-msg-btn{display:flex;align-items:center;justify-content:center;padding:8px 12px;background:var(--red-vivid);border:none;border-radius:6px;color:#F5F0EE;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.22s;width:36px;height:36px;flex-shrink:0;}
+    .new-msg-btn:hover{background:var(--red-bright);transform:translateY(-1px);}
 
     /* Messages layout */
     .msg-layout{display:grid;grid-template-columns:320px 1fr;gap:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;overflow:hidden;height:calc(100vh - 160px);min-height:680px;}
 
     /* Thread list */
     .thread-list{border-right:1px solid var(--soil-line);display:flex;flex-direction:column;min-height:0;}
-    .thread-search{padding:14px 16px;border-bottom:1px solid var(--soil-line);}
-    .thread-search-bar{display:flex;align-items:center;gap:8px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:8px 12px;transition:0.2s;}
+    .thread-search{padding:14px 16px;border-bottom:1px solid var(--soil-line);display:flex;align-items:center;gap:8px;}
+    .thread-search-bar{display:flex;align-items:center;gap:8px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:8px 12px;transition:0.2s;flex:1;}
     .thread-search-bar:focus-within{border-color:var(--red-vivid);}
     .thread-search-bar input{flex:1;background:none;border:none;outline:none;font-family:var(--font-body);font-size:13px;color:var(--text-light);}
     .thread-search-bar input::placeholder{color:var(--text-muted);}
@@ -218,9 +218,6 @@ $navActive = 'messages';
       <div class="page-title">Messages</div>
       <div class="page-sub">Your conversations with employers and recruiters</div>
     </div>
-    <button class="new-msg-btn" onclick="toggleNewMsgSearch()">
-      <i class="fas fa-pen"></i> New Message
-    </button>
   </div>
 
   <div class="msg-layout">
@@ -241,6 +238,9 @@ $navActive = 'messages';
           <i class="fas fa-search"></i>
           <input type="text" placeholder="Search conversations…" id="threadSearch" oninput="filterThreads(this.value)">
         </div>
+        <button class="new-msg-btn" onclick="toggleNewMsgSearch()" title="New Message">
+          <i class="fas fa-pen"></i>
+        </button>
       </div>
       <div class="thread-tabs">
         <button class="ttab active" onclick="setTab(this,'all')">All</button>
