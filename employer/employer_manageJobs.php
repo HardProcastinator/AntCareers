@@ -71,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $skills = trim((string)($_POST['skills'] ?? ''));
         $dl     = (string)($_POST['deadline'] ?? '') ?: null;
         $country  = trim((string)($_POST['country'] ?? ''));
+        if (!$country) { echo json_encode(['ok' => false, 'msg' => 'Please select a country to post this job.']); exit; }
         $duration = trim((string)($_POST['recruitment_duration'] ?? '')) ?: null;
         $currency = $country ? (COUNTRY_CURRENCIES[$country] ?? 'PHP') : 'PHP';
         try {
@@ -114,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $skills = trim((string)($_POST['skills'] ?? ''));
         $dl     = (string)($_POST['deadline'] ?? '') ?: null;
         $country  = trim((string)($_POST['country'] ?? ''));
+        if (!$country) { echo json_encode(['ok' => false, 'msg' => 'Please select a country to save this draft.']); exit; }
         $duration = trim((string)($_POST['recruitment_duration'] ?? '')) ?: null;
         $currency = $country ? (COUNTRY_CURRENCIES[$country] ?? 'PHP') : 'PHP';
         try {
@@ -895,8 +897,8 @@ $jobsJson = json_encode($jobs ?: []);
 
     <div class="frow" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="fg">
-        <label class="fl">Country</label>
-        <select class="fi" id="fCountry" onchange="onCountryChange()">
+        <label class="fl">Country <span style="color:var(--red-vivid);">*</span></label>
+        <select class="fi" id="fCountry" required onchange="onCountryChange()">
           <option value="">— Select Country —</option>
           <?php foreach (getCountries() as $c): ?>
           <option value="<?= htmlspecialchars($c['code']) ?>"><?= htmlspecialchars($c['name']) ?></option>
@@ -1205,6 +1207,7 @@ function validateSalary(d) {
 function submitJob() {
   var d = getFormData();
   if (!d.title) { toast('Job title required', 'err'); return; }
+  if (!d.country) { toast('Please select a country to post this job.', 'err'); return; }
   if (!validateSalary(d)) return;
   d.action = 'post_job';
   doPost(d, function(r) {
@@ -1220,6 +1223,7 @@ function submitJob() {
 function submitDraft() {
   var d = getFormData();
   if (!d.title) { toast('Job title required', 'err'); return; }
+  if (!d.country) { toast('Please select a country to save this draft.', 'err'); return; }
   if (!validateSalary(d)) return;
   d.action = 'save_draft';
   doPost(d, function(r) {

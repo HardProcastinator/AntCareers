@@ -429,8 +429,20 @@ function _recActive(string $key, string $active): string {
   /* ── HAMBURGER ── */
   var hamburger = document.getElementById('hamburger');
   var mobileMenu = document.getElementById('mobileMenu');
+  function syncMobileMenuPosition(){
+    var nav = document.getElementById('mainNavbar') || document.querySelector('.navbar');
+    if(!mobileMenu || !nav) return;
+    var rect = nav.getBoundingClientRect();
+    var top = Math.max(0, Math.round(rect.bottom));
+    mobileMenu.style.top = top + 'px';
+    mobileMenu.style.maxHeight = 'calc(100dvh - ' + top + 'px)';
+  }
+  window.addEventListener('scroll', syncMobileMenuPosition, { passive: true });
+  window.addEventListener('resize', syncMobileMenuPosition);
+  syncMobileMenuPosition();
   hamburger.addEventListener('click',function(e){
     e.stopPropagation();
+    syncMobileMenuPosition();
     var isOpen = mobileMenu.classList.toggle('open');
     hamburger.setAttribute('aria-expanded',String(isOpen));
     mobileMenu.setAttribute('aria-hidden',String(!isOpen));

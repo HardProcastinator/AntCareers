@@ -73,12 +73,56 @@ $hasExtendedFields = false;
 try {
     $db->query("SELECT linkedin_url FROM seeker_profiles LIMIT 0");
     $hasExtendedFields = true;
+  try {
+    $extStmt = $db->prepare("SELECT linkedin_url, github_url, portfolio_url, other_url FROM seeker_profiles WHERE user_id = ?");
+    $extStmt->execute([$seekerId]);
+    $extRow = $extStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+  } catch (PDOException $e) {
     $extStmt = $db->prepare("SELECT linkedin_url, github_url, portfolio_url FROM seeker_profiles WHERE user_id = ?");
     $extStmt->execute([$seekerId]);
     $extRow = $extStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    $extRow['other_url'] = '';
+  }
 } catch (PDOException $e) {
     $extRow = [];
 }
+
+// Fetch next-role preferences if columns exist
+$nr = [
+  'nr_availability' => '',
+  'nr_work_types' => '',
+  'nr_locations' => '',
+  'nr_right_to_work' => '',
+  'nr_salary' => '',
+  'nr_salary_period' => '',
+  'nr_salary_currency' => '',
+  'nr_classification' => '',
+  'nr_approachability' => '',
+];
+try {
+  try {
+    $nrStmt = $db->prepare("SELECT nr_availability, nr_work_types, nr_locations, nr_right_to_work, nr_salary, nr_salary_period, nr_salary_currency, nr_classification, nr_approachability FROM seeker_profiles WHERE user_id = ? LIMIT 1");
+    $nrStmt->execute([$seekerId]);
+    $nr = array_merge($nr, $nrStmt->fetch(PDO::FETCH_ASSOC) ?: []);
+  } catch (PDOException $e) {
+    $nrStmt = $db->prepare("SELECT nr_availability, nr_work_types, nr_locations, nr_right_to_work, nr_salary, nr_salary_period, nr_classification, nr_approachability FROM seeker_profiles WHERE user_id = ? LIMIT 1");
+    $nrStmt->execute([$seekerId]);
+    $nr = array_merge($nr, $nrStmt->fetch(PDO::FETCH_ASSOC) ?: []);
+  }
+} catch (PDOException $e) { /* optional fields */ }
+
+// Fetch languages if table exists
+$languages = [];
+try {
+  try {
+    $langStmt = $db->prepare("SELECT language_name FROM seeker_languages WHERE user_id = ? ORDER BY sort_order, id");
+    $langStmt->execute([$seekerId]);
+  } catch (PDOException $e) {
+    $langStmt = $db->prepare("SELECT language_name FROM seeker_languages WHERE user_id = ? ORDER BY id");
+    $langStmt->execute([$seekerId]);
+  }
+  $languages = $langStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+} catch (PDOException $e) { /* table may not exist */ }
 
 // Fetch education
 $education = [];
@@ -177,6 +221,7 @@ $locParts = array_filter([
 $sLocation = implode(', ', $locParts);
 $sFullAddress = implode(', ', array_filter([
     $seeker['address_line'] ?? '',
+  $seeker['landmark'] ?? '',
     $seeker['barangay_name'] ?? '',
     $seeker['city_name'] ?? '',
     $seeker['province_name'] ?? '',
@@ -186,6 +231,21 @@ $sFullAddress = implode(', ', array_filter([
 $linkedinUrl  = $extRow['linkedin_url'] ?? '';
 $githubUrl    = $extRow['github_url'] ?? '';
 $portfolioUrl = $extRow['portfolio_url'] ?? '';
+$otherUrl     = $extRow['other_url'] ?? '';
+
+$nrAvailability = trim((string)($nr['nr_availability'] ?? ''));
+$nrWorkTypes = implode(', ', array_filter(array_map('trim', explode(',', (string)($nr['nr_work_types'] ?? '')))));
+$nrLocations = trim((string)($nr['nr_locations'] ?? ''));
+$nrRightToWork = trim((string)($nr['nr_right_to_work'] ?? ''));
+$nrClassification = trim((string)($nr['nr_classification'] ?? ''));
+$nrApproachability = trim((string)($nr['nr_approachability'] ?? ''));
+$nrSalary = trim((string)($nr['nr_salary'] ?? ''));
+$nrSalaryPeriod = trim((string)($nr['nr_salary_period'] ?? ''));
+$nrSalaryCurrency = trim((string)($nr['nr_salary_currency'] ?? ''));
+$salaryExpectation = '';
+if ($nrSalary !== '') {
+  $salaryExpectation = trim(implode(' ', array_filter([$nrSalaryCurrency ?: 'PHP', $nrSalary, $nrSalaryPeriod])));
+}
 
 $smeta = [
     'Pending'     => ['c'=>'amber','i'=>'fa-clock'],
@@ -208,6 +268,16 @@ $skillLevelColors = [
     'Advanced'     => 'green',
     'Expert'       => 'purple',
 ];
+
+$hasDisplayableEducation = false;
+$hasNoSchooling = false;
+foreach ($education as $_edu) {
+  if ((int)($_edu['no_schooling'] ?? 0) === 1) {
+    $hasNoSchooling = true;
+    continue;
+  }
+  $hasDisplayableEducation = true;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -407,9 +477,7 @@ $skillLevelColors = [
       </div>
     </div>
     <div class="ph-actions">
-      <?php if($resume): ?>
-      <a class="ph-btn primary" href="<?php echo e($resume['file_path']); ?>" target="_blank"><i class="fas fa-download"></i> Resume</a>
-      <?php endif; ?>
+
       <a class="ph-btn" href="javascript:void(0)" onclick="if(typeof openMsgSidebar==='function'){openMsgSidebar();setTimeout(function(){if(typeof sbOpenThread==='function')sbOpenThread(<?= (int)$seekerId ?>);},300);}"><i class="fas fa-envelope"></i> Message</a>
     </div>
   </div>
@@ -425,6 +493,34 @@ $skillLevelColors = [
           <div class="empty-text">No professional summary provided.</div>
         <?php endif; ?>
       </div>
+
+      <!-- Skills -->
+      <div class="section anim anim-d2">
+        <div class="sec-title"><i class="fas fa-tools"></i> Skills</div>
+        <?php if(empty($skills)): ?>
+          <div class="empty-text">No skills listed.</div>
+        <?php else: ?>
+          <div class="skills-list">
+            <?php foreach($skills as $sk):
+              $cls = $skillLevelColors[$sk['skill_level'] ?? 'Intermediate'] ?? '';
+            ?>
+              <span class="skill-tag <?php echo $cls; ?>"><?php echo e($sk['skill_name']); ?><span style="opacity:0.6;font-size:10px;"><?php echo e($sk['skill_level']); ?></span></span>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </div>
+
+      <!-- Languages -->
+      <?php if(!empty($languages)): ?>
+      <div class="section anim anim-d2">
+        <div class="sec-title"><i class="fas fa-language"></i> Languages</div>
+        <div class="skills-list">
+          <?php foreach($languages as $lang): ?>
+            <span class="skill-tag"><?php echo e((string)$lang); ?></span>
+          <?php endforeach; ?>
+        </div>
+      </div>
+      <?php endif; ?>
 
       <!-- Work Experience -->
       <div class="section anim anim-d2">
@@ -459,8 +555,8 @@ $skillLevelColors = [
       <!-- Education -->
       <div class="section anim anim-d3">
         <div class="sec-title"><i class="fas fa-graduation-cap"></i> Education</div>
-        <?php if(empty($education)): ?>
-          <div class="empty-text">No education records listed.</div>
+        <?php if(empty($education) || !$hasDisplayableEducation): ?>
+          <div class="empty-text"><?php echo $hasNoSchooling ? 'Seeker indicated no formal schooling.' : 'No education records listed.'; ?></div>
         <?php else: foreach($education as $edu):
           if((int)($edu['no_schooling'] ?? 0) === 1) continue;
           $lvl = $levelLabels[strtolower($edu['education_level'] ?? 'college')] ?? 'Education';
@@ -527,24 +623,25 @@ $skillLevelColors = [
           <?php if($linkedinUrl): ?><div class="info-item"><span class="info-label">LinkedIn</span><span class="info-value"><a href="<?php echo e($linkedinUrl); ?>" target="_blank"><?php echo e($linkedinUrl); ?></a></span></div><?php endif; ?>
           <?php if($githubUrl): ?><div class="info-item"><span class="info-label">GitHub</span><span class="info-value"><a href="<?php echo e($githubUrl); ?>" target="_blank"><?php echo e($githubUrl); ?></a></span></div><?php endif; ?>
           <?php if($portfolioUrl): ?><div class="info-item"><span class="info-label">Portfolio</span><span class="info-value"><a href="<?php echo e($portfolioUrl); ?>" target="_blank"><?php echo e($portfolioUrl); ?></a></span></div><?php endif; ?>
+          <?php if($otherUrl): ?><div class="info-item"><span class="info-label">Other Link</span><span class="info-value"><a href="<?php echo e($otherUrl); ?>" target="_blank"><?php echo e($otherUrl); ?></a></span></div><?php endif; ?>
         </div>
       </div>
 
-      <!-- Skills -->
+      <!-- Next Role Preferences -->
+      <?php if($nrAvailability || $nrWorkTypes || $nrLocations || $nrRightToWork || $nrClassification || $salaryExpectation || $nrApproachability): ?>
       <div class="section anim anim-d2">
-        <div class="sec-title"><i class="fas fa-tools"></i> Skills</div>
-        <?php if(empty($skills)): ?>
-          <div class="empty-text">No skills listed.</div>
-        <?php else: ?>
-          <div class="skills-list">
-            <?php foreach($skills as $sk):
-              $cls = $skillLevelColors[$sk['skill_level'] ?? 'Intermediate'] ?? '';
-            ?>
-              <span class="skill-tag <?php echo $cls; ?>"><?php echo e($sk['skill_name']); ?><span style="opacity:0.6;font-size:10px;"><?php echo e($sk['skill_level']); ?></span></span>
-            <?php endforeach; ?>
-          </div>
-        <?php endif; ?>
+        <div class="sec-title"><i class="fas fa-bullseye"></i> Next Role Preferences</div>
+        <div class="info-grid">
+          <?php if($nrAvailability): ?><div class="info-item"><span class="info-label">Availability</span><span class="info-value"><?php echo e($nrAvailability); ?></span></div><?php endif; ?>
+          <?php if($nrWorkTypes): ?><div class="info-item"><span class="info-label">Work Types</span><span class="info-value"><?php echo e($nrWorkTypes); ?></span></div><?php endif; ?>
+          <?php if($nrRightToWork): ?><div class="info-item"><span class="info-label">Right to Work</span><span class="info-value"><?php echo e($nrRightToWork); ?></span></div><?php endif; ?>
+          <?php if($nrClassification): ?><div class="info-item"><span class="info-label">Classification</span><span class="info-value"><?php echo e($nrClassification); ?></span></div><?php endif; ?>
+          <?php if($salaryExpectation): ?><div class="info-item"><span class="info-label">Salary Expectation</span><span class="info-value"><?php echo e($salaryExpectation); ?></span></div><?php endif; ?>
+          <?php if($nrApproachability): ?><div class="info-item"><span class="info-label">Employers Can Reach Out</span><span class="info-value"><?php echo e($nrApproachability); ?></span></div><?php endif; ?>
+          <?php if($nrLocations): ?><div class="info-item" style="grid-column:1/-1;"><span class="info-label">Preferred Locations</span><span class="info-value"><?php echo e($nrLocations); ?></span></div><?php endif; ?>
+        </div>
       </div>
+      <?php endif; ?>
 
       <!-- Resume -->
       <div class="section anim anim-d2">
@@ -553,7 +650,7 @@ $skillLevelColors = [
           <div class="resume-card">
             <div class="resume-icon"><i class="fas fa-file-pdf"></i></div>
             <div class="resume-name"><?php echo e($resume['original_filename']); ?></div>
-            <a class="resume-dl" href="<?php echo e($resume['file_path']); ?>" target="_blank"><i class="fas fa-download"></i> Download</a>
+            <a class="resume-dl" href="<?php echo e($resume['file_path']); ?>" target="_blank"><i class="fas fa-eye"></i> View</a>
           </div>
         <?php else: ?>
           <div class="empty-text">No resume uploaded.</div>

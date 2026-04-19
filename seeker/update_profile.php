@@ -56,6 +56,7 @@ try {
     if (!in_array('nr_right_to_work',  $existing, true)) $toAdd[] = "ADD COLUMN nr_right_to_work   VARCHAR(255) DEFAULT NULL";
     if (!in_array('nr_salary',         $existing, true)) $toAdd[] = "ADD COLUMN nr_salary          VARCHAR(100) DEFAULT NULL";
     if (!in_array('nr_salary_period',  $existing, true)) $toAdd[] = "ADD COLUMN nr_salary_period   VARCHAR(50)  DEFAULT NULL";
+    if (!in_array('nr_salary_currency',$existing, true)) $toAdd[] = "ADD COLUMN nr_salary_currency VARCHAR(10)  DEFAULT NULL";
     if (!in_array('nr_classification', $existing, true)) $toAdd[] = "ADD COLUMN nr_classification  VARCHAR(255) DEFAULT NULL";
     if (!in_array('nr_approachability',$existing, true)) $toAdd[] = "ADD COLUMN nr_approachability VARCHAR(50)  DEFAULT NULL";
     if ($toAdd) {
@@ -130,6 +131,7 @@ $nrLocations         = postValue('nr_locations');
 $nrRightToWork       = postValue('nr_right_to_work');
 $nrSalary            = postValue('nr_salary');
 $nrSalaryPeriod      = postValue('nr_salary_period');
+$nrSalaryCurrency    = postValue('nr_salary_currency') ?: 'PHP';
 $nrClassification    = postValue('nr_classification');
 $nrApproachability   = postValue('nr_approachability');
 
@@ -171,8 +173,9 @@ $fullParams = $coreParams + [
     ':nr_work_types'     => $nrWorkTypes,
     ':nr_locations'      => $nrLocations,
     ':nr_right_to_work'  => $nrRightToWork,
-    ':nr_salary'         => $nrSalary,
-    ':nr_salary_period'  => $nrSalaryPeriod,
+    ':nr_salary'          => $nrSalary,
+    ':nr_salary_period'   => $nrSalaryPeriod,
+    ':nr_salary_currency' => $nrSalaryCurrency,
     ':nr_classification' => $nrClassification,
     ':nr_approachability'=> $nrApproachability,
 ];
@@ -203,6 +206,7 @@ try {
                     nr_availability = :nr_availability, nr_work_types = :nr_work_types,
                     nr_locations = :nr_locations, nr_right_to_work = :nr_right_to_work,
                     nr_salary = :nr_salary, nr_salary_period = :nr_salary_period,
+                    nr_salary_currency = :nr_salary_currency,
                     nr_classification = :nr_classification,
                     nr_approachability = :nr_approachability,
                     updated_at = NOW()
@@ -236,16 +240,16 @@ try {
                     barangay_code, barangay_name, desired_position, professional_summary,
                     headline, bio, experience_level, linkedin_url, github_url,
                     portfolio_url, other_url, nr_availability, nr_work_types, nr_locations,
-                    nr_right_to_work, nr_salary, nr_salary_period, nr_classification,
-                    nr_approachability, created_at, updated_at
+                    nr_right_to_work, nr_salary, nr_salary_period, nr_salary_currency,
+                    nr_classification, nr_approachability, created_at, updated_at
                 ) VALUES (
                     :uid, :phone, :address_line, :landmark, :country_name, :region_code,
                     :region_name, :province_code, :province_name, :city_code, :city_name,
                     :barangay_code, :barangay_name, :desired_position, :professional_summary,
                     :headline, :bio, :experience_level, :linkedin_url, :github_url,
                     :portfolio_url, :other_url, :nr_availability, :nr_work_types, :nr_locations,
-                    :nr_right_to_work, :nr_salary, :nr_salary_period, :nr_classification,
-                    :nr_approachability, NOW(), NOW()
+                    :nr_right_to_work, :nr_salary, :nr_salary_period, :nr_salary_currency,
+                    :nr_classification, :nr_approachability, NOW(), NOW()
                 )
             ")->execute($fullParams);
         } catch (\PDOException $colErr) {

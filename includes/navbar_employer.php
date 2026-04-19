@@ -202,8 +202,9 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   body.light .pd-item:hover i { color:var(--red-bright); }
   body.light .pd-divider { background:#E0CECA; }
   /* Mobile menu */
+  .hamburger{display:none;}
   .mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:rgba(10,9,9,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--soil-line);padding:12px 20px 16px;z-index:190;flex-direction:column;gap:2px;}
-  .mobile-menu.open{display:flex;}
+  .mobile-menu.open{display:none;}
   .mobile-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:7px;font-size:14px;font-weight:500;color:var(--text-mid);cursor:pointer;transition:0.15s;font-family:var(--font-body);text-decoration:none;}
   .mobile-link i{color:var(--red-mid);width:16px;text-align:center;}
   .mobile-link:hover{background:var(--soil-hover);color:#F5F0EE;}
@@ -219,6 +220,7 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   @media(max-width:760px){
     .nav-links{display:none}
     .hamburger{display:flex}
+    .mobile-menu.open{display:flex}
     .profile-name,.profile-role{display:none}
     .profile-chevron{display:none}
     .profile-btn{padding:5px 8px;gap:6px}
@@ -261,11 +263,24 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
 
   // ── HAMBURGER ──
   var hamburger = document.getElementById('hamburger');
+  function syncMobileMenuPosition() {
+    var mm = document.getElementById('mobileMenu');
+    var nav = document.getElementById('mainNavbar') || document.querySelector('.navbar');
+    if (!mm || !nav) return;
+    var rect = nav.getBoundingClientRect();
+    var top = Math.max(0, Math.round(rect.bottom));
+    mm.style.top = top + 'px';
+    mm.style.maxHeight = 'calc(100dvh - ' + top + 'px)';
+  }
+  window.addEventListener('scroll', syncMobileMenuPosition, { passive: true });
+  window.addEventListener('resize', syncMobileMenuPosition);
+  syncMobileMenuPosition();
   if (hamburger) {
     hamburger.addEventListener('click', function(e) {
       e.stopPropagation();
       var mm = document.getElementById('mobileMenu');
       if (!mm) return;
+      syncMobileMenuPosition();
       var open = mm.classList.toggle('open');
       hamburger.querySelector('i').className = open ? 'fas fa-times' : 'fas fa-bars';
     });
