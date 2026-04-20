@@ -172,6 +172,7 @@ if ($seekerAvatarUrl !== '' && !str_starts_with($seekerAvatarUrl, '../') && !str
   .notif-panel-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:8px; }
   .notif-panel-title i { color:var(--red-bright); }
   .notif-close { width:28px; height:28px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:0.15s; }
+  #msgNewChat i { font-size:11px; }
   .notif-close:hover { color:#F5F0EE; }
   .notif-panel-body { flex:1; overflow-y:auto; padding:12px 16px; }
   .person-modal-overlay { position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.82); backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; padding:20px; }

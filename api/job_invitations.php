@@ -22,6 +22,20 @@ function inv_json(array $p, int $s = 200): void
     exit;
 }
 
+function inv_table_has_column(PDO $db, string $table, string $column): bool
+{
+    $stmt = $db->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?");
+    $stmt->execute([$table, $column]);
+    return (int)$stmt->fetchColumn() > 0;
+}
+
+function inv_ensure_column(PDO $db, string $table, string $column, string $definition): void
+{
+    if (!inv_table_has_column($db, $table, $column)) {
+        $db->exec("ALTER TABLE {$table} ADD COLUMN {$column} {$definition}");
+    }
+}
+
 /* ── Auto-create table if needed ── */
 try {
     $db->query('SELECT 1 FROM job_invitations LIMIT 0');
@@ -48,6 +62,10 @@ try {
         error_log('[AntCareers] job_invitations create: ' . $ce->getMessage());
     }
 }
+
+inv_ensure_column($db, 'seeker_profiles', 'show_in_people_search', 'TINYINT(1) NOT NULL DEFAULT 1');
+inv_ensure_column($db, 'notifications', 'actor_id', 'INT UNSIGNED DEFAULT NULL AFTER user_id');
+inv_ensure_column($db, 'notifications', 'reference_type', "VARCHAR(50) DEFAULT NULL AFTER reference_id");
 
 switch ($action) {
 

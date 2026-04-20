@@ -74,13 +74,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $loc    = trim((string)($_POST['location'] ?? ''));
         $type   = (string)($_POST['job_type'] ?? 'Full-time');
         $setup  = (string)($_POST['setup'] ?? 'On-site');
-        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? (float)$_POST['salary_min'] : null;
-        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? (float)$_POST['salary_max'] : null;
+        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? min((float)$_POST['salary_min'], 9999999999) : null;
+        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? min((float)$_POST['salary_max'], 9999999999) : null;
+        if ($sMin !== null && $sMin < 0) $sMin = null;
+        if ($sMax !== null && $sMax < 0) $sMax = null;
+        if ($sMin !== null && $sMax !== null && $sMin > $sMax) { echo json_encode(['ok' => false, 'msg' => 'Min salary cannot be greater than max salary.']); exit; }
         $ind    = trim((string)($_POST['industry'] ?? ''));
         $exp    = (string)($_POST['experience_level'] ?? '') ?: null;
         $skills = trim((string)($_POST['skills'] ?? ''));
         $dl     = (string)($_POST['deadline'] ?? '') ?: null;
         $country  = trim((string)($_POST['country'] ?? ''));
+        if (!$country) { echo json_encode(['ok' => false, 'msg' => 'Please select a country to post this job.']); exit; }
         $duration = trim((string)($_POST['recruitment_duration'] ?? '')) ?: null;
         $currency = $country ? (COUNTRY_CURRENCIES[$country] ?? 'PHP') : 'PHP';
         try {
@@ -104,13 +108,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $loc    = trim((string)($_POST['location'] ?? ''));
         $type   = (string)($_POST['job_type'] ?? 'Full-time');
         $setup  = (string)($_POST['setup'] ?? 'On-site');
-        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? (float)$_POST['salary_min'] : null;
-        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? (float)$_POST['salary_max'] : null;
+        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? min((float)$_POST['salary_min'], 9999999999) : null;
+        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? min((float)$_POST['salary_max'], 9999999999) : null;
+        if ($sMin !== null && $sMin < 0) $sMin = null;
+        if ($sMax !== null && $sMax < 0) $sMax = null;
+        if ($sMin !== null && $sMax !== null && $sMin > $sMax) { echo json_encode(['ok' => false, 'msg' => 'Min salary cannot be greater than max salary.']); exit; }
         $ind    = trim((string)($_POST['industry'] ?? ''));
         $exp    = (string)($_POST['experience_level'] ?? '') ?: null;
         $skills = trim((string)($_POST['skills'] ?? ''));
         $dl     = (string)($_POST['deadline'] ?? '') ?: null;
         $country  = trim((string)($_POST['country'] ?? ''));
+        if (!$country) { echo json_encode(['ok' => false, 'msg' => 'Please select a country to save this draft.']); exit; }
         $duration = trim((string)($_POST['recruitment_duration'] ?? '')) ?: null;
         $currency = $country ? (COUNTRY_CURRENCIES[$country] ?? 'PHP') : 'PHP';
         try {
@@ -134,8 +142,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $loc    = trim((string)($_POST['location'] ?? ''));
         $type   = (string)($_POST['job_type'] ?? 'Full-time');
         $setup  = (string)($_POST['setup'] ?? 'On-site');
-        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? (float)$_POST['salary_min'] : null;
-        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? (float)$_POST['salary_max'] : null;
+        $sMin   = ($_POST['salary_min'] ?? '') !== '' ? min((float)$_POST['salary_min'], 9999999999) : null;
+        $sMax   = ($_POST['salary_max'] ?? '') !== '' ? min((float)$_POST['salary_max'], 9999999999) : null;
+        if ($sMin !== null && $sMin < 0) $sMin = null;
+        if ($sMax !== null && $sMax < 0) $sMax = null;
+        if ($sMin !== null && $sMax !== null && $sMin > $sMax) { echo json_encode(['ok' => false, 'msg' => 'Min salary cannot be greater than max salary.']); exit; }
         $ind    = trim((string)($_POST['industry'] ?? ''));
         $exp    = (string)($_POST['experience_level'] ?? '') ?: null;
         $skills = trim((string)($_POST['skills'] ?? ''));
@@ -469,12 +480,13 @@ $jobsJson = json_encode($jobs ?: []);
     /* ── Modal ── */
     .modal-bd{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto;}
     .modal-bd.open{display:flex;}
-    .modal-box{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:16px;padding:26px;width:100%;max-width:620px;position:relative;margin:auto;max-height:calc(100dvh - 40px);overflow-y:auto;}
+    .modal-box{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:16px;padding:26px;width:100%;max-width:620px;position:relative;margin:auto;}
     body.light .modal-box{background:#fff;border-color:#E0CECA;}
     .modal-title{font-family:var(--font-display);font-size:21px;font-weight:700;color:#F5F0EE;margin-bottom:20px;display:flex;align-items:center;gap:9px;}
     body.light .modal-title{color:#1A0A09;}
     .modal-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:6px;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;}
     .modal-close:hover{background:var(--soil-hover);color:#F5F0EE;}
+    body.light .modal-close:hover{background:#F5EDEB;color:#7A1515;border-color:#D4B0AB;}
     .fg{margin-bottom:14px;}
     .fl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:flex;align-items:center;gap:4px;}
     .fl .req{color:var(--red-bright);font-size:13px;line-height:1;}
@@ -858,8 +870,8 @@ $jobsJson = json_encode($jobs ?: []);
 
     <div class="frow" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="fg">
-        <label class="fl">Country</label>
-        <select class="fi" id="fCountry" onchange="onCountryChange()">
+        <label class="fl">Country <span style="color:var(--red-vivid);">*</span></label>
+        <select class="fi" id="fCountry" required onchange="onCountryChange()">
           <option value="">— Select Country —</option>
           <?php foreach (getCountries() as $c): ?>
           <option value="<?= htmlspecialchars($c['code']) ?>"><?= htmlspecialchars($c['name']) ?></option>
@@ -889,11 +901,11 @@ $jobsJson = json_encode($jobs ?: []);
     <div class="frow">
       <div class="fg">
         <label class="fl" id="lblSMin">Min Salary</label>
-        <input type="number" class="fi" id="fSMin" placeholder="e.g. 50000">
+        <input type="number" class="fi" id="fSMin" placeholder="e.g. 50000" min="0" max="9999999999">
       </div>
       <div class="fg">
         <label class="fl" id="lblSMax">Max Salary</label>
-        <input type="number" class="fi" id="fSMax" placeholder="e.g. 90000">
+        <input type="number" class="fi" id="fSMax" placeholder="e.g. 90000" min="0" max="9999999999">
       </div>
     </div>
 
@@ -939,7 +951,7 @@ $jobsJson = json_encode($jobs ?: []);
 <div class="modal-bd" id="confirmModal">
   <div class="confirm-box">
     <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
-    <div class="confirm-title">Delete this draft?</div>
+    <div class="confirm-title">Delete this job?</div>
     <div class="confirm-sub" id="confirmMsg">This cannot be undone.</div>
     <input type="hidden" id="delJobId">
     <div class="confirm-actions">
@@ -1170,10 +1182,23 @@ function getFormData() {
   };
 }
 
+function validateSalary(d) {
+  var mn = d.salary_min !== '' ? parseFloat(d.salary_min) : null;
+  var mx = d.salary_max !== '' ? parseFloat(d.salary_max) : null;
+  if (mn !== null && mx !== null && mn > mx) {
+    toast('Min salary cannot be greater than max salary.', 'err');
+    document.getElementById('fSMin').focus();
+    return false;
+  }
+  return true;
+}
+
 /* Submit for Approval (Active + pending) */
 function submitJob() {
   var d = getFormData();
   if (!d.title) { toast('Job title required', 'err'); return; }
+  if (!d.country) { toast('Please select a country to post this job.', 'err'); return; }
+  if (!validateSalary(d)) return;
   d.action = 'post_job';
   doPost(d, function(r) {
     if (r.ok) {
@@ -1188,6 +1213,8 @@ function submitJob() {
 function submitDraft() {
   var d = getFormData();
   if (!d.title) { toast('Job title required', 'err'); return; }
+  if (!d.country) { toast('Please select a country to save this draft.', 'err'); return; }
+  if (!validateSalary(d)) return;
   d.action = 'save_draft';
   doPost(d, function(r) {
     if (r.ok) {

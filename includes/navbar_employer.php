@@ -207,7 +207,7 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   /* Mobile menu */
   .hamburger{display:none;}
   .mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:rgba(10,9,9,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--soil-line);padding:12px 20px 16px;z-index:190;flex-direction:column;gap:2px;}
-  .mobile-menu.open{display:none;}
+  .mobile-menu.open{display:flex;}
   .mobile-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:7px;font-size:14px;font-weight:500;color:var(--text-mid);cursor:pointer;transition:0.15s;font-family:var(--font-body);text-decoration:none;}
   .mobile-link i{color:var(--red-mid);width:16px;text-align:center;}
   .mobile-link:hover{background:var(--soil-hover);color:#F5F0EE;}

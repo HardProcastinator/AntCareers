@@ -569,14 +569,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       font-family: var(--font-body); font-size: 14px; font-weight: 700;
       color: var(--text-light); letter-spacing: -0.01em;
     }
-    .save-btn {
-      width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--soil-line);
-      background: var(--soil-hover); color: var(--text-muted); font-size: 12px;
-      display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
-    }
-    .save-btn:hover, .save-btn.saved {
-      border-color: var(--red-vivid); color: var(--red-pale); background: rgba(200,57,42,0.1);
-    }
 
     /* Companies */
     .companies-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-bottom: 40px; }
@@ -774,9 +766,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     /* Section count badge */
     body.light .sec-count { background: #F5E8E6; color: #7A5555; }
 
-    /* Save btn */
-    body.light .save-btn { background: #F5E8E6; border-color: #DFC0BB; color: #9A7070; }
-
     /* Featured card icon */
     body.light .fc-icon { background: #F5E8E6; border-color: #DFC0BB; }
 
@@ -869,39 +858,76 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
     /* Small tablet / large phone */
     @media (max-width: 760px) {
-      /* Nav: hide desktop links + right buttons (keep only logo + hamburger) */
+      html, body { overflow-x: hidden; max-width: 100vw; }
+      .page-shell, .content-layout, .main-content, section, .container { max-width: 100%; overflow-x: hidden; }
+      table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+      .modal-box { width: 100% !important; max-width: 100vw !important; margin: 0 !important; border-radius: 12px 12px 0 0 !important; position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important; top: auto !important; max-height: 90vh; overflow-y: auto; }
+
       .nav-links { display: none; }
       .btn-ghost { display: none; }
       .hamburger { display: flex; }
+      .nav-inner { padding: 0 10px; gap: 4px; }
+      .nav-right { gap: 6px; flex-shrink: 0; overflow: hidden; }
+      .theme-btn { width: 30px; height: 30px; font-size: 12px; }
+      #themeToggleMobile { display: none !important; }
+      .mobile-auth .btn-ghost { display: flex; }
 
       .page-shell { padding: 0 16px 60px; }
-      .nav-inner { padding: 0 16px; }
 
       .hero { padding: 40px 0 28px; }
       .hero-h1 { letter-spacing: -1px; }
       .hero-stats { gap: 16px; }
       .stat-sep { display: none; }
 
-      .companies-row { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+      .companies-row {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+        gap: 10px;
+        padding-bottom: 6px;
+        scrollbar-width: none;
+      }
+      .companies-row::-webkit-scrollbar { display: none; }
+      .company-pill { min-width: calc(100% - 10px); flex-shrink: 0; scroll-snap-align: start; }
       .cp-top { padding: 14px 16px 10px; }
       .cp-bio { padding: 0 16px 10px; }
       .cp-footer { padding: 8px 16px; }
 
-      .job-row {
-        grid-template-columns: 1fr;
-        gap: 10px;
-      }
+      .job-row { grid-template-columns: 1fr; gap: 10px; }
       .job-row-right { flex-direction: row; align-items: center; justify-content: space-between; }
+      .job-description-preview, .card-description { display: none; }
+      .job-meta, .job-tags { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; padding-bottom: 4px; }
+      .job-meta::-webkit-scrollbar { display: none; }
+      .job-actions, .card-actions { flex-direction: row; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+      .job-actions .btn, .job-actions button, .card-actions .btn, .card-actions button { flex: 1; min-width: 80px; font-size: 12px; padding: 7px 10px; text-align: center; justify-content: center; }
 
       .footer { flex-direction: column; text-align: center; padding: 20px 16px; }
+
+      #signupBtn { display: none !important; }
+
+      .filter-sidebar { padding: 20px 16px; }
+      .filter-sidebar .fs-section { display: flex; flex-direction: column; width: 100%; min-width: 0; box-sizing: border-box; margin-bottom: 18px; }
+      .filter-sidebar .fs-section-label { margin-bottom: 8px; margin-top: 4px; }
+      .filter-sidebar .fs-divider { margin: 4px 0 18px; }
+      .filter-sidebar .fs-select,
+      .filter-sidebar .fs-text-input { width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 13px; }
+      .filter-sidebar .ms-wrap,
+      .filter-sidebar .ms-trigger { width: 100%; box-sizing: border-box; }
+      .filter-sidebar .ms-trigger { padding: 11px 14px; font-size: 13px; }
+      .filter-sidebar .role-section { width: 100%; box-sizing: border-box; margin-top: 14px; }
+      .filter-sidebar .fs-reset { padding: 12px; font-size: 13px; margin-top: 6px; }
+
+      .featured-scroll { scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-bottom: 6px; padding-left: 0; margin-left: 0; }
+      .featured-card { scroll-snap-align: start; box-sizing: border-box; min-width: 100%; max-width: 100%; flex-shrink: 0; }
     }
 
     /* Phone */
     @media (max-width: 480px) {
       .btn-red { font-size: 12px; padding: 7px 12px; }
-      .hero-stats { flex-direction: column; gap: 10px; }
+      .hero-stats { flex-direction: row; flex-wrap: wrap; gap: 12px; }
       .search-bar { border-radius: 12px; }
-      .featured-card { min-width: 230px; max-width: 230px; }
     }
 
     /* === MS-WRAP MULTI-SELECT === */
@@ -1255,8 +1281,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
   const companies = <?= $indexCompaniesJson ?>;
 
-  let savedJobs = new Set();
-
   const featuredContainer = document.getElementById('featuredJobsContainer');
   const jobsContainer = document.getElementById('jobsContainer');
   const jobCount = document.getElementById('jobCount');
@@ -1505,9 +1529,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
         </div>
         <div class="fc-footer">
           <div class="fc-salary">${j.salary}</div>
-          <button class="save-btn ${savedJobs.has(j.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${j.id},this)">
-            <i class="fa${savedJobs.has(j.id)?'s':'r'} fa-heart"></i>
-          </button>
         </div>
       </div>`).join('');
   }
@@ -1583,24 +1604,11 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
         <div class="job-row-right">
           <div class="jr-salary">${j.salary}</div>
           <div class="jr-actions">
-            <button class="save-btn ${savedJobs.has(j.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${j.id},this)">
-              <i class="fa${savedJobs.has(j.id)?'s':'r'} fa-heart"></i>
-            </button>
             <button class="jr-apply" onclick="event.stopPropagation();startApplication(${j.id})">Apply</button>
           </div>
         </div>
       </div>`).join('');
     if (filtering) document.getElementById('jobs').scrollIntoView({ behavior:'smooth', block:'start' });
-  }
-
-  function toggleSave(id, btn) {
-    if (savedJobs.has(id)) {
-      savedJobs.delete(id); btn.classList.remove('saved');
-      btn.innerHTML = '<i class="far fa-heart"></i>'; showToast('Removed from saved','fa-heart');
-    } else {
-      savedJobs.add(id); btn.classList.add('saved');
-      btn.innerHTML = '<i class="fas fa-heart"></i>'; showToast('Job saved!','fa-heart');
-    }
   }
 
   function filterByCompany(name) {
