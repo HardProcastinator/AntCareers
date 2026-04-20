@@ -876,7 +876,10 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     doPost({action:'get_applicant',application_id:id}, function(d){
       if (!d.ok) { document.getElementById('dContent').innerHTML = '<p style="color:#ff8080">'+esc(d.msg||'Error loading details')+'</p>'; return; }
       var a = d.data;
-      var ini = (a.full_name||'?').split(' ').map(function(w){return w[0]}).join('').substring(0,2).toUpperCase();
+      var parts = (a.full_name || '?').trim().split(/\s+/);
+      var ini = parts.length >= 2
+        ? (parts[0][0] + parts[1][0]).toUpperCase()
+        : ((parts[0] && parts[0][0]) ? parts[0][0].toUpperCase() : '?');
       var grad = _avatarGrads[id % _avatarGrads.length];
       var avatarHtml = a.avatar_url ? '<img src="../'+esc(a.avatar_url)+'" alt="">' : esc(ini);
 

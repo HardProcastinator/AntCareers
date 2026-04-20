@@ -17,6 +17,9 @@ $initials    = $initials    ?? 'RC';
 $companyName = $companyName ?? 'Your Company';
 $navActive   = $navActive   ?? '';
 $avatarUrl   = $avatarUrl   ?? '';
+if ($avatarUrl !== '' && !str_starts_with($avatarUrl, '../') && !str_starts_with($avatarUrl, 'http')) {
+  $avatarUrl = '../' . $avatarUrl;
+}
 
 $recNavRoutes = [
     'dashboard'    => 'recruiter_dashboard.php',
@@ -326,6 +329,7 @@ function _recActive(string $key, string $active): string {
   <div class="mobile-divider"></div>
   <a class="mobile-link" href="<?= _recNavHref($recNavRoutes['profile']) ?>"><i class="fas fa-user"></i> My Profile</a>
   <a class="mobile-link" href="<?= _recNavHref($recNavRoutes['company']) ?>"><i class="fas fa-building"></i> Company Profile</a>
+  <a class="mobile-link<?= _recActive('messages', $navActive) ?>" href="<?= _recNavHref($recNavRoutes['messages']) ?>"><i class="fas fa-envelope"></i> Messages</a>
   <a class="mobile-link" href="<?= _recNavHref($recNavRoutes['settings']) ?>"><i class="fas fa-cog"></i> Settings</a>
   <div class="mobile-divider"></div>
   <a class="mobile-link" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
@@ -543,7 +547,13 @@ function _recActive(string $key, string $active): string {
           container.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;"><i class="fas fa-inbox"></i><div style="margin-top:8px;">No messages yet</div></div>';
           return;
         }
-        var colors=['#4A90D9','#9B59B6','#27AE60','#E74C3C','#D4943A','#3498DB','#E67E22','#1ABC9C'];
+        var colors=[
+          'linear-gradient(135deg,#D13D2C,#7A1515)',
+          'linear-gradient(135deg,#4A90D9,#2A6090)',
+          'linear-gradient(135deg,#4CAF70,#2A7040)',
+          'linear-gradient(135deg,#D4943A,#8A5A10)',
+          'linear-gradient(135deg,#9C27B0,#5A0080)'
+        ];
         _recThreadsCache = data.threads;
         var html = '';
         data.threads.forEach(function(t,i){
@@ -580,8 +590,13 @@ function _recActive(string $key, string $active): string {
   function openRecConvo(partnerId,partnerName){
     _recCurrentPartner=partnerId;
     var t=(_recThreadsCache||[]).find(function(x){return x.partner_id==partnerId;});
-    var color=(t&&t.color)?t.color:'#4A90D9';
-    var ini=(t&&t.initials)?t.initials:(partnerName?partnerName.substring(0,2).toUpperCase():'?');
+    var color=(t&&t.color)?t.color:'linear-gradient(135deg,#D13D2C,#7A1515)';
+    var pParts=(partnerName||'?').trim().split(/\s+/);
+    var ini=(t&&t.initials)
+      ? t.initials
+      : (pParts.length>=2
+        ? (pParts[0][0]+pParts[1][0]).toUpperCase()
+        : ((pParts[0]&&pParts[0][0])?pParts[0][0].toUpperCase():'?'));
     var avatarUrl=t&&t.avatar_url?t.avatar_url:null;
     var avatarEl=document.getElementById('msgConvoAvatar');
     avatarEl.style.background=color;
@@ -594,7 +609,28 @@ function _recActive(string $key, string $active): string {
     fetch('../api/messages.php?action=messages&user_id='+partnerId)
       .then(function(r){return r.json();})
       .then(function(data){
-        renderRecConvoMsgs(body,data,color,ini,avatarUrl);
+        if(data && data.success){
+          var loadedName=(data.partner&&data.partner.name)?data.partner.name:(partnerName||'Conversation');
+          var loadedParts=loadedName.trim().split(/\s+/);
+          var loadedIni=(t&&t.initials)
+            ? t.initials
+            : (loadedParts.length>=2
+              ? (loadedParts[0][0]+loadedParts[1][0]).toUpperCase()
+              : ((loadedParts[0]&&loadedParts[0][0])?loadedParts[0][0].toUpperCase():'?'));
+          var loadedAvatar=(data.partner&&data.partner.avatar_url)?data.partner.avatar_url:avatarUrl;
+          var loadedAvatarSrc=loadedAvatar
+            ? ((loadedAvatar.indexOf('http')===0||loadedAvatar.indexOf('../')===0)?loadedAvatar:('../'+loadedAvatar))
+            : null;
+
+          avatarEl.style.background=color;
+          avatarEl.innerHTML=loadedAvatarSrc?'<img src="'+loadedAvatarSrc+'" alt="">':_esc(loadedIni);
+          document.getElementById('msgConvoName').textContent=loadedName;
+          document.getElementById('msgConvoMeta').textContent=(data.job&&data.job.title)?data.job.title:((t&&t.job_title)?t.job_title:'');
+
+          renderRecConvoMsgs(body,data,color,loadedIni,loadedAvatar);
+        } else {
+          renderRecConvoMsgs(body,data,color,ini,avatarUrl);
+        }
         if(data.success){markRecConversationRead(partnerId);updateRecBadges();}
       })
       .catch(function(){body.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">Failed to load conversation</div>';});
@@ -611,7 +647,7 @@ function _recActive(string $key, string $active): string {
       if(m.from==='me'){
         html+='<div class="sp-msg-row sent"><div class="sb-bubble sb-bubble-sent">'+_esc(m.body)+'<div class="sb-bubble-time">'+_esc(m.time)+' <i class="fas fa-check-double" style="font-size:8px;"></i></div></div></div>';
       } else {
-        html+='<div class="sp-msg-row"><div class="sp-chat-avatar" style="background:'+color+';width:26px;height:26px;font-size:10px;">'+(avatarUrl?'<img src="../'+avatarUrl+'" alt="">':ini)+'</div><div class="sb-bubble sb-bubble-recv">'+_esc(m.body)+'<div class="sb-bubble-time">'+_esc(m.time)+'</div></div></div>';
+        html+='<div class="sp-msg-row"><div class="sp-chat-avatar" style="background:'+color+';width:26px;height:26px;font-size:10px;">'+(avatarUrl?'<img src="'+((avatarUrl.indexOf('http')===0||avatarUrl.indexOf('../')===0)?avatarUrl:('../'+avatarUrl))+'" alt="">':ini)+'</div><div class="sb-bubble sb-bubble-recv">'+_esc(m.body)+'<div class="sb-bubble-time">'+_esc(m.time)+'</div></div></div>';
       }
     });
     body.innerHTML=html;
@@ -639,7 +675,7 @@ function _recActive(string $key, string $active): string {
         if(data.success){
           if(timeEl) timeEl.textContent=data.time||new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
           var t=(_recThreadsCache||[]).find(function(x){return x.partner_id==_recCurrentPartner;});
-          var clr=(t&&t.color)?t.color:'#4A90D9'; var ini=(t&&t.initials)?t.initials:'?'; var avu=t&&t.avatar_url?t.avatar_url:null;
+          var clr=(t&&t.color)?t.color:'linear-gradient(135deg,#D13D2C,#7A1515)'; var ini=(t&&t.initials)?t.initials:'?'; var avu=t&&t.avatar_url?t.avatar_url:null;
           fetch('../api/messages.php?action=messages&user_id='+_recCurrentPartner).then(function(r2){return r2.json();}).then(function(d2){renderRecConvoMsgs(body,d2,clr,ini,avu);});
         } else { row.style.opacity='0.5'; if(timeEl) timeEl.textContent='Failed'; }
       })
@@ -743,7 +779,13 @@ function _recActive(string $key, string $active): string {
         .then(function(r){return r.json();})
         .then(function(data){
           if(!data.success||!data.users||!data.users.length){results.innerHTML='<div style="padding:10px;text-align:center;color:var(--text-muted);font-size:12px;">No users found</div>';return;}
-          var clrs=['#4A90D9','#D4943A','#4CAF70','#9C27B0','#E05555','#00897B'];
+          var clrs=[
+            'linear-gradient(135deg,#D13D2C,#7A1515)',
+            'linear-gradient(135deg,#4A90D9,#2A6090)',
+            'linear-gradient(135deg,#4CAF70,#2A7040)',
+            'linear-gradient(135deg,#D4943A,#8A5A10)',
+            'linear-gradient(135deg,#9C27B0,#5A0080)'
+          ];
           results.innerHTML=data.users.map(function(u,i){
             return '<div class="msg-panel-new-chat-user" onclick="msgPanelStartChat('+u.id+',\''+_esc(u.name).replace(/'/g,"\\'")+'\')">'
               +'<div class="msg-panel-new-chat-user-av" style="background:'+clrs[i%clrs.length]+'">'+(u.avatar_url?'<img src="../'+u.avatar_url+'" alt="">':_esc(u.initials))+'</div>'

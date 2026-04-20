@@ -252,6 +252,29 @@ $dispIndustries = $fmtStat($statIndustries);
     .results-count { font-size:13px; color:var(--text-muted); font-weight:600; }
     .results-count strong { color:var(--text-mid); }
     .sort-select { padding:7px 12px; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:7px; font-family:var(--font-body); font-size:12px; color:var(--text-mid); cursor:pointer; outline:none; }
+    .results-actions { display:flex; align-items:center; gap:8px; }
+    .following-btn { padding:7px 12px; border-radius:7px; border:1px solid var(--soil-line); background:var(--soil-card); color:var(--text-mid); font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; }
+    .following-btn:hover { border-color:var(--red-vivid); color:var(--red-pale); background:var(--soil-hover); }
+
+    .follow-modal { position:fixed; inset:0; background:rgba(0,0,0,0.62); z-index:620; display:none; align-items:center; justify-content:center; padding:18px; }
+    .follow-modal.open { display:flex; }
+    .follow-modal-box { width:100%; max-width:560px; max-height:80vh; overflow:hidden; border-radius:14px; border:1px solid var(--soil-line); background:var(--soil-card); display:flex; flex-direction:column; }
+    .follow-modal-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--soil-line); }
+    .follow-modal-title { font-family:var(--font-display); color:#F5F0EE; font-size:18px; font-weight:700; }
+    .follow-close { width:30px; height:30px; border-radius:7px; border:1px solid var(--soil-line); background:transparent; color:var(--text-muted); cursor:pointer; }
+    .follow-close:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .follow-list { overflow:auto; padding:10px 12px 12px; display:flex; flex-direction:column; gap:8px; }
+    .follow-item { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--soil-line); border-radius:10px; padding:10px 11px; background:var(--soil-hover); }
+    .follow-item-main { display:flex; align-items:center; gap:9px; min-width:0; }
+    .follow-item-logo { width:34px; height:34px; border-radius:8px; background:var(--soil-dark); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; }
+    .follow-item-name { color:#F5F0EE; font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .follow-item-sub { color:var(--text-muted); font-size:11px; }
+    .follow-item-actions { display:flex; gap:6px; flex-shrink:0; }
+    .follow-item-btn { padding:6px 10px; border-radius:7px; border:1px solid var(--soil-line); background:transparent; color:var(--text-muted); font-size:11px; font-weight:700; cursor:pointer; }
+    .follow-item-btn:hover { background:var(--soil-dark); color:#F5F0EE; }
+    .follow-item-btn.danger { border-color:rgba(220,53,69,0.35); color:#ff9a9a; }
+    .follow-item-btn.danger:hover { background:rgba(220,53,69,0.12); color:#ffb1b1; }
+    .follow-empty { text-align:center; color:var(--text-muted); font-size:13px; padding:22px 10px; }
 
     /* ── COMPANY GRID ── */
     .company-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
@@ -265,7 +288,7 @@ $dispIndustries = $fmtStat($statIndustries);
     .cc-name { font-family:var(--font-display); font-size:16px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
     .cc-industry { font-size:12px; color:var(--red-pale); font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
     .cc-industry i { font-size:10px; }
-    .cc-desc { font-size:12px; color:var(--text-muted); line-height:1.6; margin-bottom:14px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .cc-desc { font-size:12px; color:var(--text-muted); line-height:1.6; margin-bottom:14px; display:-webkit-box; line-clamp:2; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .cc-meta { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
     .cc-meta-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-muted); font-weight:600; }
     .cc-meta-item i { color:var(--red-mid); font-size:10px; }
@@ -313,9 +336,23 @@ $dispIndustries = $fmtStat($statIndustries);
     body.light .cc-logo { background:#F5EEEC; border-color:#E0CECA; }
     body.light .cc-name { color:#1A0A09; }
     body.light .cc-footer { border-color:#E0CECA; }
+    body.light .following-btn { background:#FFFFFF; border-color:#E0CECA; color:#4A2828; }
+    body.light .follow-modal-box { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .follow-modal-head { border-color:#E0CECA; }
+    body.light .follow-modal-title { color:#1A0A09; }
+    body.light .follow-item { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .follow-item-logo { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .follow-item-name { color:#1A0A09; }
+    body.light .follow-close:hover { color:#1A0A09; }
+    body.light .follow-item-btn:hover { color:#1A0A09; }
     @media(max-width:760px) {
       html,body{overflow-x:hidden;max-width:100vw}
       .page-shell,.content-layout,.main-content{max-width:100%;overflow-x:hidden}
+      .results-actions{width:100%;justify-content:space-between;}
+      .follow-modal{align-items:flex-end;padding:0;}
+      .follow-modal-box{max-width:100%;max-height:88vh;border-radius:14px 14px 0 0;}
+      .follow-item{flex-direction:column;align-items:flex-start;}
+      .follow-item-actions{width:100%;justify-content:flex-end;}
       table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
       .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .nav-links{display:none}
@@ -403,16 +440,29 @@ $dispIndustries = $fmtStat($statIndustries);
   <!-- RESULTS META -->
   <div class="results-meta anim anim-d2">
     <div class="results-count"><strong id="resultCount">12</strong> companies found</div>
-    <select class="sort-select" onchange="window.filterCompanies()">
-      <option>Most Relevant</option>
-      <option>Most Open Jobs</option>
-      <option>Recently Added</option>
-    </select>
+    <div class="results-actions">
+      <button class="following-btn" type="button" onclick="window.openFollowingPopup()"><i class="fas fa-heart"></i> Following (<span id="followingCount">0</span>)</button>
+      <select class="sort-select" onchange="window.filterCompanies()">
+        <option>Most Relevant</option>
+        <option>Most Open Jobs</option>
+        <option>Recently Added</option>
+      </select>
+    </div>
   </div>
 
   <!-- COMPANY GRID -->
   <div class="company-grid anim anim-d3" id="companyGrid"></div>
 
+</div>
+
+<div class="follow-modal" id="followingModal" onclick="if(event.target===this) window.closeFollowingPopup();">
+  <div class="follow-modal-box">
+    <div class="follow-modal-head">
+      <div class="follow-modal-title">Companies You Follow</div>
+      <button class="follow-close" type="button" onclick="window.closeFollowingPopup()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="follow-list" id="followingList"></div>
+  </div>
 </div>
 
 <script>
@@ -461,9 +511,56 @@ $dispIndustries = $fmtStat($statIndustries);
         window._acFollowing.delete(id);
         window.showToast('Unfollowed ' + name, 'fa-heart-broken');
       }
+      window.updateFollowingCount();
+      if (document.getElementById('followingModal').classList.contains('open')) {
+        window.renderFollowingList();
+      }
       window.filterCompanies();
     })
     .catch(function() { window.showToast('Connection error. Try again.', 'fa-exclamation-circle'); });
+  };
+
+  window.updateFollowingCount = function() {
+    var el = document.getElementById('followingCount');
+    if (el) el.textContent = String(window._acFollowing.size);
+  };
+
+  window.renderFollowingList = function() {
+    var list = document.getElementById('followingList');
+    if (!list) return;
+    var followed = window._acCompanies.filter(function(c){ return window._acFollowing.has(c.id); });
+    if (!followed.length) {
+      list.innerHTML = '<div class="follow-empty"><i class="fas fa-heart-broken"></i><div style="margin-top:8px;">You are not following any companies yet.</div></div>';
+      return;
+    }
+    list.innerHTML = followed.map(function(c) {
+      var safeName = c.name.replace(/'/g, "\\'");
+      var logo = c.logo
+        ? '<img src="' + c.logo + '" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'' + c.emoji + '\'">'
+        : c.emoji;
+      return '<div class="follow-item">' +
+        '<div class="follow-item-main">' +
+          '<div class="follow-item-logo">' + logo + '</div>' +
+          '<div style="min-width:0;">' +
+            '<div class="follow-item-name">' + c.name + '</div>' +
+            '<div class="follow-item-sub">' + c.industry + ' · ' + c.jobs + ' open role' + (c.jobs!==1?'s':'') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="follow-item-actions">' +
+          '<button class="follow-item-btn" type="button" onclick="window.location.href=\'public_company_profile.php?employer_id=' + c.id + '\'">View</button>' +
+          '<button class="follow-item-btn danger" type="button" onclick="window.toggleFollow(' + c.id + ',\'' + safeName + '\')">Unfollow</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  };
+
+  window.openFollowingPopup = function() {
+    window.renderFollowingList();
+    document.getElementById('followingModal').classList.add('open');
+  };
+
+  window.closeFollowingPopup = function() {
+    document.getElementById('followingModal').classList.remove('open');
   };
 
   window.showToast = function(msg, icon) {
@@ -532,6 +629,7 @@ $dispIndustries = $fmtStat($statIndustries);
   window._acCompanies = companiesData;
   window._acFilter = 'all';
   window._acFollowing = new Set(companiesData.filter(function(c){ return c.following; }).map(function(c){ return c.id; }));
+  window.updateFollowingCount();
 
   // SEARCH KEYUP
   document.getElementById('companySearch').addEventListener('keyup', window.filterCompanies);

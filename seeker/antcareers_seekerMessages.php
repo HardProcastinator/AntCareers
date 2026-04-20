@@ -4,6 +4,11 @@ require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
 requireLogin('seeker');
 $user = getUser();
+$initials = (string)($user['initials'] ?? 'ME');
+$avatarUrl = (string)($user['avatarUrl'] ?? '');
+if ($avatarUrl !== '' && !str_starts_with($avatarUrl, '../') && !str_starts_with($avatarUrl, 'http')) {
+  $avatarUrl = '../' . $avatarUrl;
+}
 $navActive = 'messages';
 ?>
 <!DOCTYPE html>
@@ -275,8 +280,8 @@ $navActive = 'messages';
 
 <script>
 const API = '../api/messages.php';
-const MY_INI = <?= json_encode($user['initials'] ?? 'ME') ?>;
-const MY_AVATAR = <?= json_encode($user['avatarUrl'] ?? '') ?>;
+const MY_INI = <?= json_encode($initials) ?>;
+const MY_AVATAR = <?= json_encode($avatarUrl) ?>;
 let threads = [];
 let activeThread = null;
 let currentTab = 'all';
@@ -428,10 +433,14 @@ function loadConversation(partnerId) {
         return;
       }
             const t = threads.find(x => x.partner_id === partnerId);
-            const color = t ? t.color : '#4A90D9';
+            const color = t ? t.color : 'linear-gradient(135deg,#D13D2C,#7A1515)';
             const pName = (data.partner && data.partner.name) ? data.partner.name : 'User';
             const pParts = pName.split(/\s+/);
-            const ini = t ? t.initials : (pParts.length >= 2 ? (pParts[0][0]+pParts[1][0]).toUpperCase() : pName.substring(0,2).toUpperCase());
+            const ini = t
+              ? t.initials
+              : (pParts.length >= 2
+                ? (pParts[0][0] + pParts[1][0]).toUpperCase()
+                : ((pParts[0] && pParts[0][0]) ? pParts[0][0].toUpperCase() : '?'));
             const avatarUrl = (t && t.avatar_url) ? t.avatar_url : ((data.partner && data.partner.avatar_url) ? data.partner.avatar_url : null);
             const partner = data.partner || {name:'User'};
             const job = data.job;
@@ -566,7 +575,13 @@ function searchNewMsgUsers() {
         apiGet(API + '?action=search_users&q=' + encodeURIComponent(q))
             .then(data => {
                 if (!data.success || !data.users.length) { res.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;">No users found</div>'; return; }
-                const colors = ['#4A90D9','#D4943A','#4CAF70','#9C27B0','#E05555','#00897B','#5C6BC0','#F4511E'];
+                const colors = [
+                  'linear-gradient(135deg,#D13D2C,#7A1515)',
+                  'linear-gradient(135deg,#4A90D9,#2A6090)',
+                  'linear-gradient(135deg,#4CAF70,#2A7040)',
+                  'linear-gradient(135deg,#D4943A,#8A5A10)',
+                  'linear-gradient(135deg,#9C27B0,#5A0080)'
+                ];
                 res.innerHTML = data.users.map((u, i) => `
                     <div class="new-msg-user" onclick="startNewChat(${u.id})">
                         <div class="new-msg-user-av" style="background:${colors[i % colors.length]}">${u.avatar_url ? `<img src="../${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : esc(u.initials)}</div>

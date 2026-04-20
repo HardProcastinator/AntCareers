@@ -315,14 +315,14 @@ $jobsListJson   = json_encode($jobsList ?: []);
     .sp-count { font-size:17px; font-weight:800; color:#F5F0EE; font-family:var(--font-display); }
 
     /* ── TOOLBAR ── */
-    .toolbar { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+    .toolbar { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
     .search-bar { display:flex; align-items:center; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; width:100%; transition:0.25s; }
     .search-bar:focus-within { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.1); }
     .search-bar .si { padding:0 14px; color:var(--text-muted); font-size:14px; }
     .search-bar input { flex:1; padding:13px 0; background:none; border:none; outline:none; font-family:var(--font-body); font-size:14px; color:#F5F0EE; }
     .search-bar input::placeholder { color:var(--text-muted); }
-    .filter-row { display:flex; gap:10px; }
-    select.fsel { padding:13px 13px; border-radius:8px; background:var(--soil-card); border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; cursor:pointer; outline:none; flex:1; }
+    .filter-row { display:flex; gap:10px; flex-shrink:0; }
+    select.fsel { padding:13px 13px; border-radius:8px; background:var(--soil-card); border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; cursor:pointer; outline:none; min-width:170px; }
     select.fsel:focus { border-color:var(--red-vivid); }
 
     /* ── APPLICANT CARDS ── */
@@ -477,6 +477,9 @@ $jobsListJson   = json_encode($jobsList ?: []);
       .page-shell,.main-content{max-width:100%;overflow-x:hidden}
       table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
       .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .toolbar { flex-direction:column; align-items:stretch; }
+      .filter-row { width:100%; }
+      select.fsel { flex:1; min-width:0; }
       .page-shell { padding:20px 16px 40px; }
       .nav-inner { padding:0 10px; }
       .profile-name,.profile-role { display:none; }
@@ -673,7 +676,7 @@ $jobsListJson   = json_encode($jobsList ?: []);
     var parts = (name || '?').trim().split(/\s+/);
     return parts.length >= 2
       ? (parts[0][0] + parts[1][0]).toUpperCase()
-      : (parts[0].substring(0,2)).toUpperCase();
+      : ((parts[0] && parts[0][0]) ? parts[0][0].toUpperCase() : '?');
   }
 
   /* ── Render applicant cards ── */

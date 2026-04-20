@@ -37,7 +37,7 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
   <div class="msg-sb-head">
     <div class="msg-sb-title"><i class="fas fa-envelope"></i> Messages</div>
     <div style="display:flex;gap:6px;align-items:center;">
-      <button class="msg-sb-expand" onclick="toggleSbNewChat()" title="New Conversation" style="background:var(--red-vivid);color:#fff;border-color:var(--red-vivid);">
+            <button class="msg-compose-btn" onclick="toggleSbNewChat()" title="New Conversation">
         <i class="fas fa-pen-to-square"></i>
       </button>
       <button class="msg-sb-expand" onclick="window.location.href='employer_messages.php?theme='+(document.body.classList.contains('light')?'light':'dark')" title="Open Fullscreen">
@@ -117,7 +117,7 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
     <div class="fs-chat-header">
       <div class="fs-chat-title"><i class="fas fa-comments"></i> Messages</div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button class="msg-sb-expand" onclick="toggleFsNewChat()" title="New Conversation" style="background:var(--red-vivid);color:#fff;border-color:var(--red-vivid);">
+                <button class="msg-compose-btn" onclick="toggleFsNewChat()" title="New Conversation">
           <i class="fas fa-pen-to-square"></i>
         </button>
         <button class="fs-chat-close" onclick="closeFullscreenChat()"><i class="fas fa-times"></i></button>
@@ -196,8 +196,10 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
 .msg-sb-title i { color:var(--red-bright); }
 .msg-sb-close, .msg-sb-expand, .msg-sb-back { width:30px; height:30px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:0.15s; }
 .msg-sb-close:hover, .msg-sb-expand:hover, .msg-sb-back:hover { color:var(--text-light); border-color:var(--red-vivid); }
+.msg-compose-btn { width:36px; height:36px; min-width:36px; min-height:36px; border-radius:8px; background:var(--red-vivid); border:1px solid var(--red-vivid); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:0.15s; }
+.msg-compose-btn:hover { background:var(--red-bright); border-color:var(--red-bright); }
 .msg-sb-search { padding:10px 14px; border-bottom:1px solid var(--soil-line); }
-.msg-sb-search-bar { display:flex; align-items:center; gap:8px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:8px 12px; }
+.msg-sb-search-bar { display:flex; align-items:center; gap:8px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:0 12px; min-height:36px; }
 .msg-sb-search-bar input { flex:1; background:none; border:none; outline:none; font-family:var(--font-body); font-size:13px; color:var(--text-light); }
 .msg-sb-search-bar input::placeholder { color:var(--text-muted); }
 .msg-sb-search-bar i { color:var(--text-muted); font-size:13px; }
@@ -300,7 +302,7 @@ if ($_chatAvatarUrl && !str_starts_with($_chatAvatarUrl, '../') && !str_starts_w
 /* Fullscreen thread panel */
 .fs-thread-panel { border-right:1px solid var(--soil-line); display:flex; flex-direction:column; overflow:hidden; }
 .fs-thread-search { padding:12px 14px; border-bottom:1px solid var(--soil-line); }
-.fs-search-bar { display:flex; align-items:center; gap:8px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:8px 10px; }
+.fs-search-bar { display:flex; align-items:center; gap:8px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:0 10px; min-height:36px; }
 .fs-search-bar input { flex:1; background:none; border:none; outline:none; font-family:var(--font-body); font-size:13px; color:var(--text-light); }
 .fs-search-bar input::placeholder { color:var(--text-muted); }
 .fs-search-bar i { color:var(--text-muted); font-size:12px; }
@@ -395,6 +397,8 @@ body.light .notif-sb-item { border-bottom-color:#E0CECA; }
 body.light .nsb-text { color:#3A2020; }
 body.light .msg-sb-close, body.light .msg-sb-expand, body.light .msg-sb-back,
 body.light .notif-sb-close, body.light .notif-sb-mark-all, body.light .fs-chat-close { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+body.light .msg-compose-btn { background:var(--red-vivid); border-color:var(--red-vivid); color:#fff; }
+body.light .msg-compose-btn:hover { background:var(--red-bright); border-color:var(--red-bright); }
 body.light .fs-tf { border-color:#E0CECA; color:#7A5555; }
 body.light .fs-tf.active, body.light .fs-tf:hover { color:var(--red-bright); background:rgba(209,61,44,0.08); }
 
@@ -605,10 +609,12 @@ function loadConversation(partnerId, mode) {
                 return;
             }
             const t = _threads.find(x => x.partner_id === partnerId);
-            const color = t ? t.color : '#4A90D9';
+            const color = t ? t.color : 'linear-gradient(135deg,#D13D2C,#7A1515)';
             const pName = (data.partner && data.partner.name) ? data.partner.name : 'User';
             const pParts = pName.split(/\s+/);
-            const defaultIni = pParts.length >= 2 ? (pParts[0][0]+pParts[1][0]).toUpperCase() : pName.substring(0,2).toUpperCase();
+            const defaultIni = pParts.length >= 2
+                ? (pParts[0][0] + pParts[1][0]).toUpperCase()
+                : ((pParts[0] && pParts[0][0]) ? pParts[0][0].toUpperCase() : '?');
             const ini = t ? t.initials : defaultIni;
             const partnerAvUrl = (t && t.avatar_url) ? t.avatar_url : ((data.partner && data.partner.avatar_url) ? data.partner.avatar_url : null);
             const partner = data.partner || {name: 'User'};
@@ -909,7 +915,13 @@ function sbSearchNewChat() {
             .then(r => r.json())
             .then(data => {
                 if (!data.success || !data.users.length) { res.innerHTML = '<div class="sb-new-chat-empty">No users found</div>'; return; }
-                const colors = ['#4A90D9','#D4943A','#4CAF70','#9C27B0','#E05555','#00897B','#5C6BC0','#F4511E'];
+                const colors = [
+                    'linear-gradient(135deg,#D13D2C,#7A1515)',
+                    'linear-gradient(135deg,#4A90D9,#2A6090)',
+                    'linear-gradient(135deg,#4CAF70,#2A7040)',
+                    'linear-gradient(135deg,#D4943A,#8A5A10)',
+                    'linear-gradient(135deg,#9C27B0,#5A0080)'
+                ];
                 res.innerHTML = data.users.map((u, i) => `
                     <div class="sb-new-chat-user" onclick="sbStartNewChat(${u.id})">
                         <div class="sb-new-chat-user-av" style="background:${colors[i % colors.length]}">${u.avatar_url ? `<img src="../${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : esc(u.initials)}</div>
@@ -949,7 +961,13 @@ function fsSearchNewChat() {
             .then(r => r.json())
             .then(data => {
                 if (!data.success || !data.users.length) { res.innerHTML = '<div class="sb-new-chat-empty">No users found</div>'; return; }
-                const colors = ['#4A90D9','#D4943A','#4CAF70','#9C27B0','#E05555','#00897B','#5C6BC0','#F4511E'];
+                const colors = [
+                    'linear-gradient(135deg,#D13D2C,#7A1515)',
+                    'linear-gradient(135deg,#4A90D9,#2A6090)',
+                    'linear-gradient(135deg,#4CAF70,#2A7040)',
+                    'linear-gradient(135deg,#D4943A,#8A5A10)',
+                    'linear-gradient(135deg,#9C27B0,#5A0080)'
+                ];
                 res.innerHTML = data.users.map((u, i) => `
                     <div class="sb-new-chat-user" onclick="fsStartNewChat(${u.id})">
                         <div class="sb-new-chat-user-av" style="background:${colors[i % colors.length]}">${u.avatar_url ? `<img src="../${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : esc(u.initials)}</div>

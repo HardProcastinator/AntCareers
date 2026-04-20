@@ -182,20 +182,163 @@ if (!empty($sp['linkedin_url']) || !empty($sp['github_url']) || !empty($sp['port
 $initScore = min($initScore, 100);
 
 // ── Following / Followers counts ──
-$followingCount = 0;
+$followingCount  = 0;
+$followerCount   = 0;
+$followingPeople  = [];
+$followerPeople   = [];
 try {
-    $db->exec("CREATE TABLE IF NOT EXISTS company_follows (
-        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-        follower_user_id INT UNSIGNED NOT NULL,
-        employer_user_id INT UNSIGNED NOT NULL,
-        followed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id),
-        UNIQUE KEY uq_follow (follower_user_id, employer_user_id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-    $cfStmt = $db->prepare("SELECT COUNT(*) FROM company_follows WHERE follower_user_id = :uid");
-    $cfStmt->execute([':uid' => $userId]);
-    $followingCount = (int)$cfStmt->fetchColumn();
+  $db->exec("CREATE TABLE IF NOT EXISTS user_follows (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    follower_user_id INT UNSIGNED NOT NULL,
+    followed_user_id INT UNSIGNED NOT NULL,
+    followed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_follow (follower_user_id, followed_user_id),
+    KEY idx_followed_user (followed_user_id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+  $mapFollowRow = static function(array $row): array {
+    $displayName = trim((string)($row['display_name'] ?? $row['full_name'] ?? 'User'));
+    if ($displayName === '') {
+      $displayName = 'User';
+    }
+    $parts = preg_split('/\s+/', $displayName) ?: [$displayName];
+    $initials = strtoupper(substr((string)($parts[0] ?? 'U'), 0, 1) . substr((string)($parts[1] ?? ''), 0, 1));
+    $avatarUrl = '';
+    if (!empty($row['avatar_url'])) {
+      $avatarUrl = str_starts_with((string)$row['avatar_url'], 'http') ? (string)$row['avatar_url'] : '../' . ltrim((string)$row['avatar_url'], '/');
+    } elseif (!empty($row['logo_path'])) {
+      $avatarUrl = str_starts_with((string)$row['logo_path'], 'http') ? (string)$row['logo_path'] : '../' . ltrim((string)$row['logo_path'], '/');
+    }
+    $subtitle = trim((string)($row['subtitle'] ?? ''));
+    if ($subtitle === '') {
+      $subtitle = match ((string)($row['account_type'] ?? '')) {
+        'employer' => 'Employer',
+        'recruiter' => 'Recruiter',
+        default => 'Job Seeker',
+      };
+    }
+    return [
+      'id' => (int)($row['id'] ?? 0),
+      'name' => $displayName,
+      'subtitle' => $subtitle,
+      'location' => trim((string)($row['location'] ?? '')),
+      'avatar' => $initials,
+      'avatarUrl' => $avatarUrl,
+      'accountType' => (string)($row['account_type'] ?? 'seeker'),
+      'profileUrl' => ((string)($row['account_type'] ?? '') === 'employer') ? ('public_company_profile.php?employer_id=' . (int)($row['id'] ?? 0)) : '',
+      'title' => (string)($row['headline'] ?? ($row['account_type'] === 'employer' ? 'Employer' : ($row['account_type'] === 'recruiter' ? 'Recruiter' : 'Job Seeker'))),
+      'industry' => (string)($row['industry'] ?? 'Professional'),
+      'skills' => array_values(array_filter(array_map('trim', explode(',', (string)($row['skills'] ?? ''))))),
+      'exp' => (string)($row['experience_level'] ?? ''),
+      'status' => ((string)($row['nr_availability'] ?? '') === 'Now' || (string)($row['nr_availability'] ?? '') === 'Open') ? 'seeking' : '',
+      'availability' => (string)($row['nr_availability'] ?? ''),
+      'workTypes' => (string)($row['nr_work_types'] ?? ''),
+      'rightToWork' => (string)($row['nr_right_to_work'] ?? ''),
+      'salary' => (string)($row['nr_salary'] ?? ''),
+      'salaryPeriod' => (string)($row['nr_salary_period'] ?? ''),
+      'classification' => (string)($row['nr_classification'] ?? ''),
+      'summary' => (string)($row['professional_summary'] ?? ''),
+      'bio' => (string)($row['bio'] ?? ''),
+      'phone' => (string)($row['phone'] ?? ''),
+      'country' => (string)($row['country_name'] ?? ''),
+      'resumePath' => !empty($row['resume_path']) ? '../' . ltrim((string)$row['resume_path'], '/') : '',
+      'resumeName' => (string)($row['resume_name'] ?? ''),
+      'mutual' => 0,
+      'connected' => false,
+    ];
+  };
+
+  $followingStmt = $db->prepare("SELECT
+      uf.followed_user_id AS id,
+      u.full_name,
+      u.avatar_url,
+      u.account_type,
+      COALESCE(cp.company_name, u.full_name) AS display_name,
+      CASE
+        WHEN u.account_type = 'employer' THEN COALESCE(cp.industry, 'Employer')
+        WHEN u.account_type = 'recruiter' THEN COALESCE(rp.position, 'Recruiter')
+        ELSE COALESCE(sp.headline, 'Job Seeker')
+      END AS subtitle,
+      CONCAT_WS(', ', NULLIF(sp.city_name,''), NULLIF(sp.province_name,''), NULLIF(sp.country_name,'')) AS location,
+      cp.logo_path,
+      sp.headline,
+      sp.industry,
+      sp.experience_level,
+      sp.nr_availability,
+      sp.nr_work_types,
+      sp.nr_right_to_work,
+      sp.nr_salary,
+      sp.nr_salary_period,
+      sp.nr_classification,
+      sp.professional_summary,
+      sp.bio,
+      sp.phone,
+      sp.country_name,
+      sr.file_path AS resume_path,
+      sr.original_filename AS resume_name,
+      GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.sort_order SEPARATOR ',') AS skills
+    FROM user_follows uf
+    JOIN users u ON u.id = uf.followed_user_id
+    LEFT JOIN company_profiles cp ON cp.user_id = u.id
+    LEFT JOIN seeker_profiles sp ON sp.user_id = u.id
+    LEFT JOIN recruiter_profiles rp ON rp.user_id = u.id
+    LEFT JOIN seeker_skills sk ON sk.user_id = u.id
+    LEFT JOIN seeker_resumes sr ON sr.user_id = u.id AND sr.is_active = 1
+    WHERE uf.follower_user_id = :uid
+    GROUP BY uf.followed_user_id, u.full_name, u.avatar_url, u.account_type, cp.company_name, cp.industry, rp.position, sp.headline, sp.industry, sp.experience_level, sp.city_name, sp.province_name, sp.country_name, cp.logo_path, sp.nr_availability, sp.nr_work_types, sp.nr_right_to_work, sp.nr_salary, sp.nr_salary_period, sp.nr_classification, sp.professional_summary, sp.bio, sp.phone, sp.country_name, sr.file_path, sr.original_filename
+    ORDER BY display_name ASC");
+  $followingStmt->execute([':uid' => $userId]);
+  $followingPeople = array_map($mapFollowRow, $followingStmt->fetchAll(PDO::FETCH_ASSOC));
+  $followingCount = count($followingPeople);
+
+  $followersStmt = $db->prepare("SELECT
+      uf.follower_user_id AS id,
+      u.full_name,
+      u.avatar_url,
+      u.account_type,
+      COALESCE(cp.company_name, u.full_name) AS display_name,
+      CASE
+        WHEN u.account_type = 'employer' THEN COALESCE(cp.industry, 'Employer')
+        WHEN u.account_type = 'recruiter' THEN COALESCE(rp.position, 'Recruiter')
+        ELSE COALESCE(sp.headline, 'Job Seeker')
+      END AS subtitle,
+      CONCAT_WS(', ', NULLIF(sp.city_name,''), NULLIF(sp.province_name,''), NULLIF(sp.country_name,'')) AS location,
+      cp.logo_path,
+      sp.headline,
+      sp.industry,
+      sp.experience_level,
+      sp.nr_availability,
+      sp.nr_work_types,
+      sp.nr_right_to_work,
+      sp.nr_salary,
+      sp.nr_salary_period,
+      sp.nr_classification,
+      sp.professional_summary,
+      sp.bio,
+      sp.phone,
+      sp.country_name,
+      sr.file_path AS resume_path,
+      sr.original_filename AS resume_name,
+      GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.sort_order SEPARATOR ',') AS skills
+    FROM user_follows uf
+    JOIN users u ON u.id = uf.follower_user_id
+    LEFT JOIN company_profiles cp ON cp.user_id = u.id
+    LEFT JOIN seeker_profiles sp ON sp.user_id = u.id
+    LEFT JOIN recruiter_profiles rp ON rp.user_id = u.id
+    LEFT JOIN seeker_skills sk ON sk.user_id = u.id
+    LEFT JOIN seeker_resumes sr ON sr.user_id = u.id AND sr.is_active = 1
+    WHERE uf.followed_user_id = :uid
+    GROUP BY uf.follower_user_id, u.full_name, u.avatar_url, u.account_type, cp.company_name, cp.industry, rp.position, sp.headline, sp.industry, sp.experience_level, sp.city_name, sp.province_name, sp.country_name, cp.logo_path, sp.nr_availability, sp.nr_work_types, sp.nr_right_to_work, sp.nr_salary, sp.nr_salary_period, sp.nr_classification, sp.professional_summary, sp.bio, sp.phone, sp.country_name, sr.file_path, sr.original_filename
+    ORDER BY display_name ASC");
+  $followersStmt->execute([':uid' => $userId]);
+  $followerPeople = array_map($mapFollowRow, $followersStmt->fetchAll(PDO::FETCH_ASSOC));
+  $followerCount = count($followerPeople);
 } catch (\Throwable $_) {}
+
+$followingPeopleJson = json_encode($followingPeople, JSON_HEX_TAG | JSON_HEX_AMP);
+$followerPeopleJson  = json_encode($followerPeople, JSON_HEX_TAG | JSON_HEX_AMP);
+$followingIdsJson    = json_encode(array_map(static fn(array $row): string => (string)(int)$row['id'], $followingPeople));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -260,8 +403,107 @@ try {
     .sp-role { font-size:11px; color:var(--red-pale); margin-top:2px; font-weight:600; letter-spacing:0.05em; }
     .sidebar-stats { padding:14px 16px; border-bottom:1px solid var(--soil-line); display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .sb-stat { background:var(--soil-hover); border-radius:7px; padding:10px 12px; }
+    .sb-stat.clickable { cursor:pointer; transition:transform 0.16s ease, border-color 0.16s ease, background 0.16s ease; border:1px solid transparent; }
+    .sb-stat.clickable:hover { transform:translateY(-1px); border-color:var(--red-vivid); background:rgba(209,61,44,0.14); }
     .sb-stat-num { font-size:18px; font-weight:800; color:var(--text-light); }
     .sb-stat-lbl { font-size:10px; color:var(--text-muted); font-weight:600; letter-spacing:0.05em; text-transform:uppercase; margin-top:2px; }
+    .follow-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.72); backdrop-filter:blur(8px); z-index:650; display:none; align-items:center; justify-content:center; padding:16px; }
+    .follow-modal-overlay.open { display:flex; }
+    .follow-modal { width:min(680px,100%); max-height:min(82vh,760px); background:var(--soil-card); border:1px solid var(--soil-line); border-radius:18px; box-shadow:0 28px 90px rgba(0,0,0,0.5); display:flex; flex-direction:column; overflow:hidden; }
+    .follow-modal-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:20px 20px 14px; border-bottom:1px solid var(--soil-line); }
+    .follow-modal-title { font-family:var(--font-display); font-size:22px; font-weight:700; color:var(--text-light); }
+    .follow-modal-subtitle { margin-top:4px; font-size:12px; color:var(--text-muted); }
+    .follow-modal-close { width:34px; height:34px; border-radius:10px; border:1px solid var(--soil-line); background:var(--soil-hover); color:var(--text-muted); cursor:pointer; flex-shrink:0; }
+    .follow-modal-close:hover { border-color:var(--red-vivid); color:var(--text-light); }
+    .follow-modal-tabs { display:flex; gap:8px; padding:14px 20px 0; }
+    .follow-tab { flex:1; padding:10px 14px; border-radius:999px; border:1px solid var(--soil-line); background:var(--soil-hover); color:var(--text-mid); font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; }
+    .follow-tab.active { background:rgba(209,61,44,0.16); border-color:rgba(209,61,44,0.35); color:var(--red-pale); }
+    .follow-modal-body { padding:16px 20px 20px; overflow:auto; }
+    .follow-list { display:flex; flex-direction:column; gap:10px; }
+    .follow-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px; border-radius:14px; background:var(--soil-hover); border:1px solid var(--soil-line); cursor:pointer; transition:transform 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
+    .follow-item:hover { transform:translateY(-1px); border-color:var(--red-vivid); background:rgba(209,61,44,0.12); }
+    .follow-item-main { display:flex; align-items:center; gap:12px; min-width:0; }
+    .follow-avatar { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; overflow:hidden; flex-shrink:0; background:linear-gradient(135deg,var(--red-vivid),var(--red-deep)); }
+    .follow-avatar img { width:100%; height:100%; object-fit:cover; }
+    .follow-copy { min-width:0; }
+    .follow-name { font-size:14px; font-weight:700; color:var(--text-light); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .follow-sub { font-size:12px; color:var(--red-pale); margin-top:2px; }
+    .follow-location { font-size:11px; color:var(--text-muted); margin-top:4px; display:flex; align-items:center; gap:5px; }
+    .follow-location i { color:var(--red-mid); font-size:10px; }
+    .follow-action { padding:9px 14px; border-radius:10px; border:1px solid var(--soil-line); font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
+    .follow-action.primary { background:var(--red-vivid); border-color:var(--red-vivid); color:#fff; }
+    .follow-action.primary:hover { background:var(--red-bright); }
+    .follow-action.secondary { background:var(--soil-card); color:var(--text-mid); }
+    .follow-action.secondary:hover { border-color:var(--red-vivid); color:var(--text-light); }
+    .follow-action.danger { background:transparent; color:var(--red-pale); }
+    .follow-action.danger:hover { border-color:var(--red-vivid); background:rgba(209,61,44,0.12); }
+    .follow-detail { display:flex; flex-direction:column; gap:16px; }
+    .follow-detail-back { align-self:flex-start; padding:8px 12px; border-radius:10px; border:1px solid var(--soil-line); background:var(--soil-hover); color:var(--text-mid); font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; }
+    .follow-detail-back:hover { border-color:var(--red-vivid); color:var(--text-light); }
+    .follow-detail-card { padding:18px; border-radius:16px; border:1px solid var(--soil-line); background:linear-gradient(180deg, rgba(209,61,44,0.12), rgba(0,0,0,0)); }
+    .follow-detail-head { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+    .follow-detail-avatar { width:64px; height:64px; border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:700; background:linear-gradient(135deg,var(--red-vivid),var(--red-deep)); }
+    .follow-detail-avatar img { width:100%; height:100%; object-fit:cover; }
+    .follow-detail-name { font-family:var(--font-display); font-size:22px; font-weight:700; color:var(--text-light); }
+    .follow-detail-sub { font-size:13px; color:var(--red-pale); font-weight:600; margin-top:3px; }
+    .follow-detail-location { font-size:12px; color:var(--text-muted); margin-top:6px; display:flex; align-items:center; gap:6px; }
+    .follow-detail-location i { color:var(--red-mid); font-size:10px; }
+    .follow-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .follow-detail-meta { padding:12px; border-radius:12px; background:var(--soil-hover); border:1px solid var(--soil-line); }
+    .follow-detail-meta-label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); font-weight:700; margin-bottom:4px; }
+    .follow-detail-meta-value { font-size:13px; color:var(--text-light); font-weight:600; }
+    .follow-detail-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .follow-empty { padding:42px 20px; text-align:center; color:var(--text-muted); }
+    .follow-empty i { font-size:26px; color:var(--red-mid); margin-bottom:10px; }
+    .person-modal-overlay { position:fixed; inset:0; z-index:700; background:rgba(0,0,0,0.82); backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; padding:20px; }
+    .person-modal-box { width:min(560px,100%); background:var(--soil-card); border:1px solid var(--soil-line); border-radius:16px; padding:24px; box-shadow:0 32px 80px rgba(0,0,0,0.55); position:relative; animation:fadeUp 0.22s ease both; max-height:82vh; overflow:auto; }
+    .person-modal-close { position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); cursor:pointer; }
+    .person-modal-close:hover { color:#F5F0EE; border-color:var(--red-vivid); }
+    .person-modal-head { display:flex; align-items:center; gap:14px; margin-bottom:14px; padding-right:40px; }
+    .person-modal-avatar { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:700; flex-shrink:0; overflow:hidden; }
+    .person-modal-avatar img { width:100%; height:100%; object-fit:cover; }
+    .person-modal-meta { min-width:0; }
+    .person-modal-name { font-family:var(--font-display); font-size:22px; font-weight:700; color:var(--text-light); margin-bottom:4px; }
+    .person-modal-title { color:var(--red-pale); font-size:13px; font-weight:600; margin-bottom:4px; }
+    .person-modal-location { color:var(--text-muted); font-size:12px; display:flex; align-items:center; gap:5px; }
+    .person-modal-section { margin-top:14px; }
+    .person-modal-section-label { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
+    .pm-section-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .pm-info-card { background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:10px; padding:10px 12px; }
+    .pm-info-label { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; }
+    .pm-info-value { font-size:12px; color:var(--text-mid); font-weight:600; }
+    .pm-about { font-size:13px; line-height:1.55; color:var(--text-mid); white-space:pre-wrap; }
+    .person-skill-row { display:flex; flex-wrap:wrap; gap:6px; }
+    .person-skill-chip { font-size:11px; padding:4px 9px; border-radius:999px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); }
+    .person-skill-empty { color:var(--text-muted); font-size:12px; }
+    .person-modal-status { display:inline-flex; align-items:center; gap:6px; margin-top:4px; padding:4px 10px; border-radius:999px; font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; }
+    .person-modal-status.seeking { background:rgba(209,61,44,0.12); border:1px solid rgba(209,61,44,0.22); color:var(--red-pale); }
+    .person-modal-status.hiring { background:rgba(76,175,112,0.12); border:1px solid rgba(76,175,112,0.22); color:#6ccf8a; }
+    .person-modal-status.neutral { background:rgba(212,148,58,0.12); border:1px solid rgba(212,148,58,0.22); color:var(--amber); }
+    .person-modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; flex-wrap:wrap; }
+    .person-modal-btn { padding:8px 14px; border-radius:8px; border:1px solid var(--soil-line); font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; }
+    .person-modal-btn.secondary { background:var(--soil-hover); color:var(--text-light); }
+    .person-modal-btn.secondary:hover { border-color:var(--red-vivid); }
+    .person-modal-btn.primary { background:var(--red-vivid); border-color:var(--red-vivid); color:#fff; }
+    .person-modal-btn.primary:hover { background:var(--red-bright); }
+    .follow-item-btn { margin-left:auto; }
+    body.light .follow-modal { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .follow-modal-head { border-color:#E0CECA; }
+    body.light .follow-modal-close, body.light .follow-tab, body.light .follow-item { background:#F9F5F4; border-color:#E0CECA; }
+    body.light .follow-name { color:#1A0A09; }
+    body.light .follow-sub { color:#7A5555; }
+    body.light .follow-location { color:#7A5555; }
+    body.light .follow-action.secondary { color:#4A2828; }
+    body.light .follow-detail-card { background:linear-gradient(180deg, rgba(209,61,44,0.08), rgba(255,255,255,0)); border-color:#E0CECA; }
+    body.light .follow-detail-name { color:#1A0A09; }
+    body.light .follow-detail-meta { background:#F9F5F4; border-color:#E0CECA; }
+    body.light .follow-detail-meta-value { color:#1A0A09; }
+    body.light .person-modal-box { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .person-modal-close, body.light .person-modal-btn.secondary, body.light .pm-info-card { background:#F9F5F4; border-color:#E0CECA; }
+    body.light .person-modal-name { color:#1A0A09; }
+    body.light .person-modal-title { color:#7A5555; }
+    body.light .pm-info-value { color:#4A2828; }
+    body.light .pm-about { color:#4A2828; }
     .sb-browse-wrap { padding:12px 14px; border-top:1px solid var(--soil-line); background:var(--soil-card); flex-shrink:0; }
     .sb-browse { display:flex; align-items:center; justify-content:center; gap:8px; padding:11px; border-radius:8px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; width:100%; box-shadow:0 2px 12px rgba(209,61,44,0.3); }
     .sb-browse:hover { background:var(--red-bright); transform:translateY(-1px); box-shadow:0 6px 20px rgba(209,61,44,0.4); }
@@ -553,6 +795,14 @@ try {
       .page-shell,.profile-layout,.main-content{max-width:100%;overflow-x:hidden}
       table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
       .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
+      .follow-modal{width:100%;max-height:88vh;border-radius:16px 16px 0 0}
+      .follow-modal-head,.follow-modal-tabs,.follow-modal-body{padding-left:16px;padding-right:16px}
+      .follow-item{flex-direction:column;align-items:stretch}
+      .follow-item-main{width:100%}
+      .follow-action{width:100%;text-align:center}
+      .follow-detail-grid{grid-template-columns:1fr}
+      .person-modal-box{width:100%;max-height:88vh;border-radius:16px 16px 0 0;padding:20px}
+      .pm-section-grid{grid-template-columns:1fr}
     }
     @media(max-width:640px) { .form-row{grid-template-columns:1fr} .contact-grid{grid-template-columns:1fr} .hero-actions{flex-wrap:wrap} }
 
@@ -618,12 +868,12 @@ try {
             <div class="hero-meta-item"><i class="fas fa-envelope"></i> <?= htmlspecialchars($userEmail) ?></div>
           </div>
           <div class="sidebar-stats" style="margin:10px 0 4px;">
-            <div class="sb-stat">
+            <div class="sb-stat clickable" role="button" tabindex="0" onclick="openFollowModal('following')" onkeydown="if(event.key==='Enter'||event.key===' ') openFollowModal('following')">
               <div class="sb-stat-num" id="followingCountEl"><?= $followingCount ?></div>
               <div class="sb-stat-lbl">Following</div>
             </div>
-            <div class="sb-stat">
-              <div class="sb-stat-num">0</div>
+            <div class="sb-stat clickable" role="button" tabindex="0" onclick="openFollowModal('followers')" onkeydown="if(event.key==='Enter'||event.key===' ') openFollowModal('followers')">
+              <div class="sb-stat-num" id="followersCountEl"><?= $followerCount ?></div>
               <div class="sb-stat-lbl">Followers</div>
             </div>
           </div>
@@ -1493,6 +1743,32 @@ try {
   </div>
 </div>
 
+<!-- Follow List Modal -->
+<div class="follow-modal-overlay" id="followModal">
+  <div class="follow-modal" onclick="event.stopPropagation();">
+    <div class="follow-modal-head">
+      <div>
+        <div class="follow-modal-title">Connections</div>
+        <div class="follow-modal-subtitle" id="followModalSubtitle">People you follow</div>
+      </div>
+      <button class="follow-modal-close" type="button" onclick="closeFollowModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="follow-modal-tabs">
+      <button class="follow-tab active" type="button" id="followTabFollowing" onclick="openFollowModal('following')">Following</button>
+      <button class="follow-tab" type="button" id="followTabFollowers" onclick="openFollowModal('followers')">Followers</button>
+    </div>
+    <div class="follow-modal-body" id="followModalBody"></div>
+  </div>
+</div>
+
+<!-- Person Preview Modal -->
+<div class="person-modal-overlay" id="personModal">
+  <div class="person-modal-box">
+    <button class="person-modal-close" type="button" onclick="closeFollowPersonView()"><i class="fas fa-times"></i></button>
+    <div id="personModalBody"></div>
+  </div>
+</div>
+
 <script>
   // ── STATE — seeded from PHP/DB ──
   const CSRF_TOKEN = '<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES); ?>';
@@ -1500,6 +1776,14 @@ try {
   if (!profile.certifications) profile.certifications = [];
   if (!profile.languages) profile.languages = [];
   if (!profile.nextRole) profile.nextRole = { availability:'', workTypes:[], locations:'', rightToWork:'', salary:'', salaryPeriod:'per month', classification:'', approachability:'' };
+  const followLists = {
+    following: <?= $followingPeopleJson ?>,
+    followers: <?= $followerPeopleJson ?>,
+  };
+  const followingIds = new Set(<?= $followingIdsJson ?>);
+  let followModalMode = 'following';
+  let followModalView = 'list';
+  let followDetailItem = null;
 
   // ── MODAL OPEN / CLOSE ──
   function openModal(id) {
@@ -1515,6 +1799,230 @@ try {
       if (e.target === overlay) overlay.classList.remove('open');
     });
   });
+  const followOverlay = document.getElementById('followModal');
+  if (followOverlay) {
+    followOverlay.addEventListener('click', function(e) {
+      if (e.target === followOverlay) closeFollowModal();
+    });
+  }
+
+  function escHtml(value) {
+    const div = document.createElement('div');
+    div.textContent = value || '';
+    return div.innerHTML;
+  }
+
+  function normalizeFollowItem(item) {
+    const title = item.subtitle || (item.accountType === 'employer' ? 'Employer' : item.accountType === 'recruiter' ? 'Recruiter' : 'Job Seeker');
+    const location = item.location || 'Location not specified';
+    return {
+      id: item.id,
+      name: item.name || 'User',
+      subtitle: title,
+      location: location,
+      avatar: item.avatar || 'U',
+      avatarUrl: item.avatarUrl || '',
+      accountType: item.accountType || 'seeker',
+      profileUrl: item.profileUrl || '',
+    };
+  }
+
+  function updateFollowingCount(nextCount) {
+    const count = typeof nextCount === 'number' ? nextCount : followingIds.size;
+    const el = document.getElementById('followingCountEl');
+    if (el) el.textContent = String(count);
+  }
+
+  function openFollowPersonView(personId) {
+    const key = String(personId);
+    const source = followLists.following.find(item => String(item.id) === key) || followLists.followers.find(item => String(item.id) === key);
+    if (!source) return;
+    followDetailItem = source;
+    renderFollowPersonModal();
+    const overlay = document.getElementById('personModal');
+    if (overlay) overlay.style.display = 'flex';
+  }
+
+  function closeFollowPersonView() {
+    const overlay = document.getElementById('personModal');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  function renderFollowPersonModal() {
+    const person = followDetailItem ? normalizeFollowItem(followDetailItem) : null;
+    const body = document.getElementById('personModalBody');
+    if (!body || !person) return;
+
+    const isFollowing = followingIds.has(String(person.id));
+    const statusLabel = person.status === 'seeking' ? 'Open to work' : person.accountType === 'employer' ? 'Employer' : person.accountType === 'recruiter' ? 'Recruiter' : 'Available';
+    const statusClass = person.status === 'seeking' ? 'seeking' : person.accountType === 'employer' ? 'hiring' : 'neutral';
+    const skills = (person.skills || []).slice(0, 8).map(s => `<span class="person-skill-chip">${escHtml(s)}</span>`).join('');
+
+    let infoCards = '';
+    if (person.exp) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Experience</div><div class="pm-info-value">${escHtml(person.exp)}</div></div>`;
+    if (person.availability) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Availability</div><div class="pm-info-value">${escHtml(person.availability)}</div></div>`;
+    if (person.workTypes) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Work Type</div><div class="pm-info-value">${escHtml(person.workTypes)}</div></div>`;
+    if (person.rightToWork) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Right to Work</div><div class="pm-info-value">${escHtml(person.rightToWork)}</div></div>`;
+    if (person.classification) infoCards += `<div class="pm-info-card"><div class="pm-info-label">Classification</div><div class="pm-info-value">${escHtml(person.classification)}</div></div>`;
+    if (person.salary) {
+      const salaryDisplay = person.salary + (person.salaryPeriod ? ' ' + person.salaryPeriod : '');
+      infoCards += `<div class="pm-info-card"><div class="pm-info-label">Salary Expectation</div><div class="pm-info-value">${escHtml(salaryDisplay)}</div></div>`;
+    }
+
+    const aboutText = person.summary || person.bio || '';
+    const aboutSection = aboutText
+      ? `<div class="person-modal-section"><div class="person-modal-section-label">About</div><div class="pm-about">${escHtml(aboutText)}</div></div>`
+      : '';
+
+    const resumeSection = person.resumePath
+      ? `<div class="person-modal-section"><div class="person-modal-section-label">Resume</div><a class="person-modal-btn secondary" style="display:inline-flex;align-items:center;text-decoration:none;" href="${escHtml(person.resumePath)}" target="_blank" rel="noopener"><i class="fas fa-file-pdf" style="margin-right:6px;"></i>${escHtml(person.resumeName || 'View Resume')}</a></div>`
+      : '';
+
+    body.innerHTML = `
+      <div class="person-modal-head">
+        <div class="person-modal-avatar" style="background:${person.color || 'linear-gradient(135deg,var(--red-vivid),var(--red-deep))'};">
+          ${person.avatarUrl ? `<img src="${escHtml(person.avatarUrl)}" alt="">` : escHtml(person.avatar)}
+        </div>
+        <div class="person-modal-meta">
+          <div class="person-modal-name">${escHtml(person.name)}</div>
+          <div class="person-modal-title">${escHtml(person.title)}</div>
+          <div class="person-modal-location"><i class="fas fa-map-marker-alt"></i> ${escHtml(person.location)}</div>
+          ${person.phone ? `<div class="person-modal-location"><i class="fas fa-phone"></i> ${escHtml(person.phone)}</div>` : ''}
+        </div>
+      </div>
+      <div class="person-modal-status ${statusClass}">${escHtml(statusLabel)}</div>
+      ${aboutSection}
+      ${infoCards ? `<div class="person-modal-section"><div class="person-modal-section-label">Details</div><div class="pm-section-grid">${infoCards}</div></div>` : ''}
+      <div class="person-modal-section">
+        <div class="person-modal-section-label">Skills</div>
+        <div class="person-skill-row">${skills || '<span class="person-skill-empty">No skills listed</span>'}</div>
+      </div>
+      ${resumeSection}
+      <div class="person-modal-actions">
+        ${person.profileUrl ? `<button class="person-modal-btn secondary" type="button" onclick="window.location.href='${escHtml(person.profileUrl)}'"><i class="fas fa-user-circle"></i> Open full profile</button>` : ''}
+        <button class="person-modal-btn secondary" type="button" onclick="window.location.href='antcareers_seekerMessages.php?user_id=${person.id}'"><i class="fas fa-comment-dots"></i> Message</button>
+        ${String(person.id) !== String(<?= (int)$userId ?>) ? `<button class="person-modal-btn ${isFollowing ? 'secondary' : 'primary'}" type="button" onclick="toggleFollowFromModal(${person.id}, this, 'detail')"><i class="fas ${isFollowing ? 'fa-user-minus' : 'fa-user-plus'}"></i> ${isFollowing ? 'Unfollow' : 'Follow back'}</button>` : ''}
+        <button class="person-modal-btn primary" type="button" onclick="closeFollowPersonView()">Close</button>
+      </div>`;
+  }
+
+  function renderFollowModal() {
+    const body = document.getElementById('followModalBody');
+    const subtitle = document.getElementById('followModalSubtitle');
+    const followingTab = document.getElementById('followTabFollowing');
+    const followersTab = document.getElementById('followTabFollowers');
+    if (!body || !subtitle) return;
+
+    const isFollowingView = followModalMode === 'following';
+    const items = isFollowingView
+      ? followLists.following.filter(item => followingIds.has(String(item.id)))
+      : followLists.followers;
+
+    if (followingTab) followingTab.classList.toggle('active', isFollowingView);
+    if (followersTab) followersTab.classList.toggle('active', !isFollowingView);
+    subtitle.textContent = isFollowingView ? 'People you are following' : 'People who follow you';
+
+    if (!items.length) {
+      body.innerHTML = `
+        <div class="follow-empty">
+          <i class="fas fa-users"></i>
+          <div style="font-weight:700;color:var(--text-light);margin-bottom:4px;">No ${isFollowingView ? 'following' : 'followers'} yet</div>
+          <div>Use people search to build your network.</div>
+        </div>`;
+      return;
+    }
+
+    body.innerHTML = `<div class="follow-list">${items.map(item => {
+      const person = normalizeFollowItem(item);
+      const personId = String(person.id);
+      const isFollowing = followingIds.has(personId);
+      const buttonLabel = isFollowingView ? 'Unfollow' : (isFollowing ? 'Following' : 'Follow back');
+      const buttonClass = isFollowingView ? 'danger' : (isFollowing ? 'secondary' : 'primary');
+      const buttonIcon = isFollowingView ? 'fa-user-minus' : (isFollowing ? 'fa-check' : 'fa-user-plus');
+      return `
+        <div class="follow-item" onclick="openFollowPersonView(${personId})">
+          <div class="follow-item-main">
+            <div class="follow-avatar" style="background:${isFollowing ? 'linear-gradient(135deg,var(--red-vivid),var(--red-deep))' : 'linear-gradient(135deg,var(--red-bright),var(--red-mid))'};">
+              ${person.avatarUrl ? `<img src="${escHtml(person.avatarUrl)}" alt="">` : escHtml(person.avatar)}
+            </div>
+            <div class="follow-copy">
+              <div class="follow-name">${escHtml(person.name)}</div>
+              <div class="follow-sub">${escHtml(person.subtitle)}</div>
+              <div class="follow-location"><i class="fas fa-map-marker-alt"></i> ${escHtml(person.location)}</div>
+            </div>
+          </div>
+          <button class="follow-action ${buttonClass}" type="button" onclick="event.stopPropagation();toggleFollowFromModal(${personId}, this, '${isFollowingView ? 'following' : 'followers'}')">
+            <i class="fas ${buttonIcon}" style="margin-right:6px;"></i>${buttonLabel}
+          </button>
+        </div>`;
+    }).join('')}</div>`;
+  }
+
+  function openFollowModal(mode) {
+    followModalMode = mode === 'followers' ? 'followers' : 'following';
+    followModalView = 'list';
+    followDetailItem = null;
+    renderFollowModal();
+    const modal = document.getElementById('followModal');
+    if (modal) modal.classList.add('open');
+  }
+
+  function closeFollowModal() {
+    const modal = document.getElementById('followModal');
+    if (modal) modal.classList.remove('open');
+  }
+
+  (function openFollowPersonFromQuery() {
+    const focusUserId = new URLSearchParams(window.location.search).get('focus_user_id');
+    if (!focusUserId) return;
+    if (String(focusUserId) === String(<?= (int)$userId ?>)) return;
+    setTimeout(() => {
+      openFollowPersonView(focusUserId);
+    }, 0);
+  })();
+
+  async function toggleFollowFromModal(targetId, btn, sourceMode) {
+    const personId = String(targetId);
+    const wasFollowing = followingIds.has(personId);
+    const previousHtml = btn.innerHTML;
+    const previousClass = btn.className;
+    btn.disabled = true;
+    try {
+      const fd = new FormData();
+      fd.append('target_user_id', personId);
+      const res = await fetch('../api/follow_user.php', { method:'POST', body: fd });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Follow failed');
+
+      if (data.following) {
+        followingIds.add(personId);
+        const personName = followLists.followers.find(x => String(x.id) === personId)?.name || followLists.following.find(x => String(x.id) === personId)?.name || 'user';
+        showToast('Now following ' + personName + '!', 'fa-heart');
+
+        const followSource = followLists.following.find(x => String(x.id) === personId) || followLists.followers.find(x => String(x.id) === personId);
+        if (followSource && !followLists.following.some(x => String(x.id) === personId)) {
+          followLists.following = [followSource, ...followLists.following];
+        }
+      } else {
+        followingIds.delete(personId);
+        showToast('Unfollowed', 'fa-user-minus');
+      }
+
+      const updatedSource = followLists.following.find(x => String(x.id) === personId) || followLists.followers.find(x => String(x.id) === personId);
+      if (updatedSource) followDetailItem = updatedSource;
+
+      updateFollowingCount(typeof data.following_count === 'number' ? data.following_count : undefined);
+      renderFollowModal();
+      if (document.getElementById('personModal')?.style.display === 'flex') {
+        renderFollowPersonModal();
+      }
+    } catch (e) {
+      btn.innerHTML = previousHtml;
+      btn.className = previousClass;
+    } finally {
+      btn.disabled = false;
+    }
+  }
 
   // ── PHOTO UPLOAD (avatar / banner) ──
   async function uploadPhoto(input, type) {

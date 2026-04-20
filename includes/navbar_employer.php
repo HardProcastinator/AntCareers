@@ -19,6 +19,9 @@ $initials    = $initials    ?? 'EM';
 $companyName = $companyName ?? 'Your Company';
 $navActive   = $navActive   ?? '';
 $avatarUrl   = $avatarUrl   ?? '';
+if ($avatarUrl !== '' && !str_starts_with($avatarUrl, '../') && !str_starts_with($avatarUrl, 'http')) {
+  $avatarUrl = '../' . $avatarUrl;
+}
 $navbarShowMessage    = $navbarShowMessage    ?? true;
 $navbarShowNotif      = $navbarShowNotif      ?? true;
 $navbarShowPostJob    = $navbarShowPostJob    ?? true;

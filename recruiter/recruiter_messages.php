@@ -8,6 +8,9 @@ $fullName    = $user['fullName'];
 $firstName   = $user['firstName'];
 $initials    = $user['initials'];
 $avatarUrl   = $user['avatarUrl'];
+if ($avatarUrl !== '' && !str_starts_with($avatarUrl, '../') && !str_starts_with($avatarUrl, 'http')) {
+  $avatarUrl = '../' . $avatarUrl;
+}
 $companyName = $user['companyName'] ?: 'Your Company';
 $navActive   = 'messages';
 
@@ -75,8 +78,8 @@ try {
     /* CONVERSATION LIST */
     .thread-list { border-right:1px solid var(--soil-line); display:flex; flex-direction:column; overflow:hidden; }
     body.light .thread-list { border-right-color:#E0CECA; }
-    .thread-search { padding:14px 16px; border-bottom:1px solid var(--soil-line); }
-    .thread-search-bar { display:flex; align-items:center; gap:8px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:8px 12px; }
+    .thread-search { padding:14px 16px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; gap:10px; }
+    .thread-search-bar { display:flex; align-items:center; gap:8px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:0 12px; min-height:36px; flex:1; }
     body.light .thread-search-bar { background:#F5EEEC; border-color:#E0CECA; }
     .thread-search-bar input { flex:1; background:none; border:none; outline:none; font-family:var(--font-body); font-size:13px; color:var(--text-light); }
     .thread-search-bar input::placeholder { color:var(--text-muted); }
@@ -112,8 +115,10 @@ try {
     body.light .ttab:hover:not(.active) { color:#1A0A09; background:#FEF0EE; }
 
     /* NEW MSG BTN (in page header) */
-    .new-msg-btn { display:flex; align-items:center; gap:7px; padding:9px 18px; background:var(--red-vivid); border:none; border-radius:8px; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.2s; }
-    .new-msg-btn:hover { background:var(--red-bright); }
+    .new-msg-btn { display:flex; align-items:center; justify-content:center; padding:0; background:var(--red-vivid); border:none; border-radius:8px; color:#F5F0EE; font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.22s; width:36px; min-width:36px; height:36px; min-height:36px; flex-shrink:0; }
+    .new-msg-btn:hover { background:var(--red-bright); transform:translateY(-1px); }
+    body.light .new-msg-btn { color:#fff; background:var(--red-vivid); border:1px solid var(--red-vivid); }
+    body.light .new-msg-btn:hover { background:var(--red-bright); border-color:var(--red-bright); }
 
     /* NEW MSG PANEL */
     .new-msg-panel { padding:12px 16px; border-bottom:1px solid var(--soil-line); }
@@ -201,6 +206,8 @@ try {
     @media(max-width:800px){
       .msg-layout{grid-template-columns:1fr;height:calc(100vh - 180px);min-height:500px;border-radius:10px;width:100%;box-sizing:border-box;overflow-x:hidden;}
       .thread-list{display:flex;flex-direction:column;border-right:none;height:100%;min-height:0;overflow-x:hidden;}
+      .thread-search{padding:12px;}
+      .new-msg-btn{width:34px;height:34px;}
       .thread-item{max-width:100%;box-sizing:border-box;}
       .threads-scroll{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;}
       .chat-area{display:none;flex-direction:column;height:100%;overflow-x:hidden;}
@@ -230,9 +237,6 @@ try {
       <div class="page-title">Messages</div>
       <div class="page-sub">Communicate with applicants and keep conversations organized.</div>
     </div>
-    <button class="new-msg-btn" onclick="toggleNewMsgSearch()">
-      <i class="fas fa-pen"></i> New Message
-    </button>
   </div>
 
   <div class="msg-layout">
@@ -253,6 +257,9 @@ try {
           <i class="fas fa-search"></i>
           <input type="text" placeholder="Search conversations…" id="threadSearch" oninput="filterThreadsByQuery(this.value)">
         </div>
+        <button class="new-msg-btn" onclick="toggleNewMsgSearch()" title="New Message">
+          <i class="fas fa-pen-to-square"></i>
+        </button>
       </div>
       <div class="thread-tabs">
         <button class="ttab active" onclick="setTab(this,'all')">All</button>
@@ -385,10 +392,14 @@ function loadConversation(partnerId) {
         return;
       }
       const t = threads.find(x => x.partner_id === partnerId);
-      const color = t ? t.color : '#4A90D9';
+      const color = t ? t.color : 'linear-gradient(135deg,#D13D2C,#7A1515)';
       const partner = data.partner || {name: 'User'};
       const pParts = partner.name.split(/\s+/);
-      const ini = t ? t.initials : (pParts.length >= 2 ? (pParts[0][0]+pParts[1][0]).toUpperCase() : partner.name.substring(0,2).toUpperCase());
+      const ini = t
+        ? t.initials
+        : (pParts.length >= 2
+          ? (pParts[0][0] + pParts[1][0]).toUpperCase()
+          : ((pParts[0] && pParts[0][0]) ? pParts[0][0].toUpperCase() : '?'));
       const avatarUrl = (t && t.avatar_url) ? t.avatar_url : ((data.partner && data.partner.avatar_url) ? data.partner.avatar_url : null);
       const job = data.job;
 
@@ -509,7 +520,13 @@ function searchNewMsgUsers() {
       .then(r => r.json())
       .then(data => {
         if (!data.success || !data.users.length) { results.innerHTML = '<div style="padding:8px 10px;font-size:12px;color:var(--text-muted);">No users found</div>'; return; }
-        const colors = ['#4A90D9','#D4943A','#4CAF70','#9C27B0','#E05555','#00897B','#5C6BC0','#F4511E'];
+        const colors = [
+          'linear-gradient(135deg,#D13D2C,#7A1515)',
+          'linear-gradient(135deg,#4A90D9,#2A6090)',
+          'linear-gradient(135deg,#4CAF70,#2A7040)',
+          'linear-gradient(135deg,#D4943A,#8A5A10)',
+          'linear-gradient(135deg,#9C27B0,#5A0080)'
+        ];
         results.innerHTML = data.users.map((u, i) => `
           <div class="new-msg-user" onclick="startNewMsg(${u.id})">
             <div class="new-msg-user-av" style="background:${colors[i % colors.length]}">${u.avatar_url ? `<img src="../${u.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : esc(u.initials)}</div>

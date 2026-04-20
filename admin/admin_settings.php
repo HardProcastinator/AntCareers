@@ -348,6 +348,7 @@ if (isset($_GET['pw'])) {
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
     body.light .theme-btn { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .theme-btn:hover { color:#1A0A09; border-color:var(--red-vivid); background:#FEF0EE; }
     body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
     body.light .profile-name { color:#1A0A09; }
     body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; }
@@ -377,7 +378,7 @@ if (isset($_GET['pw'])) {
     body.light .form-label { color:#8A6060; }
     body.light .form-hint { color:#A08080; }
     body.light .btn-secondary { border-color:#D0BCBA; color:#4A2828; }
-    body.light .btn-secondary:hover { background:#FEF0EE; }
+    body.light .btn-secondary:hover { background:#FEF0EE; color:#1A0A09; }
     body.light .profile-dropdown { background:#FFFFFF; border-color:#E0CECA; }
     body.light .pd-item { color:#4A2828; }
     body.light .pd-item:hover { background:#FEF0EE; color:#1A0A09; }
