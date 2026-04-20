@@ -454,7 +454,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     .sidebar { position: sticky; top: 72px; align-self: start; }
     .filter-sidebar {
       background: var(--soil-card); border: 1px solid var(--soil-line);
-      border-radius: 12px; padding: 18px; flex:1;
+      border-radius: 12px; padding: 18px;
     }
     .fs-title {
       font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
@@ -1725,8 +1725,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   }
   document.getElementById('loginBtn').addEventListener('click', () => window.location.href = 'auth/antcareers_login.php' + getThemeParam());
   document.getElementById('signupBtn').addEventListener('click', goToSignup);
-  document.getElementById('loginBtnMob').addEventListener('click', () => window.location.href = 'auth/antcareers_login.php' + getThemeParam());
-  document.getElementById('signupBtnMob').addEventListener('click', goToSignup);
 
   // Filter events
   document.getElementById('searchBtn').addEventListener('click', renderAllJobs);
