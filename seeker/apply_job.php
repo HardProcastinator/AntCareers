@@ -91,6 +91,13 @@ try {
     $appId = (int)$db->lastInsertId();
     logActivity($seekerId, $seekerId, 'application_made', 'application', $appId, "Seeker applied to job ID {$jobId}.");
 
+    // If the seeker had a pending invitation for this job, mark it as accepted silently
+    // (no extra notification — the employer already got the new_application notification above)
+    try {
+        $db->prepare("UPDATE job_invitations SET status = 'accepted', responded_at = NOW() WHERE job_id = ? AND jobseeker_id = ? AND status = 'pending'")
+           ->execute([$jobId, $seekerId]);
+    } catch (PDOException $e) { /* non-critical */ }
+
     exit(json_encode(['success' => true]));
 
 } catch (PDOException $e) {

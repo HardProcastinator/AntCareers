@@ -324,26 +324,8 @@ $sentDate = $inv ? date('F j, Y', strtotime($inv['sent_at'])) : '';
       </div>
     </div><!-- /.inv-letter -->
 
-    <?php if ($canRespond): ?>
-    <div class="inv-cta">
-      <button class="btn-invite-accept" id="btnAccept" onclick="respondToInvite('accepted')">
-        <i class="fas fa-check-circle"></i> Accept &amp; Apply
-      </button>
-      <button class="btn-invite-decline" id="btnDecline" onclick="respondToInvite('declined')">
-        <i class="fas fa-times-circle"></i> Decline
-      </button>
-      <span class="inv-cta-note">Accepting will submit your application automatically.</span>
-    </div>
-    <?php elseif ($inv['status'] === 'pending' && !$canRespond && !$alreadyApplied): ?>
-    <div class="inv-cta">
-      <span style="font-size:13px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>This invitation can no longer be accepted.</span>
-    </div>
-    <?php endif; ?>
-  </div><!-- /.inv-card -->
-
-
-  <!-- ═══ JOB DETAILS CARD ═══ -->
-  <div class="job-detail-card">
+    <!-- ═══ JOB DETAILS (inside same card) ═══ -->
+    <div style="border-top:1px solid var(--soil-line);"></div>
     <div class="jd-header">
       <div class="company-logo">
         <?php if (!empty($inv['company_logo'])): ?>
@@ -396,19 +378,24 @@ $sentDate = $inv ? date('F j, Y', strtotime($inv['sent_at'])) : '';
       <div class="jd-section-title">Requirements</div>
       <div class="jd-text"><?= htmlspecialchars($inv['requirements']) ?></div>
       <?php endif; ?>
-
-      <?php if ($canRespond): ?>
-      <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--soil-line);display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn-invite-accept" onclick="respondToInvite('accepted')">
-          <i class="fas fa-check-circle"></i> Accept &amp; Apply Now
-        </button>
-        <button class="btn-invite-decline" onclick="respondToInvite('declined')">
-          <i class="fas fa-times-circle"></i> Decline Invitation
-        </button>
-      </div>
-      <?php endif; ?>
     </div>
-  </div><!-- /.job-detail-card -->
+
+    <?php if ($canRespond): ?>
+    <div class="inv-cta">
+      <button class="btn-invite-accept" onclick="respondToInvite('accepted')">
+        <i class="fas fa-check-circle"></i> Accept &amp; Apply Now
+      </button>
+      <button class="btn-invite-decline" onclick="respondToInvite('declined')">
+        <i class="fas fa-times-circle"></i> Decline Invitation
+      </button>
+      <span class="inv-cta-note">Accepting will submit your application automatically.</span>
+    </div>
+    <?php elseif ($inv['status'] === 'pending' && !$canRespond && !$alreadyApplied): ?>
+    <div class="inv-cta">
+      <span style="font-size:13px;color:var(--text-muted);"><i class="fas fa-info-circle" style="margin-right:6px;"></i>This invitation can no longer be accepted.</span>
+    </div>
+    <?php endif; ?>
+  </div><!-- /.inv-card -->
 
 <?php endif; ?>
 </div><!-- /.page-shell -->
@@ -422,15 +409,15 @@ var _invStatus = <?= json_encode($inv['status'] ?? 'pending') ?>;
 function respondToInvite(response) {
   if (_invStatus !== 'pending') return;
 
-  var acceptBtn  = document.getElementById('btnAccept');
-  var declineBtn = document.getElementById('btnDecline');
+  var acceptBtns  = document.querySelectorAll('.btn-invite-accept');
+  var declineBtns = document.querySelectorAll('.btn-invite-decline');
 
   var label = response === 'accepted'
     ? '<i class="fas fa-circle-notch fa-spin"></i> Applying…'
     : '<i class="fas fa-circle-notch fa-spin"></i> Declining…';
 
-  if (acceptBtn)  { acceptBtn.disabled  = true; if (response === 'accepted')  acceptBtn.innerHTML  = label; }
-  if (declineBtn) { declineBtn.disabled = true; if (response === 'declined') declineBtn.innerHTML = label; }
+  acceptBtns.forEach(function(b){ b.disabled = true; if (response === 'accepted') b.innerHTML = label; });
+  declineBtns.forEach(function(b){ b.disabled = true; if (response === 'declined') b.innerHTML = label; });
 
   var fd = new FormData();
   fd.append('action',   'respond');
@@ -451,14 +438,14 @@ function respondToInvite(response) {
         /* Reload after short delay so status banner updates */
         setTimeout(function(){ location.reload(); }, 1600);
       } else {
-        if (acceptBtn)  { acceptBtn.disabled  = false; acceptBtn.innerHTML  = '<i class="fas fa-check-circle"></i> Accept &amp; Apply'; }
-        if (declineBtn) { declineBtn.disabled = false; declineBtn.innerHTML = '<i class="fas fa-times-circle"></i> Decline'; }
+        acceptBtns.forEach(function(b){ b.disabled = false; b.innerHTML = '<i class="fas fa-check-circle"></i> Accept &amp; Apply Now'; });
+        declineBtns.forEach(function(b){ b.disabled = false; b.innerHTML = '<i class="fas fa-times-circle"></i> Decline Invitation'; });
         viToast(d.msg || 'Something went wrong. Please try again.', 'err');
       }
     })
     .catch(function() {
-      if (acceptBtn)  { acceptBtn.disabled  = false; acceptBtn.innerHTML  = '<i class="fas fa-check-circle"></i> Accept &amp; Apply'; }
-      if (declineBtn) { declineBtn.disabled = false; declineBtn.innerHTML = '<i class="fas fa-times-circle"></i> Decline'; }
+      acceptBtns.forEach(function(b){ b.disabled = false; b.innerHTML = '<i class="fas fa-check-circle"></i> Accept &amp; Apply Now'; });
+      declineBtns.forEach(function(b){ b.disabled = false; b.innerHTML = '<i class="fas fa-times-circle"></i> Decline Invitation'; });
       viToast('Network error. Please try again.', 'err');
     });
 }

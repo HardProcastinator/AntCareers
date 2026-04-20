@@ -687,8 +687,8 @@ $jobsJson = json_encode($jobs ?: []);
     .inv-mfoot .inv-cancel-btn:hover{background:var(--soil-hover);color:var(--text-mid);border-color:var(--text-muted);}
     body.light .inv-mfoot .inv-cancel-btn{border-color:#D4B0AB;color:#6A4A4A;}
     body.light .inv-mfoot .inv-cancel-btn:hover{background:#F5EDEB;color:#3A2020;}
-    body.light #invSendBtn{background:linear-gradient(135deg,var(--red-vivid) 0%,#B91C1C 100%);box-shadow:0 4px 20px rgba(209,61,44,.35);}
-    body.light #invSendBtn:not(:disabled):hover{background:linear-gradient(135deg,var(--red-bright) 0%,#DC2626 100%);box-shadow:0 8px 30px rgba(209,61,44,.5);}
+    body.light #invSendBtn{background:linear-gradient(135deg,var(--red-vivid) 0%,#B91C1C 100%);box-shadow:0 4px 20px rgba(209,61,44,.35);color:#fff;}
+    body.light #invSendBtn:not(:disabled):hover{background:linear-gradient(135deg,var(--red-bright) 0%,#DC2626 100%);box-shadow:0 8px 30px rgba(209,61,44,.5);color:#fff;}
   </style>
 </head>
 <body>
