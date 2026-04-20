@@ -2,6 +2,8 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
+require_once dirname(__DIR__) . '/includes/constants.php';
+require_once dirname(__DIR__) . '/includes/countries.php';
 requireLogin('employer');
 $user        = getUser();
 $fullName    = $user['fullName'];
@@ -383,12 +385,12 @@ $cpScore = min($cpScore, 100);
       <div class="form-group">
         <label class="form-label">Industry</label>
         <select class="form-input" id="industry">
+          <option value="">— Select Industry —</option>
           <?php
-          $industries = ['Information Technology','Finance & Banking','Healthcare','Education','E-Commerce / Retail','BPO / Outsourcing','Engineering','Manufacturing','Media & Creative','Government','Other'];
-          $savedIndustry = $profileData['industry'] ?? 'Information Technology';
-          foreach ($industries as $ind) {
+          $savedIndustry = $profileData['industry'] ?? '';
+          foreach (INDUSTRY_LIST as $ind) {
               $sel = ($ind === $savedIndustry) ? ' selected' : '';
-              echo "<option{$sel}>" . htmlspecialchars($ind, ENT_QUOTES, 'UTF-8') . "</option>";
+              echo '<option value="' . htmlspecialchars($ind, ENT_QUOTES, 'UTF-8') . '"' . $sel . '>' . htmlspecialchars($ind, ENT_QUOTES, 'UTF-8') . '</option>';
           }
           ?>
         </select>
@@ -447,12 +449,13 @@ $cpScore = min($cpScore, 100);
       <div class="form-group">
         <label class="form-label">Country</label>
         <select class="form-input" id="countrySelect">
+          <option value="">— Select Country —</option>
           <?php
-          $countries = ['Philippines','Singapore','United States','Other'];
-          $savedCountry = $profileData['country'] ?? 'Philippines';
-          foreach ($countries as $c) {
-              $sel = ($c === $savedCountry) ? ' selected' : '';
-              echo "<option{$sel}>" . htmlspecialchars($c, ENT_QUOTES, 'UTF-8') . "</option>";
+          $savedCountry = $profileData['country'] ?? '';
+          foreach (getCountries() as $ctry) {
+              $cName = (string)$ctry['name'];
+              $sel = ($cName === $savedCountry) ? ' selected' : '';
+              echo '<option value="' . htmlspecialchars($cName, ENT_QUOTES, 'UTF-8') . '"' . $sel . '>' . htmlspecialchars($cName, ENT_QUOTES, 'UTF-8') . '</option>';
           }
           ?>
         </select>

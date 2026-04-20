@@ -847,7 +847,7 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     document.getElementById('modalBody').innerHTML = `
       <div style="padding-right:24px;margin-bottom:20px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Job Post</div>
-        <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:#F5F0EE;margin-bottom:8px;">${j.title}</div>
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text-light);margin-bottom:8px;">${j.title}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <span style="background:${sc}22;color:${sc};border:1px solid ${sc}44;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">${statusLabel[j.status]||j.status}</span>
           ${j.jobType?`<span style="background:rgba(74,144,217,.15);color:#7ab8f0;border:1px solid rgba(74,144,217,.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">${j.jobType}</span>`:''}
@@ -872,7 +872,7 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
   function infoRow(icon, label, val) {
     return `<div style="background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:10px 14px;">
       <div style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;"><i class="fas ${icon}" style="margin-right:4px;"></i>${label}</div>
-      <div style="font-size:13px;color:#F5F0EE;word-break:break-all;">${val||'—'}</div>
+      <div style="font-size:13px;color:var(--text-light);word-break:break-all;">${val||'—'}</div>
     </div>`;
   }
   async function suspendUser(id, btn) {

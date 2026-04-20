@@ -772,6 +772,7 @@ if ($seekerAvatarUrl !== '' && !str_starts_with($seekerAvatarUrl, '../') && !str
       case 'interview': case 'interview_invite': case 'interview_accepted': return 'antcareers_seekerApplications.php';
       case 'new_application': return 'antcareers_seekerApplications.php';
       case 'job_invite': return 'view_invitation.php' + (refId ? '?id=' + refId : '');
+      case 'relevant_job': return 'antcareers_seekerJobs.php' + (refId ? '?job_id=' + refId : '');
       case 'follow': case 'unfollow': return '';
       default: return 'antcareers_seekerDashboard.php';
     }
@@ -978,7 +979,7 @@ if ($seekerAvatarUrl !== '' && !str_starts_with($seekerAvatarUrl, '../') && !str
         }
         var html = '';
         data.notifications.forEach(function (n) {
-          var dotClass = n.is_read ? 'read' : (n.type === 'message' ? 'red' : (n.type === 'application' ? 'green' : 'amber'));
+          var dotClass = n.is_read ? 'read' : (n.type === 'message' ? 'red' : (n.type === 'application' ? 'green' : (n.type === 'relevant_job' ? 'green' : 'amber')));
           var href = getNotifUrl(n.type, n.reference_id);
           var personId = (n.type === 'follow' || n.type === 'unfollow') ? (n.actor_id || n.reference_id || '') : '';
           html += '<div class="notif-item" data-notif-id="' + n.id + '" data-href="' + _esc(href) + '" data-person-id="' + _esc(String(personId)) + '" style="cursor:pointer;">'

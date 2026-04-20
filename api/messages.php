@@ -150,6 +150,7 @@ function ensure_schema(PDO $db): void
     // Ensure new notification columns exist
     ensure_column($db, 'notifications', 'actor_id', 'INT UNSIGNED DEFAULT NULL AFTER user_id');
     ensure_column($db, 'notifications', 'reference_type', "VARCHAR(50) DEFAULT NULL AFTER reference_id");
+    ensure_column($db, 'notifications', 'is_expired', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER is_read');
 
     try {
         $db->query('SELECT 1 FROM conversations LIMIT 0');
@@ -580,7 +581,7 @@ switch ($action) {
             $stmt->execute([$uid]);
             $messageCount = (int) $stmt->fetchColumn();
 
-            $stmt = $db->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+            $stmt = $db->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0 AND COALESCE(is_expired, 0) = 0");
             $stmt->execute([$uid]);
             $notificationCount = (int) $stmt->fetchColumn();
 
@@ -600,9 +601,9 @@ switch ($action) {
             $stmt = $db->prepare("SELECT id, type, content, reference_id, reference_type, actor_id, is_read, created_at,
                        TIMESTAMPDIFF(SECOND, created_at, NOW()) AS age_seconds
                 FROM notifications
-                WHERE user_id = ?
+                WHERE user_id = ? AND COALESCE(is_expired, 0) = 0
                 ORDER BY created_at DESC, id DESC
-                LIMIT 30");
+                LIMIT 20");
             $stmt->execute([$uid]);
 
             $notifications = [];

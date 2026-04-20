@@ -19,29 +19,8 @@ $db = getDB();
 $jobs      = [];
 $companies = [];
 $dbJobs    = [];
-$perPage   = 20;
-$page      = max(1, (int)($_GET['page'] ?? 1));
-$offset    = ($page - 1) * $perPage;
-$totalJobs  = 0;
-$totalPages = 1;
-
 try {
-    // Count for pagination
-    $cStmt = $db->prepare("
-        SELECT COUNT(*)
-        FROM jobs j
-        WHERE j.status = 'Active'
-          AND j.approval_status = 'approved'
-          AND (j.deadline IS NULL OR j.deadline >= CURDATE())
-          AND j.deleted_at IS NULL
-    ");
-    $cStmt->execute();
-    $totalJobs  = (int)$cStmt->fetchColumn();
-    $totalPages = max(1, (int)ceil($totalJobs / $perPage));
-    $page       = min($page, $totalPages);
-    $offset     = ($page - 1) * $perPage;
-
-    // Full query — works after migration (new columns exist)
+    // Load all active jobs — client-side filtering requires the full dataset
     $jStmt = $db->prepare("
         SELECT
             j.id, j.employer_id, j.title, j.location, j.job_type, j.setup AS work_setup,
@@ -57,10 +36,7 @@ try {
           AND (j.deadline IS NULL OR j.deadline >= CURDATE())
           AND j.deleted_at IS NULL
         ORDER BY j.created_at DESC
-        LIMIT :perPage OFFSET :offset
     ");
-    $jStmt->bindValue(':perPage', $perPage, PDO::PARAM_INT);
-    $jStmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $jStmt->execute();
     $dbJobs = $jStmt->fetchAll();
 } catch (PDOException $e) {
@@ -79,7 +55,6 @@ try {
             LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
             WHERE j.status = 'Active'
             ORDER BY j.created_at DESC
-            LIMIT 100
         ");
         $jStmt->execute();
         $dbJobs = $jStmt->fetchAll();
@@ -309,7 +284,7 @@ foreach ($industryKeys as $industryValue) {
     .content-layout { display:grid; grid-template-columns:240px 1fr; gap:24px; }
 
     /* ── SIDEBAR ── */
-    .filter-sidebar { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:18px; position:sticky; top:80px; align-self:start; }
+    .filter-sidebar { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:18px; position:sticky; top:80px; align-self:start; overflow:visible; z-index:10; }
     .fs-title { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px; display:flex; align-items:center; gap:7px; }
     .fs-title i { color:var(--red-bright); }
     .fs-section-label { font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
@@ -842,12 +817,6 @@ foreach ($industryKeys as $industryValue) {
 
       <div class="fs-section">
         <div class="fs-section-label">Salary</div>
-        <select class="fs-select" id="salaryPeriodFilter">
-          <option value="">Any period</option>
-          <option value="Annually">Annually</option>
-          <option value="Monthly">Monthly</option>
-          <option value="Hourly">Hourly</option>
-        </select>
         <div style="display:flex;gap:6px;align-items:center;margin-top:6px;">
           <input type="number" id="salaryMinFilter" class="fs-text-input" placeholder="Min" style="flex:1;">
           <span style="color:var(--text-muted);font-size:11px;">–</span>
@@ -893,19 +862,6 @@ foreach ($industryKeys as $industryValue) {
           </select>
         </div>
         <div class="job-list" id="jobsContainer"></div>
-        <?php if ($totalPages > 1): ?>
-        <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap;padding:0 4px;">
-          <?php if ($page > 1): ?>
-            <a href="?page=<?= $page - 1 ?>" style="padding:7px 14px;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:8px;color:var(--text-mid);text-decoration:none;font-size:13px;">← Prev</a>
-          <?php endif; ?>
-          <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
-            <a href="?page=<?= $p ?>" style="padding:7px 14px;background:<?= $p === $page ? 'var(--red-vivid)' : 'var(--soil-card)' ?>;border:1px solid <?= $p === $page ? 'var(--red-vivid)' : 'var(--soil-line)' ?>;border-radius:8px;color:<?= $p === $page ? '#fff' : 'var(--text-mid)' ?>;text-decoration:none;font-size:13px;"><?= $p ?></a>
-          <?php endfor; ?>
-          <?php if ($page < $totalPages): ?>
-            <a href="?page=<?= $page + 1 ?>" style="padding:7px 14px;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:8px;color:var(--text-mid);text-decoration:none;font-size:13px;">Next →</a>
-          <?php endif; ?>
-        </div>
-        <?php endif; ?>
       </div>
 
     </main>
@@ -1052,7 +1008,6 @@ foreach ($industryKeys as $industryValue) {
       jobTypes:       getMsValues('msWorkType'),
       setups:         getMsValues('msRemote'),
       experiences:    getMsValues('msExperience'),
-      salaryPeriod:   document.getElementById('salaryPeriodFilter')?.value || '',
       dateDays:       getMsValues('msListed'),
     };
   }
@@ -1078,8 +1033,6 @@ foreach ($industryKeys as $industryValue) {
       if (!matched) return false;
     }
     if (f.setups.length && !f.setups.includes(j.workSetup)) return false;
-    // Salary period (single-select)
-    if (f.salaryPeriod && j.salaryPeriod && j.salaryPeriod !== f.salaryPeriod) return false;
     // Salary min/max filter
     if (f.salaryMin) {
       if (j.salaryMax && j.salaryMax < f.salaryMin / 1000) return false;
@@ -1347,15 +1300,6 @@ foreach ($industryKeys as $industryValue) {
   }
 
   // Multi-select dropdown behavior
-  function positionMsPanel(wrap) {
-    const trigger = wrap.querySelector('.ms-trigger');
-    const panel = wrap.querySelector('.ms-panel');
-    if (!trigger || !panel) return;
-    const rect = trigger.getBoundingClientRect();
-    panel.style.top = (rect.bottom + 4) + 'px';
-    panel.style.left = rect.left + 'px';
-    panel.style.width = rect.width + 'px';
-  }
   document.querySelectorAll('.ms-trigger').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -1363,14 +1307,7 @@ foreach ($industryKeys as $industryValue) {
       const wasOpen = wrap.classList.contains('open');
       document.querySelectorAll('.ms-wrap.open').forEach(w => w.classList.remove('open'));
       if (!wasOpen) wrap.classList.add('open');
-      if (!wasOpen) positionMsPanel(wrap);
     });
-  });
-  window.addEventListener('scroll', () => {
-    document.querySelectorAll('.ms-wrap.open').forEach(positionMsPanel);
-  }, { passive: true });
-  window.addEventListener('resize', () => {
-    document.querySelectorAll('.ms-wrap.open').forEach(positionMsPanel);
   });
   document.addEventListener('click', e => {
     if (!e.target.closest('.ms-wrap')) document.querySelectorAll('.ms-wrap.open').forEach(w => w.classList.remove('open'));
@@ -1417,6 +1354,12 @@ foreach ($industryKeys as $industryValue) {
   // ── INIT ──────────────────────────────────────────────────────────────────
   document.getElementById('locationKeyword')?.addEventListener('input', renderAllJobs);
   renderAllJobs();
+
+  // ── Auto-open job from notification link (?job_id=X) ─────────────────────
+  (function () {
+    const jid = parseInt(new URLSearchParams(window.location.search).get('job_id') || '0', 10);
+    if (jid > 0) setTimeout(() => openJobModal(jid), 60);
+  })();
 </script>
 
 <!-- QUICK APPLY MODAL -->
