@@ -51,7 +51,7 @@ $respondError = static function (string $message, int $status = 200, string $err
     }
 
     $_SESSION['login_error'] = $message;
-    header('Location: antcareers_login.php');
+    header('Location: ' . url('auth/antcareers_login.php'));
     exit;
 };
 

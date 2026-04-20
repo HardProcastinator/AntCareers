@@ -32,7 +32,7 @@ define('DB_PASS',    'AntCareers46810');
 define('DB_CHARSET', 'utf8mb4');
 
 // ── Application settings ──────────────────────────────────────────────────────
-define('APP_URL',    'https://antcareers.site'); // Hostinger domain
+define('APP_URL',    'https://antcareers.site/'); // Hostinger domain
 define('APP_NAME', 'AntCareers');
 
 // ── Auth / security constants ─────────────────────────────────────────────────
@@ -159,32 +159,21 @@ function getDB(): PDO
 
 // ── URL helper ────────────────────────────────────────────────────────────────
 /**
- * Build a root-relative URL for a given path.
+ * Build an absolute URL for a given path.
  * Preserves the current theme preference as a query parameter.
  *
  * Examples:
- *   url('seeker/antcareers_seekerDashboard.php')         → /antcareers_seekerDashboard.php
- *   url('seeker/antcareers_seekerJobs.php', true)        → /antcareers_seekerJobs.php?theme=dark
- *   url('auth/logout.php')                         → /auth/logout.php
+ *   url('seeker/antcareers_seekerDashboard.php')   → https://antcareers.site/seeker/antcareers_seekerDashboard.php
+ *   url('seeker/antcareers_seekerJobs.php', true)  → https://antcareers.site/seeker/antcareers_seekerJobs.php?theme=dark
+ *   url('auth/logout.php')                         → https://antcareers.site/auth/logout.php
  */
 function url(string $path, bool $withTheme = false): string
 {
-    // Strip leading slash so we never double-slash
+    // Strip leading slash so we never double-slash when appending to APP_URL.
     $path = ltrim($path, '/');
 
-   // Build a web base path from filesystem paths in a Windows-safe way.
-    $docRootFs    = str_replace('\\', '/', rtrim((string)($_SERVER['DOCUMENT_ROOT'] ?? ''), '/\\'));
-    $projectRootFs = str_replace('\\', '/', rtrim(__DIR__, '/\\'));
-
-    if ($docRootFs !== '' && stripos($projectRootFs, $docRootFs) === 0) {
-        $basePath = substr($projectRootFs, strlen($docRootFs));
-    } else {
-        // Fallback when DOCUMENT_ROOT is missing/mismatched
-        $basePath = '/' . basename($projectRootFs);
-    }
-
-    $basePath = trim($basePath, '/');
-    $full = '/' . ($basePath !== '' ? $basePath . '/' : '') . $path;
+    $baseUrl = rtrim(APP_URL, '/') . '/';
+    $full = $baseUrl . $path;
 
     if ($withTheme) {
         $theme = htmlspecialchars($_GET['theme'] ?? '', ENT_QUOTES, 'UTF-8');

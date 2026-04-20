@@ -10,7 +10,7 @@ require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth_helpers.php';
 
 if (empty($_SESSION['user_id'])) {
-    header('Location: antcareers_login.php');
+    header('Location: ' . url('auth/antcareers_login.php'));
     exit;
 }
 
