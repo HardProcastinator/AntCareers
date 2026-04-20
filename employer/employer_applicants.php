@@ -363,11 +363,9 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
       .app-right{display:flex!important;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px;width:100%;border-top:1px solid var(--soil-line);padding-top:10px;margin-top:0}
       .app-date{display:none}
       .app-actions{justify-content:flex-start;flex-wrap:wrap;gap:6px}
-      /* Toolbar: search full-width + job filter in 2-col grid */
-      .toolbar-form{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
-      .toolbar-form .filter-group{grid-column:1/-1}
-      .toolbar .search-bar{min-width:unset;flex:none;width:100%}
-      .toolbar .fsel{width:100%}
+      .toolbar{flex-direction:column;align-items:stretch;}
+      .filter-row{width:100%;}
+      select.fsel{flex:1;min-width:0;}
     }
     @media(min-width:761px){.mobile-filter-toggle{display:none!important}.filter-sidebar{display:block!important}}
     body.light{background:#FAF7F5;color:#1A0A09;--soil-dark:#F9F5F4;--soil-card:#FFFFFF;--soil-hover:#FEF0EE;--soil-line:#E0CECA;--text-light:#1A0A09;--text-mid:#4A2828;--text-muted:#7A5555;--amber-dim:#FFF4E0;--amber:#B8620A;}
@@ -396,15 +394,8 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
     .sp-count{font-size:17px;font-weight:800;color:#F5F0EE;font-family:var(--font-display);}
     body.light .stat-pill{background:#fff;border-color:#E0CECA;}
     body.light .sp-count{color:#1A0A09;}
-    .toolbar{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;padding:16px 18px;margin-bottom:16px;}
-    body.light .toolbar{background:#FFFFFF;border-color:#E0CECA;}
-    .toolbar-form{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;}
-    .filter-group{display:flex;flex-direction:column;gap:5px;min-width:0;}
-    .filter-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;}
-    .toolbar .stats-row{margin-bottom:0;}
-    .toolbar .stat-pill{padding:5px 12px;border-radius:100px;background:var(--soil-hover);}
-    .toolbar .sp-label{font-size:12px;}
-    .toolbar .sp-count{font-size:12px;font-family:var(--font-body);font-weight:700;line-height:1;}
+    .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+    .filter-row{display:flex;gap:10px;flex-shrink:0;}
     .search-bar{display:flex;align-items:center;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;overflow:hidden;flex:1;min-width:200px;transition:0.25s;}
     .search-bar:focus-within{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,0.1);}
     .search-bar .si{padding:0 14px;color:var(--text-muted);font-size:14px;}
@@ -551,69 +542,72 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   <?php endif;?>
 
   <!-- FILTER TOOLBAR -->
-  <div class="toolbar">
-    <div class="toolbar-form">
-      <div class="filter-group" style="width:100%;">
-        <div class="filter-label">Status</div>
-        <div class="stats-row" id="statsRow">
-          <div class="stat-pill active" data-filter="">
-            <i class="fas fa-users sp-icon" style="color:var(--red-pale)"></i>
-            <span class="sp-label">All</span>
-            <span class="sp-count" id="cnt-all"><?= $total ?></span>
-          </div>
-          <div class="stat-pill" data-filter="Pending">
-            <i class="fas fa-clock sp-icon" style="color:#D4943A"></i>
-            <span class="sp-label">Pending</span>
-            <span class="sp-count" id="cnt-Pending"><?= $sCounts['Pending'] ?></span>
-          </div>
-          <div class="stat-pill" data-filter="Shortlisted">
-            <i class="fas fa-star sp-icon" style="color:#7ab8f0"></i>
-            <span class="sp-label">Shortlisted</span>
-            <span class="sp-count" id="cnt-Shortlisted"><?= $sCounts['Shortlisted'] ?></span>
-          </div>
-          <div class="stat-pill" data-filter="Interviewed">
-            <i class="fas fa-comments sp-icon" style="color:#cf8ae0"></i>
-            <span class="sp-label">Interviewed</span>
-            <span class="sp-count" id="cnt-Interviewed"><?= $sCounts['Interviewed'] ?></span>
-          </div>
-          <div class="stat-pill" data-filter="Offered">
-            <i class="fas fa-check-circle sp-icon" style="color:#6ccf8a"></i>
-            <span class="sp-label">Offered</span>
-            <span class="sp-count" id="cnt-Offered"><?= $sCounts['Offered'] ?></span>
-          </div>
-          <div class="stat-pill" data-filter="Accepted">
-            <i class="fas fa-handshake sp-icon" style="color:#6ccf8a"></i>
-            <span class="sp-label">Accepted</span>
-            <span class="sp-count" id="cnt-Accepted"><?= $sCounts['Accepted'] ?></span>
-          </div>
-          <div class="stat-pill" data-filter="Declined">
-            <i class="fas fa-times sp-icon" style="color:#ff8080"></i>
-            <span class="sp-label">Declined</span>
-            <span class="sp-count" id="cnt-Declined"><?= $sCounts['Declined'] ?></span>
-          </div>
-          <div class="stat-pill" data-filter="Rejected">
-            <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
-            <span class="sp-label">Rejected</span>
-            <span class="sp-count" id="cnt-Rejected"><?= $sCounts['Rejected'] ?></span>
-          </div>
-        </div>
-      </div>
-      <div class="filter-group" style="flex:1;min-width:260px;">
-        <div class="filter-label">Search</div>
-        <div class="search-bar">
-          <i class="fas fa-search si"></i>
-          <input type="text" id="searchInput" placeholder="Search name, email or job title…">
-        </div>
-      </div>
-      <div class="filter-group" style="min-width:180px;">
-        <div class="filter-label">Job</div>
-        <select class="fsel" id="filterJob">
-          <option value="">All Jobs</option>
-          <?php foreach($jobsList as $j): ?>
-          <option value="<?= (int)$j['id'] ?>"><?= htmlspecialchars($j['title'], ENT_QUOTES, 'UTF-8') ?></option>
-          <?php endforeach; ?>
-        </select>
-      </div>
+  <div class="stats-row anim" id="statsRow">
+    <div class="stat-pill active" data-filter="">
+      <i class="fas fa-users sp-icon" style="color:var(--red-pale)"></i>
+      <span class="sp-label">All</span>
+      <span class="sp-count" id="cnt-all"><?= $total ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Pending">
+      <i class="fas fa-clock sp-icon" style="color:#D4943A"></i>
+      <span class="sp-label">Pending</span>
+      <span class="sp-count" id="cnt-Pending"><?= $sCounts['Pending'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Shortlisted">
+      <i class="fas fa-star sp-icon" style="color:#7ab8f0"></i>
+      <span class="sp-label">Shortlisted</span>
+      <span class="sp-count" id="cnt-Shortlisted"><?= $sCounts['Shortlisted'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Interviewed">
+      <i class="fas fa-comments sp-icon" style="color:#cf8ae0"></i>
+      <span class="sp-label">Interviewed</span>
+      <span class="sp-count" id="cnt-Interviewed"><?= $sCounts['Interviewed'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Offered">
+      <i class="fas fa-check-circle sp-icon" style="color:#6ccf8a"></i>
+      <span class="sp-label">Offered</span>
+      <span class="sp-count" id="cnt-Offered"><?= $sCounts['Offered'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Accepted">
+      <i class="fas fa-handshake sp-icon" style="color:#6ccf8a"></i>
+      <span class="sp-label">Accepted</span>
+      <span class="sp-count" id="cnt-Accepted"><?= $sCounts['Accepted'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Declined">
+      <i class="fas fa-times sp-icon" style="color:#ff8080"></i>
+      <span class="sp-label">Declined</span>
+      <span class="sp-count" id="cnt-Declined"><?= $sCounts['Declined'] ?></span>
+    </div>
+    <div class="stat-pill" data-filter="Rejected">
+      <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
+      <span class="sp-label">Rejected</span>
+      <span class="sp-count" id="cnt-Rejected"><?= $sCounts['Rejected'] ?></span>
+    </div>
+  </div>
+
+  <div class="toolbar anim">
+    <div class="search-bar">
+      <i class="fas fa-search si"></i>
+      <input type="text" id="searchInput" placeholder="Search name, email or job title…">
+    </div>
+    <div class="filter-row">
+      <select class="fsel" id="filterJob">
+        <option value="">All Jobs</option>
+        <?php foreach($jobsList as $j): ?>
+        <option value="<?= (int)$j['id'] ?>"><?= htmlspecialchars($j['title'], ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
+      </select>
+      <select class="fsel" id="filterStatus">
+        <option value="">All Statuses</option>
+        <option value="Pending">Pending</option>
+        <option value="Reviewed">Reviewed</option>
+        <option value="Shortlisted">Shortlisted</option>
+        <option value="Interviewed">Interviewed</option>
+        <option value="Offered">Offered</option>
+        <option value="Accepted">Accepted</option>
+        <option value="Declined">Declined</option>
+        <option value="Rejected">Rejected</option>
+      </select>
     </div>
   </div>
 
@@ -731,12 +725,16 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   function toggleExp(id){var p=document.getElementById('exp-'+id),c=document.getElementById('chev-'+id),o=p.classList.toggle('open');c.style.transform=o?'rotate(180deg)':'';}
   function saveStatus(id){var s=document.getElementById('sel-'+id).value;if(s==='Offered'&&!confirm('Send an offer to this applicant? They will be notified via message and can accept or decline.'))return;doPost({action:'update_status',application_id:id,status:s},function(d){if(d.ok){var b=document.getElementById('badge-'+id),m={Pending:{c:'amber',i:'fa-clock'},Reviewed:{c:'blue',i:'fa-eye'},Shortlisted:{c:'green',i:'fa-star'},Interviewed:{c:'blue',i:'fa-video'},Rejected:{c:'red',i:'fa-times-circle'},Offered:{c:'purple',i:'fa-check-circle'},Accepted:{c:'green',i:'fa-handshake'},Declined:{c:'red',i:'fa-times'}}[d.status]||{c:'muted',i:'fa-circle'};b.className='sbadge '+m.c;b.innerHTML='<i class="fas '+m.i+'"></i> '+d.status;document.getElementById('card-'+id).setAttribute('data-status',d.status);filterCards();toast('Status: '+d.status,'ok');}else{toast(d.msg||'Error','err');}});}
 
-  /* ── Client-side filtering (matches recruiter layout) ── */
+  /* ── Client-side filtering ── */
+  function updateStatPills(active){
+    document.querySelectorAll('#statsRow .stat-pill').forEach(function(p){
+      p.classList.toggle('active',p.getAttribute('data-filter')===active);
+    });
+  }
   function filterCards(){
     var q=document.getElementById('searchInput').value.toLowerCase();
     var fj=document.getElementById('filterJob').value;
-    var activePill=document.querySelector('#statsRow .stat-pill.active');
-    var fs=activePill?activePill.getAttribute('data-filter')||'':'';
+    var fs=document.getElementById('filterStatus').value;
     var cards=document.querySelectorAll('.app-card');
     var shown=0;
     cards.forEach(function(c){
@@ -750,10 +748,15 @@ $smeta=['Pending'=>['c'=>'amber','i'=>'fa-clock'],'Reviewed'=>['c'=>'blue','i'=>
   }
   document.getElementById('searchInput').addEventListener('input',filterCards);
   document.getElementById('filterJob').addEventListener('change',filterCards);
+  document.getElementById('filterStatus').addEventListener('change',function(){
+    updateStatPills(this.value);
+    filterCards();
+  });
   document.querySelectorAll('#statsRow .stat-pill').forEach(function(pill){
     pill.addEventListener('click',function(){
-      document.querySelectorAll('#statsRow .stat-pill').forEach(function(p){p.classList.remove('active');});
-      this.classList.add('active');
+      var f=this.getAttribute('data-filter');
+      document.getElementById('filterStatus').value=f;
+      updateStatPills(f);
       filterCards();
     });
   });

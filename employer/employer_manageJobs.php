@@ -468,19 +468,20 @@ $jobsJson = json_encode($jobs ?: []);
     .toolbar-row.controls-row .quick-filters{width:100%;}
     .filter-toolbar .search-wrap{flex:1;min-width:220px;position:relative;}
     .filter-toolbar .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;}
-    .filter-toolbar .search-input{width:100%;padding:8px 13px 8px 34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
-    .filter-toolbar .search-input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
+    .filter-toolbar .search-wrap input{width:100%;padding:9px 13px 9px 34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
+    .filter-toolbar .search-wrap input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
     .filter-toolbar .quick-filters{display:flex;align-items:flex-end;gap:10px;flex-wrap:nowrap;}
     .filter-toolbar .quick-filters .search-wrap{flex:1;min-width:260px;}
-    .filter-toolbar .quick-filters select{padding:8px 12px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;cursor:pointer;min-width:170px;}
-    .filter-toolbar .quick-filters select:focus{border-color:var(--red-vivid);}
+    .filter-toolbar select{padding:9px 13px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;cursor:pointer;transition:.2s;min-width:170px;}
+    .filter-toolbar select:focus{border-color:var(--red-vivid);}
     .filter-toolbar .stat-pill{padding:5px 12px;border-radius:100px;background:var(--soil-hover);}
     .filter-toolbar .sp-label{font-size:12px;}
     .filter-toolbar .sp-count{font-size:12px;font-family:var(--font-body);font-weight:700;line-height:1;}
     body.light .filter-toolbar{background:#FFFFFF;border-color:#E0CECA;}
     body.light .filter-toolbar .stat-pill{background:#F5EEEC;border-color:#E0CECA;}
-    body.light .filter-toolbar .search-input{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
-    body.light .filter-toolbar .quick-filters select{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
+    body.light .filter-toolbar .search-wrap input{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
+    body.light .filter-toolbar select{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
+    body.light .filter-toolbar select option{background:#fff;color:#1A0A09;}
     @media(max-width:900px){
       .filter-toolbar .quick-filters{flex-direction:column;align-items:stretch;}
       .filter-toolbar .quick-filters .search-wrap,.filter-toolbar .quick-filters select{width:100%;min-width:0;}
@@ -756,15 +757,18 @@ $jobsJson = json_encode($jobs ?: []);
         <div class="quick-filters">
           <div class="search-wrap">
             <i class="fas fa-search"></i>
-            <input class="search-input" type="text" id="searchInput" placeholder="Search jobs by title, location, skills…" oninput="applyFilters()">
+            <input type="text" id="searchInput" placeholder="Search jobs by title, location, skills…" oninput="applyFilters()">
           </div>
-          <select id="quickStatusFilter" onchange="applyFilters()">
+          <select id="statusFilter" onchange="applyFilters()">
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
             <option value="closed">Closed</option>
             <option value="draft">Draft</option>
+            <option value="deleted">Trash</option>
+            <option value="pending">Pending Approval</option>
+            <option value="rejected">Rejected</option>
           </select>
-          <select id="quickApprovalFilter" onchange="applyFilters()">
+          <select id="approvalFilter" onchange="applyFilters()">
             <option value="all">All Approvals</option>
             <option value="approved">Approved</option>
             <option value="pending">Pending</option>
@@ -1107,15 +1111,22 @@ function filterJobs(type, el) {
   document.querySelectorAll('.stat-pill').forEach(function(p){ p.classList.remove('active'); });
   if (el) el.classList.add('active');
 
+  var sel = document.getElementById('statusFilter');
+  if (type === 'all')     sel.value = 'all';
+  else if (type === 'active')  sel.value = 'active';
+  else if (type === 'closed')  sel.value = 'closed';
+  else if (type === 'pending') sel.value = 'pending';
+  else if (type === 'draft')   sel.value = 'draft';
+  else if (type === 'deleted') sel.value = 'deleted';
+
   currentFilter = type;
   applyFilters();
 }
 
 function applyFilters() {
   var search = document.getElementById('searchInput').value.trim().toLowerCase();
-  var status = currentFilter;
-  var quickStatus = document.getElementById('quickStatusFilter') ? document.getElementById('quickStatusFilter').value : 'all';
-  var quickApproval = document.getElementById('quickApprovalFilter') ? document.getElementById('quickApprovalFilter').value : 'all';
+  var status = document.getElementById('statusFilter').value;
+  var approval = document.getElementById('approvalFilter') ? document.getElementById('approvalFilter').value : 'all';
   var cards  = document.querySelectorAll('.job-card');
   var visible = 0;
 
@@ -1149,10 +1160,7 @@ function applyFilters() {
       if (haystack.indexOf(search) === -1) show = false;
     }
 
-    if (show && quickStatus !== 'all' && cStatus !== quickStatus) {
-      show = false;
-    }
-    if (show && quickApproval !== 'all' && cApproval !== quickApproval) {
+    if (show && approval !== 'all' && cApproval !== approval) {
       show = false;
     }
 

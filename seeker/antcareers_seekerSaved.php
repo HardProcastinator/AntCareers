@@ -224,8 +224,8 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     .form-textarea { resize:vertical; min-height:80px; line-height:1.5; }
     .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; padding-top:14px; border-top:1px solid var(--soil-line); }
     .btn-cancel { padding:9px 18px; border-radius:7px; background:transparent; border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; }
-    body.light {
-      background:#F5EDEC; color:#1A0A09;
+    html.theme-light body, body.light {
+      background:#F9F5F4; color:#1A0A09;
       --soil-dark:#F9F5F4; --soil-card:#FFFFFF; --soil-hover:#FEF0EE; --soil-line:#E0CECA;
       --text-light:#1A0A09; --text-mid:#4A2828; --text-muted:#7A5555;
       --amber-dim:#FFF4E0; --amber:#B8620A;
