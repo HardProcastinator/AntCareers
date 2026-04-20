@@ -67,6 +67,48 @@ inv_ensure_column($db, 'seeker_profiles', 'show_in_people_search', 'TINYINT(1) N
 inv_ensure_column($db, 'notifications', 'actor_id', 'INT UNSIGNED DEFAULT NULL AFTER user_id');
 inv_ensure_column($db, 'notifications', 'reference_type', "VARCHAR(50) DEFAULT NULL AFTER reference_id");
 
+/**
+ * Send an automated message between two users (creates conversation if needed).
+ */
+function inv_send_auto_message(PDO $db, int $senderId, int $receiverId, string $body): void
+{
+    if ($senderId <= 0 || $receiverId <= 0 || $senderId === $receiverId) return;
+    try {
+        $min = min($senderId, $receiverId);
+        $max = max($senderId, $receiverId);
+        $key = 'direct:' . $min . ':' . $max;
+
+        // Find or create conversation
+        $stmt = $db->prepare("SELECT id FROM conversations WHERE conversation_key = ? LIMIT 1");
+        $stmt->execute([$key]);
+        $conv = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$conv) {
+            $db->prepare(
+                "INSERT INTO conversations (conversation_key, participant_a_id, participant_b_id, created_at, updated_at)
+                 VALUES (?, ?, ?, NOW(), NOW())"
+            )->execute([$key, $min, $max]);
+            $convId = (int)$db->lastInsertId();
+        } else {
+            $convId = (int)$conv['id'];
+        }
+
+        // Insert the message
+        $db->prepare(
+            "INSERT INTO messages (conversation_id, sender_id, receiver_id, body, message_type, is_read, created_at, updated_at)
+             VALUES (?, ?, ?, ?, 'system', 0, NOW(), NOW())"
+        )->execute([$convId, $senderId, $receiverId, $body]);
+        $msgId = (int)$db->lastInsertId();
+
+        // Update conversation latest
+        $db->prepare(
+            "UPDATE conversations SET latest_message_id = ?, latest_message_at = NOW(), updated_at = NOW() WHERE id = ?"
+        )->execute([$msgId, $convId]);
+    } catch (PDOException $e) {
+        error_log('[AntCareers] inv_send_auto_message: ' . $e->getMessage());
+    }
+}
+
 switch ($action) {
 
     /* ════════════════════════════════════════════════════════════
@@ -114,24 +156,25 @@ switch ($action) {
                     (SELECT status FROM job_invitations ji
                         WHERE ji.job_id = ? AND ji.jobseeker_id = u.id LIMIT 1) AS invite_status
                 FROM users u
-                LEFT JOIN seeker_profiles sp ON sp.user_id COLLATE utf8mb4_unicode_ci = u.id COLLATE utf8mb4_unicode_ci
+                LEFT JOIN seeker_profiles sp ON sp.user_id = u.id
                 LEFT JOIN (
                     SELECT user_id,
                            GROUP_CONCAT(DISTINCT skill_name ORDER BY skill_name SEPARATOR ',') AS skills
                     FROM seeker_skills
                     GROUP BY user_id
-                ) ss ON ss.user_id COLLATE utf8mb4_unicode_ci = u.id COLLATE utf8mb4_unicode_ci
+                ) ss ON ss.user_id = u.id
                 WHERE u.account_type = 'seeker'
                   AND u.is_active    = 1
                   AND COALESCE(sp.show_in_people_search, 1) = 1
                   AND (
                     ? = ''
-                    OR u.full_name    LIKE ?
+                    OR u.full_name COLLATE utf8mb4_unicode_ci LIKE ? COLLATE utf8mb4_unicode_ci
                     OR sp.city_name COLLATE utf8mb4_unicode_ci LIKE ? COLLATE utf8mb4_unicode_ci
                     OR sp.country_name COLLATE utf8mb4_unicode_ci LIKE ? COLLATE utf8mb4_unicode_ci
                     OR EXISTS (
                         SELECT 1 FROM seeker_skills sk2
-                        WHERE sk2.user_id COLLATE utf8mb4_unicode_ci = u.id COLLATE utf8mb4_unicode_ci AND sk2.skill_name LIKE ?
+                        WHERE sk2.user_id = u.id
+                          AND sk2.skill_name COLLATE utf8mb4_unicode_ci LIKE ? COLLATE utf8mb4_unicode_ci
                     )
                   )
                 ORDER BY u.full_name ASC
@@ -169,7 +212,7 @@ switch ($action) {
             inv_json(['ok' => true, 'seekers' => $seekers]);
         } catch (PDOException $e) {
             error_log('[AntCareers] inv search_seekers: ' . $e->getMessage());
-            inv_json(['ok' => false, 'msg' => 'DB ERROR: ' . $e->getMessage()], 500);
+            inv_json(['ok' => false, 'msg' => 'Database error. Please try again.'], 500);
         }
         break;
 
@@ -272,6 +315,17 @@ switch ($action) {
                         . '" at '
                         . htmlspecialchars($job['company_name'], ENT_QUOTES, 'UTF-8');
                     $insNotif->execute([$seekerId, $uid, $notifContent, $invId]);
+
+                    /* Auto-message to the jobseeker */
+                    $msgBody = "Hi! I'm " . ($recruiterName)
+                        . " from " . ($job['company_name']) . ".\n\n"
+                        . "We came across your profile and believe you'd be a great fit for our \""
+                        . ($job['title']) . "\" position.\n\n"
+                        . "We'd like to formally invite you to review this opportunity and consider applying."
+                        . ($customNote ? "\n\nPersonal note: " . $customNote : '')
+                        . "\n\nYou can view the full invitation details in your notifications.";
+                    inv_send_auto_message($db, $uid, $seekerId, $msgBody);
+
                     $sent++;
                 } else {
                     $skipped++;
@@ -397,6 +451,23 @@ switch ($action) {
                     (int)$inv['employer_id'], $uid, $notifType,
                     $notifContent, (int)$inv['job_id'],
                 ]);
+            }
+
+            /* Auto-message to recruiter about the response */
+            $rawSeekerName = $inv['seeker_name'] ?? 'A jobseeker';
+            $rawJobTitle   = $inv['job_title'] ?? 'a position';
+            if ($response === 'accepted') {
+                $responseMsg = "Great news! I've accepted your invitation for \""
+                    . $rawJobTitle . "\" and submitted my application. Looking forward to hearing from you!";
+            } else {
+                $responseMsg = "Thank you for considering me for the \""
+                    . $rawJobTitle . "\" position. Unfortunately, I have to decline this invitation at this time.";
+            }
+            inv_send_auto_message($db, $uid, (int)$inv['recruiter_id'], $responseMsg);
+
+            /* Also message employer if different */
+            if ($response === 'accepted' && !empty($inv['employer_id']) && (int)$inv['employer_id'] !== (int)$inv['recruiter_id']) {
+                inv_send_auto_message($db, $uid, (int)$inv['employer_id'], $responseMsg);
             }
 
             /* Auto-create application on accept */
