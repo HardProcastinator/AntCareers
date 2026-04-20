@@ -135,8 +135,6 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     @keyframes orb2 { to { transform:translate(-40px,-50px) scale(1.1); } }
     .tunnel-bg { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
     .tunnel-bg svg { width:100%; height:100%; opacity:0.05; }
-    .nav-link:hover,
-
     .pd-sep { border:none; border-top:1px solid var(--soil-line); margin:4px 0; }
     .pd-logout { color:#E05050 !important; } .pd-logout i { color:#E05050 !important; }
 

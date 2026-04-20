@@ -244,7 +244,7 @@ $navActive = 'messages';
           <input type="text" placeholder="Search conversations…" id="threadSearch" oninput="filterThreads(this.value)">
         </div>
         <button class="new-msg-btn" onclick="toggleNewMsgSearch()" title="New Message">
-          <i class="fas fa-pen"></i>
+          <i class="fas fa-pen-to-square"></i>
         </button>
       </div>
       <div class="thread-tabs">

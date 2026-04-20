@@ -578,6 +578,7 @@ $jobsJson = json_encode($jobs ?: []);
     body.light .modal-title{color:#1A0A09;}
     .modal-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:6px;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;}
     .modal-close:hover{background:var(--soil-hover);color:#F5F0EE;}
+    body.light .modal-close:hover{background:#F5EDEB;color:#7A1515;border-color:#D4B0AB;}
     .fg{margin-bottom:14px;}
     .fl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:flex;align-items:center;gap:4px;}
     .fl .req{color:var(--red-bright);font-size:13px;line-height:1;}
