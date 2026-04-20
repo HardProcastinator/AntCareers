@@ -114,24 +114,24 @@ switch ($action) {
                     (SELECT status FROM job_invitations ji
                         WHERE ji.job_id = ? AND ji.jobseeker_id = u.id LIMIT 1) AS invite_status
                 FROM users u
-                LEFT JOIN seeker_profiles sp ON sp.user_id = u.id
+                LEFT JOIN seeker_profiles sp ON sp.user_id COLLATE utf8mb4_unicode_ci = u.id COLLATE utf8mb4_unicode_ci
                 LEFT JOIN (
                     SELECT user_id,
                            GROUP_CONCAT(DISTINCT skill_name ORDER BY skill_name SEPARATOR ',') AS skills
                     FROM seeker_skills
                     GROUP BY user_id
-                ) ss ON ss.user_id = u.id
+                ) ss ON ss.user_id COLLATE utf8mb4_unicode_ci = u.id COLLATE utf8mb4_unicode_ci
                 WHERE u.account_type = 'seeker'
                   AND u.is_active    = 1
                   AND COALESCE(sp.show_in_people_search, 1) = 1
                   AND (
                     ? = ''
                     OR u.full_name    LIKE ?
-                    OR sp.city_name   LIKE ?
-                    OR sp.country_name LIKE ?
+                    OR sp.city_name COLLATE utf8mb4_unicode_ci LIKE ? COLLATE utf8mb4_unicode_ci
+                    OR sp.country_name COLLATE utf8mb4_unicode_ci LIKE ? COLLATE utf8mb4_unicode_ci
                     OR EXISTS (
                         SELECT 1 FROM seeker_skills sk2
-                        WHERE sk2.user_id = u.id AND sk2.skill_name LIKE ?
+                        WHERE sk2.user_id COLLATE utf8mb4_unicode_ci = u.id COLLATE utf8mb4_unicode_ci AND sk2.skill_name LIKE ?
                     )
                   )
                 ORDER BY u.full_name ASC
@@ -169,8 +169,7 @@ switch ($action) {
             inv_json(['ok' => true, 'seekers' => $seekers]);
         } catch (PDOException $e) {
             error_log('[AntCareers] inv search_seekers: ' . $e->getMessage());
-            // Temporarily show real error for debugging
-            inv_json(['ok' => false, 'msg' => 'DB ERROR: ' . $e->getMessage()], 500);
+            inv_json(['ok' => false, 'msg' => 'Database error. Please try again.'], 500);
         }
         break;
 
