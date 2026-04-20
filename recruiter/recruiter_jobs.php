@@ -1389,6 +1389,7 @@ var _invJobTitle  = '';
 var _invSelected  = {};   /* { seekerId: seekerObj } */
 var _invSeekers   = [];   /* current search results */
 var _invTimer     = null;
+var _invSearchQuery = '';  /* Track current search query for retry */
 var _invCompany   = <?= json_encode($companyName) ?>;
 var _invRecruiter = <?= json_encode($fullName) ?>;
 
@@ -1425,20 +1426,23 @@ function invSearchDebounce() {
 }
 
 function invLoadSeekers(q) {
+  _invSearchQuery = q;  /* Store for retry */
   var list = document.getElementById('invSeekerList');
   list.innerHTML = '<div class="inv-loading"><i class="fas fa-circle-notch fa-spin"></i><br>Loading jobseekers…</div>';
   fetch('../api/job_invitations.php?action=search_seekers&job_id=' + _invJobId + '&q=' + encodeURIComponent(q))
     .then(function (r) { return r.json(); })
     .then(function (data) {
       if (!data.ok) {
-        list.innerHTML = '<div class="inv-empty"><i class="fas fa-exclamation-circle"></i><p>Could not load jobseekers.<br><small style="opacity:.7">' + (data.msg||'') + '</small></p></div>';
+        var errorMsg = data.msg || 'Could not load jobseekers';
+        list.innerHTML = '<div class="inv-empty"><i class="fas fa-exclamation-circle"></i><p>' + _esc(errorMsg) + '</p><button class="btn amber" style="margin-top:10px;" onclick="invLoadSeekers(\'' + _invSearchQuery.replace(/'/g, "\\'") + '\')"><i class="fas fa-redo"></i> Try Again</button></div>';
         return;
       }
       _invSeekers = data.seekers || [];
       invRenderList();
     })
-    .catch(function () {
-      list.innerHTML = '<div class="inv-empty"><i class="fas fa-wifi"></i><p>Connection error. Please try again.</p></div>';
+    .catch(function (err) {
+      console.error('Invite load error:', err);
+      list.innerHTML = '<div class="inv-empty"><i class="fas fa-wifi"></i><p>Connection error. Please check your internet and try again.</p><button class="btn amber" style="margin-top:10px;" onclick="invLoadSeekers(\'' + _invSearchQuery.replace(/'/g, "\\'") + '\')"><i class="fas fa-redo"></i> Try Again</button></div>';
     });
 }
 
