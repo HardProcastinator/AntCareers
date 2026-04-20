@@ -873,15 +873,15 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       .modal-box { width: 100% !important; max-width: 100vw !important; margin: 0 !important; border-radius: 12px 12px 0 0 !important; position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important; top: auto !important; max-height: 90vh; overflow-y: auto; }
 
       .nav-links { display: none; }
-      .btn-ghost { display: none; }
       .hamburger { display: flex; }
       .nav-inner { padding: 0 10px; gap: 4px; }
-      .nav-right { gap: 6px; flex-shrink: 0; overflow: hidden; }
+      .nav-right { gap: 4px; flex-shrink: 0; overflow: hidden; }
       .nav-right #themeToggle { display: none !important; }
-      .nav-right #signupBtn { display: none !important; }
+      .nav-right .btn-ghost { padding: 5px 8px; font-size: 11px; }
+      .nav-right .btn-ghost i { display: none; }
+      .nav-right .btn-red { padding: 5px 8px; font-size: 11px; }
       #themeToggleMobile { display: flex !important; }
       .theme-btn { width: 30px; height: 30px; font-size: 12px; }
-      .mobile-auth .btn-ghost { display: flex; }
 
       .page-shell { padding: 0 16px 60px; }
 
@@ -1035,11 +1035,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   <a class="mobile-link" data-scroll="featured" data-close-mobile><i class="fas fa-star"></i> Featured jobs</a>
   <a class="mobile-link" data-scroll="companies" data-close-mobile><i class="fas fa-building"></i> Companies</a>
   <a class="mobile-link" data-scroll="jobs" data-close-mobile><i class="fas fa-list"></i> All Jobs</a>
-  <div class="mobile-divider"></div>
-  <div class="mobile-auth">
-    <button class="btn-ghost" id="loginBtnMob" type="button" onclick="window.location.href='auth/antcareers_login.php'"><i class="fas fa-key"></i> Log in</button>
-    <button class="btn-red" id="signupBtnMob" type="button" onclick="window.location.href='auth/antcareers_signup.php'">Get started</button>
-  </div>
 </div>
 
 <!-- PAGE -->
