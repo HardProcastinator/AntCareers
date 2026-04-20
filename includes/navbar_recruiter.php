@@ -56,7 +56,7 @@ function _recActive(string $key, string $active): string {
   .nav-link:hover{color:#F5F0EE;background:var(--soil-hover)}
   .nav-link.active{color:#F5F0EE;background:var(--soil-hover)}
   .nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
-  .theme-btn{width:34px;height:34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;font-size:13px;flex-shrink:0}
+  .theme-btn{width:36px;height:36px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;font-size:14px;flex-shrink:0}
   .theme-btn:hover{color:var(--red-bright);border-color:var(--red-vivid)}
   .profile-wrap{position:relative}
   .profile-btn{display:flex;align-items:center;gap:9px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:6px 12px 6px 8px;cursor:pointer;transition:.2s;flex-shrink:0}
@@ -81,7 +81,7 @@ function _recActive(string $key, string $active): string {
   .pd-item.danger:hover{background:rgba(224,85,85,0.1);color:#FF7070}
 
   /* Nav icon buttons (Messages, Notifications) */
-  .msg-btn-nav,.notif-btn-nav{position:relative;width:36px;height:36px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;font-size:15px;color:var(--text-muted);flex-shrink:0}
+  .msg-btn-nav,.notif-btn-nav{position:relative;width:36px;height:36px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;font-size:14px;color:var(--text-muted);flex-shrink:0}
   .msg-btn-nav:hover,.notif-btn-nav:hover{color:var(--red-pale);border-color:var(--red-vivid)}
   .msg-btn-nav .badge,.notif-btn-nav .badge{position:absolute;top:-5px;right:-5px;width:17px;height:17px;border-radius:50%;background:var(--red-vivid);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--soil-dark)}
   body.light .msg-btn-nav,body.light .notif-btn-nav{background:#F5EEEC;border-color:#E0CECA;color:#7A5555}
@@ -133,7 +133,7 @@ function _recActive(string $key, string $active): string {
   .msg-item .msg-unread-dot{width:8px;height:8px;border-radius:50%;background:var(--red-vivid);flex-shrink:0;margin-top:4px}
 
   /* Hamburger + Mobile */
-  .hamburger{display:none;width:34px;height:34px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-mid);align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;margin-left:8px}
+  .hamburger{display:none;width:36px;height:36px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-mid);align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;margin-left:8px}
   .mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:rgba(10,9,9,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--soil-line);padding:12px 20px 16px;z-index:190;flex-direction:column;gap:2px}
   .mobile-menu.open{display:flex}
   .mobile-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:7px;font-size:14px;font-weight:500;color:var(--text-mid);cursor:pointer;transition:.15s;font-family:var(--font-body);text-decoration:none}
@@ -237,7 +237,7 @@ function _recActive(string $key, string $active): string {
     .profile-wrap{display:none}
     .nav-inner{padding:0 10px;gap:4px}
     .nav-right{gap:6px;flex-shrink:0}
-    .theme-btn,.msg-btn-nav,.notif-btn-nav{width:30px;height:30px;font-size:12px}
+    .theme-btn,.msg-btn-nav,.notif-btn-nav{width:32px;height:32px;font-size:13px}
     .notif-panel-side{width:380px;max-width:calc(100vw - 16px)}
   }
 </style>

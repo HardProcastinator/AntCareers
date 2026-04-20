@@ -200,7 +200,7 @@ if (isset($_GET['pw'])) {
     .nav-link:hover { color:#F5F0EE; background:var(--soil-hover); }
     .nav-link.active { color:#F5F0EE; background:var(--soil-hover); }
     .nav-right { display:flex; align-items:center; gap:10px; margin-left:auto; flex-shrink:0; }
-    .theme-btn { width:34px; height:34px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:13px; flex-shrink:0; }
+    .theme-btn{ width:36px;height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; flex-shrink:0; }
     .theme-btn:hover { color:var(--red-bright); border-color:var(--red-vivid); }
     .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; color:var(--text-muted); flex-shrink:0; }
     .notif-btn-nav:hover { color:var(--red-pale); border-color:var(--red-vivid); }
@@ -226,7 +226,7 @@ if (isset($_GET['pw'])) {
     .pd-item.danger { color:#E05555; }
     .pd-item.danger i { color:#E05555; }
     .pd-item.danger:hover { background:rgba(224,85,85,0.1); color:#FF7070; }
-    .hamburger { display:none; width:34px; height:34px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); align-items:center; justify-content:center; cursor:pointer; font-size:14px; flex-shrink:0; margin-left:8px; }
+    .hamburger { display:none; width:36px;height:36px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); align-items:center; justify-content:center; cursor:pointer; font-size:14px; flex-shrink:0; margin-left:8px; }
 
     .main-wrap { max-width:1380px; margin:0 auto; padding:28px 24px 60px; position:relative; z-index:1; }
     .content-layout { display:grid; grid-template-columns:1fr; gap:20px; align-items:start; }

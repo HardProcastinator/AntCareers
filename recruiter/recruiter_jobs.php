@@ -447,9 +447,15 @@ $jobsJson = json_encode($jobs ?: []);
       .modal-bd{z-index:9999!important;inset:0!important;position:fixed!important}
       .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .job-card{flex-direction:column;gap:10px}
-      .job-right{display:flex;flex-direction:column;width:100%;align-items:flex-end;gap:8px;border-top:1px solid var(--soil-line);padding-top:12px}
+      .job-right{display:flex;flex-direction:column;width:100%;align-items:stretch;gap:8px;border-top:1px solid var(--soil-line);padding-top:12px}
+      .app-badge{flex-direction:row;gap:6px;padding:0;min-width:auto;background:none!important;border:none!important;border-radius:0;align-items:center}
+      .app-badge>i{margin-bottom:0;font-size:13px}
+      .app-count{font-size:13px;font-weight:700}
+      .app-count-lbl{font-size:12px;display:inline;text-transform:none;letter-spacing:0;color:var(--text-muted)}
       .job-salary{white-space:normal;word-break:break-word;font-size:13px}
-      .job-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}
+      .job-actions{width:100%;justify-content:flex-start;flex-wrap:nowrap;gap:6px}
+      .job-actions .btn{padding:6px 8px;font-size:11px;gap:4px}
+      .job-actions .btn-send-invite{padding:6px 8px;font-size:11px;gap:4px}
       .chips{display:flex;flex-wrap:wrap;gap:6px}
       .job-description-preview,.card-description{display:none}
       .profile-name{display:none}

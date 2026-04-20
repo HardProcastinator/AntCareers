@@ -229,7 +229,7 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
     .profile-btn{padding:5px 8px;gap:6px}
     .nav-inner{padding:0 10px;gap:4px}
     .nav-right{gap:6px;flex-shrink:0}
-    .theme-btn,.msg-btn-nav,.notif-btn-nav{width:30px;height:30px;font-size:12px}
+    .theme-btn,.msg-btn-nav,.notif-btn-nav{width:32px;height:32px;font-size:13px}
     .profile-wrap{display:none}
   }
 </style>
