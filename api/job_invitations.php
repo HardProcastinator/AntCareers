@@ -81,6 +81,28 @@ switch ($action) {
         if (!$jobId) inv_json(['ok' => false, 'msg' => 'job_id required']);
 
         try {
+            /* ── Validate job belongs to recruiter/employer ── */
+            $jobCheckStmt = $db->prepare("
+                SELECT j.id, j.status, j.approval_status
+                FROM jobs j
+                WHERE j.id = ?
+                  AND (
+                    (? = 'recruiter' AND j.recruiter_id = ?)
+                    OR (? = 'employer' AND j.employer_id = ?)
+                  )
+                LIMIT 1
+            ");
+            $jobCheckStmt->execute([$jobId, $role, $uid, $role, $uid]);
+            $job = $jobCheckStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$job) {
+                inv_json(['ok' => false, 'msg' => 'Job not found or not authorized'], 404);
+            }
+
+            if ($job['status'] !== 'Active') {
+                inv_json(['ok' => false, 'msg' => 'This job is no longer active'], 400);
+            }
+
             $likeQ = '%' . $q . '%';
             $stmt  = $db->prepare("
                 SELECT
@@ -147,7 +169,7 @@ switch ($action) {
             inv_json(['ok' => true, 'seekers' => $seekers]);
         } catch (PDOException $e) {
             error_log('[AntCareers] inv search_seekers: ' . $e->getMessage());
-            inv_json(['ok' => false, 'msg' => 'DB error'], 500);
+            inv_json(['ok' => false, 'msg' => 'Database error. Please try again.'], 500);
         }
         break;
 

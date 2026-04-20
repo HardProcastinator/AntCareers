@@ -327,6 +327,7 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
       case 'new_application': case 'application': case 'offer_response': return 'employer_applicants.php';
       case 'offer': return 'employer_applicants.php';
       case 'interview_invite': return 'employer_applicants.php';
+      case 'invite_accepted': case 'invite_declined': return 'employer_applicants.php';
       case 'follow': case 'unfollow': return 'employer_dashboard.php';
       case 'recruiter_added': return 'employer_manageRecruiters.php';
       default: return 'employer_dashboard.php';
