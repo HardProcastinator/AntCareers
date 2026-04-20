@@ -37,8 +37,10 @@ $navActive = 'messages';
     .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
     .page-title{font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--text-light);}
     .page-sub{font-size:13px;color:var(--text-muted);margin-top:3px;}
-    .new-msg-btn{display:flex;align-items:center;justify-content:center;padding:8px 12px;background:var(--red-vivid);border:none;border-radius:6px;color:#F5F0EE;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.22s;width:36px;height:36px;flex-shrink:0;}
+    .new-msg-btn{display:flex;align-items:center;justify-content:center;padding:0;background:var(--red-vivid);border:none;border-radius:8px;color:#F5F0EE;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.22s;width:36px;height:36px;min-width:36px;min-height:36px;flex-shrink:0;}
     .new-msg-btn:hover{background:var(--red-bright);transform:translateY(-1px);}
+    body.light .new-msg-btn{color:#fff;background:var(--red-vivid);border:1px solid var(--red-vivid);}
+    body.light .new-msg-btn:hover{background:var(--red-bright);border-color:var(--red-bright);}
 
     /* Messages layout */
     .msg-layout{display:grid;grid-template-columns:320px 1fr;gap:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;overflow:hidden;height:calc(100vh - 160px);min-height:680px;}
