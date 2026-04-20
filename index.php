@@ -320,7 +320,37 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     .mobile-auth {
       display: flex; gap: 8px; padding: 8px 0 2px;
     }
-    .mobile-auth .btn-ghost, .mobile-auth .btn-red { flex: 1; text-align: center; justify-content: center; }
+    .mobile-auth .btn-ghost, .mobile-auth .btn-red { flex: 1; text-align: center; justify-content: center; padding: 10px 16px; font-size: 14px; border-radius: 8px; }
+
+    /* ============================================
+       FILTER COLLAPSIBLE — MOBILE ONLY
+       ============================================ */
+    .filter-toggle-bar {
+      display: none; /* desktop: hidden, filters always visible */
+    }
+    .filter-body {
+      /* always visible on desktop */
+    }
+    /* Active-filter badge on filter header */
+    .filter-active-badge {
+      display: none;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--red-vivid);
+      margin-left: 6px;
+      flex-shrink: 0;
+    }
+    .filter-active-badge.visible { display: inline-block; }
+
+    /* Salary row: side-by-side inputs */
+    .salary-row {
+      display: flex; gap: 6px; align-items: center; margin-top: 6px;
+    }
+    .salary-row .fs-text-input { flex: 1; min-width: 0; }
+    .salary-row .sal-sep { color: var(--text-muted); font-size: 11px; flex-shrink: 0; }
+    .salary-error {
+      font-size: 11px; color: var(--red-pale); margin-top: 5px; display: none;
+    }
+    .salary-error.visible { display: block; }
 
     /* === MAIN LAYOUT === */
     .page-shell {
@@ -454,10 +484,10 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     }
 
     /* === SIDEBAR === */
-    .sidebar { position: sticky; top: 72px; align-self: start; }
+    .sidebar { position: sticky; top: 72px; align-self: start; overflow: visible; z-index: 10; }
     .filter-sidebar {
       background: var(--soil-card); border: 1px solid var(--soil-line);
-      border-radius: 12px; padding: 18px;
+      border-radius: 12px; padding: 18px; overflow: visible;
     }
     .fs-title {
       font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
@@ -880,12 +910,38 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       .nav-inner { padding: 0 10px; gap: 4px; }
       .nav-right { gap: 4px; flex-shrink: 0; overflow: hidden; }
       .nav-right #themeToggle { display: none !important; }
-      .nav-right .btn-ghost { padding: 5px 8px; font-size: 11px; }
-      .nav-right .btn-ghost i { display: none; }
-      .nav-right .btn-red { padding: 5px 8px; font-size: 11px; }
+      /* Hide login/register from navbar on mobile — they move into burger menu */
+      .nav-right .btn-ghost,
+      .nav-right .btn-red { display: none !important; }
       #themeToggleMobile { display: flex !important; }
       .theme-btn { width: 32px; height: 32px; font-size: 13px; }
       .hamburger { width: 32px; height: 32px; font-size: 13px; }
+
+      /* Collapsible filter on mobile */
+      .filter-toggle-bar {
+        display: flex; align-items: center; justify-content: space-between;
+        cursor: pointer; padding: 2px 0 12px; user-select: none;
+      }
+      .filter-toggle-bar .fth-label {
+        font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+        text-transform: uppercase; color: var(--text-muted);
+        display: flex; align-items: center; gap: 7px;
+      }
+      .filter-toggle-bar .fth-label i { color: var(--red-bright); }
+      .filter-toggle-bar .fth-chevron {
+        font-size: 10px; color: var(--text-muted);
+        transition: transform 0.25s ease;
+      }
+      .filter-toggle-bar.expanded .fth-chevron { transform: rotate(180deg); }
+      /* Filter body: collapsed by default on mobile */
+      .filter-body {
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.35s ease;
+      }
+      .filter-body.expanded { max-height: 9999px; }
+      /* Hide old static fs-title on mobile (replaced by toggle bar) */
+      .fs-title { display: none; }
 
       .page-shell { padding: 0 16px 60px; }
 
@@ -1039,6 +1095,11 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   <a class="mobile-link" data-scroll="featured" data-close-mobile><i class="fas fa-star"></i> Featured jobs</a>
   <a class="mobile-link" data-scroll="companies" data-close-mobile><i class="fas fa-building"></i> Companies</a>
   <a class="mobile-link" data-scroll="jobs" data-close-mobile><i class="fas fa-list"></i> All Jobs</a>
+  <div class="mobile-divider"></div>
+  <div class="mobile-auth">
+    <button class="btn-ghost" type="button" onclick="window.location.href='auth/antcareers_login.php'">Log in</button>
+    <button class="btn-red" type="button" onclick="window.location.href='auth/antcareers_signup.php'">Get started</button>
+  </div>
 </div>
 
 <!-- PAGE -->
@@ -1093,7 +1154,16 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     <!-- SIDEBAR -->
     <aside class="sidebar anim anim-d1">
       <div class="filter-sidebar">
+        <!-- Static title (desktop only — replaced by toggle bar on mobile) -->
         <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
+        <!-- Toggle bar (mobile only) -->
+        <div class="filter-toggle-bar" id="filterToggleBar">
+          <span class="fth-label"><i class="fas fa-sliders-h"></i> FILTERS <span class="filter-active-badge" id="filterActiveBadge"></span></span>
+          <i class="fas fa-chevron-down fth-chevron"></i>
+        </div>
+
+        <!-- Filter body: collapsible on mobile -->
+        <div class="filter-body" id="filterBody">
 
         <div class="fs-section">
           <div class="fs-section-label">Industry</div>
@@ -1163,7 +1233,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
               <label class="ms-item"><input type="checkbox" value="Contract"><span>Contract</span></label>
               <label class="ms-item"><input type="checkbox" value="Freelance"><span>Freelance</span></label>
               <label class="ms-item"><input type="checkbox" value="Internship"><span>Internship</span></label>
-              <label class="ms-item"><input type="checkbox" value="Casual"><span>Casual</span></label>
             </div>
           </div>
         </div>
@@ -1190,8 +1259,11 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
             <button class="ms-trigger" type="button"><span class="ms-text">Any level</span><i class="fas fa-chevron-down ms-arrow"></i></button>
             <div class="ms-panel">
               <label class="ms-item"><input type="checkbox" value="Entry"><span>Entry level</span></label>
+              <label class="ms-item"><input type="checkbox" value="Junior"><span>Junior</span></label>
               <label class="ms-item"><input type="checkbox" value="Mid"><span>Mid level</span></label>
               <label class="ms-item"><input type="checkbox" value="Senior"><span>Senior level</span></label>
+              <label class="ms-item"><input type="checkbox" value="Lead"><span>Lead</span></label>
+              <label class="ms-item"><input type="checkbox" value="Executive"><span>Executive</span></label>
             </div>
           </div>
         </div>
@@ -1200,13 +1272,12 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
         <div class="fs-section">
           <div class="fs-section-label">Salary</div>
-          <select class="fs-select" id="salaryPeriodFilter">
-            <option value="">Any period</option>
-            <option value="Annually">Annually</option>
-            <option value="Monthly">Monthly</option>
-            <option value="Hourly">Hourly</option>
-          </select>
-          <input type="text" id="salaryKeyword" class="fs-text-input" placeholder="Enter salary range" style="margin-top:6px;">
+          <div class="salary-row">
+            <input type="number" id="salaryMinFilter" class="fs-text-input" placeholder="Min salary" min="0">
+            <span class="sal-sep">–</span>
+            <input type="number" id="salaryMaxFilter" class="fs-text-input" placeholder="Max salary" min="0">
+          </div>
+          <div class="salary-error" id="salaryError">Max salary must be greater than min salary</div>
         </div>
 
         <div class="fs-divider"></div>
@@ -1227,6 +1298,8 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
         <div class="fs-divider"></div>
         <button class="fs-reset" id="resetFiltersBtn"><i class="fas fa-undo" style="margin-right:5px;"></i> Reset Filters</button>
+
+        </div><!-- /filter-body -->
       </div>
     </aside>
 
@@ -1453,9 +1526,9 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     const kw = (keywordInput?.value || '').trim();
     const loc = (document.getElementById('locationKeyword')?.value || '').trim();
     const sLoc = document.getElementById('sidebarLocationFilter')?.value || '';
-    const salKw = (document.getElementById('salaryKeyword')?.value || '').trim();
-    const salPer = document.getElementById('salaryPeriodFilter')?.value || '';
-    return !!(kw || loc || sLoc || salKw || salPer ||
+    const salMin = parseFloat(document.getElementById('salaryMinFilter')?.value) || 0;
+    const salMax = parseFloat(document.getElementById('salaryMaxFilter')?.value) || 0;
+    return !!(kw || loc || sLoc || salMin || salMax ||
       getMsValues('msIndustry').length || getMsValues('msJobRole').length ||
       getMsValues('msWorkType').length || getMsValues('msRemote').length ||
       getMsValues('msExperience').length || getMsValues('msListed').length);
@@ -1471,14 +1544,23 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     const kw  = (keywordInput?.value || '').trim().toLowerCase();
     const locKw = (document.getElementById('locationKeyword')?.value || '').trim().toLowerCase();
     const sLoc = document.getElementById('sidebarLocationFilter')?.value || '';
-    const salKw = (document.getElementById('salaryKeyword')?.value || '').trim();
-    const salPer = document.getElementById('salaryPeriodFilter')?.value || '';
+    const salMin = parseFloat(document.getElementById('salaryMinFilter')?.value) || 0;
+    const salMax = parseFloat(document.getElementById('salaryMaxFilter')?.value) || 0;
     const industries = getMsValues('msIndustry');
     const roles      = getMsValues('msJobRole');
     const jobTypes   = getMsValues('msWorkType');
     const setups     = getMsValues('msRemote');
     const exps       = getMsValues('msExperience');
     const dateDays   = getMsValues('msListed');
+
+    // Salary validation
+    const salErr = document.getElementById('salaryError');
+    if (salMin > 0 && salMax > 0 && salMax <= salMin) {
+      if (salErr) salErr.classList.add('visible');
+      return [];
+    }
+    if (salErr) salErr.classList.remove('visible');
+
     return jobsData.filter(j => {
       if (kw && !`${j.title} ${j.company} ${j.description} ${(j.tags||[]).join(' ')}`.toLowerCase().includes(kw)) return false;
       if (sLoc && !j.location.toLowerCase().includes(sLoc.toLowerCase())) return false;
@@ -1496,23 +1578,17 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       if (jobTypes.length && !jobTypes.includes(j.jobType)) return false;
       if (setups.length && !setups.includes(j.workSetup)) return false;
       if (exps.length && !exps.includes(j.experience)) return false;
-      if (salPer && j.salaryPeriod && j.salaryPeriod !== salPer) return false;
-      if (salKw) {
-        const sk = salKw.toLowerCase().replace(/[₱,\s]/g, '');
-        const nums = sk.match(/\d+/g);
-        if (nums && nums.length >= 1) {
-          let lo = parseInt(nums[0]);
-          let hi = nums.length >= 2 ? parseInt(nums[1]) : 0;
-          if (sk.includes('k') || lo < 1000) lo *= 1000;
-          if (hi && (sk.includes('k') || hi < 1000)) hi *= 1000;
-          if (hi && j.salaryMax && j.salaryMax < lo) return false;
-          if (hi && j.salaryMin && j.salaryMin > hi) return false;
-          if (!hi && j.salaryMax && j.salaryMax < lo) return false;
-        }
+      // Salary range-overlap filter: show jobs where job.salaryMin <= userMax AND job.salaryMax >= userMin
+      if (salMin > 0) {
+        if (j.salaryMax && j.salaryMax < salMin) return false;
+        if (!j.salaryMax && j.salaryMin && j.salaryMin < salMin) return false;
+      }
+      if (salMax > 0) {
+        if (j.salaryMin && j.salaryMin > salMax) return false;
       }
       if (dateDays.length) {
         const maxDays = Math.max(...dateDays.map(d => parseInt(d)));
-        const posted = new Date(j.postedDate);
+        const posted = new Date(j.createdRaw || j.postedDate);
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - maxDays);
         if (posted < cutoff) return false;
@@ -1584,6 +1660,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
   function renderAllJobs() {
     const filtering = isFiltering();
+    updateActiveFilterBadge();
     setSearchMode(filtering);
     const filtered = getFiltered();
     const countEl = document.getElementById('jobCount');
@@ -1735,8 +1812,15 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
   keywordInput.addEventListener('keyup', e => { if (e.key==='Enter') renderAllJobs(); });
   document.getElementById('locationKeyword')?.addEventListener('input', renderAllJobs);
   document.getElementById('sidebarLocationFilter')?.addEventListener('change', renderAllJobs);
-  document.getElementById('salaryKeyword')?.addEventListener('input', renderAllJobs);
-  document.getElementById('salaryPeriodFilter')?.addEventListener('change', renderAllJobs);
+  document.getElementById('salaryMinFilter')?.addEventListener('input', renderAllJobs);
+  document.getElementById('salaryMaxFilter')?.addEventListener('input', renderAllJobs);
+
+  // Active filter badge
+  function updateActiveFilterBadge() {
+    const badge = document.getElementById('filterActiveBadge');
+    if (badge) badge.classList.toggle('visible', isFiltering());
+  }
+
   document.getElementById('resetFiltersBtn').addEventListener('click', () => {
     keywordInput.value = '';
     document.querySelectorAll('.ms-wrap input[type=checkbox]').forEach(cb => cb.checked = false);
@@ -1744,12 +1828,27 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     updateRolePicker([]);
     const locKw = document.getElementById('locationKeyword');
     if (locKw) locKw.value = '';
-    const salKw = document.getElementById('salaryKeyword');
-    if (salKw) salKw.value = '';
-    ['sidebarLocationFilter','salaryPeriodFilter'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    const salMin = document.getElementById('salaryMinFilter');
+    if (salMin) salMin.value = '';
+    const salMax = document.getElementById('salaryMaxFilter');
+    if (salMax) salMax.value = '';
+    const salErr = document.getElementById('salaryError');
+    if (salErr) salErr.classList.remove('visible');
+    const sLoc = document.getElementById('sidebarLocationFilter');
+    if (sLoc) sLoc.value = '';
     renderAllJobs();
     document.querySelector('.hero').scrollIntoView({ behavior:'smooth', block:'start' });
   });
+
+  // ── COLLAPSIBLE FILTER (mobile only) ──────────────────────────────────────
+  const filterToggleBar = document.getElementById('filterToggleBar');
+  const filterBody      = document.getElementById('filterBody');
+  if (filterToggleBar && filterBody) {
+    filterToggleBar.addEventListener('click', () => {
+      const expanded = filterBody.classList.toggle('expanded');
+      filterToggleBar.classList.toggle('expanded', expanded);
+    });
+  }
 
   // ── HERO MINI JOBS ──
   (function(){

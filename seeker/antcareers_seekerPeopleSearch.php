@@ -511,10 +511,12 @@ foreach ($industryKeys as $ind) {
         <div class="ms-wrap" id="msExperience" data-default="Any level">
           <button class="ms-trigger" type="button"><span class="ms-text">Any level</span><i class="fas fa-chevron-down ms-arrow"></i></button>
           <div class="ms-panel">
-            <label class="ms-item"><input type="checkbox" value="Entry Level"><span>Entry Level</span></label>
-            <label class="ms-item"><input type="checkbox" value="Mid Level"><span>Mid Level</span></label>
+            <label class="ms-item"><input type="checkbox" value="Entry"><span>Entry</span></label>
+            <label class="ms-item"><input type="checkbox" value="Junior"><span>Junior</span></label>
+            <label class="ms-item"><input type="checkbox" value="Mid"><span>Mid</span></label>
             <label class="ms-item"><input type="checkbox" value="Senior"><span>Senior</span></label>
-            <label class="ms-item"><input type="checkbox" value="Lead / Manager"><span>Lead / Manager</span></label>
+            <label class="ms-item"><input type="checkbox" value="Lead"><span>Lead</span></label>
+            <label class="ms-item"><input type="checkbox" value="Executive"><span>Executive</span></label>
           </div>
         </div>
       </div>

@@ -171,6 +171,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if ($st->rowCount() === 0) {
                 echo json_encode(['ok' => false, 'msg' => 'Job not found or already deleted']);
             } else {
+                // Expire unread job-match notifications for this job
+                try {
+                    $db->prepare("UPDATE notifications SET is_expired = 1 WHERE type = 'relevant_job' AND reference_id = ? AND reference_type = 'job' AND is_read = 0")
+                       ->execute([$jobId]);
+                } catch (Exception) {}
                 echo json_encode(['ok' => true]);
             }
         } catch (Exception $e) {
@@ -243,6 +248,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             $new = $r['status'] === 'Active' ? 'Closed' : 'Active';
             $db->prepare("UPDATE jobs SET status=?, updated_at=NOW() WHERE id=? AND employer_id=?")->execute([$new, $jobId, $uid]);
+            // Expire unread job-match notifications when a job is closed
+            if ($new === 'Closed') {
+                try {
+                    $db->prepare("UPDATE notifications SET is_expired = 1 WHERE type = 'relevant_job' AND reference_id = ? AND reference_type = 'job' AND is_read = 0")
+                       ->execute([$jobId]);
+                } catch (Exception) {}
+            }
             echo json_encode(['ok' => true, 'status' => $new]);
         } catch (Exception $e) {
             error_log('[AntCareers] employer toggle_status: ' . $e->getMessage());

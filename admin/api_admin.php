@@ -68,6 +68,19 @@ $adminId = (int)$_SESSION['user_id'];
 $db      = getDB();
 
 /**
+ * Check if a column exists (used for self-healing schema upgrades).
+ */
+function table_has_column_admin(PDO $db, string $table, string $column): bool
+{
+    $stmt = $db->prepare(
+        'SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+    );
+    $stmt->execute([$table, $column]);
+    return (int)$stmt->fetchColumn() > 0;
+}
+
+/**
  * Helper — send an in-app notification to a user.
  */
 $notify = static function (int $toUserId, int $fromUserId, string $type, string $content, int $refId, string $refType) use ($db): void {
@@ -205,7 +218,7 @@ if ($action === 'approve_job') {
              WHERE id = :jid"
         )->execute([':admin' => $adminId, ':jid' => $jobId]);
 
-        $jRow = $db->prepare("SELECT j.title, j.employer_id, j.industry, j.skills_required, u.full_name, COALESCE(cp.company_name, u.company_name, u.full_name, 'A company') AS company_label FROM jobs j JOIN users u ON u.id = j.employer_id LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id WHERE j.id = :jid LIMIT 1");
+        $jRow = $db->prepare("SELECT j.title, j.employer_id, j.industry, j.experience_level, j.skills_required, j.location, j.setup, u.full_name, COALESCE(cp.company_name, u.company_name, u.full_name, 'A company') AS company_label FROM jobs j JOIN users u ON u.id = j.employer_id LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id WHERE j.id = :jid LIMIT 1");
         $jRow->execute([':jid' => $jobId]);
         $j = $jRow->fetch();
 
@@ -214,61 +227,115 @@ if ($action === 'approve_job') {
                 "Your job post \"{$j['title']}\" has been approved and is now live.",
                 $jobId, 'job');
 
-            // ── Notify matching seekers ──────────────────────────────
+            // ── Notify matching seekers (4-criteria job match) ─────────────────
             try {
-                $jobIndustry = trim((string)($j['industry'] ?? ''));
-                $jobSkills   = array_filter(array_map('trim', explode(',', (string)($j['skills_required'] ?? ''))));
+                require_once dirname(__DIR__) . '/includes/job_match_mailer.php';
+
+                // Ensure is_expired column exists (self-healing migration)
+                if (!table_has_column_admin($db, 'notifications', 'is_expired')) {
+                    $db->exec("ALTER TABLE notifications ADD COLUMN is_expired TINYINT(1) NOT NULL DEFAULT 0 AFTER is_read");
+                }
+
+                $jobExpLevel  = strtolower(trim((string)($j['experience_level'] ?? '')));
+                $jobIndustry  = strtolower(trim((string)($j['industry'] ?? '')));
+                $jobLocation  = strtolower(trim((string)($j['location'] ?? '')));
+                $jobSetup     = strtolower(trim((string)($j['setup'] ?? '')));
+                $jobTitleLow  = strtolower(trim((string)($j['title'] ?? '')));
+                $jobSkillsLow = strtolower((string)($j['skills_required'] ?? ''));
                 $companyLabel = (string)($j['company_label'] ?? 'A company');
 
-                // Build query: match seekers whose nr_classification starts with the job industry
-                // OR who have any skill matching the job's skills_required
-                // Exclude seekers who already applied, and respect notif_relevant_jobs preference
-                $matchedSeekers = [];
+                // Fetch all opted-in seekers who have at least one relevant profile field
+                $seekerStmt = $db->prepare("
+                    SELECT u.id, u.email, u.full_name,
+                           sp.experience_level, sp.industry, sp.country_name, sp.desired_position
+                    FROM users u
+                    JOIN seeker_profiles sp ON sp.user_id = u.id
+                    LEFT JOIN user_preferences up ON up.user_id = u.id
+                    WHERE u.account_type = 'seeker'
+                      AND u.is_active = 1
+                      AND COALESCE(up.notif_relevant_jobs, 1) = 1
+                      AND (
+                        sp.experience_level IS NOT NULL
+                        OR sp.industry IS NOT NULL
+                        OR sp.desired_position IS NOT NULL
+                      )
+                ");
+                $seekerStmt->execute();
+                $seekers = $seekerStmt->fetchAll();
 
-                if ($jobIndustry !== '') {
-                    $indStmt = $db->prepare("
-                        SELECT DISTINCT u.id
-                        FROM users u
-                        JOIN seeker_profiles sp ON sp.user_id = u.id
-                        LEFT JOIN user_preferences up ON up.user_id = u.id
-                        WHERE u.account_type = 'seeker' AND u.is_active = 1
-                          AND sp.nr_classification LIKE CONCAT(:industry, '%')
-                          AND COALESCE(up.notif_relevant_jobs, 1) = 1
-                          AND u.id NOT IN (SELECT seeker_id FROM applications WHERE job_id = :jid)
-                    ");
-                    $indStmt->execute([':industry' => $jobIndustry, ':jid' => $jobId]);
-                    foreach ($indStmt->fetchAll(PDO::FETCH_COLUMN) as $sid) {
-                        $matchedSeekers[(int)$sid] = true;
-                    }
-                }
+                // Prepared statements used inside the loop
+                $dupChk = $db->prepare(
+                    "SELECT COUNT(*) FROM notifications
+                     WHERE user_id = ? AND type = 'relevant_job'
+                       AND reference_id = ? AND reference_type = 'job'"
+                );
+                $insNotif = $db->prepare(
+                    "INSERT INTO notifications (user_id, actor_id, type, content, reference_id, reference_type, is_read, created_at)
+                     VALUES (?, ?, 'relevant_job', ?, ?, 'job', 0, NOW())"
+                );
 
-                if (!empty($jobSkills)) {
-                    // Match seekers who have any overlapping skill
-                    $placeholders = implode(',', array_fill(0, count($jobSkills), '?'));
-                    $skillStmt = $db->prepare("
-                        SELECT DISTINCT u.id
-                        FROM users u
-                        JOIN seeker_skills ss ON ss.user_id = u.id
-                        LEFT JOIN user_preferences up ON up.user_id = u.id
-                        WHERE u.account_type = 'seeker' AND u.is_active = 1
-                          AND ss.skill_name IN ({$placeholders})
-                          AND COALESCE(up.notif_relevant_jobs, 1) = 1
-                          AND u.id NOT IN (SELECT seeker_id FROM applications WHERE job_id = ?)
-                    ");
-                    $params = array_values($jobSkills);
-                    $params[] = $jobId;
-                    $skillStmt->execute($params);
-                    foreach ($skillStmt->fetchAll(PDO::FETCH_COLUMN) as $sid) {
-                        $matchedSeekers[(int)$sid] = true;
-                    }
-                }
-
-                // Send notifications to matched seekers (cap at 200 to avoid overload)
-                $notifContent = "A new job matching your profile has been posted: \"{$j['title']}\" at {$companyLabel}.";
                 $count = 0;
-                foreach (array_keys($matchedSeekers) as $seekerId) {
-                    if (++$count > 200) break;
-                    $notify($seekerId, $adminId, 'relevant_job', $notifContent, $jobId, 'job');
+                foreach ($seekers as $seeker) {
+                    if ($count >= 200) break;
+
+                    $sExp     = strtolower(trim((string)($seeker['experience_level'] ?? '')));
+                    $sInd     = strtolower(trim((string)($seeker['industry'] ?? '')));
+                    $sCountry = strtolower(trim((string)($seeker['country_name'] ?? '')));
+                    $sDesired = strtolower(trim((string)($seeker['desired_position'] ?? '')));
+
+                    // Skip seekers whose profile has no relevant data (incomplete profile)
+                    if ($sExp === '' && $sInd === '' && $sDesired === '') continue;
+
+                    // ── Score 4 criteria ────────────────────────────────────────────
+                    $expMatch = ($sExp !== '' && $jobExpLevel !== '' && $sExp === $jobExpLevel);
+                    $indMatch = ($sInd !== '' && $jobIndustry !== '' && $sInd === $jobIndustry);
+                    $score    = (int)$expMatch + (int)$indMatch;
+
+                    // Country match: job location contains seeker's country OR job is remote
+                    if ($sCountry !== '' && ($jobSetup === 'remote' || str_contains($jobLocation, $sCountry))) {
+                        $score++;
+                    }
+
+                    // Title/skills keyword: desired_position words overlap with job title or skills
+                    if ($sDesired !== '') {
+                        $words = array_filter(
+                            preg_split('/[\s,\/\-]+/', $sDesired) ?: [],
+                            static fn($w) => strlen($w) > 3
+                        );
+                        foreach ($words as $word) {
+                            if (str_contains($jobTitleLow, $word) || str_contains($jobSkillsLow, $word)) {
+                                $score++;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Notify: score >= 2 OR experience AND industry both match (hard filter)
+                    if ($score < 2 && !($expMatch && $indMatch)) continue;
+
+                    // Duplicate prevention — skip if already notified
+                    $dupChk->execute([(int)$seeker['id'], $jobId]);
+                    if ((int)$dupChk->fetchColumn() > 0) continue;
+
+                    // Insert in-app notification
+                    $content = 'New job match: "' . $j['title'] . '" at ' . $companyLabel . '.';
+                    $insNotif->execute([(int)$seeker['id'], $adminId, $content, $jobId]);
+
+                    // Send email notification
+                    sendJobMatchEmail(
+                        (string)$seeker['email'],
+                        (string)$seeker['full_name'],
+                        [
+                            'id'               => $jobId,
+                            'title'            => (string)($j['title'] ?? ''),
+                            'company'          => $companyLabel,
+                            'location'         => (string)($j['location'] ?? ''),
+                            'experience_level' => (string)($j['experience_level'] ?? ''),
+                        ],
+                        APP_URL
+                    );
+
+                    $count++;
                 }
             } catch (Throwable $matchErr) {
                 error_log('[AntCareers] relevant job notification matching: ' . $matchErr->getMessage());
@@ -322,6 +389,15 @@ if ($action === 'reject_job') {
             $notify((int)$j['employer_id'], $adminId, 'general', $msg, $jobId, 'job');
         }
 
+        // Expire any unread relevant_job notifications for this job
+        try {
+            $db->prepare(
+                "UPDATE notifications SET is_expired = 1
+                 WHERE type = 'relevant_job' AND reference_id = :jid
+                   AND reference_type = 'job' AND is_read = 0"
+            )->execute([':jid' => $jobId]);
+        } catch (Throwable) {}
+
         // Mark the job approval request notification as read for all admins
         $db->prepare(
             "UPDATE notifications SET is_read = 1
@@ -367,6 +443,15 @@ if ($action === 'remove_job') {
             }
             $notify((int)$j['employer_id'], $adminId, 'general', $msg, $jobId, 'job');
         }
+
+        // Expire any unread relevant_job notifications for this job
+        try {
+            $db->prepare(
+                "UPDATE notifications SET is_expired = 1
+                 WHERE type = 'relevant_job' AND reference_id = :jid
+                   AND reference_type = 'job' AND is_read = 0"
+            )->execute([':jid' => $jobId]);
+        } catch (Throwable) {}
 
         logActivity(
             $j ? (int)$j['employer_id'] : null,
