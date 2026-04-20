@@ -243,10 +243,10 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       margin-left: auto; flex-shrink: 0;
     }
     .theme-btn {
-      width: 34px; height: 34px; border-radius: 7px;
+      width: 36px; height: 36px; border-radius: 7px;
       background: var(--soil-hover); border: 1px solid var(--soil-line);
       color: var(--text-muted); display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: 0.2s; font-size: 13px; flex-shrink: 0;
+      cursor: pointer; transition: 0.2s; font-size: 14px; flex-shrink: 0;
     }
     .theme-btn:hover { color: var(--red-bright); border-color: var(--red-vivid); }
 
@@ -283,7 +283,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     /* === HAMBURGER (mobile only) === */
     .hamburger {
       display: none;
-      width: 34px; height: 34px; border-radius: 8px;
+      width: 36px; height: 36px; border-radius: 8px;
       background: var(--soil-hover); border: 1px solid var(--soil-line);
       color: var(--text-mid); align-items: center; justify-content: center;
       cursor: pointer; font-size: 14px; flex-shrink: 0;
@@ -432,7 +432,8 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     .mini-job-badge {
       font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 4px;
       background: rgba(200,57,42,0.1); color: var(--red-pale);
-      border: 1px solid rgba(200,57,42,0.18); white-space: nowrap; margin-left: auto;
+      border: 1px solid rgba(200,57,42,0.18); margin-left: auto;
+      max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .cv-footer {
       margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--soil-line);
@@ -881,7 +882,8 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       .nav-right .btn-ghost i { display: none; }
       .nav-right .btn-red { padding: 5px 8px; font-size: 11px; }
       #themeToggleMobile { display: flex !important; }
-      .theme-btn { width: 30px; height: 30px; font-size: 12px; }
+      .theme-btn { width: 32px; height: 32px; font-size: 13px; }
+      .hamburger { width: 32px; height: 32px; font-size: 13px; }
 
       .page-shell { padding: 0 16px 60px; }
 

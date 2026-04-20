@@ -352,7 +352,7 @@ $jobsJson = json_encode($jobs ?: []);
     .nav-link{font-size:13px;font-weight:600;color:#A09090;text-decoration:none;padding:7px 11px;border-radius:6px;transition:all 0.2s;cursor:pointer;background:none;border:none;font-family:var(--font-body);display:flex;align-items:center;gap:5px;white-space:nowrap;letter-spacing:0.01em;}
     .nav-link:hover,.nav-link.active{color:#F5F0EE;background:var(--soil-hover);}
     .nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0;}
-    .theme-btn{width:34px;height:34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:13px;flex-shrink:0;}
+    .theme-btn{width:36px;height:36px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:14px;flex-shrink:0;}
     .theme-btn:hover{color:var(--red-bright);border-color:var(--red-vivid);}
     .notif-btn-nav{position:relative;width:36px;height:36px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:14px;color:var(--text-muted);flex-shrink:0;}
     .notif-btn-nav:hover{color:var(--red-pale);border-color:var(--red-vivid);}
@@ -377,7 +377,7 @@ $jobsJson = json_encode($jobs ?: []);
     .pd-item.danger{color:#E05555;}
     .pd-item.danger i{color:#E05555;}
     .pd-item.danger:hover{background:rgba(224,85,85,0.1);color:#FF7070;}
-    .hamburger{display:none;width:34px;height:34px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-mid);align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;margin-left:8px;}
+    .hamburger{display:none;width:36px;height:36px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-mid);align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;margin-left:8px;}
     .btn-nav-red{padding:7px 16px;border-radius:7px;background:var(--red-vivid);border:none;color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;transition:0.2s;white-space:nowrap;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(209,61,44,0.3);text-decoration:none;display:flex;align-items:center;gap:7px;}
     .btn-nav-red:hover{background:var(--red-bright);transform:translateY(-1px);box-shadow:0 4px 14px rgba(209,61,44,0.45);}
     .mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:rgba(10,9,9,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--soil-line);padding:12px 20px 16px;z-index:190;flex-direction:column;gap:2px;}
@@ -401,12 +401,14 @@ $jobsJson = json_encode($jobs ?: []);
       .job-card{padding:14px;flex-direction:column;gap:10px}
       .job-icon{display:none}
       .job-body{width:100%}
-      .job-right{display:flex!important;flex-direction:row;align-items:center;width:100%;gap:10px;border-top:1px solid var(--soil-line);padding-top:10px}
-      .app-badge{flex-direction:column;gap:2px;padding:7px 12px;min-width:auto;flex-shrink:0;align-items:center}
-      .app-badge>i{margin-bottom:0;font-size:12px}
-      .app-count{font-size:16px}
-      .app-count-lbl{font-size:9px;display:block}
-      .job-actions{flex:1;justify-content:flex-end;flex-wrap:wrap;gap:5px}
+      .job-right{display:flex!important;flex-direction:column;align-items:stretch;width:100%;gap:8px;border-top:1px solid var(--soil-line);padding-top:10px}
+      .app-badge{flex-direction:row;gap:6px;padding:0;min-width:auto;background:none!important;border:none!important;border-radius:0;align-items:center}
+      .app-badge>i{margin-bottom:0;font-size:13px}
+      .app-count{font-size:13px;font-weight:700}
+      .app-count-lbl{font-size:12px;display:inline;text-transform:none;letter-spacing:0;color:var(--text-muted)}
+      .job-actions{flex:unset;width:100%;justify-content:flex-start;flex-wrap:nowrap;gap:6px}
+      .job-actions .btn{padding:6px 8px;font-size:11px;gap:4px}
+      .job-actions .btn-send-invite{padding:6px 8px;font-size:11px;gap:4px}
       .chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
       .chips::-webkit-scrollbar{display:none}
       .chips .chip,.chips .tag{flex-shrink:0}

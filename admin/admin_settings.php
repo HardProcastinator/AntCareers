@@ -205,7 +205,7 @@ if (isset($_GET['pw'])) {
     .nav-link:hover { color:#F5F0EE; background:var(--soil-hover); }
     .nav-link.active { color:#F5F0EE; background:var(--soil-hover); }
     .nav-right { display:flex; align-items:center; gap:10px; margin-left:auto; flex-shrink:0; }
-    .theme-btn { width:34px; height:34px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:13px; flex-shrink:0; }
+    .theme-btn{ width:36px;height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; flex-shrink:0; }
     .theme-btn:hover { color:var(--red-bright); border-color:var(--red-vivid); }
     .notif-btn-nav { position:relative; width:36px; height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:15px; color:var(--text-muted); flex-shrink:0; text-decoration:none; }
     .notif-btn-nav:hover { color:var(--red-pale); border-color:var(--red-vivid); }
@@ -231,7 +231,7 @@ if (isset($_GET['pw'])) {
     .pd-item.danger { color:#E05555; }
     .pd-item.danger i { color:#E05555; }
     .pd-item.danger:hover { background:rgba(224,85,85,0.1); color:#FF7070; }
-    .hamburger { display:none; width:34px; height:34px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); align-items:center; justify-content:center; cursor:pointer; font-size:14px; flex-shrink:0; margin-left:8px; }
+    .hamburger { display:none; width:36px;height:36px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); align-items:center; justify-content:center; cursor:pointer; font-size:14px; flex-shrink:0; margin-left:8px; }
     .mobile-menu { display:none; position:fixed; top:64px; left:0; right:0; background:rgba(10,9,9,0.97); backdrop-filter:blur(20px); border-bottom:1px solid var(--soil-line); padding:12px 20px 16px; z-index:190; flex-direction:column; gap:2px; }
     .mobile-menu.open { display:flex; }
     .mobile-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:7px; font-size:14px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; text-decoration:none; }
@@ -392,7 +392,7 @@ if (isset($_GET['pw'])) {
       .nav-links{display:none} .hamburger{display:flex}
       .page-shell{padding:16px 16px 60px} .nav-inner{padding:0 16px}
       .profile-wrap{display:none}
-      .theme-btn,.notif-btn-nav{width:30px;height:30px;font-size:12px} .nav-right{gap:6px}
+      .theme-btn,.notif-btn-nav{width:32px;height:32px;font-size:13px} .nav-right{gap:6px}
       .form-row { grid-template-columns:1fr; }
     }
   </style>
