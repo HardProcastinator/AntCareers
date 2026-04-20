@@ -476,6 +476,7 @@ try {
     body.light .sum-card { background:#FFFFFF; border-color:#E0CECA; }
     body.light .sc-num { color:#1A0A09; }
     body.light .featured-card { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .featured-card:hover { box-shadow:0 16px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(209,61,44,0.08); }
     body.light .fc-title { color:#1A0A09; }
     body.light .fc-count { color:#1A0A09; }
     body.light .chip { background:#F5EEEC; border-color:#E0CECA; color:#5A3838; }

@@ -399,6 +399,7 @@ $openJobCount      = count($companyJobs);
     body.light .jdm-footer { background:#FFFFFF; border-top-color:#E0CECA; }
     body.light .job-row:hover { background:#FEF0EE; }
     body.light .job-row { border-bottom-color:#E0CECA; }
+    body.light .jr-icon { background:rgba(209,61,44,0.08); border-color:rgba(209,61,44,0.15); }
 
     @media(max-width:860px) {
       .cp-layout { grid-template-columns:1fr; }

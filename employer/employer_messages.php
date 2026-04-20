@@ -455,7 +455,7 @@ function openThread(partnerId) {
   const layout = document.querySelector('.msg-layout');
   if (layout) layout.classList.add('chat-open');
   if (msgPollTimer) clearInterval(msgPollTimer);
-  msgPollTimer = setInterval(() => loadConversation(partnerId), 10000);
+  msgPollTimer = setInterval(() => loadConversation(partnerId), 3000);
 }
 
 function mobileBackToThreads() {
@@ -634,6 +634,10 @@ function startNewMsg(userId) {
 }
 
 // â”€â”€ NAVBAR OVERRIDES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// On the full messages page, prevent navbar sidebar from opening
+window.openMsgSidebar = function() {
+  window.scrollTo({top: 0, behavior: 'smooth'});
+};
 const _navMsgBtn = document.getElementById('navMsgBtn');
 if (_navMsgBtn) _navMsgBtn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
 
@@ -641,7 +645,7 @@ if (_navMsgBtn) _navMsgBtn.addEventListener('click', e => { e.preventDefault(); 
 const _params = new URLSearchParams(window.location.search);
 const _targetUser = Number(_params.get('user_id') || 0);
 loadThreads(() => { if (_targetUser > 0) openThread(_targetUser); });
-setInterval(() => { loadThreads(); updateBadges(); }, 10000);
+setInterval(() => { loadThreads(); updateBadges(); }, 3000);
 updateBadges();
 </script>
 </body>

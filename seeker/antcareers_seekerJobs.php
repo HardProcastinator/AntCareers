@@ -695,8 +695,9 @@ foreach ($industryKeys as $industryValue) {
       .filter-sidebar.mobile-open{display:block}
       .job-row{flex-wrap:wrap}
       .jr-icon{display:none}
-      .jr-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;scrollbar-width:none;padding-bottom:4px}
-      .jr-chips::-webkit-scrollbar{display:none}
+      .jr-top{flex-wrap:wrap;gap:6px}
+      .jr-salary{white-space:normal;word-break:break-word;font-size:13px}
+      .jr-chips{display:flex;flex-wrap:wrap;gap:6px}
       .jr-chips .chip{flex-shrink:0}
       .job-row-right{flex-direction:row;align-items:center;justify-content:space-between;width:100%;min-width:unset}
       .job-description-preview,.card-description{display:none}
@@ -705,6 +706,9 @@ foreach ($industryKeys as $industryValue) {
       .footer{flex-direction:column;text-align:center;padding:20px 16px}
       .search-box{min-width:100%}
       .search-btn{flex:1;justify-content:center}
+      .search-row{flex-direction:column;gap:8px}
+      .search-row .ms-wrap{width:100%;min-width:0}
+      .search-row .filter-select{width:100%}
     }
     @media(min-width:761px){
       .mobile-filter-toggle{display:none!important}

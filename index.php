@@ -289,6 +289,9 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       cursor: pointer; font-size: 14px; flex-shrink: 0;
       margin-left: 8px;
     }
+    #themeToggleMobile {
+      display: none;
+    }
 
     /* Mobile drawer */
     .mobile-menu {
@@ -300,6 +303,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       padding: 12px 20px 16px;
       z-index: 190;
       flex-direction: column; gap: 2px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
     }
     .mobile-menu.open { display: flex; }
     .mobile-link {
@@ -820,6 +824,11 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     body.light .hero-stat-num { color: #1A0A09; }
     body.light .hero-stat-num span { color: var(--red-vivid); }
     body.light .hero-stat-label { color: #7A5555; }
+    body.light .stat-sep { background: #E0CECA; }
+
+    /* Job row light mode */
+    body.light .job-row { background: #FFFFFF; border-color: #E0CECA; }
+    body.light .job-row:hover { background: #FEF0EE; border-color: rgba(209,61,44,0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
     /* === EMPTY STATE === */
     .empty-state { text-align: center; padding: 56px 20px; color: var(--text-muted); }
@@ -868,16 +877,19 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       .hamburger { display: flex; }
       .nav-inner { padding: 0 10px; gap: 4px; }
       .nav-right { gap: 6px; flex-shrink: 0; overflow: hidden; }
+      .nav-right #themeToggle { display: none !important; }
+      .nav-right #signupBtn { display: none !important; }
+      #themeToggleMobile { display: flex !important; }
       .theme-btn { width: 30px; height: 30px; font-size: 12px; }
-      #themeToggleMobile { display: none !important; }
       .mobile-auth .btn-ghost { display: flex; }
 
       .page-shell { padding: 0 16px 60px; }
 
       .hero { padding: 40px 0 28px; }
       .hero-h1 { letter-spacing: -1px; }
-      .hero-stats { gap: 16px; }
-      .stat-sep { display: none; }
+      .hero-stats { gap: 0; flex-direction: row; flex-wrap: nowrap; align-items: stretch; }
+      .hero-stat { flex: 1; text-align: center; }
+      .stat-sep { display: block; width: 1px; background: var(--soil-line); margin: 0 16px; flex-shrink: 0; }
 
       .companies-row {
         display: flex;
@@ -905,7 +917,12 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
 
       .footer { flex-direction: column; text-align: center; padding: 20px 16px; }
 
-      #signupBtn { display: none !important; }
+      .search-bar { max-width: 100%; }
+      .search-bar input { min-width: 0; }
+
+      .jr-salary { white-space: normal; word-break: break-word; font-size: 13px; }
+      .jr-top { flex-wrap: wrap; }
+      .job-row-right { min-width: 0; overflow: hidden; }
 
       .filter-sidebar { padding: 20px 16px; }
       .filter-sidebar .fs-section { display: flex; flex-direction: column; width: 100%; min-width: 0; box-sizing: border-box; margin-bottom: 18px; }
@@ -1008,7 +1025,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     </div>
 
     <!-- Hamburger (mobile only) -->
-    <button class="theme-btn" id="themeToggleMobile" style="display:none;"><i class="fas fa-moon"></i></button>
+    <button class="theme-btn" id="themeToggleMobile"><i class="fas fa-moon"></i></button>
     <div class="hamburger" id="hamburger"><i class="fas fa-bars"></i></div>
   </div>
 </nav>
@@ -1332,14 +1349,6 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       hamburger.querySelector('i').className = 'fas fa-bars';
     }
   });
-
-  // mobile theme toggle visibility
-  function updateMobileThemeBtn() {
-    const mob = document.getElementById('themeToggleMobile');
-    mob.style.display = window.innerWidth <= 760 ? 'flex' : 'none';
-  }
-  window.addEventListener('resize', updateMobileThemeBtn);
-  updateMobileThemeBtn();
 
   // mobile scroll links
   document.querySelectorAll('[data-close-mobile][data-scroll]').forEach(el => {
