@@ -42,5 +42,5 @@ if (ini_get('session.use_cookies')) {
 session_destroy();
 
 // 6 — Redirect to login
-header('Location: antcareers_login.php');
+header('Location: ' . url('auth/antcareers_login.php'));
 exit;
