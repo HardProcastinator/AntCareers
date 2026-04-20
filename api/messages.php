@@ -208,20 +208,17 @@ function initials_for(string $name): string
     if (count($parts) >= 2) {
         return strtoupper(substr($parts[0], 0, 1) . substr($parts[1], 0, 1));
     }
-    return strtoupper(substr($parts[0], 0, 2));
+    return strtoupper(substr($parts[0], 0, 1));
 }
 
 function color_for_id(int $id): string
 {
     $colors = [
+        'linear-gradient(135deg,#D13D2C,#7A1515)',
         'linear-gradient(135deg,#4A90D9,#2A6090)',
         'linear-gradient(135deg,#4CAF70,#2A7040)',
-        'linear-gradient(135deg,#9C27B0,#5A1070)',
-        'linear-gradient(135deg,#D4943A,#8a5010)',
-        'linear-gradient(135deg,#D13D2C,#7A1515)',
-        'linear-gradient(135deg,#00897B,#00564F)',
-        'linear-gradient(135deg,#5C6BC0,#283593)',
-        'linear-gradient(135deg,#F4511E,#BF360C)',
+        'linear-gradient(135deg,#D4943A,#8A5A10)',
+        'linear-gradient(135deg,#9C27B0,#5A0080)',
     ];
     return $colors[$id % count($colors)];
 }

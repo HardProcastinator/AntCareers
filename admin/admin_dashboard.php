@@ -5,7 +5,7 @@ require_once dirname(__DIR__) . '/config.php';
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../auth/antcareers_login.php');
     exit;
-} 
+}
 if (strtolower((string)($_SESSION['account_type'] ?? '')) !== 'admin') {
     header('Location: ../index.php');
     exit;
@@ -40,7 +40,7 @@ $adminStats = [
   'recruiters'        => $countValue("SELECT COUNT(*) FROM users WHERE LOWER(account_type)='recruiter'"),
 ];
 
-// Recent activity logs — defensive (table created by migration)
+// Recent activity logs - defensive (table created by migration)
 $recentActivity = [];
 try {
   $stmt = $db->query(
@@ -52,7 +52,7 @@ try {
   $recentActivity = $stmt ? $stmt->fetchAll() : [];
 } catch (Throwable) {}
 
-// ── Recent users (latest 5) ──
+// Recent users (latest 5)
 $recentUsers = [];
 try {
   $stmt = $db->query(
@@ -64,7 +64,7 @@ try {
   $recentUsers = $stmt ? $stmt->fetchAll() : [];
 } catch (Throwable) {}
 
-// ── Recent jobs (latest 5) ──
+// Recent jobs (latest 5)
 $recentJobs = [];
 try {
   $stmt = $db->query(
@@ -79,7 +79,7 @@ try {
   $recentJobs = $stmt ? $stmt->fetchAll() : [];
 } catch (Throwable) {}
 
-// ── Analytics: weekly stats ──
+// Analytics: weekly stats
 $weeklyUsers = $countValue("SELECT COUNT(*) FROM users WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
 $weeklyJobs  = $countValue("SELECT COUNT(*) FROM jobs WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
 $weeklyApps  = $countValue("SELECT COUNT(*) FROM applications WHERE applied_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
@@ -354,9 +354,12 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
     body.light .theme-btn { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .theme-btn:hover { color:#1A0A09; border-color:var(--red-vivid); background:#FEF0EE; }
     body.light .notif-btn-nav { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .notif-btn-nav:hover { color:#1A0A09; border-color:var(--red-vivid); background:#FEF0EE; }
     body.light .notif-btn-nav .badge { border-color:#F9F5F4; }
     body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .profile-btn:hover { background:#FEF0EE; border-color:var(--red-vivid); }
     body.light .profile-name { color:#1A0A09; }
     body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; }
     body.light .search-bar { background:#FFFFFF; border-color:#E0CECA; }
@@ -375,6 +378,9 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     body.light .chip.green,.chip.amber,.chip.red,.chip.blue { opacity:1; }
     body.light .job-row { background:#FFFFFF; border-color:#E0CECA; }
     body.light .job-row:hover { background:#FEF0EE; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+    body.light .jr-btn:hover { color:#1A0A09; }
+    body.light .ap-close:hover { color:#1A0A09; background:#FEF0EE; border-color:#D4B0AB; }
+    body.light .modal-close:hover { color:#1A0A09; background:#FEF0EE; border-color:var(--red-mid); }
     body.light .reg-card { background:#fff; border-color:#E0CECA; }
     body.light .reg-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.08); }
     body.light .reg-name { color:#1A0A09; }
@@ -468,8 +474,6 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
   </style>
 </head>
 <body>
-
-
 <div class="tunnel-bg">
   <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
     <g stroke="#C0392B" stroke-width="1.5" fill="none" opacity="0.6">

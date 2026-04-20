@@ -54,6 +54,7 @@ try { $pendingJobs = (int)$db->query("SELECT COUNT(*) FROM jobs WHERE approval_s
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>AntCareers — Recruiters</title>
+  <script>(function(){const t=localStorage.getItem('ac-theme')||'dark';if(t==='light')document.documentElement.classList.add('theme-light');})();</script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -194,9 +195,12 @@ try { $pendingJobs = (int)$db->query("SELECT COUNT(*) FROM jobs WHERE approval_s
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
     body.light .theme-btn { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .theme-btn:hover { color:#1A0A09; border-color:var(--red-vivid); background:#FEF0EE; }
     body.light .notif-btn-nav { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .notif-btn-nav:hover { color:#1A0A09; border-color:var(--red-vivid); background:#FEF0EE; }
     body.light .notif-btn-nav .badge { border-color:#F9F5F4; }
     body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .profile-btn:hover { background:#FEF0EE; border-color:var(--red-vivid); }
     body.light .profile-name { color:#1A0A09; }
     body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; }
     body.light .page-title { color:#1A0A09; }
@@ -206,6 +210,8 @@ try { $pendingJobs = (int)$db->query("SELECT COUNT(*) FROM jobs WHERE approval_s
     body.light .ur-name { color:#1A0A09; }
     body.light .user-row:hover { background:#FEF0EE; }
     body.light .modal-box { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .modal-title { color:#1A0A09; }
+    body.light .modal-close:hover { color:#1A0A09; background:#FEF0EE; border-color:#D4B0AB; }
     body.light .modal-textarea, body.light .modal-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .chip-date { background:#F5EEEC; border-color:#E0CECA; }
     body.light .pdh-name { color:#1A0A09; }

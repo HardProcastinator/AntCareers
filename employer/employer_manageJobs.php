@@ -462,20 +462,29 @@ $jobsJson = json_encode($jobs ?: []);
 
     /* ── Filter Bar (Admin-style) ── */
     .filter-toolbar{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;padding:16px 18px;margin-bottom:18px;}
-    .filter-form{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;}
-    .filter-group{display:flex;flex-direction:column;gap:5px;min-width:0;}
-    .filter-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;}
+    .filter-form{display:flex;flex-direction:column;gap:12px;align-items:stretch;}
+    .toolbar-row{width:100%;}
+    .toolbar-row.status-row .stats-row{width:100%;margin-bottom:0;}
+    .toolbar-row.controls-row .quick-filters{width:100%;}
     .filter-toolbar .search-wrap{flex:1;min-width:220px;position:relative;}
     .filter-toolbar .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;}
     .filter-toolbar .search-input{width:100%;padding:8px 13px 8px 34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
     .filter-toolbar .search-input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
-    .filter-toolbar .stats-row{margin-bottom:0;}
+    .filter-toolbar .quick-filters{display:flex;align-items:flex-end;gap:10px;flex-wrap:nowrap;}
+    .filter-toolbar .quick-filters .search-wrap{flex:1;min-width:260px;}
+    .filter-toolbar .quick-filters select{padding:8px 12px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;cursor:pointer;min-width:170px;}
+    .filter-toolbar .quick-filters select:focus{border-color:var(--red-vivid);}
     .filter-toolbar .stat-pill{padding:5px 12px;border-radius:100px;background:var(--soil-hover);}
     .filter-toolbar .sp-label{font-size:12px;}
     .filter-toolbar .sp-count{font-size:12px;font-family:var(--font-body);font-weight:700;line-height:1;}
     body.light .filter-toolbar{background:#FFFFFF;border-color:#E0CECA;}
     body.light .filter-toolbar .stat-pill{background:#F5EEEC;border-color:#E0CECA;}
     body.light .filter-toolbar .search-input{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
+    body.light .filter-toolbar .quick-filters select{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
+    @media(max-width:900px){
+      .filter-toolbar .quick-filters{flex-direction:column;align-items:stretch;}
+      .filter-toolbar .quick-filters .search-wrap,.filter-toolbar .quick-filters select{width:100%;min-width:0;}
+    }
 
     /* ── Job list ── */
     .job-list{display:flex;flex-direction:column;gap:10px;}
@@ -677,6 +686,8 @@ $jobsJson = json_encode($jobs ?: []);
     .inv-mfoot .inv-cancel-btn:hover{background:var(--soil-hover);color:var(--text-mid);border-color:var(--text-muted);}
     body.light .inv-mfoot .inv-cancel-btn{border-color:#D4B0AB;color:#6A4A4A;}
     body.light .inv-mfoot .inv-cancel-btn:hover{background:#F5EDEB;color:#3A2020;}
+    body.light #invSendBtn{background:linear-gradient(135deg,var(--red-vivid) 0%,#B91C1C 100%);box-shadow:0 4px 20px rgba(209,61,44,.35);}
+    body.light #invSendBtn:not(:disabled):hover{background:linear-gradient(135deg,var(--red-bright) 0%,#DC2626 100%);box-shadow:0 8px 30px rgba(209,61,44,.5);}
   </style>
 </head>
 <body>
@@ -701,8 +712,7 @@ $jobsJson = json_encode($jobs ?: []);
   <!-- Toolbar -->
   <div class="filter-toolbar">
     <div class="filter-form">
-      <div class="filter-group">
-        <div class="filter-label">Status</div>
+      <div class="toolbar-row status-row">
         <div class="stats-row" id="statsRow">
           <div class="stat-pill active" data-filter="all" onclick="filterJobs('all',this)">
             <i class="fas fa-briefcase sp-icon" style="color:var(--red-pale)"></i>
@@ -741,11 +751,24 @@ $jobsJson = json_encode($jobs ?: []);
           </div>
         </div>
       </div>
-      <div class="filter-group" style="flex:1;min-width:220px;">
-        <div class="filter-label">Search</div>
-        <div class="search-wrap">
-          <i class="fas fa-search"></i>
-          <input class="search-input" type="text" id="searchInput" placeholder="Search jobs by title, location, skills…" oninput="applyFilters()">
+      <div class="toolbar-row controls-row">
+        <div class="quick-filters">
+          <div class="search-wrap">
+            <i class="fas fa-search"></i>
+            <input class="search-input" type="text" id="searchInput" placeholder="Search jobs by title, location, skills…" oninput="applyFilters()">
+          </div>
+          <select id="quickStatusFilter" onchange="applyFilters()">
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="closed">Closed</option>
+            <option value="draft">Draft</option>
+          </select>
+          <select id="quickApprovalFilter" onchange="applyFilters()">
+            <option value="all">All Approvals</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending</option>
+            <option value="rejected">Rejected</option>
+          </select>
         </div>
       </div>
     </div>
@@ -1090,6 +1113,8 @@ function filterJobs(type, el) {
 function applyFilters() {
   var search = document.getElementById('searchInput').value.trim().toLowerCase();
   var status = currentFilter;
+  var quickStatus = document.getElementById('quickStatusFilter') ? document.getElementById('quickStatusFilter').value : 'all';
+  var quickApproval = document.getElementById('quickApprovalFilter') ? document.getElementById('quickApprovalFilter').value : 'all';
   var cards  = document.querySelectorAll('.job-card');
   var visible = 0;
 
@@ -1121,6 +1146,13 @@ function applyFilters() {
     if (show && search) {
       var haystack = cTitle + ' ' + cLoc + ' ' + cSkills;
       if (haystack.indexOf(search) === -1) show = false;
+    }
+
+    if (show && quickStatus !== 'all' && cStatus !== quickStatus) {
+      show = false;
+    }
+    if (show && quickApproval !== 'all' && cApproval !== quickApproval) {
+      show = false;
     }
 
     c.classList.toggle('hidden', !show);
@@ -1440,7 +1472,7 @@ function invLoadSeekers(q) {
     .then(function (r) { return r.json(); })
     .then(function (data) {
       if (!data.ok) {
-        list.innerHTML = '<div class="inv-empty"><i class="fas fa-exclamation-circle"></i><p>Could not load jobseekers.</p></div>';
+        list.innerHTML = '<div class="inv-empty"><i class="fas fa-exclamation-circle"></i><p>Could not load jobseekers.<br><small style="opacity:.7">' + (data.msg||'') + '</small></p></div>';
         return;
       }
       _invSeekers = data.seekers || [];

@@ -96,6 +96,26 @@ try {
 }
 $peopleJson = json_encode($peopleList, JSON_HEX_TAG | JSON_HEX_AMP);
 
+$followingIds = [];
+try {
+  $db = $db ?? getDB();
+  $db->exec("CREATE TABLE IF NOT EXISTS user_follows (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    follower_user_id INT UNSIGNED NOT NULL,
+    followed_user_id INT UNSIGNED NOT NULL,
+    followed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_follow (follower_user_id, followed_user_id),
+    KEY idx_followed_user (followed_user_id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+  $fStmt = $db->prepare("SELECT followed_user_id FROM user_follows WHERE follower_user_id = :uid");
+  $fStmt->execute([':uid' => $seekerId]);
+  $followingIds = array_map('intval', $fStmt->fetchAll(PDO::FETCH_COLUMN));
+} catch (Throwable $e) {
+  error_log('[AntCareers] seeker people follows: ' . $e->getMessage());
+}
+$followingIdsJson = json_encode($followingIds);
+
 $countrySearchOptionsHtml = '<option value="">All Countries</option>';
 $countrySidebarOptionsHtml = '<option value="">All countries</option>';
 foreach (getCountries() as $country) {
@@ -542,7 +562,7 @@ foreach ($industryKeys as $ind) {
   const peopleData = <?= $peopleJson ?>;
   const peopleById = Object.fromEntries(peopleData.map(p => [String(p.id), p]));
 
-  let connections = new Set();
+  let connections = new Set(<?= $followingIdsJson ?>.map(String));
 
   /* ── JOB ROLES DATA (31-industry system) ── */
   const JOB_ROLES = {
@@ -669,7 +689,7 @@ foreach ($industryKeys as $ind) {
   function openPersonMessageFullPage(personId) {
     const person = peopleById[String(personId)];
     if (!person) return;
-    window.location.href = 'antcareers_seekerMessages.php?user=' + person.id;
+    window.location.href = 'antcareers_seekerMessages.php?user_id=' + person.id;
   }
 
   function closePersonView() {
@@ -799,19 +819,42 @@ foreach ($industryKeys as $ind) {
 
   function toggleConnect(personId, btn) {
     const key = String(personId);
-    if (connections.has(key)) {
-      connections.delete(key);
-      btn.classList.remove('connected');
-      btn.innerHTML = '<i class="fas fa-user-plus"></i>';
-      btn.title = 'Follow';
-      showToast('Unfollowed','fa-user-minus');
-    } else {
-      connections.add(key);
-      btn.classList.add('connected');
-      btn.innerHTML = '<i class="fas fa-check"></i>';
-      btn.title = 'Following';
-      showToast('Followed!','fa-heart');
-    }
+    const person = peopleById[key];
+    if (!person) return;
+    const isConnected = connections.has(key);
+    const endpoint = '../api/follow_user.php';
+    const nextLabel = isConnected ? 'Follow' : 'Following';
+    const nextIcon = isConnected ? 'fa-user-plus' : 'fa-check';
+    const previousHtml = btn.innerHTML;
+    const previousTitle = btn.title;
+    btn.disabled = true;
+    const fd = new FormData();
+    fd.append('target_user_id', key);
+    fetch(endpoint, { method:'POST', body:fd })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.ok) throw new Error(data.error || 'Follow failed');
+        if (data.following) {
+          connections.add(key);
+          btn.classList.add('connected');
+          btn.innerHTML = '<i class="fas fa-check"></i>';
+          btn.title = 'Following';
+          showToast('Now following ' + person.name + '!', 'fa-heart');
+        } else {
+          connections.delete(key);
+          btn.classList.remove('connected');
+          btn.innerHTML = '<i class="fas fa-user-plus"></i>';
+          btn.title = 'Follow';
+          showToast('Unfollowed ' + person.name, 'fa-user-minus');
+        }
+      })
+      .catch(() => {
+        btn.innerHTML = previousHtml;
+        btn.title = previousTitle;
+      })
+      .finally(() => {
+        btn.disabled = false;
+      });
   }
   // theme handled by seeker_navbar.php
   // PROFILE DROPDOWN

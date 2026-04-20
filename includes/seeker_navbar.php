@@ -41,6 +41,11 @@ function _navHref(string $file): string {
     $theme = htmlspecialchars($_GET['theme'] ?? '', ENT_QUOTES, 'UTF-8');
     return htmlspecialchars($file . ($theme !== '' ? '?theme=' . $theme : ''), ENT_QUOTES, 'UTF-8');
 }
+
+$seekerAvatarUrl = (string)($user['avatarUrl'] ?? '');
+if ($seekerAvatarUrl !== '' && !str_starts_with($seekerAvatarUrl, '../') && !str_starts_with($seekerAvatarUrl, 'http')) {
+  $seekerAvatarUrl = '../' . $seekerAvatarUrl;
+}
 ?>
 
 <!-- ═══════════════════════════════════════════════════════
@@ -169,6 +174,41 @@ function _navHref(string $file): string {
   .notif-close { width:28px; height:28px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:0.15s; }
   .notif-close:hover { color:#F5F0EE; }
   .notif-panel-body { flex:1; overflow-y:auto; padding:12px 16px; }
+  .person-modal-overlay { position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.82); backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; padding:20px; }
+  .person-modal-box { width:min(640px,100%); max-height:85vh; overflow-y:auto; scrollbar-width:thin; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:16px; padding:24px; box-shadow:0 32px 80px rgba(0,0,0,0.55); position:relative; animation:fadeUp 0.22s ease both; }
+  .person-modal-close { position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); cursor:pointer; }
+  .person-modal-close:hover { color:var(--text-light); border-color:var(--red-vivid); }
+  .person-modal-head { display:flex; gap:16px; align-items:flex-start; margin-bottom:16px; }
+  .person-modal-avatar { width:72px; height:72px; border-radius:18px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:800; overflow:hidden; flex-shrink:0; }
+  .person-modal-avatar img { width:100%; height:100%; object-fit:cover; }
+  .person-modal-meta { flex:1; min-width:0; }
+  .person-modal-name { font-family:var(--font-display); font-size:22px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
+  .person-modal-title { font-size:14px; color:var(--red-pale); font-weight:600; margin-bottom:4px; }
+  .person-modal-location, .pm-detail-row { font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:5px; margin-top:3px; }
+  .person-modal-location i, .pm-detail-row i { font-size:11px; color:var(--red-mid); }
+  .person-modal-status { display:inline-flex; align-items:center; padding:5px 10px; border-radius:999px; font-size:11px; font-weight:700; margin-bottom:14px; }
+  .person-modal-status.seeking { background:rgba(76,175,112,0.12); color:#6CCF8A; }
+  .person-modal-status.hiring { background:rgba(209,61,44,0.12); color:var(--red-pale); }
+  .person-modal-status.neutral { background:rgba(212,148,58,0.12); color:#E0B06F; }
+  .person-modal-section { margin-top:16px; }
+  .person-modal-section-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:8px; }
+  .pm-about { font-size:13px; line-height:1.6; color:var(--text-mid); }
+  .pm-section-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .pm-info-card { background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:10px; padding:12px; }
+  .pm-info-label { font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); margin-bottom:5px; font-weight:800; }
+  .pm-info-value { font-size:13px; color:var(--text-light); font-weight:600; line-height:1.45; }
+  .person-skill-row { display:flex; flex-wrap:wrap; gap:6px; }
+  .person-skill-chip { font-size:11px; padding:5px 9px; border-radius:999px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); }
+  .person-skill-empty { font-size:12px; color:var(--text-muted); }
+  .person-modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; flex-wrap:wrap; }
+  .person-modal-btn { padding:8px 14px; border-radius:8px; border:1px solid var(--soil-line); font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; }
+  .person-modal-btn.secondary { background:var(--soil-hover); color:var(--text-light); }
+  .person-modal-btn.secondary:hover { border-color:var(--red-vivid); }
+  .person-modal-btn.primary { background:var(--red-vivid); border-color:var(--red-vivid); color:#fff; }
+  .person-modal-btn.primary:hover { background:var(--red-bright); }
+  .pm-resume-btn { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:8px; border:1px solid rgba(76,175,112,0.3); background:rgba(76,175,112,0.08); color:#6ccf8a; font-size:12px; font-weight:700; font-family:var(--font-body); cursor:pointer; text-decoration:none; transition:0.18s; margin-top:8px; }
+  .pm-resume-btn:hover { background:rgba(76,175,112,0.15); border-color:rgba(76,175,112,0.5); }
+  .pm-resume-btn i { font-size:13px; }
   .notif-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--soil-line); }
   .notif-item:last-child { border-bottom:none; }
   .n-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:5px; }
@@ -207,6 +247,20 @@ function _navHref(string $file): string {
   body.light .notif-close { background:#F0E4E2; border-color:#E0CECA; color:#7A5555; }
   body.light .n-dot.read { background:#E0CECA; }
   body.light .sidepanel-overlay { background:rgba(0,0,0,0.15); }
+  body.light .person-modal-overlay { background:rgba(0,0,0,0.5); }
+  body.light .person-modal-box { background:#FFFFFF; border-color:#E0CECA; box-shadow:0 32px 80px rgba(0,0,0,0.18); }
+  body.light .person-modal-close { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+  body.light .person-modal-name { color:#1A0A09; }
+  body.light .person-modal-title { color:var(--red-vivid); }
+  body.light .person-modal-section-label { color:#7A5555; }
+  body.light .pm-about { color:#4A2828; }
+  body.light .pm-info-card { background:#F5EEEC; border-color:#E0CECA; }
+  body.light .pm-info-value { color:#1A0A09; }
+  body.light .person-skill-chip { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
+  body.light .person-modal-btn.secondary { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
+  body.light .person-modal-btn.secondary:hover { border-color:var(--red-vivid); }
+  body.light .pm-resume-btn { background:rgba(76,175,112,0.06); border-color:rgba(76,175,112,0.25); color:#2E7D4C; }
+  body.light .pm-resume-btn:hover { background:rgba(76,175,112,0.12); }
 
   /* Conversation slide-over — mirrors employer .msg-sb-chat */
   #msgConvoView {
@@ -315,7 +369,7 @@ function _navHref(string $file): string {
       <!-- Profile dropdown: account actions only -->
       <div class="profile-wrap" id="profileWrap">
         <button class="profile-btn" id="profileToggle" type="button" aria-haspopup="true" aria-expanded="false">
-          <div class="profile-avatar"><?php if (!empty($user['avatarUrl'])): ?><img src="<?= htmlspecialchars($user['avatarUrl'], ENT_QUOTES, 'UTF-8') ?>" alt=""><?php else: ?><?= htmlspecialchars($user['initials'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?></div>
+          <div class="profile-avatar"><?php if (!empty($seekerAvatarUrl)): ?><img src="<?= htmlspecialchars($seekerAvatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt=""><?php else: ?><?= htmlspecialchars($user['initials'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?></div>
           <div>
             <div class="profile-name"><?= htmlspecialchars($user['fullName'], ENT_QUOTES, 'UTF-8') ?></div>
             <div class="profile-role-lbl">Job Seeker</div>
@@ -368,6 +422,7 @@ function _navHref(string $file): string {
   <a class="mobile-link<?= _navActiveClass('applications', $navActive) ?>" href="<?= _navHref($navRoutes['applications']) ?>"><i class="fas fa-paper-plane"></i> My Applications</a>
   <a class="mobile-link<?= _navActiveClass('saved',        $navActive) ?>" href="<?= _navHref($navRoutes['saved'])        ?>"><i class="fas fa-heart"></i> Saved Jobs</a>
   <a class="mobile-link<?= _navActiveClass('messages',     $navActive) ?>" href="<?= _navHref($navRoutes['messages'])     ?>"><i class="fas fa-envelope"></i> Messages</a>
+  <a class="mobile-link<?= _navActiveClass('settings',     $navActive) ?>" href="<?= _navHref($navRoutes['settings'])     ?>"><i class="fas fa-cog"></i> Settings</a>
   <div class="mobile-divider"></div>
   <a class="mobile-link" href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Sign out</a>
 </div>
@@ -450,6 +505,13 @@ function _navHref(string $file): string {
 </div>
 <div class="sidepanel-overlay" id="sidePanelOverlay" aria-hidden="true"></div>
 
+<div class="person-modal-overlay" id="globalPersonModal" aria-hidden="true" style="display:none;">
+  <div class="person-modal-box">
+    <button class="person-modal-close" type="button" id="globalPersonModalClose" aria-label="Close profile preview"><i class="fas fa-times"></i></button>
+    <div id="globalPersonModalBody"></div>
+  </div>
+</div>
+
 <!-- ═══════════ SHARED NAVBAR SCRIPTS ═══════════
      Placed right after the markup so IDs are already in the DOM.
      Each page may add its own <script> blocks after including this file.
@@ -518,6 +580,101 @@ function _navHref(string $file): string {
   // ── NOTIFICATIONS PANEL ────────────────────────────────────────────────────
   const notifPanel = document.getElementById('notifPanel');
   const sidePanelOverlay = document.getElementById('sidePanelOverlay');
+  const globalPersonModal = document.getElementById('globalPersonModal');
+
+  function escHtml(value) {
+    var div = document.createElement('div');
+    div.textContent = value || '';
+    return div.innerHTML;
+  }
+
+  function closeGlobalPersonModal() {
+    if (!globalPersonModal) return;
+    globalPersonModal.style.display = 'none';
+    globalPersonModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function openGlobalPersonModal(personId) {
+    var id = parseInt(personId, 10);
+    if (!id) return;
+
+    fetch('../api/person_preview.php?id=' + id)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success || !data.person) {
+          throw new Error(data.message || 'Unable to load profile');
+        }
+
+        var person = data.person;
+        var skills = (person.skills || []).slice(0, 8).map(function (s) {
+          return '<span class="person-skill-chip">' + escHtml(s) + '</span>';
+        }).join('');
+
+        var infoCards = '';
+        if (person.exp) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Experience</div><div class="pm-info-value">' + escHtml(person.exp) + '</div></div>';
+        if (person.availability) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Availability</div><div class="pm-info-value">' + escHtml(person.availability) + '</div></div>';
+        if (person.workTypes) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Work Type</div><div class="pm-info-value">' + escHtml(person.workTypes) + '</div></div>';
+        if (person.rightToWork) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Right to Work</div><div class="pm-info-value">' + escHtml(person.rightToWork) + '</div></div>';
+        if (person.classification) infoCards += '<div class="pm-info-card"><div class="pm-info-label">Classification</div><div class="pm-info-value">' + escHtml(person.classification) + '</div></div>';
+        if (person.salary) {
+          var salaryDisplay = person.salary + (person.salaryPeriod ? ' ' + person.salaryPeriod : '');
+          infoCards += '<div class="pm-info-card"><div class="pm-info-label">Salary Expectation</div><div class="pm-info-value">' + escHtml(salaryDisplay) + '</div></div>';
+        }
+
+        var aboutText = person.summary || person.bio || '';
+        var aboutSection = aboutText
+          ? '<div class="person-modal-section"><div class="person-modal-section-label">About</div><div class="pm-about">' + escHtml(aboutText) + '</div></div>'
+          : '';
+
+        var resumeSection = person.resumePath
+          ? '<div class="person-modal-section"><div class="person-modal-section-label">Resume</div><a class="pm-resume-btn" href="' + escHtml(person.resumePath) + '" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> ' + escHtml(person.resumeName || 'View Resume') + '</a></div>'
+          : '';
+
+        var statusLabel = person.status === 'seeking' ? 'Open to work' : person.status === 'hiring' ? 'Actively hiring' : 'Available';
+        var statusClass = person.status === 'seeking' ? 'seeking' : person.status === 'hiring' ? 'hiring' : 'neutral';
+
+        document.getElementById('globalPersonModalBody').innerHTML =
+          '<div class="person-modal-head">' +
+            '<div class="person-modal-avatar" style="background:' + escHtml(person.color || 'linear-gradient(135deg,var(--red-vivid),var(--red-deep))') + ';">' +
+              (person.avatarUrl ? '<img src="' + escHtml(person.avatarUrl) + '" alt="">' : escHtml(person.avatar)) +
+            '</div>' +
+            '<div class="person-modal-meta">' +
+              '<div class="person-modal-name">' + escHtml(person.name) + '</div>' +
+              '<div class="person-modal-title">' + escHtml(person.title) + '</div>' +
+              '<div class="person-modal-location"><i class="fas fa-map-marker-alt"></i> ' + escHtml(person.location) + '</div>' +
+              (person.phone ? '<div class="pm-detail-row"><i class="fas fa-phone"></i> ' + escHtml(person.phone) + '</div>' : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="person-modal-status ' + statusClass + '">' + escHtml(statusLabel) + '</div>' +
+          aboutSection +
+          (infoCards ? '<div class="person-modal-section"><div class="person-modal-section-label">Details</div><div class="pm-section-grid">' + infoCards + '</div></div>' : '') +
+          '<div class="person-modal-section"><div class="person-modal-section-label">Skills</div><div class="person-skill-row">' + (skills || '<span class="person-skill-empty">No skills listed</span>') + '</div></div>' +
+          resumeSection +
+          '<div class="person-modal-actions">' +
+            '<button class="person-modal-btn secondary" type="button" onclick="window.location.href=\'antcareers_seekerMessages.php?user_id=' + id + '\'"><i class="fas fa-comment-dots"></i> Message</button>' +
+            '<button class="person-modal-btn primary" type="button" id="globalPersonModalCloseBtn">Close</button>' +
+          '</div>';
+
+        globalPersonModal.style.display = 'flex';
+        globalPersonModal.setAttribute('aria-hidden', 'false');
+        var closeBtn = document.getElementById('globalPersonModalCloseBtn');
+        if (closeBtn) closeBtn.addEventListener('click', closeGlobalPersonModal, { once: true });
+      })
+      .catch(function () {
+        if (typeof showToast === 'function') showToast('Unable to load profile', 'fa-exclamation');
+      });
+  }
+
+  window.openGlobalPersonModal = openGlobalPersonModal;
+  window.closeGlobalPersonModal = closeGlobalPersonModal;
+
+  if (globalPersonModal) {
+    globalPersonModal.addEventListener('click', function (e) {
+      if (e.target === globalPersonModal) closeGlobalPersonModal();
+    });
+    var closeIcon = document.getElementById('globalPersonModalClose');
+    if (closeIcon) closeIcon.addEventListener('click', closeGlobalPersonModal);
+  }
 
   function syncSidePanelOverlay() {
     if (!sidePanelOverlay) return;
@@ -614,7 +771,7 @@ function _navHref(string $file): string {
       case 'interview': case 'interview_invite': case 'interview_accepted': return 'antcareers_seekerApplications.php';
       case 'new_application': return 'antcareers_seekerApplications.php';
       case 'job_invite': return 'view_invitation.php' + (refId ? '?id=' + refId : '');
-      case 'follow': case 'unfollow': return 'antcareers_seekerDashboard.php';
+      case 'follow': case 'unfollow': return '';
       default: return 'antcareers_seekerDashboard.php';
     }
   }
@@ -630,7 +787,13 @@ function _navHref(string $file): string {
           return;
         }
         var html = '';
-        var colors = ['#4A90D9','#9B59B6','#27AE60','#E74C3C','#D4943A','#3498DB','#E67E22','#1ABC9C'];
+        var colors = [
+          'linear-gradient(135deg,#D13D2C,#7A1515)',
+          'linear-gradient(135deg,#4A90D9,#2A6090)',
+          'linear-gradient(135deg,#4CAF70,#2A7040)',
+          'linear-gradient(135deg,#D4943A,#8A5A10)',
+          'linear-gradient(135deg,#9C27B0,#5A0080)'
+        ];
         _seekerThreadsCache = data.threads;
         data.threads.forEach(function (t, i) {
           var color = t.color || colors[i % colors.length];
@@ -675,8 +838,13 @@ function _navHref(string $file): string {
     _seekerCurrentPartner = partnerId;
     // Find thread data for avatar/color/meta
     var t = (_seekerThreadsCache || []).find(function(x){ return x.partner_id == partnerId; });
-    var color = (t && t.color) ? t.color : '#4A90D9';
-    var ini = (t && t.initials) ? t.initials : (partnerName ? partnerName.substring(0,2).toUpperCase() : '?');
+    var color = (t && t.color) ? t.color : 'linear-gradient(135deg,#D13D2C,#7A1515)';
+    var pParts = (partnerName || '?').trim().split(/\s+/);
+    var ini = (t && t.initials)
+      ? t.initials
+      : (pParts.length >= 2
+        ? (pParts[0][0] + pParts[1][0]).toUpperCase()
+        : ((pParts[0] && pParts[0][0]) ? pParts[0][0].toUpperCase() : '?'));
     var avatarUrl = t && t.avatar_url ? t.avatar_url : null;
     // Set header
     var avatarEl = document.getElementById('msgConvoAvatar');
@@ -692,7 +860,28 @@ function _navHref(string $file): string {
     fetch('../api/messages.php?action=messages&user_id=' + partnerId)
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        renderSeekerConvoMsgs(body, data, color, ini, avatarUrl);
+        if (data && data.success) {
+          var loadedName = (data.partner && data.partner.name) ? data.partner.name : (partnerName || 'Conversation');
+          var loadedParts = loadedName.trim().split(/\s+/);
+          var loadedIni = (t && t.initials)
+            ? t.initials
+            : (loadedParts.length >= 2
+              ? (loadedParts[0][0] + loadedParts[1][0]).toUpperCase()
+              : ((loadedParts[0] && loadedParts[0][0]) ? loadedParts[0][0].toUpperCase() : '?'));
+          var loadedAvatar = (data.partner && data.partner.avatar_url) ? data.partner.avatar_url : avatarUrl;
+          var loadedAvatarSrc = loadedAvatar
+            ? ((loadedAvatar.indexOf('http') === 0 || loadedAvatar.indexOf('../') === 0) ? loadedAvatar : ('../' + loadedAvatar))
+            : null;
+
+          avatarEl.style.background = color;
+          avatarEl.innerHTML = loadedAvatarSrc ? '<img src="' + loadedAvatarSrc + '" alt="">' : _esc(loadedIni);
+          document.getElementById('msgConvoName').textContent = loadedName;
+          document.getElementById('msgConvoMeta').textContent = (data.job && data.job.title) ? data.job.title : ((t && t.job_title) ? t.job_title : '');
+
+          renderSeekerConvoMsgs(body, data, color, loadedIni, loadedAvatar);
+        } else {
+          renderSeekerConvoMsgs(body, data, color, ini, avatarUrl);
+        }
         if (data.success) { markSeekerConversationRead(partnerId); updateSeekerBadges(); }
       })
       .catch(function () {
@@ -714,7 +903,7 @@ function _navHref(string $file): string {
           + '</div>';
       } else {
         html += '<div class="sp-msg-row">'
-          + '<div class="sp-chat-avatar" style="background:' + color + ';width:26px;height:26px;font-size:10px;">' + (avatarUrl ? '<img src="../' + avatarUrl + '" alt="">' : ini) + '</div>'
+            + '<div class="sp-chat-avatar" style="background:' + color + ';width:26px;height:26px;font-size:10px;">' + (avatarUrl ? '<img src="' + ((avatarUrl.indexOf('http') === 0 || avatarUrl.indexOf('../') === 0) ? avatarUrl : ('../' + avatarUrl)) + '" alt="">' : ini) + '</div>'
           + '<div class="sb-bubble sb-bubble-recv">' + _esc(m.body) + '<div class="sb-bubble-time">' + _esc(m.time) + '</div></div>'
           + '</div>';
       }
@@ -756,7 +945,7 @@ function _navHref(string $file): string {
       if (data.success) {
         if (timeEl) timeEl.textContent = data.time || new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
         var t = (_seekerThreadsCache || []).find(function(x){ return x.partner_id == _seekerCurrentPartner; });
-        var clr = (t && t.color) ? t.color : '#4A90D9';
+        var clr = (t && t.color) ? t.color : 'linear-gradient(135deg,#D13D2C,#7A1515)';
         var ini = (t && t.initials) ? t.initials : '?';
         var avu = t && t.avatar_url ? t.avatar_url : null;
         fetch('../api/messages.php?action=messages&user_id=' + _seekerCurrentPartner)
@@ -790,7 +979,8 @@ function _navHref(string $file): string {
         data.notifications.forEach(function (n) {
           var dotClass = n.is_read ? 'read' : (n.type === 'message' ? 'red' : (n.type === 'application' ? 'green' : 'amber'));
           var href = getNotifUrl(n.type, n.reference_id);
-          html += '<div class="notif-item" data-notif-id="' + n.id + '" data-href="' + _esc(href) + '" style="cursor:pointer;">'
+          var personId = (n.type === 'follow' || n.type === 'unfollow') ? (n.actor_id || n.reference_id || '') : '';
+          html += '<div class="notif-item" data-notif-id="' + n.id + '" data-href="' + _esc(href) + '" data-person-id="' + _esc(String(personId)) + '" style="cursor:pointer;">'
             + '<div class="n-dot ' + dotClass + '"></div>'
             + '<div><div class="n-text">' + _esc(n.content) + '</div><div class="n-time">' + _esc(n.time) + '</div></div>'
             + '</div>';
@@ -800,10 +990,16 @@ function _navHref(string $file): string {
           el.addEventListener('click', function () {
             var nid = el.getAttribute('data-notif-id');
             var href = el.getAttribute('data-href');
+            var personId = el.getAttribute('data-person-id');
             fetch('../api/messages.php?action=mark_notif_read&id=' + nid, { method: 'POST' })
               .then(function () {
                 el.querySelector('.n-dot').className = 'n-dot read';
                 updateSeekerBadges();
+                if (personId) {
+                  closeNotif();
+                  openGlobalPersonModal(personId);
+                  return;
+                }
                 if (href) {
                   if (href.indexOf('seekerMessages.php?user_id=') !== -1 && window.location.pathname.indexOf('seekerMessages.php') !== -1) {
                     var uid = parseInt(href.split('user_id=')[1]);
@@ -868,7 +1064,13 @@ function _navHref(string $file): string {
         .then(function(r){ return r.json(); })
         .then(function(data) {
           if (!data.success || !data.users || !data.users.length) { results.innerHTML = '<div style="padding:10px;text-align:center;color:var(--text-muted);font-size:12px;">No users found</div>'; return; }
-          var clrs = ['#4A90D9','#D4943A','#4CAF70','#9C27B0','#E05555','#00897B'];
+          var clrs = [
+            'linear-gradient(135deg,#D13D2C,#7A1515)',
+            'linear-gradient(135deg,#4A90D9,#2A6090)',
+            'linear-gradient(135deg,#4CAF70,#2A7040)',
+            'linear-gradient(135deg,#D4943A,#8A5A10)',
+            'linear-gradient(135deg,#9C27B0,#5A0080)'
+          ];
           results.innerHTML = data.users.map(function(u, i) {
             return '<div class="msg-panel-new-chat-user" onclick="msgPanelStartChat(' + u.id + ',_esc(' + JSON.stringify(u.name) + '))">' +
               '<div class="msg-panel-new-chat-user-av" style="background:' + clrs[i % clrs.length] + '">' + (u.avatar_url ? '<img src="../' + u.avatar_url + '" alt="">' : _esc(u.initials)) + '</div>' +

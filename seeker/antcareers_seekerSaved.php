@@ -174,7 +174,7 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
 
     /* SORT/FILTER BAR */
     .filter-bar { display:flex; gap:10px; align-items:center; margin-bottom:18px; flex-wrap:wrap; }
-    .filter-select { padding:8px 14px; padding-right:32px; border-radius:7px; background:var(--soil-card); border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; cursor:pointer; outline:none; transition:0.18s; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23927C7A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
+    .filter-select { padding:8px 14px; padding-right:32px; border-radius:7px; background:var(--soil-card); border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; cursor:pointer; outline:none; transition:0.18s; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpolygon points='0,0 6,8 12,0' fill='%23927C7A'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; background-size:12px 8px; }
     .filter-select:focus, .filter-select:hover { border-color:var(--red-vivid); }
     .filter-select option { background:var(--soil-card); color:var(--text-mid); }
     .filter-label { font-size:12px; font-weight:600; color:var(--text-muted); }
@@ -248,7 +248,7 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     body.light .card-title { color:#1A0A09; }
     body.light .salary-row { color:#1A0A09; }
     body.light .chip { background:#F0E4E2; border-color:#D0BCBA; }
-    body.light .filter-select { background:#FFFFFF; border-color:#D0BCBA; color:#3A2020; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237A5555' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+    body.light .filter-select { background:#FFFFFF; border-color:#D0BCBA; color:#3A2020; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpolygon points='0,0 6,8 12,0' fill='%237A5555'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; background-size:12px 8px; }
     body.light .filter-select option { background:#FFFFFF; color:#3A2020; }
     body.light .empty-state { background:#FFFFFF; border-color:#E0CECA; color:#7A5555; }
     body.light .empty-title { color:#1A0A09; }
@@ -556,14 +556,15 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
 
   window.submitApplication = async function() {
     if (!window._applyingJobId) return;
-    var j = window._savedJobs.find(function(x){ return x.id === window._applyingJobId; });
+    var applyingJobId = window._applyingJobId;
+    var j = window._savedJobs.find(function(x){ return x.id === applyingJobId; });
     var btn = document.getElementById('savedApplySubmit');
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…'; }
     var cover = document.getElementById('coverLetter')?.value ?? '';
     var data;
     try {
       var fd = new FormData();
-      fd.append('job_id', String(window._applyingJobId));
+      fd.append('job_id', String(applyingJobId));
       fd.append('cover_letter', cover);
       fd.append('csrf_token', '<?= htmlspecialchars(csrfToken(), ENT_QUOTES) ?>');
       var res = await fetch('apply_job.php', { method:'POST', body:fd });
@@ -575,7 +576,7 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     }
     window.closeModal();
     if (data.success) {
-      window._appliedIds.add(window._applyingJobId);
+      window._appliedIds.add(applyingJobId);
       window.renderSaved();
       window.showToast('Application sent to ' + (j ? j.company : 'employer') + '! 🎉', 'fa-check');
     } else {

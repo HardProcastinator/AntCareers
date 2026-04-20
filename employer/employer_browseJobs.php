@@ -205,7 +205,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
     .ms-trigger .ms-arrow{font-size:8px;color:var(--text-muted);transition:transform 0.2s;flex-shrink:0;}
     .ms-wrap.open .ms-trigger .ms-arrow{transform:rotate(180deg);}
     .ms-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .ms-panel{display:none;position:fixed;top:auto;left:auto;right:auto;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:7px;max-height:200px;overflow-y:auto;z-index:1050;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+    .ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:7px;max-height:200px;overflow-y:auto;z-index:1050;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
     .ms-wrap.open .ms-panel{display:block;}
     .role-section{display:block;margin-top:8px;}
     .role-section-label{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin:10px 0 6px;display:block;}
@@ -370,36 +370,15 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
 
     @media(max-width:1060px){.content-layout{grid-template-columns:1fr} .filter-sidebar{position:static}}
     @media(max-width:760px){
-      html,body{overflow-x:hidden;max-width:100vw}
-      .page-shell,.content-layout,.main-content{max-width:100%;overflow-x:hidden}
-      table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
-      .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .nav-links{display:none}
-      .hamburger{display:flex}
       .page-shell{padding:0 16px 60px}
-      .mobile-filter-toggle{display:flex;align-items:center;gap:8px;background:var(--soil-hover);border:1px solid var(--red-vivid);color:var(--text-light);font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;margin-bottom:14px;width:100%;justify-content:center}
-      body.light .mobile-filter-toggle{background:#F5EEEC;border-color:var(--red-vivid);color:#1A0A09}
-      .filter-sidebar{display:none;margin-bottom:16px}
-      .filter-sidebar.mobile-open{display:block}
-      .jr-chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
-      .jr-chips::-webkit-scrollbar{display:none}
-      .jr-chips .chip{flex-shrink:0}
-      .job-row{flex-direction:column;padding:16px;gap:0}
-      .jr-icon{display:none}
-      .jr-left{flex:none;width:100%}
-      .jr-meta{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
-      .jr-meta::-webkit-scrollbar{display:none}
-      .job-row-right{flex-direction:row;align-items:center;width:100%;min-width:0;margin-top:10px}
-      .jr-salary{flex:1;font-size:13px;white-space:normal}
-      .jr-actions{margin-left:auto;flex-shrink:0}
-      .job-description-preview,.card-description{display:none}
-      .featured-scroll{-webkit-overflow-scrolling:touch}
-      .featured-card{min-width:230px;max-width:230px}
+      .job-row{grid-template-columns:1fr;gap:10px}
+      .job-row-right{flex-direction:row;align-items:center;justify-content:space-between}
       .footer{flex-direction:column;text-align:center;padding:20px 16px}
       .search-box{min-width:100%}
       .search-btn{flex:1;justify-content:center}
     }
-    @media(min-width:761px){.mobile-filter-toggle{display:none!important}.filter-sidebar{display:block!important}}
+    @media(max-width:480px){.featured-card{min-width:230px;max-width:230px}}
   </style>
 </head>
 <body>
@@ -443,10 +422,7 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
   <div class="content-layout">
 
     <!-- SIDEBAR FILTERS -->
-    <button class="mobile-filter-toggle anim anim-d1" id="mobileFilterToggle" onclick="document.getElementById('filterSidebar').classList.toggle('mobile-open')">
-      <i class="fas fa-sliders-h"></i> Filters
-    </button>
-    <aside class="filter-sidebar anim anim-d1" id="filterSidebar">
+    <aside class="filter-sidebar anim anim-d1">
       <div class="fs-title"><i class="fas fa-sliders-h"></i> Filters</div>
 
       <div class="fs-section">
@@ -885,22 +861,12 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
   // Theme, hamburger, profile dropdown are now handled by navbar_employer.php shared script
 
   /* ── MULTI-SELECT WIRING ── */
-  function positionMsPanel(wrap) {
-    const trigger = wrap.querySelector('.ms-trigger');
-    const panel = wrap.querySelector('.ms-panel');
-    if (!trigger || !panel) return;
-    const rect = trigger.getBoundingClientRect();
-    panel.style.top = (rect.bottom + 4) + 'px';
-    panel.style.left = rect.left + 'px';
-    panel.style.width = rect.width + 'px';
-  }
   document.querySelectorAll('.ms-wrap').forEach(wrap => {
     const trigger = wrap.querySelector('.ms-trigger');
     trigger.addEventListener('click', e => {
       e.stopPropagation();
       document.querySelectorAll('.ms-wrap.open').forEach(w => { if (w !== wrap) w.classList.remove('open'); });
       wrap.classList.toggle('open');
-      if (wrap.classList.contains('open')) positionMsPanel(wrap);
     });
     wrap.querySelectorAll('input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', () => {
@@ -909,12 +875,6 @@ $jobsJson      = json_encode($jobs, JSON_HEX_TAG | JSON_HEX_AMP);
         renderAllJobs();
       });
     });
-  });
-  window.addEventListener('scroll', () => {
-    document.querySelectorAll('.ms-wrap.open').forEach(positionMsPanel);
-  }, { passive: true });
-  window.addEventListener('resize', () => {
-    document.querySelectorAll('.ms-wrap.open').forEach(positionMsPanel);
   });
   document.addEventListener('click', e => {
     if (!e.target.closest('.ms-wrap')) document.querySelectorAll('.ms-wrap.open').forEach(w => w.classList.remove('open'));

@@ -20,6 +20,7 @@
  */
 
 declare(strict_types=1);
+
 // ── Database credentials ──────────────────────────────────────────────────────
 // Hostinger credentials
 define('DB_HOST', 'localhost');
@@ -171,7 +172,7 @@ function url(string $path, bool $withTheme = false): string
     // Strip leading slash so we never double-slash
     $path = ltrim($path, '/');
 
-    // Build a web base path from filesystem paths in a Windows-safe way.
+   // Build a web base path from filesystem paths in a Windows-safe way.
     $docRootFs    = str_replace('\\', '/', rtrim((string)($_SERVER['DOCUMENT_ROOT'] ?? ''), '/\\'));
     $projectRootFs = str_replace('\\', '/', rtrim(__DIR__, '/\\'));
 
@@ -182,8 +183,8 @@ function url(string $path, bool $withTheme = false): string
         $basePath = '/' . basename($projectRootFs);
     }
 
-    $basePath = trim($basePath, '/');
-    $full = '/' . ($basePath !== '' ? $basePath . '/' : '') . $path;
+    $basePath = '/' . trim($basePath, '/') . '/';
+    $full = $basePath . $path;
 
     if ($withTheme) {
         $theme = htmlspecialchars($_GET['theme'] ?? '', ENT_QUOTES, 'UTF-8');

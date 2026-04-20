@@ -235,10 +235,12 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     body.light .page-title { color:#1A0A09; }
     body.light .filter-bar, body.light .user-row { background:#FFFFFF; border-color:#E0CECA; }
     body.light .pill-opt { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .pill-opt:hover { color:#1A0A09; border-color:rgba(209,61,44,0.35); }
     body.light .search-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .ur-name { color:#1A0A09; }
     body.light .user-row:hover { background:#FEF0EE; }
     body.light .modal-box { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .modal-close:hover { color:#1A0A09; background:#FEF0EE; border-color:#D4B0AB; }
     body.light .modal-textarea, body.light .modal-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .pdh-name { color:#1A0A09; }
     body.light .profile-dropdown { background:#FFFFFF; border-color:#E0CECA; }

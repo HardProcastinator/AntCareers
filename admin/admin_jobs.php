@@ -166,7 +166,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .jr-meta span { display:flex; align-items:center; gap:4px; }
     .jr-meta i { font-size:10px; color:var(--red-bright); }
     .jr-company { color:var(--red-pale); font-weight:600; }
-    .jr-desc { font-size:12px; color:var(--text-muted); line-height:1.6; margin-top:4px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .jr-desc { font-size:12px; color:var(--text-muted); line-height:1.6; margin-top:4px; display:-webkit-box; line-clamp:2; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .jr-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
     .btn { padding:7px 14px; border-radius:6px; font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; border:1px solid transparent; transition:0.18s; white-space:nowrap; }
     .btn-approve { background:rgba(76,175,112,0.12); border-color:rgba(76,175,112,0.3); color:#6ccf8a; }
@@ -224,21 +224,27 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
     body.light .theme-btn { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .theme-btn:hover { color:#1A0A09; border-color:var(--red-vivid); background:#FEF0EE; }
     body.light .notif-btn-nav { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .notif-btn-nav:hover { color:#1A0A09; border-color:var(--red-vivid); background:#FEF0EE; }
     body.light .notif-btn-nav .badge { border-color:#F9F5F4; }
     body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .profile-btn:hover { background:#FEF0EE; border-color:var(--red-vivid); }
     body.light .profile-name { color:#1A0A09; }
     body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; }
     body.light .page-title { color:#1A0A09; }
     body.light .filter-bar { background:#FFFFFF; border-color:#E0CECA; }
     body.light .pill-opt { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .pill-opt:hover { color:#1A0A09; border-color:rgba(209,61,44,0.35); }
     body.light .search-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
     body.light .table-wrap { background:#FFFFFF; border-color:#E0CECA; }
     body.light .job-row { background:#FFFFFF; border-color:#E0CECA; }
     body.light .job-row:hover { background:#FEF0EE; }
     body.light .jr-title { color:#1A0A09; }
     body.light .modal-box { background:#FFFFFF; border-color:#E0CECA; }
+    body.light .modal-close:hover { color:#1A0A09; background:#FEF0EE; border-color:var(--red-mid); }
     body.light .modal-textarea { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
+    body.light .btn-cancel:hover { color:#1A0A09; background:#FEF0EE; border-color:#D4B0AB; }
     body.light .pdh-name { color:#1A0A09; }
     body.light .profile-dropdown { background:#FFFFFF; border-color:#E0CECA; }
     body.light .pd-item { color:#4A2828; }
@@ -258,7 +264,6 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
   </style>
 </head>
 <body>
-
 <div class="tunnel-bg">
   <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
     <g stroke="#C0392B" stroke-width="1.5" fill="none" opacity="0.6">

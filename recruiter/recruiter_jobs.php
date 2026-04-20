@@ -362,16 +362,29 @@ $jobsJson = json_encode($jobs ?: []);
     body.light .sp-count{color:#1A0A09;}
 
     /* ── Toolbar ── */
-    .filter-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+    .filter-toolbar{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;padding:16px 18px;margin-bottom:18px;}
+    .filter-form{display:flex;flex-direction:column;gap:12px;align-items:stretch;}
+    .toolbar-row{width:100%;}
+    .toolbar-row.status-row .stats-row{width:100%;margin-bottom:0;}
+    .toolbar-row.controls-row .quick-filters{width:100%;}
     .filter-toolbar .search-wrap{flex:1;min-width:200px;position:relative;}
     .filter-toolbar .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;}
-    .filter-toolbar .search-wrap input{width:100%;padding:9px 13px 9px 34px;border-radius:7px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
+    .filter-toolbar .search-wrap input{width:100%;padding:9px 13px 9px 34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
     .filter-toolbar .search-wrap input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
-    body.light .filter-toolbar .search-wrap input{background:#fff;border-color:#E0CECA;color:#1A0A09;}
-    .filter-toolbar select{padding:9px 13px;border-radius:7px;background:var(--soil-card);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;cursor:pointer;transition:.2s;}
+    body.light .filter-toolbar .search-wrap input{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
+    .filter-toolbar .quick-filters{display:flex;align-items:flex-end;gap:10px;flex-wrap:nowrap;}
+    .filter-toolbar .quick-filters .search-wrap{flex:1;min-width:260px;}
+    .filter-toolbar select{padding:9px 13px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;cursor:pointer;transition:.2s;min-width:170px;}
     .filter-toolbar select:focus{border-color:var(--red-vivid);}
-    body.light .filter-toolbar select{background:#fff;border-color:#E0CECA;color:#1A0A09;}
+    body.light .filter-toolbar select{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
     body.light .filter-toolbar select option{background:#fff;color:#1A0A09;}
+    .filter-toolbar .stat-pill{padding:5px 12px;border-radius:100px;background:var(--soil-hover);}
+    .filter-toolbar .sp-label{font-size:12px;}
+    .filter-toolbar .sp-count{font-size:12px;font-family:var(--font-body);font-weight:700;line-height:1;}
+    @media(max-width:900px){
+      .filter-toolbar .quick-filters{flex-direction:column;align-items:stretch;}
+      .filter-toolbar .quick-filters .search-wrap,.filter-toolbar .quick-filters select{width:100%;min-width:0;}
+    }
 
     /* ── Job list ── */
     .job-list{display:flex;flex-direction:column;gap:10px;}
@@ -420,6 +433,7 @@ $jobsJson = json_encode($jobs ?: []);
       html,body{overflow-x:hidden;max-width:100vw}
       .page-shell,.main-content{max-width:100%;overflow-x:hidden}
       table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+      .modal-bd{z-index:9999!important;inset:0!important;position:fixed!important}
       .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
       .job-card{flex-direction:column;gap:10px}
       .job-right{display:flex;flex-direction:column;width:100%;align-items:flex-end;gap:8px;border-top:1px solid var(--soil-line);padding-top:12px}
@@ -427,6 +441,9 @@ $jobsJson = json_encode($jobs ?: []);
       .chips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none;padding-bottom:4px}
       .chips::-webkit-scrollbar{display:none}
       .job-description-preview,.card-description{display:none}
+    }
+    @media(min-width:761px){
+      .modal,.modal-inner,.modal-box{position:relative!important;bottom:auto!important;left:auto!important;right:auto!important;top:auto!important;border-radius:16px!important}
     }
     @media(max-width:620px){}
 
@@ -452,7 +469,7 @@ $jobsJson = json_encode($jobs ?: []);
     /* ── Modal ── */
     .modal-bd{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto;}
     .modal-bd.open{display:flex;}
-    .modal-box{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:16px;padding:26px;width:100%;max-width:620px;position:relative;margin:auto;}
+    .modal-box{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:16px;padding:26px;width:100%;max-width:620px;position:relative;margin:auto;max-height:calc(100dvh - 40px);overflow-y:auto;}
     body.light .modal-box{background:#fff;border-color:#E0CECA;}
     .modal-title{font-family:var(--font-display);font-size:21px;font-weight:700;color:#F5F0EE;margin-bottom:20px;display:flex;align-items:center;gap:9px;}
     body.light .modal-title{color:#1A0A09;}
@@ -590,6 +607,8 @@ $jobsJson = json_encode($jobs ?: []);
     .inv-mfoot .inv-cancel-btn:hover{background:var(--soil-hover);color:var(--text-mid);border-color:var(--text-muted);}
     body.light .inv-mfoot .inv-cancel-btn{border-color:#D4B0AB;color:#6A4A4A;}
     body.light .inv-mfoot .inv-cancel-btn:hover{background:#F5EDEB;color:#3A2020;}
+    body.light #invSendBtn{background:linear-gradient(135deg,var(--red-vivid) 0%,#B91C1C 100%);box-shadow:0 4px 20px rgba(209,61,44,.35);}
+    body.light #invSendBtn:not(:disabled):hover{background:linear-gradient(135deg,var(--red-bright) 0%,#DC2626 100%);box-shadow:0 8px 30px rgba(209,61,44,.5);}
   </style>
 </head>
 <body>
@@ -611,60 +630,72 @@ $jobsJson = json_encode($jobs ?: []);
   <div class="db-warn"><i class="fas fa-exclamation-triangle"></i> Could not load job data — please check your database connection.</div>
   <?php endif; ?>
 
-  <!-- Stats Row -->
-  <div class="stats-row">
-    <div class="stat-pill active" data-filter="all" onclick="filterJobs('all',this)">
-      <i class="fas fa-briefcase sp-icon" style="color:var(--red-pale)"></i>
-      <span class="sp-label">Total Jobs</span>
-      <span class="sp-count" id="cntTotal"><?= $counts['total'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="active" onclick="filterJobs('active',this)">
-      <i class="fas fa-check-circle sp-icon" style="color:#6ccf8a"></i>
-      <span class="sp-label">Active</span>
-      <span class="sp-count" id="cntActive"><?= $counts['Active'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="pending" onclick="filterJobs('pending',this)">
-      <i class="fas fa-clock sp-icon" style="color:var(--amber)"></i>
-      <span class="sp-label">Pending Approval</span>
-      <span class="sp-count" id="cntPending"><?= $counts['pending'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="closed" onclick="filterJobs('closed',this)">
-      <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
-      <span class="sp-label">Closed</span>
-      <span class="sp-count" id="cntClosed"><?= $counts['Closed'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="draft" onclick="filterJobs('draft',this)">
-      <i class="fas fa-pencil-alt sp-icon" style="color:var(--text-muted)"></i>
-      <span class="sp-label">Drafts</span>
-      <span class="sp-count" id="cntDraft"><?= $counts['Draft'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="deleted" onclick="filterJobs('deleted',this)">
-      <i class="fas fa-trash-alt sp-icon" style="color:var(--red-pale)"></i>
-      <span class="sp-label">Trash</span>
-      <span class="sp-count" id="cntDeleted"><?= $counts['deleted'] ?></span>
-    </div>
-    <div class="stat-pill" style="cursor:default;">
-      <i class="fas fa-users sp-icon" style="color:var(--amber)"></i>
-      <span class="sp-label">Applicants</span>
-      <span class="sp-count"><?= array_sum(array_column($jobs, 'app_count')) ?></span>
-    </div>
-  </div>
-
   <!-- Toolbar -->
   <div class="filter-toolbar">
-    <div class="search-wrap">
-      <i class="fas fa-search"></i>
-      <input type="text" id="searchInput" placeholder="Search jobs by title, location, skills…" oninput="applyFilters()">
+    <div class="filter-form">
+      <div class="toolbar-row status-row">
+        <div class="stats-row">
+          <div class="stat-pill active" data-filter="all" onclick="filterJobs('all',this)">
+            <i class="fas fa-briefcase sp-icon" style="color:var(--red-pale)"></i>
+            <span class="sp-label">Total Jobs</span>
+            <span class="sp-count" id="cntTotal"><?= $counts['total'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="active" onclick="filterJobs('active',this)">
+            <i class="fas fa-check-circle sp-icon" style="color:#6ccf8a"></i>
+            <span class="sp-label">Active</span>
+            <span class="sp-count" id="cntActive"><?= $counts['Active'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="pending" onclick="filterJobs('pending',this)">
+            <i class="fas fa-clock sp-icon" style="color:var(--amber)"></i>
+            <span class="sp-label">Pending Approval</span>
+            <span class="sp-count" id="cntPending"><?= $counts['pending'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="closed" onclick="filterJobs('closed',this)">
+            <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
+            <span class="sp-label">Closed</span>
+            <span class="sp-count" id="cntClosed"><?= $counts['Closed'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="draft" onclick="filterJobs('draft',this)">
+            <i class="fas fa-pencil-alt sp-icon" style="color:var(--text-muted)"></i>
+            <span class="sp-label">Drafts</span>
+            <span class="sp-count" id="cntDraft"><?= $counts['Draft'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="deleted" onclick="filterJobs('deleted',this)">
+            <i class="fas fa-trash-alt sp-icon" style="color:var(--red-pale)"></i>
+            <span class="sp-label">Trash</span>
+            <span class="sp-count" id="cntDeleted"><?= $counts['deleted'] ?></span>
+          </div>
+          <div class="stat-pill" style="cursor:default;">
+            <i class="fas fa-users sp-icon" style="color:var(--amber)"></i>
+            <span class="sp-label">Applicants</span>
+            <span class="sp-count"><?= array_sum(array_column($jobs, 'app_count')) ?></span>
+          </div>
+        </div>
+      </div>
+      <div class="toolbar-row controls-row">
+        <div class="quick-filters">
+          <div class="search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search jobs by title, location, skills…" oninput="applyFilters()">
+          </div>
+          <select id="statusFilter" onchange="applyFilters()">
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="closed">Closed</option>
+            <option value="draft">Draft</option>
+            <option value="deleted">Trash</option>
+            <option value="pending">Pending Approval</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <select id="approvalFilter" onchange="applyFilters()">
+            <option value="all">All Approvals</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
     </div>
-    <select id="statusFilter" onchange="applyFilters()">
-      <option value="all">All Statuses</option>
-      <option value="active">Active</option>
-      <option value="closed">Closed</option>
-      <option value="draft">Draft</option>
-      <option value="deleted">Trash</option>
-      <option value="pending">Pending Approval</option>
-      <option value="rejected">Rejected</option>
-    </select>
   </div>
 
   <!-- Job list -->
@@ -777,6 +808,8 @@ $jobsJson = json_encode($jobs ?: []);
     <?php endif; ?>
   </div>
   <?php endif; ?>
+
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════
      Post / Edit Job Modal
@@ -1029,6 +1062,7 @@ function filterJobs(type, el) {
 function applyFilters() {
   var search = document.getElementById('searchInput').value.trim().toLowerCase();
   var status = document.getElementById('statusFilter').value;
+  var approval = document.getElementById('approvalFilter') ? document.getElementById('approvalFilter').value : 'all';
   var cards  = document.querySelectorAll('.job-card');
   var visible = 0;
 
@@ -1061,6 +1095,10 @@ function applyFilters() {
     if (show && search) {
       var haystack = cTitle + ' ' + cLoc + ' ' + cSkills;
       if (haystack.indexOf(search) === -1) show = false;
+    }
+
+    if (show && approval !== 'all' && cApproval !== approval) {
+      show = false;
     }
 
     c.classList.toggle('hidden', !show);
@@ -1366,7 +1404,7 @@ function invLoadSeekers(q) {
     .then(function (r) { return r.json(); })
     .then(function (data) {
       if (!data.ok) {
-        list.innerHTML = '<div class="inv-empty"><i class="fas fa-exclamation-circle"></i><p>Could not load jobseekers.</p></div>';
+        list.innerHTML = '<div class="inv-empty"><i class="fas fa-exclamation-circle"></i><p>Could not load jobseekers.<br><small style="opacity:.7">' + (data.msg||'') + '</small></p></div>';
         return;
       }
       _invSeekers = data.seekers || [];

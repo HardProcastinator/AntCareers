@@ -56,7 +56,7 @@ switch ($action) {
        ?action=search_seekers&job_id=X&q=...
        ════════════════════════════════════════════════════════════ */
     case 'search_seekers':
-        if ($role !== 'recruiter') inv_json(['ok' => false, 'msg' => 'Forbidden'], 403);
+        if ($role !== 'recruiter' && $role !== 'employer') inv_json(['ok' => false, 'msg' => 'Forbidden'], 403);
 
         $jobId = (int)($_GET['job_id'] ?? 0);
         $q     = trim((string)($_GET['q'] ?? ''));
@@ -68,14 +68,19 @@ switch ($action) {
                 SELECT
                     u.id, u.full_name, u.avatar_url,
                     sp.headline, sp.city_name, sp.country_name,
-                    GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.sort_order SEPARATOR ',') AS skills,
+                    COALESCE(ss.skills, '') AS skills,
                     (SELECT 1 FROM applications a
                         WHERE a.job_id = ? AND a.seeker_id = u.id LIMIT 1) AS already_applied,
                     (SELECT status FROM job_invitations ji
                         WHERE ji.job_id = ? AND ji.jobseeker_id = u.id LIMIT 1) AS invite_status
                 FROM users u
                 LEFT JOIN seeker_profiles sp ON sp.user_id = u.id
-                LEFT JOIN seeker_skills sk   ON sk.user_id  = u.id
+                LEFT JOIN (
+                    SELECT user_id,
+                           GROUP_CONCAT(DISTINCT skill_name ORDER BY skill_name SEPARATOR ',') AS skills
+                    FROM seeker_skills
+                    GROUP BY user_id
+                ) ss ON ss.user_id = u.id
                 WHERE u.account_type = 'seeker'
                   AND u.is_active    = 1
                   AND COALESCE(sp.show_in_people_search, 1) = 1
@@ -89,7 +94,6 @@ switch ($action) {
                         WHERE sk2.user_id = u.id AND sk2.skill_name LIKE ?
                     )
                   )
-                GROUP BY u.id
                 ORDER BY u.full_name ASC
                 LIMIT 60
             ");
@@ -134,7 +138,7 @@ switch ($action) {
        POST: job_id, seeker_ids (JSON array), custom_note
        ════════════════════════════════════════════════════════════ */
     case 'send_invites':
-        if ($role !== 'recruiter') inv_json(['ok' => false, 'msg' => 'Forbidden'], 403);
+        if ($role !== 'recruiter' && $role !== 'employer') inv_json(['ok' => false, 'msg' => 'Forbidden'], 403);
 
         $jobId      = (int)($_POST['job_id'] ?? 0);
         $rawIds     = (string)($_POST['seeker_ids'] ?? '[]');
@@ -145,18 +149,32 @@ switch ($action) {
             inv_json(['ok' => false, 'msg' => 'job_id and seeker_ids required']);
         }
 
-        /* Validate job belongs to this recruiter and is active */
+        /* Validate job belongs to this recruiter/employer and is active */
         try {
-            $jobStmt = $db->prepare("
-                SELECT j.id, j.title, j.employer_id, j.status, j.approval_status,
-                       COALESCE(cp.company_name, eu.company_name, eu.full_name, 'Company') AS company_name
-                FROM jobs j
-                JOIN users eu ON eu.id = j.employer_id
-                LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
-                WHERE j.id = ? AND j.recruiter_id = ?
-                LIMIT 1
-            ");
-            $jobStmt->execute([$jobId, $uid]);
+            if ($role === 'recruiter') {
+                $jobStmt = $db->prepare("
+                    SELECT j.id, j.title, j.employer_id, j.status, j.approval_status,
+                           COALESCE(cp.company_name, eu.company_name, eu.full_name, 'Company') AS company_name
+                    FROM jobs j
+                    JOIN users eu ON eu.id = j.employer_id
+                    LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
+                    WHERE j.id = ? AND j.recruiter_id = ?
+                    LIMIT 1
+                ");
+                $jobStmt->execute([$jobId, $uid]);
+            } else {
+                // employer role
+                $jobStmt = $db->prepare("
+                    SELECT j.id, j.title, j.employer_id, j.status, j.approval_status,
+                           COALESCE(cp.company_name, eu.company_name, eu.full_name, 'Company') AS company_name
+                    FROM jobs j
+                    JOIN users eu ON eu.id = j.employer_id
+                    LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
+                    WHERE j.id = ? AND j.employer_id = ?
+                    LIMIT 1
+                ");
+                $jobStmt->execute([$jobId, $uid]);
+            }
             $job = $jobStmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('[AntCareers] inv send_invites job lookup: ' . $e->getMessage());

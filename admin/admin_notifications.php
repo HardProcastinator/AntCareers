@@ -187,15 +187,19 @@ function notifIconClass(string $type): string {
     body.light .nav-link { color:#5A4040; }
     body.light .nav-link:hover, body.light .nav-link.active { color:#1A0A09; background:#FEF0EE; }
     body.light .theme-btn { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .theme-btn:hover { color:#1A0A09; border-color:var(--red-vivid); background:#FEF0EE; }
     body.light .notif-btn-nav { background:#F5EEEC; border-color:#E0CECA; color:#7A5555; }
+    body.light .notif-btn-nav:hover { color:#1A0A09; border-color:var(--red-vivid); background:#FEF0EE; }
     body.light .notif-btn-nav .badge { border-color:#F9F5F4; }
     body.light .profile-btn { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .profile-btn:hover { background:#FEF0EE; border-color:var(--red-vivid); }
     body.light .profile-name { color:#1A0A09; }
     body.light .hamburger { background:#F5EEEC; border-color:#E0CECA; }
     body.light .page-title { color:#1A0A09; }
     body.light .notif-item { background:#FFFFFF; border-color:#E0CECA; }
     body.light .notif-title { color:#1A0A09; }
     body.light .notif-item:hover { background:#FEF0EE; }
+    body.light .btn-read:hover { color:#1A0A09; background:#F5EEEC; border-color:rgba(209,61,44,0.35); }
     body.light .notif-content { color:#4A2828; }
     body.light .pdh-name { color:#1A0A09; }
     body.light .profile-dropdown { background:#FFFFFF; border-color:#E0CECA; }
@@ -216,7 +220,6 @@ function notifIconClass(string $type): string {
   </style>
 </head>
 <body>
-
 <div class="tunnel-bg">
   <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
     <g stroke="#C0392B" stroke-width="1.5" fill="none" opacity="0.6">

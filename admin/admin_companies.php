@@ -168,7 +168,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .cc-meta { display:flex; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--text-muted); margin-bottom:8px; }
     .cc-meta span { display:flex; align-items:center; gap:4px; }
     .cc-meta i { color:var(--red-bright); font-size:10px; }
-    .cc-desc { font-size:12px; color:var(--text-muted); line-height:1.6; margin-top:6px; border-top:1px solid var(--soil-line); padding-top:8px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .cc-desc { font-size:12px; color:var(--text-muted); line-height:1.6; margin-top:6px; border-top:1px solid var(--soil-line); padding-top:8px; display:-webkit-box; line-clamp:2; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .cc-actions { display:flex; gap:8px; align-items:flex-start; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
     .btn { padding:7px 15px; border-radius:6px; font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; border:1px solid transparent; transition:0.18s; white-space:nowrap; }
     .btn-approve { background:rgba(76,175,112,0.12); border-color:rgba(76,175,112,0.3); color:#6ccf8a; }
@@ -242,7 +242,10 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     body.light .sec-title { color:#1A0A09; }
     body.light .filter-bar { background:#FFFFFF; border-color:#E0CECA; }
     body.light .pill-opt { background:#F5EEEC; border-color:#E0CECA; }
+    body.light .pill-opt:hover { color:#1A0A09; border-color:rgba(209,61,44,0.35); }
     body.light .search-input { background:#F5EEEC; border-color:#E0CECA; color:#1A0A09; }
+    body.light .modal-close:hover { color:#1A0A09; background:#FEF0EE; border-color:var(--red-mid); }
+    body.light .btn-cancel:hover { color:#1A0A09; background:#FEF0EE; border-color:#D4B0AB; }
 
     .hamburger { display:none; width:34px; height:34px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); align-items:center; justify-content:center; cursor:pointer; font-size:14px; flex-shrink:0; margin-left:8px; }
     .mobile-menu { display:none; position:fixed; top:64px; left:0; right:0; background:rgba(10,9,9,0.97); backdrop-filter:blur(20px); border-bottom:1px solid var(--soil-line); padding:12px 20px 16px; z-index:190; flex-direction:column; gap:2px; }
