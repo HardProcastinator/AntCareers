@@ -60,18 +60,20 @@ try {
 
 try {
     $s = $db->prepare("
-        SELECT COALESCE(cp.company_name, u.company_name, u.full_name) AS name,
-               j.employer_id,
+        SELECT cp.company_name AS name,
+               cp.user_id AS employer_id,
                COUNT(j.id) AS open_roles,
                cp.logo_path, cp.tagline, cp.about, cp.industry,
                cp.company_size, cp.location AS company_location
-        FROM jobs j
-        JOIN users u ON u.id = j.employer_id
-        LEFT JOIN company_profiles cp ON cp.user_id = j.employer_id
-        WHERE j.status = 'Active'
-          AND j.approval_status = 'approved'
-          AND (j.deadline IS NULL OR j.deadline >= CURDATE())
-        GROUP BY j.employer_id
+        FROM company_profiles cp
+        JOIN users u ON u.id = cp.user_id AND u.account_type = 'employer'
+        LEFT JOIN jobs j ON j.employer_id = cp.user_id
+            AND j.status = 'Active'
+            AND j.approval_status = 'approved'
+            AND (j.deadline IS NULL OR j.deadline >= CURDATE())
+            AND j.deleted_at IS NULL
+        GROUP BY cp.user_id
+        HAVING open_roles > 0
         ORDER BY open_roles DESC LIMIT 6
     ");
     $s->execute();
