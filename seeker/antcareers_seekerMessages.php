@@ -546,7 +546,7 @@ function startMsgPoll(partnerId) {
     stopMsgPoll();
     msgPollTimer = setInterval(() => {
         loadConversation(partnerId);
-    }, 4000);
+    }, 3000);
 }
 
 function stopMsgPoll() {
@@ -615,10 +615,10 @@ loadThreads(() => {
     selectThread(_targetUser);
   }
 });
-// Poll for new threads every 5 seconds
+// Poll for new threads every 3 seconds
 setInterval(() => {
-    if (!activeThread) loadThreads();
-}, 5000);
+    loadThreads();
+}, 3000);
 </script>
 </body>
 </html>

@@ -547,22 +547,22 @@ $jobsJson = json_encode($jobs ?: []);
     body.light .btn.primary:hover{background:var(--red-bright);}
 
     /* ── Send Invite Button ── */
-    .btn-send-invite{padding:7px 15px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);white-space:nowrap;display:inline-flex;align-items:center;gap:6px;border:none;background:linear-gradient(135deg,#3B82F6,#1D4ED8);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.35);transition:all .2s ease;letter-spacing:.01em;}
-    .btn-send-invite:hover{background:linear-gradient(135deg,#60A5FA,#2563EB);box-shadow:0 4px 16px rgba(37,99,235,.55);transform:translateY(-1px);}
-    .btn-send-invite:active{transform:translateY(0);box-shadow:0 2px 6px rgba(37,99,235,.3);}
+    .btn-send-invite{padding:7px 15px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);white-space:nowrap;display:inline-flex;align-items:center;gap:6px;border:none;background:linear-gradient(135deg,var(--red-vivid),#B91C1C);color:#fff;box-shadow:0 2px 8px rgba(209,61,44,.35);transition:all .2s ease;letter-spacing:.01em;}
+    .btn-send-invite:hover{background:linear-gradient(135deg,var(--red-bright),#DC2626);box-shadow:0 4px 16px rgba(209,61,44,.55);transform:translateY(-1px);}
+    .btn-send-invite:active{transform:translateY(0);box-shadow:0 2px 6px rgba(209,61,44,.3);}
     .btn-send-invite i{font-size:11px;}
-    .btn.blue{background:linear-gradient(135deg,#3B82F6,#1D4ED8);border-color:#2563EB;color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.3);}
-    .btn.blue:hover{background:linear-gradient(135deg,#60A5FA,#2563EB);box-shadow:0 4px 14px rgba(37,99,235,.45);transform:translateY(-1px);}
-    .btn.blue:disabled,.btn.blue[disabled]{background:#4B7AC7;border-color:#4B7AC7;opacity:.55;cursor:not-allowed;transform:none;box-shadow:none;}
+    .btn.blue{background:linear-gradient(135deg,var(--red-vivid),#B91C1C);border-color:#DC2626;color:#fff;box-shadow:0 2px 8px rgba(209,61,44,.3);}
+    .btn.blue:hover{background:linear-gradient(135deg,var(--red-bright),#DC2626);box-shadow:0 4px 14px rgba(209,61,44,.45);transform:translateY(-1px);}
+    .btn.blue:disabled,.btn.blue[disabled]{background:#A85C5C;border-color:#A85C5C;opacity:.55;cursor:not-allowed;transform:none;box-shadow:none;}
 
     /* ── Premium Send Invitation CTA ── */
-    #invSendBtn{padding:13px 30px;font-size:14px;font-weight:800;letter-spacing:.04em;gap:9px;border-radius:11px;background:linear-gradient(135deg,#3B82F6 0%,#1E40AF 100%);border:none;box-shadow:0 4px 20px rgba(37,99,235,.52);transition:all .25s ease;position:relative;overflow:hidden;}
+    #invSendBtn{padding:13px 30px;font-size:14px;font-weight:800;letter-spacing:.04em;gap:9px;border-radius:11px;background:linear-gradient(135deg,var(--red-vivid) 0%,#B91C1C 100%);border:none;box-shadow:0 4px 20px rgba(209,61,44,.52);transition:all .25s ease;position:relative;overflow:hidden;}
     #invSendBtn::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);transition:left .55s ease;pointer-events:none;}
     #invSendBtn:not(:disabled){animation:invBtnPulse 3.5s ease infinite;}
-    #invSendBtn:not(:disabled):hover{background:linear-gradient(135deg,#60A5FA 0%,#2563EB 100%);box-shadow:0 8px 30px rgba(37,99,235,.7);transform:translateY(-2px);}
+    #invSendBtn:not(:disabled):hover{background:linear-gradient(135deg,var(--red-bright) 0%,#DC2626 100%);box-shadow:0 8px 30px rgba(209,61,44,.7);transform:translateY(-2px);}
     #invSendBtn:not(:disabled):hover::after{left:140%;}
     #invSendBtn:disabled{opacity:.55;cursor:not-allowed;box-shadow:none;animation:none;}
-    @keyframes invBtnPulse{0%,100%{box-shadow:0 4px 20px rgba(37,99,235,.52);}55%{box-shadow:0 6px 28px rgba(37,99,235,.78),0 0 0 5px rgba(37,99,235,.13);}}
+    @keyframes invBtnPulse{0%,100%{box-shadow:0 4px 20px rgba(209,61,44,.52);}55%{box-shadow:0 6px 28px rgba(209,61,44,.78),0 0 0 5px rgba(209,61,44,.13);}}
     #invSendBtn i{font-size:13px;transition:transform .22s;}
     #invSendBtn:not(:disabled):hover i{transform:translateX(3px) rotate(-8deg);}
 
@@ -683,7 +683,7 @@ $jobsJson = json_encode($jobs ?: []);
     .inv-preview-sig strong{color:var(--text-mid);font-size:13px;}
     .inv-note-count{font-size:11px;color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;}
     .inv-mfoot{display:flex;justify-content:space-between;align-items:center;padding:16px 26px;background:linear-gradient(to right,rgba(0,0,0,.18),rgba(0,0,0,.1));border-top:1px solid var(--soil-line);flex-shrink:0;flex-wrap:wrap;gap:12px;}
-    body.light .inv-mfoot{border-top-color:#E0CECA;background:linear-gradient(to right,rgba(37,99,235,.04),rgba(37,99,235,.01));}
+    body.light .inv-mfoot{border-top-color:#E0CECA;background:linear-gradient(to right,rgba(209,61,44,.04),rgba(209,61,44,.01));}
     .inv-mfoot .inv-cancel-btn{padding:12px 22px;font-size:13px;font-weight:600;border-radius:10px;border:1.5px solid var(--soil-line);background:transparent;color:var(--text-muted);cursor:pointer;font-family:var(--font-body);transition:all .2s;}
     .inv-mfoot .inv-cancel-btn:hover{background:var(--soil-hover);color:var(--text-mid);border-color:var(--text-muted);}
     body.light .inv-mfoot .inv-cancel-btn{border-color:#D4B0AB;color:#6A4A4A;}
