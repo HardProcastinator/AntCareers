@@ -169,7 +169,8 @@ switch ($action) {
             inv_json(['ok' => true, 'seekers' => $seekers]);
         } catch (PDOException $e) {
             error_log('[AntCareers] inv search_seekers: ' . $e->getMessage());
-            inv_json(['ok' => false, 'msg' => 'Database error. Please try again.'], 500);
+            // Temporarily show real error for debugging
+            inv_json(['ok' => false, 'msg' => 'DB ERROR: ' . $e->getMessage()], 500);
         }
         break;
 
