@@ -11,6 +11,10 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $db     = getDB();
+/* Force connection collation to match all table collations (utf8mb4_unicode_ci).
+   MariaDB 11.x defaults utf8mb4 connections to utf8mb4_uca1400_ai_ci which
+   conflicts with the utf8mb4_unicode_ci tables and causes SQLSTATE[HY000]:1267. */
+try { $db->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"); } catch (PDOException $e) { /* non-fatal */ }
 $uid    = (int)$_SESSION['user_id'];
 $role   = strtolower((string)($_SESSION['account_type'] ?? ''));
 $action = (string)($_GET['action'] ?? $_POST['action'] ?? '');
@@ -168,13 +172,13 @@ switch ($action) {
                   AND COALESCE(sp.show_in_people_search, 1) = 1
                   AND (
                     ? = ''
-                    OR u.full_name COLLATE utf8mb4_unicode_ci LIKE ? COLLATE utf8mb4_unicode_ci
-                    OR sp.city_name COLLATE utf8mb4_unicode_ci LIKE ? COLLATE utf8mb4_unicode_ci
-                    OR sp.country_name COLLATE utf8mb4_unicode_ci LIKE ? COLLATE utf8mb4_unicode_ci
+                    OR u.full_name LIKE ?
+                    OR sp.city_name LIKE ?
+                    OR sp.country_name LIKE ?
                     OR EXISTS (
                         SELECT 1 FROM seeker_skills sk2
                         WHERE sk2.user_id = u.id
-                          AND sk2.skill_name COLLATE utf8mb4_unicode_ci LIKE ? COLLATE utf8mb4_unicode_ci
+                          AND sk2.skill_name LIKE ?
                     )
                   )
                 ORDER BY u.full_name ASC
