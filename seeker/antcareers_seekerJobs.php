@@ -309,7 +309,7 @@ foreach ($industryKeys as $industryValue) {
     .content-layout { display:grid; grid-template-columns:240px 1fr; gap:24px; }
 
     /* ── SIDEBAR ── */
-    .filter-sidebar { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:18px; position:sticky; top:80px; }
+    .filter-sidebar { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:18px; position:sticky; top:80px; align-self:start; }
     .fs-title { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px; display:flex; align-items:center; gap:7px; }
     .fs-title i { color:var(--red-bright); }
     .fs-section-label { font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
