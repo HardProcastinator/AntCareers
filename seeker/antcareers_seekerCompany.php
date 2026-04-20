@@ -17,8 +17,8 @@ try {
     $db = getDB();
     $st = $db->prepare("
         SELECT
-            cp.user_id,
-            cp.company_name,
+            u.id AS user_id,
+            COALESCE(cp.company_name, u.company_name, u.full_name) AS company_name,
             cp.industry,
             cp.company_size,
             cp.about,
@@ -27,12 +27,14 @@ try {
             CONCAT_WS(', ', NULLIF(cp.city,''), NULLIF(cp.province,''), NULLIF(cp.country,'')) AS location,
             cp.perks,
             COUNT(j.id) AS open_roles
-        FROM company_profiles cp
-        JOIN users u ON u.id = cp.user_id AND u.account_type = 'employer'
-        LEFT JOIN jobs j ON j.employer_id = cp.user_id AND j.status = 'Active'
+        FROM users u
+        JOIN jobs j ON j.employer_id = u.id AND j.status = 'Active'
             AND (j.deadline IS NULL OR j.deadline >= CURDATE())
-        GROUP BY cp.user_id
-        ORDER BY open_roles DESC, cp.company_name ASC
+            AND j.deleted_at IS NULL
+        LEFT JOIN company_profiles cp ON cp.user_id = u.id
+        WHERE u.account_type = 'employer'
+        GROUP BY u.id
+        ORDER BY open_roles DESC, company_name ASC
     ");
     $st->execute();
     foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
