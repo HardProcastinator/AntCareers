@@ -24,6 +24,7 @@ try {
             cp.company_size,
             cp.about,
             cp.logo_path,
+            cp.cover_path,
             cp.is_verified,
             CONCAT_WS(', ', NULLIF(cp.city,''), NULLIF(cp.province,''), NULLIF(cp.country,'')) AS location,
             cp.perks,
@@ -53,6 +54,7 @@ try {
             'emoji'     => '🏢',
             'color'     => 'linear-gradient(135deg,var(--red-vivid),var(--red-deep))',
             'logo'      => ($r['logo_path'] ?? '') ? '../' . $r['logo_path'] : '',
+            'cover'     => ($r['cover_path'] ?? '') ? '../' . $r['cover_path'] : '',,
             'jobs'      => (int)$r['open_roles'],
             'verified'  => (bool)$r['is_verified'],
             'following' => false,
@@ -599,7 +601,7 @@ $dispIndustries = $fmtStat($statIndustries);
       const tags = c.tags.map(function(t){ return '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);">' + t + '</span>'; }).join('');
       const safeName = c.name.replace(/'/g, "\\'");
       return '<div class="company-card anim" style="animation-delay:' + (i*0.04) + 's;cursor:pointer;" onclick="window.location.href=\'public_company_profile.php?employer_id=' + c.id + '\'">' +
-        '<div class="cc-banner" style="background:' + c.color + ';">' +
+        '<div class="cc-banner" style="' + (c.cover ? 'background:url(\'' + c.cover + '\') center/cover no-repeat;' : 'background:' + c.color + ';') + '">' +
           '<button class="follow-btn ' + (isFollowing?'following':'') + '" onclick="event.stopPropagation();window.toggleFollow(' + c.id + ',\'' + safeName + '\')" title="' + (isFollowing?'Unfollow':'Follow') + '">'+
             '<i class="fas fa-heart" style="color:' + (isFollowing?'#ff6b6b':'rgba(255,255,255,0.6)') + '"></i>' +
           '</button>' +

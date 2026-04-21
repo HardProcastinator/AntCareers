@@ -314,16 +314,23 @@ $jobsListJson   = json_encode($jobsList ?: []);
     .sp-label { font-size:12px; font-weight:600; color:var(--text-muted); }
     .sp-count { font-size:17px; font-weight:800; color:var(--text-light); font-family:var(--font-display); }
 
-    /* ── TOOLBAR ── */
-    .toolbar { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
-    .search-bar { display:flex; align-items:center; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; width:100%; transition:0.25s; }
-    .search-bar:focus-within { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.1); }
-    .search-bar .si { padding:0 14px; color:var(--text-muted); font-size:14px; }
-    .search-bar input { flex:1; padding:13px 0; background:none; border:none; outline:none; font-family:var(--font-body); font-size:14px; color:var(--text-light); }
-    .search-bar input::placeholder { color:var(--text-muted); }
-    .filter-row { display:flex; gap:10px; flex-shrink:0; }
-    select.fsel { padding:13px 13px; border-radius:8px; background:var(--soil-card); border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; cursor:pointer; outline:none; min-width:170px; }
-    select.fsel:focus { border-color:var(--red-vivid); }
+    /* ── FILTER TOOLBAR ── */
+    .filter-toolbar{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;padding:16px 18px;margin-bottom:18px;}
+    .filter-form{display:flex;flex-direction:column;gap:12px;align-items:stretch;}
+    .toolbar-row{width:100%;}
+    .toolbar-row.status-row .stats-row{width:100%;margin-bottom:0;}
+    .toolbar-row.controls-row .quick-filters{width:100%;}
+    .filter-toolbar .search-wrap{flex:1;min-width:220px;position:relative;}
+    .filter-toolbar .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;}
+    .filter-toolbar .search-wrap input{width:100%;padding:9px 13px 9px 34px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
+    .filter-toolbar .search-wrap input:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
+    .filter-toolbar .quick-filters{display:flex;align-items:flex-end;gap:10px;flex-wrap:nowrap;}
+    .filter-toolbar .quick-filters .search-wrap{flex:1;min-width:260px;}
+    .filter-toolbar select.fsel{padding:9px 13px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;cursor:pointer;transition:.2s;min-width:170px;}
+    .filter-toolbar select.fsel:focus{border-color:var(--red-vivid);}
+    .filter-toolbar .stat-pill{padding:5px 12px;border-radius:100px;background:var(--soil-hover);}
+    .filter-toolbar .sp-label{font-size:12px;}
+    .filter-toolbar .sp-count{font-size:12px;font-family:var(--font-body);font-weight:700;line-height:1;}
 
     /* ── APPLICANT CARDS ── */
     .app-list { display:flex; flex-direction:column; gap:10px; }
@@ -456,7 +463,11 @@ $jobsListJson   = json_encode($jobsList ?: []);
     body.light .sp-count { color:#1A0A09; }
     body.light .search-bar { background:#fff; border-color:#E0CECA; }
     body.light .search-bar input { color:#1A0A09; }
-    body.light select.fsel { background:#fff; border-color:#E0CECA; color:#3A2020; }
+    body.light .filter-toolbar{background:#FFFFFF;border-color:#E0CECA;}
+    body.light .filter-toolbar .stat-pill{background:#F5EEEC;border-color:#E0CECA;}
+    body.light .filter-toolbar .search-wrap input{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
+    body.light .filter-toolbar select.fsel{background:#F5EEEC;border-color:#E0CECA;color:#1A0A09;}
+    body.light .filter-toolbar select.fsel option{background:#fff;color:#1A0A09;}
     body.light .app-card { background:#fff; border-color:#E0CECA; }
     body.light .app-name { color:#1A0A09; }
     body.light .app-expand { background:#FAF7F5; border-color:#E0CECA; }
@@ -471,15 +482,16 @@ $jobsListJson   = json_encode($jobsList ?: []);
     body.light .person-skill-chip { background:#F5EEEC; border-color:#E0CECA; color:#4A2828; }
 
     /* ── RESPONSIVE ── */
+    @media(max-width:900px){
+      .filter-toolbar .quick-filters{flex-direction:column;align-items:stretch;}
+      .filter-toolbar .quick-filters .search-wrap,.filter-toolbar .quick-filters select.fsel{width:100%;min-width:0;}
+    }
     @media(max-width:880px) { .nav-links { display:none; } .hamburger { display:flex; } }
     @media(max-width:760px) {
       html,body{overflow-x:hidden;max-width:100vw}
       .page-shell,.main-content{max-width:100%;overflow-x:hidden}
       table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
       .modal,.modal-inner,.modal-box{width:100%!important;max-width:100vw!important;margin:0!important;border-radius:12px 12px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;max-height:90vh;overflow-y:auto}
-      .toolbar { flex-direction:column; align-items:stretch; }
-      .filter-row { width:100%; }
-      select.fsel { flex:1; min-width:0; }
       .page-shell { padding:20px 16px 40px; }
       .nav-inner { padding:0 10px; }
       .profile-name,.profile-role { display:none; }
@@ -511,80 +523,84 @@ $jobsListJson   = json_encode($jobsList ?: []);
 
 <div class="page-shell">
   <h1 class="page-title anim">Applicant <span>Pipeline</span></h1>
-  <p class="page-sub anim">Review, shortlist and manage all job applicants assigned to your postings.</p>
+  <p class="page-sub anim">Review, shortlist and manage all job applications in one place.</p>
 
   <?php if($dbErr): ?>
   <div class="db-warn"><i class="fas fa-exclamation-triangle"></i> Could not fetch applicant data — run <strong>sql/migration_recruiter.sql</strong> to set up tables.</div>
   <?php endif; ?>
 
-  <!-- STATS PILLS -->
-  <div class="stats-row anim" id="statsRow">
-    <div class="stat-pill active" data-filter="">
-      <i class="fas fa-users sp-icon" style="color:var(--red-pale)"></i>
-      <span class="sp-label">All</span>
-      <span class="sp-count" id="cnt-all"><?= $total ?></span>
-    </div>
-    <div class="stat-pill" data-filter="Pending">
-      <i class="fas fa-clock sp-icon" style="color:#D4943A"></i>
-      <span class="sp-label">Pending</span>
-      <span class="sp-count" id="cnt-Pending"><?= $sCounts['Pending'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="Shortlisted">
-      <i class="fas fa-star sp-icon" style="color:#7ab8f0"></i>
-      <span class="sp-label">Shortlisted</span>
-      <span class="sp-count" id="cnt-Shortlisted"><?= $sCounts['Shortlisted'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="Interviewed">
-      <i class="fas fa-comments sp-icon" style="color:#cf8ae0"></i>
-      <span class="sp-label">Interviewed</span>
-      <span class="sp-count" id="cnt-Interviewed"><?= $sCounts['Interviewed'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="Offered">
-      <i class="fas fa-check-circle sp-icon" style="color:#6ccf8a"></i>
-      <span class="sp-label">Offered</span>
-      <span class="sp-count" id="cnt-Offered"><?= $sCounts['Offered'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="Accepted">
-      <i class="fas fa-handshake sp-icon" style="color:#6ccf8a"></i>
-      <span class="sp-label">Accepted</span>
-      <span class="sp-count" id="cnt-Accepted"><?= $sCounts['Accepted'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="Declined">
-      <i class="fas fa-times sp-icon" style="color:#ff8080"></i>
-      <span class="sp-label">Declined</span>
-      <span class="sp-count" id="cnt-Declined"><?= $sCounts['Declined'] ?></span>
-    </div>
-    <div class="stat-pill" data-filter="Rejected">
-      <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
-      <span class="sp-label">Rejected</span>
-      <span class="sp-count" id="cnt-Rejected"><?= $sCounts['Rejected'] ?></span>
-    </div>
-  </div>
-
   <!-- FILTER TOOLBAR -->
-  <div class="toolbar anim">
-    <div class="search-bar">
-      <i class="fas fa-search si"></i>
-      <input type="text" id="searchInput" placeholder="Search name, email or job title…">
-    </div>
-    <div class="filter-row">
-    <select class="fsel" id="filterJob">
-      <option value="">All Jobs</option>
-      <?php foreach($jobsList as $j): ?>
-      <option value="<?= (int)$j['id'] ?>"><?= htmlspecialchars($j['title'], ENT_QUOTES, 'UTF-8') ?></option>
-      <?php endforeach; ?>
-    </select>
-    <select class="fsel" id="filterStatus">
-      <option value="">All Statuses</option>
-      <option value="Pending">Pending</option>
-      <option value="Reviewed">Reviewed</option>
-      <option value="Shortlisted">Shortlisted</option>
-      <option value="Interviewed">Interviewed</option>
-      <option value="Offered">Offered</option>
-      <option value="Accepted">Accepted</option>
-      <option value="Declined">Declined</option>
-      <option value="Rejected">Rejected</option>
-    </select>
+  <div class="filter-toolbar anim">
+    <div class="filter-form">
+      <div class="toolbar-row status-row">
+        <div class="stats-row" id="statsRow">
+          <div class="stat-pill active" data-filter="">
+            <i class="fas fa-users sp-icon" style="color:var(--red-pale)"></i>
+            <span class="sp-label">All</span>
+            <span class="sp-count" id="cnt-all"><?= $total ?></span>
+          </div>
+          <div class="stat-pill" data-filter="Pending">
+            <i class="fas fa-clock sp-icon" style="color:#D4943A"></i>
+            <span class="sp-label">Pending</span>
+            <span class="sp-count" id="cnt-Pending"><?= $sCounts['Pending'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="Shortlisted">
+            <i class="fas fa-star sp-icon" style="color:#7ab8f0"></i>
+            <span class="sp-label">Shortlisted</span>
+            <span class="sp-count" id="cnt-Shortlisted"><?= $sCounts['Shortlisted'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="Interviewed">
+            <i class="fas fa-comments sp-icon" style="color:#cf8ae0"></i>
+            <span class="sp-label">Interviewed</span>
+            <span class="sp-count" id="cnt-Interviewed"><?= $sCounts['Interviewed'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="Offered">
+            <i class="fas fa-check-circle sp-icon" style="color:#6ccf8a"></i>
+            <span class="sp-label">Offered</span>
+            <span class="sp-count" id="cnt-Offered"><?= $sCounts['Offered'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="Accepted">
+            <i class="fas fa-handshake sp-icon" style="color:#6ccf8a"></i>
+            <span class="sp-label">Accepted</span>
+            <span class="sp-count" id="cnt-Accepted"><?= $sCounts['Accepted'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="Declined">
+            <i class="fas fa-times sp-icon" style="color:#ff8080"></i>
+            <span class="sp-label">Declined</span>
+            <span class="sp-count" id="cnt-Declined"><?= $sCounts['Declined'] ?></span>
+          </div>
+          <div class="stat-pill" data-filter="Rejected">
+            <i class="fas fa-times-circle sp-icon" style="color:#ff8080"></i>
+            <span class="sp-label">Rejected</span>
+            <span class="sp-count" id="cnt-Rejected"><?= $sCounts['Rejected'] ?></span>
+          </div>
+        </div>
+      </div>
+      <div class="toolbar-row controls-row">
+        <div class="quick-filters">
+          <div class="search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search name, email or job title…">
+          </div>
+          <select class="fsel" id="filterJob">
+            <option value="">All Jobs</option>
+            <?php foreach($jobsList as $j): ?>
+            <option value="<?= (int)$j['id'] ?>"><?= htmlspecialchars($j['title'], ENT_QUOTES, 'UTF-8') ?></option>
+            <?php endforeach; ?>
+          </select>
+          <select class="fsel" id="filterStatus">
+            <option value="">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Reviewed">Reviewed</option>
+            <option value="Shortlisted">Shortlisted</option>
+            <option value="Interviewed">Interviewed</option>
+            <option value="Offered">Offered</option>
+            <option value="Accepted">Accepted</option>
+            <option value="Declined">Declined</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
     </div>
   </div>
 

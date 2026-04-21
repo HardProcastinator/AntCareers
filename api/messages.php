@@ -409,6 +409,10 @@ switch ($action) {
             api_json(['success' => false, 'message' => 'Recipient not found'], 404);
         }
 
+        if (strtolower((string) ($partner['account_type'] ?? '')) === 'admin') {
+            api_json(['success' => false, 'message' => 'Admin accounts cannot be messaged.'], 403);
+        }
+
         if (!role_allows_direct_message($role, strtolower((string) $partner['account_type']))) {
             api_json(['success' => false, 'message' => 'Messages are only allowed between employer and seeker accounts'], 403);
         }
@@ -493,6 +497,10 @@ switch ($action) {
         $receiver = fetch_user($db, $receiverId);
         if (!$receiver) {
             api_json(['success' => false, 'message' => 'Recipient not found'], 404);
+        }
+
+        if (strtolower((string) ($receiver['account_type'] ?? '')) === 'admin') {
+            api_json(['success' => false, 'message' => 'Admin accounts cannot be messaged.'], 403);
         }
 
         if (!role_allows_direct_message($role, strtolower((string) $receiver['account_type']))) {

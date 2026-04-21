@@ -322,6 +322,13 @@ foreach ($industryKeys as $ind) {
     .fs-title i { color:var(--red-bright); }
     .fs-section { margin-bottom:20px; }
     .fs-section-label { font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
+    .fs-toggle-row { display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; }
+    .fs-toggle-row input { display:none; }
+    .fs-toggle-switch { width:36px; height:20px; border-radius:10px; background:var(--soil-line); position:relative; transition:background 0.2s; flex-shrink:0; }
+    .fs-toggle-switch::after { content:''; position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:#fff; transition:transform 0.2s; }
+    .fs-toggle-row input:checked ~ .fs-toggle-switch { background:var(--red-vivid); }
+    .fs-toggle-row input:checked ~ .fs-toggle-switch::after { transform:translateX(16px); }
+    .fs-toggle-text { font-size:12px; color:var(--text-mid); font-weight:500; }
     .role-section { display:block; margin-top:8px; }
     .role-section-label { display:block; font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; }
     .fs-option { display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:7px; font-size:13px; color:var(--text-mid); cursor:pointer; transition:0.15s; font-weight:500; }
@@ -524,14 +531,12 @@ foreach ($industryKeys as $ind) {
       <div class="fs-divider"></div>
 
       <div class="fs-section">
-        <div class="fs-section-label">Status</div>
-        <div class="ms-wrap" id="msStatus" data-default="Any status">
-          <button class="ms-trigger" type="button"><span class="ms-text">Any status</span><i class="fas fa-chevron-down ms-arrow"></i></button>
-          <div class="ms-panel">
-            <label class="ms-item"><input type="checkbox" value="seeking"><span>Open to Work</span></label>
-            <label class="ms-item"><input type="checkbox" value="hiring"><span>Actively Hiring</span></label>
-          </div>
-        </div>
+        <div class="fs-section-label">Open to Work</div>
+        <label class="fs-toggle-row">
+          <input type="checkbox" id="filterOpenToWork" onchange="filterPeople()">
+          <span class="fs-toggle-switch"></span>
+          <span class="fs-toggle-text">Show only open to work</span>
+        </label>
       </div>
 
       <div class="fs-divider"></div>
@@ -765,7 +770,7 @@ foreach ($industryKeys as $ind) {
     const industries = getMsValues('msIndustry');
     const jobRoles = getMsValues('msJobRole');
     const expLevels = getMsValues('msExperience');
-    const statuses = getMsValues('msStatus');
+    const openToWork = document.getElementById('filterOpenToWork').checked;
     const sidebarLoc = document.getElementById('sidebarLocationFilter')?.value || '';
     const locKeyword = (document.getElementById('sidebarLocationKeyword')?.value || '').toLowerCase();
     const companyQ = (document.getElementById('sidebarCompanyFilter')?.value || '').toLowerCase();
@@ -774,11 +779,11 @@ foreach ($industryKeys as $ind) {
       const matchInd = !industries.length || industries.some(ind => (p.classification || '').toLowerCase().includes(ind.toLowerCase()));
       const matchRole = !jobRoles.length || jobRoles.some(role => (p.classification || '').toLowerCase().includes(role.toLowerCase()) || (p.title || '').toLowerCase().includes(role.toLowerCase()));
       const matchExp = !expLevels.length || expLevels.includes(p.exp);
-      const matchStatus = !statuses.length || statuses.includes(p.status);
+      const matchOtw = !openToWork || p.status === 'seeking';
       const matchSidebarLoc = !sidebarLoc || p.location.includes(sidebarLoc);
       const matchLocKw = !locKeyword || p.location.toLowerCase().includes(locKeyword);
       const matchCompany = !companyQ || (p.company && p.company.toLowerCase().includes(companyQ)) || p.title.toLowerCase().includes(companyQ);
-      return matchQ && matchInd && matchRole && matchExp && matchStatus && matchSidebarLoc && matchLocKw && matchCompany;
+      return matchQ && matchInd && matchRole && matchExp && matchOtw && matchSidebarLoc && matchLocKw && matchCompany;
     });
     renderPeople(filtered);
   }
@@ -789,6 +794,7 @@ foreach ($industryKeys as $ind) {
     document.getElementById('sidebarLocationKeyword') && (document.getElementById('sidebarLocationKeyword').value='');
     document.getElementById('sidebarPositionKeyword') && (document.getElementById('sidebarPositionKeyword').value='');
     document.getElementById('sidebarCompanyFilter') && (document.getElementById('sidebarCompanyFilter').value='');
+    document.getElementById('filterOpenToWork') && (document.getElementById('filterOpenToWork').checked = false);
     document.querySelectorAll('.ms-wrap').forEach(wrap => {
       wrap.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
       updateMsLabel(wrap);
