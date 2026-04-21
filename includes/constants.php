@@ -54,3 +54,28 @@ const INDUSTRY_LIST = [
     'Sports & Recreation',
     'Trades & Services',
 ];
+
+// ─── Company Sizes ────────────────────────────────────────────────────────────
+// Stored in: company_profiles.company_size (varchar)
+// Used in: employer company profile form, Browse Companies filter
+// Key   = value stored in DB (clean, no "employees" suffix)
+// Value = human-readable label shown in dropdowns
+const COMPANY_SIZES = [
+    '1-10'      => '1–10 employees',
+    '11-50'     => '11–50 employees',
+    '51-200'    => '51–200 employees',
+    '201-500'   => '201–500 employees',
+    '501-1000'  => '501–1,000 employees',
+    '1001-5000' => '1,001–5,000 employees',
+    '5000+'     => '5,000+ employees',
+];
+
+// ─── Company Size Filter Ranges ───────────────────────────────────────────────
+// Maps Browse Companies filter option keys → array of matching DB stored values
+// Key must match the value="" attribute of the <option> in the filter dropdown
+const COMPANY_SIZE_FILTER_RANGES = [
+    'startup'  => ['1-10', '11-50'],
+    'small'    => ['51-200'],
+    'midsize'  => ['201-500', '501-1000'],
+    'large'    => ['1001-5000', '5000+'],
+];

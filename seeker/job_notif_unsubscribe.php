@@ -58,7 +58,7 @@ $safeEmail = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     body {
       font-family:'Segoe UI',Arial,sans-serif;
-      background:#0A0909; color:#F5F0EE;
+      background:#0A0909; color:var(--text-light);
       min-height:100vh; display:flex; align-items:center; justify-content:center;
       padding:24px;
     }
@@ -81,8 +81,8 @@ $safeEmail = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
       color:#D0BCBA; text-decoration:none; font-size:13px; font-weight:600;
       transition:border-color 0.15s;
     }
-    .back-link:hover { border-color:#D13D2C; color:#F5F0EE; }
-    .logo { font-size:18px; font-weight:800; margin-bottom:28px; color:#F5F0EE; }
+    .back-link:hover { border-color:#D13D2C; color:var(--text-light); }
+    .logo { font-size:18px; font-weight:800; margin-bottom:28px; color:var(--text-light); }
     .logo span { color:#D13D2C; }
   </style>
 </head>

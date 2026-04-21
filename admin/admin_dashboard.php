@@ -128,12 +128,12 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .logo { display:flex; align-items:center; gap:8px; text-decoration:none; margin-right:28px; flex-shrink:0; }
     .logo-icon { width:34px; height:34px; background:var(--red-vivid); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; box-shadow:0 0 18px rgba(209,61,44,0.35); }
     .logo-icon::before { content:'🐜'; font-size:18px; filter:brightness(0) invert(1); }
-    .logo-text { font-family:var(--font-display); font-weight:700; font-size:19px; color:#F5F0EE; white-space:nowrap; }
+    .logo-text { font-family:var(--font-display); font-weight:700; font-size:19px; color:var(--text-light); white-space:nowrap; }
     .logo-text span { color:var(--red-bright); }
     .nav-links { display:flex; align-items:center; gap:2px; flex:1; min-width:0; }
     .nav-link { font-size:13px; font-weight:600; color:#A09090; text-decoration:none; padding:7px 11px; border-radius:6px; transition:all 0.2s; cursor:pointer; background:none; border:none; font-family:var(--font-body); display:flex; align-items:center; gap:5px; white-space:nowrap; letter-spacing:0.01em; }
-    .nav-link:hover { color:#F5F0EE; background:var(--soil-hover); }
-    .nav-link.active { color:#F5F0EE; background:var(--soil-hover); }
+    .nav-link:hover { color:var(--text-light); background:var(--soil-hover); }
+    .nav-link.active { color:var(--text-light); background:var(--soil-hover); }
     .nav-right { display:flex; align-items:center; gap:10px; margin-left:auto; flex-shrink:0; }
     .theme-btn{ width:36px;height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; flex-shrink:0; }
     .theme-btn:hover { color:var(--red-bright); border-color:var(--red-vivid); }
@@ -151,17 +151,17 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .profile-btn { display:flex; align-items:center; gap:9px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:6px 12px 6px 8px; cursor:pointer; transition:0.2s; flex-shrink:0; }
     .profile-btn:hover { background:var(--soil-card); }
     .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--red-deep),var(--red-vivid)); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
-    .profile-name { font-size:13px; font-weight:600; color:#F5F0EE; }
+    .profile-name { font-size:13px; font-weight:600; color:var(--text-light); }
     .profile-role { font-size:10px; color:var(--red-pale); margin-top:1px; letter-spacing:0.02em; font-weight:600; }
     .profile-chevron { font-size:9px; color:var(--text-muted); margin-left:2px; }
     .profile-dropdown { position:absolute; top:calc(100% + 8px); right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:6px; min-width:200px; opacity:0; visibility:hidden; transform:translateY(-6px); transition:all 0.18s ease; z-index:300; box-shadow:0 20px 40px rgba(0,0,0,0.5); }
     .profile-dropdown.open { opacity:1; visibility:visible; transform:translateY(0); }
     .profile-dropdown-head { padding:12px 14px 10px; border-bottom:1px solid var(--soil-line); margin-bottom:4px; }
-    .pdh-name { font-size:14px; font-weight:700; color:#F5F0EE; }
+    .pdh-name { font-size:14px; font-weight:700; color:var(--text-light); }
     .pdh-sub { font-size:11px; color:var(--red-pale); margin-top:2px; font-weight:600; }
     .pd-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:6px; font-size:13px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); text-decoration:none; }
     .pd-item i { color:var(--text-muted); width:16px; text-align:center; font-size:12px; }
-    .pd-item:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .pd-item:hover { background:var(--soil-hover); color:var(--text-light); }
     .pd-item:hover i { color:var(--red-bright); }
     .pd-divider { height:1px; background:var(--soil-line); margin:4px 6px; }
     .pd-item.danger { color:#E05555; }
@@ -174,7 +174,7 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .mobile-menu.open { display:flex; }
     .mobile-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:7px; font-size:14px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); text-decoration:none; }
     .mobile-link i { color:var(--red-mid); width:16px; text-align:center; }
-    .mobile-link:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .mobile-link:hover { background:var(--soil-hover); color:var(--text-light); }
     .mobile-divider { height:1px; background:var(--soil-line); margin:6px 0; }
 
     /* ── PAGE SHELL ── */
@@ -182,13 +182,13 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
 
     /* ── SEARCH HEADER ── */
     .search-header { padding:32px 0 24px; }
-    .search-greeting { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; margin-bottom:6px; }
+    .search-greeting { font-family:var(--font-display); font-size:28px; font-weight:700; color:var(--text-light); margin-bottom:6px; }
     .search-greeting span { color:var(--red-bright); font-style:italic; }
     .search-sub { font-size:14px; color:var(--text-muted); margin-bottom:20px; }
     .search-bar { display:flex; align-items:center; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; transition:0.25s; }
     .search-bar:focus-within { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.12), 0 4px 20px rgba(0,0,0,0.3); }
     .search-bar .si { padding:0 16px; color:var(--text-muted); font-size:16px; flex-shrink:0; }
-    .search-bar input { flex:1; padding:16px 0; min-width:0; background:none; border:none; outline:none; font-family:var(--font-body); font-size:15px; color:#F5F0EE; }
+    .search-bar input { flex:1; padding:16px 0; min-width:0; background:none; border:none; outline:none; font-family:var(--font-body); font-size:15px; color:var(--text-light); }
     .search-bar input::placeholder { color:var(--text-muted); }
     .search-divider { width:1px; height:28px; background:var(--soil-line); flex-shrink:0; }
     .search-btn { margin:6px; padding:10px 22px; border-radius:7px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.2s; white-space:nowrap; flex-shrink:0; letter-spacing:0.02em; display:flex; align-items:center; gap:7px; }
@@ -205,7 +205,7 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
 
     /* ── MAIN SECTIONS ── */
     .sec-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
-    .sec-title { font-family:var(--font-display); font-size:20px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:10px; letter-spacing:0.01em; }
+    .sec-title { font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--text-light); display:flex; align-items:center; gap:10px; letter-spacing:0.01em; }
     .sec-title i { color:var(--red-bright); font-size:16px; }
     .sec-count { font-size:11px; font-weight:600; color:var(--text-muted); background:var(--soil-hover); padding:2px 9px; border-radius:4px; letter-spacing:0.04em; }
     .see-more { font-size:12px; font-weight:600; color:var(--red-pale); cursor:pointer; background:none; border:none; font-family:var(--font-body); display:flex; align-items:center; gap:4px; transition:0.15s; letter-spacing:0.02em; text-decoration:none; }
@@ -222,7 +222,7 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .sc-icon.b { background:rgba(74,144,217,.1); color:#7ab8f0; }
     .sc-icon.g { background:rgba(76,175,112,.1); color:#6ccf8a; }
     .sc-icon.p { background:rgba(156,39,176,.1); color:#cf8ae0; }
-    .sc-num { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; line-height:1; }
+    .sc-num { font-family:var(--font-display); font-size:28px; font-weight:700; color:var(--text-light); line-height:1; }
     .sc-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
     .sc-btn { padding:6px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:11px; font-weight:700; cursor:pointer; transition:0.18s; width:100%; text-decoration:none; display:block; text-align:center; }
     .sc-btn:hover { background:var(--soil-hover); border-color:var(--red-vivid); color:var(--red-pale); }
@@ -234,9 +234,9 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .featured-card:hover { border-color:rgba(209,61,44,0.55); transform:translateY(-4px); box-shadow:0 20px 48px rgba(0,0,0,0.45); }
     .fc-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--amber); background:var(--amber-dim); border:1px solid rgba(212,148,58,0.22); padding:2px 7px; border-radius:3px; margin-bottom:14px; }
     .fc-icon { width:40px; height:40px; border-radius:10px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:14px; color:var(--red-bright); }
-    .fc-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:#F5F0EE; margin-bottom:4px; line-height:1.3; }
+    .fc-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-light); margin-bottom:4px; line-height:1.3; }
     .fc-sub { font-size:12px; color:var(--text-muted); margin-bottom:14px; }
-    .fc-num { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; line-height:1; margin-bottom:4px; }
+    .fc-num { font-family:var(--font-display); font-size:28px; font-weight:700; color:var(--text-light); line-height:1; margin-bottom:4px; }
     .fc-footer { display:flex; align-items:center; justify-content:space-between; padding-top:14px; border-top:1px solid var(--soil-line); }
     .fc-action { padding:6px 14px; border-radius:6px; background:var(--red-vivid); border:none; color:#fff; font-size:11px; font-weight:700; cursor:pointer; font-family:var(--font-body); transition:0.2s; }
     .fc-action:hover { background:var(--red-bright); }
@@ -248,7 +248,7 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .job-row { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:18px 20px; transition:all 0.18s; display:grid; grid-template-columns:1fr auto; gap:16px; align-items:center; position:relative; }
     .job-row:hover { border-color:rgba(209,61,44,0.5); background:var(--soil-hover); transform:translateX(2px); box-shadow:0 4px 20px rgba(0,0,0,0.3); }
     .jr-top { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
-    .jr-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:#F5F0EE; }
+    .jr-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-light); }
     .jr-new { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; padding:2px 7px; border-radius:3px; white-space:nowrap; }
     .jr-new.red { color:var(--red-pale); background:rgba(209,61,44,0.1); border:1px solid rgba(209,61,44,0.2); }
     .jr-new.green { color:#6ccf8a; background:rgba(76,175,112,.1); border:1px solid rgba(76,175,112,.2); }
@@ -268,7 +268,7 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .job-row-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
     .jr-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
     .jr-btn { padding:6px 13px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-size:12px; font-weight:700; cursor:pointer; font-family:var(--font-body); transition:0.18s; white-space:nowrap; }
-    .jr-btn:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .jr-btn:hover { background:var(--soil-hover); color:var(--text-light); }
     .jr-btn.r:hover { border-color:var(--red-vivid); color:var(--red-pale); }
     .jr-btn.g:hover { border-color:rgba(76,175,112,.5); color:#6ccf8a; }
     .jr-btn.a:hover { border-color:rgba(212,148,58,.5); color:var(--amber); }
@@ -280,10 +280,10 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .activity-panel { position:fixed; top:64px; right:0; bottom:0; width:380px; background:var(--soil-card); border-left:1px solid var(--soil-line); z-index:150; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.4); }
     .activity-panel.open { transform:translateX(0); }
     .ap-head { padding:20px 20px 16px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-    .ap-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:8px; }
+    .ap-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:var(--text-light); display:flex; align-items:center; gap:8px; }
     .ap-title i { color:var(--red-bright); }
     .ap-close { width:28px; height:28px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:0.15s; }
-    .ap-close:hover { color:#F5F0EE; }
+    .ap-close:hover { color:var(--text-light); }
     .ap-body { flex:1; overflow-y:auto; padding:12px 16px; }
     .ap-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--soil-line); }
     .ap-item:last-child { border-bottom:none; }
@@ -302,7 +302,7 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .aitem:last-child { margin-bottom:0; }
     .a-row { display:flex; justify-content:space-between; margin-bottom:5px; }
     .a-key { font-size:12px; color:var(--text-muted); font-weight:600; }
-    .a-val { font-size:12px; color:#F5F0EE; font-weight:700; }
+    .a-val { font-size:12px; color:var(--text-light); font-weight:700; }
     .bar-track { height:6px; background:var(--soil-line); border-radius:3px; overflow:hidden; }
     .bar-fill { height:100%; border-radius:3px; }
     .bar-fill.red { background:linear-gradient(90deg,var(--red-vivid),var(--red-bright)); }
@@ -320,7 +320,7 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .modal-box { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:32px; max-width:560px; width:92%; position:relative; animation:modalIn 0.2s ease; box-shadow:0 40px 80px rgba(0,0,0,0.6); max-height:88vh; overflow-y:auto; }
     @keyframes modalIn { from{opacity:0;transform:scale(0.97) translateY(8px)} to{opacity:1;transform:scale(1)} }
     .modal-close { position:absolute; top:18px; right:18px; width:30px; height:30px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.15s; }
-    .modal-close:hover { color:#F5F0EE; border-color:var(--red-mid); }
+    .modal-close:hover { color:var(--text-light); border-color:var(--red-mid); }
 
     /* Toast — handled by includes/toast.php */
 
@@ -399,7 +399,7 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .reg-av { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
     .reg-av img { width:100%; height:100%; object-fit:cover; }
     .reg-info { min-width:0; }
-    .reg-name { font-family:var(--font-display); font-size:15px; font-weight:700; color:#F5F0EE; margin-bottom:4px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+    .reg-name { font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-light); margin-bottom:4px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
     .reg-sub { font-size:12px; color:var(--text-muted); margin-bottom:6px; }
     .reg-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--text-muted); }
     .reg-meta i { color:var(--red-bright); font-size:10px; }
@@ -410,13 +410,13 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
     .jpost:hover { border-color:rgba(209,61,44,.4); box-shadow:0 8px 32px rgba(0,0,0,.3); transform:translateY(-1px); }
     .jpost-icon { width:42px; height:42px; border-radius:10px; background:rgba(209,61,44,.1); border:1px solid rgba(209,61,44,.2); display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--red-bright); flex-shrink:0; }
     .jpost-body { flex:1; min-width:0; }
-    .jpost-ttl { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; margin-bottom:6px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+    .jpost-ttl { font-family:var(--font-display); font-size:17px; font-weight:700; color:var(--text-light); margin-bottom:6px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
     .jpost-meta { display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--text-muted); margin-bottom:8px; }
     .jpost-meta i { font-size:10px; color:var(--red-bright); }
     .jpost-right { display:flex; flex-direction:column; align-items:flex-end; gap:10px; flex-shrink:0; }
     .jpost-badge { display:flex; flex-direction:column; align-items:center; gap:2px; background:rgba(212,148,58,.06); border:1px solid rgba(212,148,58,.15); border-radius:10px; padding:10px 16px; min-width:72px; }
     .jpost-badge > i { font-size:14px; color:var(--amber); margin-bottom:2px; }
-    .jpost-badge-num { font-family:var(--font-display); font-size:22px; font-weight:700; color:#F5F0EE; text-align:center; }
+    .jpost-badge-num { font-family:var(--font-display); font-size:22px; font-weight:700; color:var(--text-light); text-align:center; }
     .jpost-badge-lbl { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
     .jpost-acts { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
     /* ── Status badges ── */
@@ -817,7 +817,7 @@ $activeEmployers = $countValue("SELECT COUNT(DISTINCT employer_id) FROM jobs WHE
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-right:24px;">
         <div style="width:56px;height:56px;border-radius:50%;background:${u.color};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;">${u.initials}</div>
         <div>
-          <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:#F5F0EE;">${u.name}</div>
+          <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text-light);">${u.name}</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
             <span style="background:${roleColor[u.role]||'#D13D2C'}22;color:${roleColor[u.role]||'#D13D2C'};border:1px solid ${roleColor[u.role]||'#D13D2C'}44;border-radius:20px;padding:2px 10px;font-weight:700;">${roleLabel[u.role]||u.role}</span>
             &nbsp;

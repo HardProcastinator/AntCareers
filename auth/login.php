@@ -173,6 +173,18 @@ $_SESSION['account_type'] = $accountType;
 $_SESSION['company_name'] = $user['company_name'] ?? '';
 $_SESSION['avatar_url']   = $user['avatar_url'] ?? '';
 
+// For employer accounts: if no personal avatar_url, fall back to company logo
+if (in_array($accountType, ['employer', 'recruiter'], true) && empty($_SESSION['avatar_url'])) {
+    try {
+        $logoStmt = $db->prepare('SELECT logo_path FROM company_profiles WHERE user_id = :uid LIMIT 1');
+        $logoStmt->execute([':uid' => (int)$user['id']]);
+        $logoPath = $logoStmt->fetchColumn();
+        if ($logoPath) {
+            $_SESSION['avatar_url'] = (string)$logoPath;
+        }
+    } catch (\Throwable $_) {}
+}
+
 // Check if must change password (recruiter first-login)
 if ((int)$user['must_change_password'] === 1) {
     $_SESSION['must_change_password'] = true;

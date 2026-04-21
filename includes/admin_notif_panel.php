@@ -71,10 +71,10 @@ function renderAdminNotifPanel(): void {
   .admin-notif-overlay{display:none;position:fixed;inset:0;z-index:599;background:rgba(0,0,0,0.35);backdrop-filter:blur(2px)}
   .admin-notif-overlay.visible{display:block}
   .anp-head{padding:20px 20px 16px;border-bottom:1px solid var(--soil-line,#352E2E);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-  .anp-title{font-family:var(--font-display,'Playfair Display',serif);font-size:17px;font-weight:700;color:#F5F0EE;display:flex;align-items:center;gap:8px}
+  .anp-title{font-family:var(--font-display,'Playfair Display',serif);font-size:17px;font-weight:700;color:var(--text-light);display:flex;align-items:center;gap:8px}
   .anp-title i{color:var(--red-bright,#E85540)}
   .anp-close-btn{width:28px;height:28px;border-radius:6px;background:var(--soil-hover,#252020);border:1px solid var(--soil-line,#352E2E);color:var(--text-muted,#927C7A);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;transition:.15s}
-  .anp-close-btn:hover{color:#F5F0EE;border-color:var(--red-vivid,#D13D2C)}
+  .anp-close-btn:hover{color:var(--text-light);border-color:var(--red-vivid,#D13D2C)}
   .anp-body{flex:1;overflow-y:auto;padding:8px 0}
   .anp-footer{border-top:1px solid var(--soil-line,#352E2E);padding:12px 20px;flex-shrink:0}
   .anp-view-all{font-size:12px;font-weight:700;color:var(--red-pale,#F07060);text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s}

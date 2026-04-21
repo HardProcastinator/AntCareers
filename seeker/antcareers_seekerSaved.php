@@ -396,7 +396,7 @@ $appliedIdsJson = json_encode(array_map('intval', $appliedIds));
     if (!toast) {
       toast = document.createElement("div");
       toast.id = "acToastSaved";
-      toast.style.cssText = "position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);background:#1C1818;border:1px solid rgba(209,61,44,0.35);color:#F5F0EE;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:9px;z-index:9999;opacity:0;transition:opacity 0.22s,transform 0.22s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.5);";
+      toast.style.cssText = "position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);background:#1C1818;border:1px solid rgba(209,61,44,0.35);color:var(--text-light);padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:9px;z-index:9999;opacity:0;transition:opacity 0.22s,transform 0.22s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.5);";
       document.body.appendChild(toast);
     }
     toast.innerHTML = "<i class=\"fas " + icon + "\" style=\"color:var(--red-pale)\"></i> " + msg;

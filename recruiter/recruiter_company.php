@@ -84,7 +84,7 @@ function cpfImg(?array $p, string $key): string {
 
     /* PAGE */
     .page-shell { position:relative; z-index:1; max-width:960px; margin:0 auto; padding:36px 24px 80px; }
-    .page-title { font-family:var(--font-display); font-size:26px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
+    .page-title { font-family:var(--font-display); font-size:26px; font-weight:700; color:var(--text-light); margin-bottom:4px; }
     .page-sub { font-size:13px; color:var(--text-muted); margin-bottom:32px; }
 
     /* Cover + logo hero */
@@ -94,12 +94,12 @@ function cpfImg(?array $p, string $key): string {
     .cover-bottom { display:flex; align-items:flex-end; justify-content:space-between; padding:0 24px 20px; gap:16px; flex-wrap:wrap; }
     .company-logo-wrap { margin-top:-40px; position:relative; }
     .company-logo { width:88px; height:88px; border-radius:14px; background:var(--soil-hover); border:3px solid var(--soil-dark); display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:800; color:var(--red-bright); font-family:var(--font-display); position:relative; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.4); }
-    .cover-company-name { font-size:20px; font-weight:700; color:#F5F0EE; font-family:var(--font-display); }
+    .cover-company-name { font-size:20px; font-weight:700; color:var(--text-light); font-family:var(--font-display); }
     .cover-company-sub { font-size:12px; color:var(--amber); font-weight:600; margin-top:2px; }
 
     /* Form cards (view-only) */
     .form-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:14px; padding:28px; margin-bottom:20px; }
-    .fc-title { font-size:15px; font-weight:700; color:#F5F0EE; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+    .fc-title { font-size:15px; font-weight:700; color:var(--text-light); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
     .fc-title i { color:var(--red-bright); font-size:14px; }
     .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
     .form-group { display:flex; flex-direction:column; gap:6px; }

@@ -262,7 +262,7 @@ $openJobCount      = count($companyJobs);
     .btn-follow:disabled { opacity:0.6; cursor:not-allowed; }
     .btn-website { display:flex; align-items:center; gap:6px; padding:10px 16px; border-radius:8px; background:transparent; border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:12px; font-weight:700; text-decoration:none; transition:0.18s; }
     .btn-website:hover { border-color:var(--red-vivid); color:var(--red-pale); }
-    .cp-name { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; margin-bottom:5px; line-height:1.2; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .cp-name { font-family:var(--font-display); font-size:28px; font-weight:700; color:var(--text-light); margin-bottom:5px; line-height:1.2; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
     .cp-tagline { font-size:14px; color:var(--text-muted); margin-bottom:12px; font-weight:500; }
     .cp-verified { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#6ccf8a; background:rgba(76,175,112,0.12); border:1px solid rgba(76,175,112,0.25); padding:3px 9px; border-radius:4px; }
     .cp-meta { display:flex; flex-wrap:wrap; gap:16px; margin-bottom:0; }
@@ -321,7 +321,7 @@ $openJobCount      = count($companyJobs);
     .job-row:last-child { border-bottom:none; }
     .jr-icon { width:40px; height:40px; border-radius:10px; background:rgba(209,61,44,0.08); border:1px solid rgba(209,61,44,0.15); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--red-pale); flex-shrink:0; }
     .jr-main { flex:1; min-width:0; }
-    .jr-title { font-size:14px; font-weight:700; color:#F5F0EE; margin-bottom:3px; }
+    .jr-title { font-size:14px; font-weight:700; color:var(--text-light); margin-bottom:3px; }
     .jr-meta-row { display:flex; flex-wrap:wrap; gap:10px; }
     .jr-meta-row span { font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:4px; }
     .jr-meta-row i { font-size:10px; color:var(--red-pale); }
@@ -348,10 +348,10 @@ $openJobCount      = count($companyJobs);
     .jdm-footer { padding:14px 22px; border-top:1px solid var(--soil-line); display:flex; gap:10px; flex-shrink:0; background:var(--soil-card); }
     .jdm-close-row { display:flex; justify-content:flex-end; margin-bottom:16px; }
     .jdm-close { width:32px; height:32px; border-radius:50%; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; transition:0.15s; }
-    .jdm-close:hover { color:#F5F0EE; }
+    .jdm-close:hover { color:var(--text-light); }
     .jdm-header { display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
     .jdm-icon { width:46px; height:46px; border-radius:10px; background:rgba(209,61,44,0.1); border:1px solid rgba(209,61,44,0.2); display:flex; align-items:center; justify-content:center; font-size:19px; color:var(--red-pale); flex-shrink:0; }
-    .jdm-title { font-size:18px; font-weight:700; color:#F5F0EE; line-height:1.25; margin-bottom:3px; }
+    .jdm-title { font-size:18px; font-weight:700; color:var(--text-light); line-height:1.25; margin-bottom:3px; }
     .jdm-company { font-size:13px; color:var(--text-muted); font-weight:500; }
     .jdm-badges { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
     .jdm-badge { font-size:11px; font-weight:600; padding:5px 10px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-mid); display:flex; align-items:center; gap:5px; }

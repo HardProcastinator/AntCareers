@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
+require_once dirname(__DIR__) . '/includes/constants.php';
 requireLogin('seeker');
 $user = getUser();
 // Convenience aliases for page templates that use the old variable names
@@ -194,7 +195,7 @@ $dispIndustries = $fmtStat($statIndustries);
 
     /* ── HEADER ── */
     .page-header { margin-bottom:28px; }
-    .page-title { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; margin-bottom:6px; }
+    .page-title { font-family:var(--font-display); font-size:28px; font-weight:700; color:var(--text-light); margin-bottom:6px; }
     .page-title em { color:var(--red-bright); font-style:italic; }
     .page-sub { font-size:14px; color:var(--text-muted); }
 
@@ -202,7 +203,7 @@ $dispIndustries = $fmtStat($statIndustries);
     .featured-banner { background:linear-gradient(135deg,rgba(209,61,44,0.15),rgba(122,21,21,0.08)); border:1px solid rgba(209,61,44,0.25); border-radius:14px; padding:28px 32px; margin-bottom:32px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; overflow:hidden; position:relative; }
     .featured-banner::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--red-vivid),var(--red-bright)); }
     .fb-label { font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--amber); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
-    .fb-title { font-family:var(--font-display); font-size:22px; font-weight:700; color:#F5F0EE; margin-bottom:6px; }
+    .fb-title { font-family:var(--font-display); font-size:22px; font-weight:700; color:var(--text-light); margin-bottom:6px; }
     .fb-sub { font-size:13px; color:var(--text-muted); }
     .fb-stats { display:flex; gap:24px; flex-wrap:wrap; }
     .fb-stat { text-align:center; }
@@ -230,7 +231,7 @@ $dispIndustries = $fmtStat($statIndustries);
     .search-box { flex:1; min-width:240px; display:flex; align-items:center; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; transition:0.25s; }
     .search-box:focus-within { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.12); }
     .search-box .si { padding:0 14px; color:var(--text-muted); font-size:14px; flex-shrink:0; }
-    .search-box input { flex:1; padding:13px 0; background:none; border:none; outline:none; font-family:var(--font-body); font-size:14px; color:#F5F0EE; }
+    .search-box input { flex:1; padding:13px 0; background:none; border:none; outline:none; font-family:var(--font-body); font-size:14px; color:var(--text-light); }
     .search-box input::placeholder { color:var(--text-muted); }
     .filter-select { padding:13px 16px; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; font-family:var(--font-body); font-size:13px; color:var(--text-mid); cursor:pointer; outline:none; transition:0.2s; }
     .filter-select:focus { border-color:var(--red-vivid); }
@@ -262,18 +263,18 @@ $dispIndustries = $fmtStat($statIndustries);
     .follow-modal.open { display:flex; }
     .follow-modal-box { width:100%; max-width:560px; max-height:80vh; overflow:hidden; border-radius:14px; border:1px solid var(--soil-line); background:var(--soil-card); display:flex; flex-direction:column; }
     .follow-modal-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--soil-line); }
-    .follow-modal-title { font-family:var(--font-display); color:#F5F0EE; font-size:18px; font-weight:700; }
+    .follow-modal-title { font-family:var(--font-display); color:var(--text-light); font-size:18px; font-weight:700; }
     .follow-close { width:30px; height:30px; border-radius:7px; border:1px solid var(--soil-line); background:transparent; color:var(--text-muted); cursor:pointer; }
-    .follow-close:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .follow-close:hover { background:var(--soil-hover); color:var(--text-light); }
     .follow-list { overflow:auto; padding:10px 12px 12px; display:flex; flex-direction:column; gap:8px; }
     .follow-item { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--soil-line); border-radius:10px; padding:10px 11px; background:var(--soil-hover); }
     .follow-item-main { display:flex; align-items:center; gap:9px; min-width:0; }
     .follow-item-logo { width:34px; height:34px; border-radius:8px; background:var(--soil-dark); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; }
-    .follow-item-name { color:#F5F0EE; font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .follow-item-name { color:var(--text-light); font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .follow-item-sub { color:var(--text-muted); font-size:11px; }
     .follow-item-actions { display:flex; gap:6px; flex-shrink:0; }
     .follow-item-btn { padding:6px 10px; border-radius:7px; border:1px solid var(--soil-line); background:transparent; color:var(--text-muted); font-size:11px; font-weight:700; cursor:pointer; }
-    .follow-item-btn:hover { background:var(--soil-dark); color:#F5F0EE; }
+    .follow-item-btn:hover { background:var(--soil-dark); color:var(--text-light); }
     .follow-item-btn.danger { border-color:rgba(220,53,69,0.35); color:#ff9a9a; }
     .follow-item-btn.danger:hover { background:rgba(220,53,69,0.12); color:#ffb1b1; }
     .follow-empty { text-align:center; color:var(--text-muted); font-size:13px; padding:22px 10px; }
@@ -287,7 +288,7 @@ $dispIndustries = $fmtStat($statIndustries);
     .cc-banner { height:72px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
     .cc-body { padding:20px; }
     .cc-logo { width:52px; height:52px; border-radius:12px; background:var(--soil-dark); border:2px solid var(--soil-line); display:flex; align-items:center; justify-content:center; font-size:22px; margin-top:-38px; margin-bottom:12px; position:relative; z-index:1; overflow:hidden; }
-    .cc-name { font-family:var(--font-display); font-size:16px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
+    .cc-name { font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--text-light); margin-bottom:4px; }
     .cc-industry { font-size:12px; color:var(--red-pale); font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
     .cc-industry i { font-size:10px; }
     .cc-desc { font-size:12px; color:var(--text-muted); line-height:1.6; margin-bottom:14px; display:-webkit-box; line-clamp:2; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
@@ -299,7 +300,7 @@ $dispIndustries = $fmtStat($statIndustries);
     .cc-open-jobs i { font-size:10px; }
     .cc-actions { display:flex; gap:6px; }
     .cc-btn { padding:6px 13px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-size:11px; font-weight:700; cursor:pointer; font-family:var(--font-body); transition:0.18s; white-space:nowrap; }
-    .cc-btn:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .cc-btn:hover { background:var(--soil-hover); color:var(--text-light); }
     .cc-btn.primary { background:var(--red-vivid); border-color:var(--red-vivid); color:#fff; }
     .cc-btn.primary:hover { background:var(--red-bright); }
     .verified-badge { position:absolute; top:12px; right:12px; width:22px; height:22px; border-radius:50%; background:rgba(76,175,112,0.2); border:1px solid rgba(76,175,112,0.4); display:flex; align-items:center; justify-content:center; font-size:10px; color:#6ccf8a; }
@@ -431,10 +432,10 @@ $dispIndustries = $fmtStat($statIndustries);
     </div>
     <select class="filter-select" id="sizeFilter">
       <option value="">All Sizes</option>
-      <option>Startup (1–50)</option>
-      <option>Small (51–200)</option>
-      <option>Mid-size (201–1000)</option>
-      <option>Large (1000+)</option>
+      <option value="startup">Startup (1–50)</option>
+      <option value="small">Small (51–200)</option>
+      <option value="midsize">Mid-size (201–1000)</option>
+      <option value="large">Large (1000+)</option>
     </select>
     <button class="search-btn" onclick="window.filterCompanies()"><i class="fas fa-search"></i> Search</button>
   </div>
@@ -468,6 +469,9 @@ $dispIndustries = $fmtStat($statIndustries);
 </div>
 
 <script>
+  // Company size filter ranges — single source of truth via PHP constants
+  var _companySizeRanges = <?= json_encode(COMPANY_SIZE_FILTER_RANGES, JSON_UNESCAPED_UNICODE) ?>;
+
   // Expose interactive functions globally so inline onclick handlers work
   // regardless of what the navbar include does to scope
 
@@ -491,7 +495,7 @@ $dispIndustries = $fmtStat($statIndustries);
     var filtered = window._acCompanies.filter(function(c) {
       var matchQ = !q || c.name.toLowerCase().indexOf(q) !== -1 || c.desc.toLowerCase().indexOf(q) !== -1 || c.tags.some(function(t){ return t.toLowerCase().indexOf(q) !== -1; });
       var matchI = !industries.length || industries.indexOf(c.industry) !== -1;
-      var matchS = !size || c.size === size;
+      var matchS = !size || (_companySizeRanges[size] || []).indexOf(c.size) !== -1;
       return matchQ && matchI && matchS;
     });
     window.renderCompanies(filtered);
@@ -570,7 +574,7 @@ $dispIndustries = $fmtStat($statIndustries);
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'acToast';
-      toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);background:#1C1818;border:1px solid rgba(209,61,44,0.35);color:#F5F0EE;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:9px;z-index:9999;opacity:0;transition:opacity 0.22s,transform 0.22s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+      toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);background:#1C1818;border:1px solid rgba(209,61,44,0.35);color:var(--text-light);padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:9px;z-index:9999;opacity:0;transition:opacity 0.22s,transform 0.22s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
       document.body.appendChild(toast);
     }
     toast.innerHTML = '<i class="fas ' + icon + '" style="color:var(--red-pale)"></i> ' + msg;

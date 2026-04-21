@@ -121,6 +121,7 @@ $jsProfile = json_encode([
     'country'  => $sp['country_name'] ?? '',
     'expLevel' => $sp['experience_level'] ?? '',
     'about'    => $sp['bio'] ?? '',
+    'avatar'   => !empty($avatarUrl) ? $avatarUrl : '',
     'skills'   => $dbSkills,
     'experience' => array_map(fn($e) => [
         'title'   => $e['job_title'] ?? '',
@@ -170,16 +171,38 @@ $jsProfile = json_encode([
 ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
 // ── Compute initial profile completeness server-side ──
-$initScore = 35; // base
-if (!empty($sp['headline']))    $initScore += 10; // title
-if (!empty($sp['bio']))         $initScore += 10; // about
-if (count($dbSkills) > 0)       $initScore += 10; // skills
-if (count($dbExperience) > 0)   $initScore += 10; // experience
-if (count($dbEducation) > 0)    $initScore += 10; // education
-if (!empty($sp['phone']))       $initScore +=  5; // phone
-if (!empty($sp['linkedin_url']) || !empty($sp['github_url']) || !empty($sp['portfolio_url']))
-                                $initScore += 10; // links
-$initScore = min($initScore, 100);
+// 10 equally-weighted fields × 10% = 100% total
+$_complChecks = [
+    !empty($sp['headline']),          // job title
+    !empty($sp['city_name']),         // home location
+    !empty($sp['country_name']),      // country
+    !empty($sp['phone']),             // phone
+    !empty($sp['experience_level']),  // experience level
+    !empty($avatarUrl),               // profile photo
+    !empty($sp['bio']),               // about me
+    count($dbSkills) > 0,             // skills
+    count($dbExperience) > 0,         // work experience
+    count($dbEducation) > 0,          // education
+];
+$initScore = array_sum(array_map('intval', $_complChecks)) * 10;
+
+// ── Parse saved phone number for modal pre-fill ──
+$_savedPhone  = $sp['phone'] ?? '';
+$_phoneCode   = '+63'; // default
+$_phoneNumber = '';
+if ($_savedPhone !== '') {
+    if (str_starts_with($_savedPhone, '+')) {
+        $spacePos = strpos($_savedPhone, ' ');
+        if ($spacePos !== false) {
+            $_phoneCode   = substr($_savedPhone, 0, $spacePos);
+            $_phoneNumber = substr($_savedPhone, $spacePos + 1);
+        } else {
+            $_phoneCode = $_savedPhone; // code only, no number portion
+        }
+    } else {
+        $_phoneNumber = $_savedPhone; // legacy: stored without code
+    }
+}
 
 // ── Following / Followers counts ──
 $followingCount  = 0;
@@ -458,7 +481,7 @@ $followingIdsJson    = json_encode(array_map(static fn(array $row): string => (s
     .person-modal-overlay { position:fixed; inset:0; z-index:700; background:rgba(0,0,0,0.82); backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; padding:20px; }
     .person-modal-box { width:min(560px,100%); background:var(--soil-card); border:1px solid var(--soil-line); border-radius:16px; padding:24px; box-shadow:0 32px 80px rgba(0,0,0,0.55); position:relative; animation:fadeUp 0.22s ease both; max-height:82vh; overflow:auto; }
     .person-modal-close { position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:8px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); cursor:pointer; }
-    .person-modal-close:hover { color:#F5F0EE; border-color:var(--red-vivid); }
+    .person-modal-close:hover { color:var(--text-light); border-color:var(--red-vivid); }
     .person-modal-head { display:flex; align-items:center; gap:14px; margin-bottom:14px; padding-right:40px; }
     .person-modal-avatar { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:700; flex-shrink:0; overflow:hidden; }
     .person-modal-avatar img { width:100%; height:100%; object-fit:cover; }
@@ -1138,11 +1161,11 @@ $followingIdsJson    = json_encode(array_map(static fn(array $row): string => (s
     </div>
     <div class="form-group">
       <label class="form-label">Job Title / Headline</label>
-      <input class="form-input" type="text" id="editTitle" placeholder="e.g. Fresh Graduate · Web Developer">
+      <input class="form-input" type="text" id="editTitle" value="<?= htmlspecialchars($sp['headline'] ?? '', ENT_QUOTES) ?>" placeholder="e.g. Fresh Graduate &middot; Web Developer">
     </div>
     <div class="form-group">
       <label class="form-label">Home location</label>
-      <input class="form-input" type="text" id="editLocation" placeholder="e.g. San Rafael Bulacan">
+      <input class="form-input" type="text" id="editLocation" value="<?= htmlspecialchars($sp['city_name'] ?? '', ENT_QUOTES) ?>" placeholder="e.g. San Rafael Bulacan">
     </div>
     <div class="form-group">
       <label class="form-label">Country</label>
@@ -1310,12 +1333,9 @@ $followingIdsJson    = json_encode(array_map(static fn(array $row): string => (s
       <label class="form-label">Experience Level</label>
       <select class="form-input" id="editExpLevel">
         <option value="">Select level...</option>
-        <option>Entry</option>
-        <option>Junior</option>
-        <option>Mid</option>
-        <option>Senior</option>
-        <option>Lead</option>
-        <option>Executive</option>
+        <?php foreach (['Entry','Junior','Mid','Senior','Lead','Executive'] as $_lvl): ?>
+        <option<?= ($sp['experience_level'] ?? '') === $_lvl ? ' selected' : '' ?>><?= $_lvl ?></option>
+        <?php endforeach; ?>
       </select>
     </div>
     <div class="form-group" style="margin-bottom:0;">
@@ -1331,6 +1351,19 @@ $followingIdsJson    = json_encode(array_map(static fn(array $row): string => (s
     </div>
   </div>
 </div>
+<script>
+(function() {
+  var code = <?= json_encode($_phoneCode) ?>;
+  var num  = <?= json_encode($_phoneNumber) ?>;
+  var sel  = document.getElementById('editPhoneCountry');
+  var disp = document.getElementById('phoneCodeDisplay');
+  var inp  = document.getElementById('editPhone');
+  if (sel && code) { sel.value = code; }
+  if (disp) disp.textContent = (sel && sel.value) ? sel.value : '+63';
+  if (inp && num) inp.value = num;
+  if (sel && disp) sel.addEventListener('change', function() { disp.textContent = this.value; });
+})();
+</script>
 
 <!-- About Modal -->
 <div class="modal-overlay" id="aboutModal">
@@ -2041,6 +2074,8 @@ $followingIdsJson    = json_encode(array_map(static fn(array $row): string => (s
           const el = document.getElementById('heroAvatar');
           el.style.background = `url('${data.url}') center/cover no-repeat`;
           el.style.fontSize = '0';
+          profile.avatar = data.url; // update completeness tracking
+          updateCompleteness();
           showToast('Profile photo updated!', 'fa-check');
         } else {
           const el = document.getElementById('heroBanner');
@@ -2067,31 +2102,36 @@ $followingIdsJson    = json_encode(array_map(static fn(array $row): string => (s
   }
 
   // ── COMPLETENESS ──
+  // 10 equal fields × 10% = 100% max. Must match PHP $_complChecks exactly.
   const CHECKS = [
-    { key:'title',      label:'Job title / headline',     points:10, action:"openModal('editProfileModal')" },
-    { key:'about',      label:'About Me bio',             points:10, action:"openModal('aboutModal')" },
-    { key:'skills',     label:'At least one skill',       points:10, action:"openModal('skillModal')" },
-    { key:'experience', label:'Work experience',          points:10, action:"openModal('expModal')" },
-    { key:'education',  label:'Education history',        points:10, action:"openModal('eduModal')" },
-    { key:'phone',      label:'Phone number',             points:5,  action:"openModal('editProfileModal')" },
-    { key:'links',      label:'LinkedIn / GitHub / Portfolio', points:10, action:"openModal('linksModal')" },
+    { key:'title',      label:'Job title / headline',          action:"openModal('editProfileModal')" },
+    { key:'location',   label:'Home location',                 action:"openModal('editProfileModal')" },
+    { key:'country',    label:'Country',                       action:"openModal('editProfileModal')" },
+    { key:'phone',      label:'Phone number',                  action:"openModal('editProfileModal')" },
+    { key:'expLevel',   label:'Experience level',              action:"openModal('editProfileModal')" },
+    { key:'avatar',     label:'Profile photo',                 action:"document.getElementById('avatarInput').click()" },
+    { key:'about',      label:'About Me bio',                  action:"openModal('aboutModal')" },
+    { key:'skills',     label:'At least one skill',            action:"openModal('skillModal')" },
+    { key:'experience', label:'Work experience',               action:"openModal('expModal')" },
+    { key:'education',  label:'Education history',             action:"openModal('eduModal')" },
   ];
 
   function checkDone(key) {
     if (key === 'title')      return !!profile.title;
+    if (key === 'location')   return !!profile.city;
+    if (key === 'country')    return !!profile.country;
+    if (key === 'phone')      return !!profile.contact.phone;
+    if (key === 'expLevel')   return !!profile.expLevel;
+    if (key === 'avatar')     return !!profile.avatar;
     if (key === 'about')      return !!profile.about;
     if (key === 'skills')     return profile.skills.length > 0;
     if (key === 'experience') return profile.experience.length > 0;
     if (key === 'education')  return profile.education.length > 0;
-    if (key === 'phone')      return !!profile.contact.phone;
-    if (key === 'links')      return !!(profile.links.linkedin || profile.links.github || profile.links.portfolio);
     return false;
   }
 
   function updateCompleteness() {
-    let score = 35;
-    CHECKS.forEach(c => { if (checkDone(c.key)) score += c.points; });
-    score = Math.min(score, 100);
+    const score = CHECKS.filter(c => checkDone(c.key)).length * 10;
     document.getElementById('completenessFill').style.width = score + '%';
     document.getElementById('completenessText').textContent = score + '%';
 
@@ -2108,7 +2148,7 @@ $followingIdsJson    = json_encode(array_map(static fn(array $row): string => (s
         html += `<div onclick="${c.action};toggleChecklist()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0;font-size:12px;color:var(--text-mid);font-weight:500;transition:0.15s;" onmouseover="this.style.color='var(--text-light)'" onmouseout="this.style.color='var(--text-mid)'">
           <i class="fas fa-circle-dot" style="color:var(--red-pale);font-size:10px;width:14px;"></i>
           <span>${c.label}</span>
-          <span style="margin-left:auto;font-size:10px;color:var(--text-muted);font-weight:700;">+${c.points}%</span>
+          <span style="margin-left:auto;font-size:10px;color:var(--text-muted);font-weight:700;">+10%</span>
           <i class="fas fa-arrow-right" style="font-size:10px;color:var(--text-muted);"></i>
         </div>`;
       });

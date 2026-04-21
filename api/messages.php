@@ -319,7 +319,14 @@ function mark_message_notifications_read(PDO $db, int $userId, int $conversation
 
 function fetch_user(PDO $db, int $userId): ?array
 {
-    $stmt = $db->prepare('SELECT id, full_name, company_name, avatar_url, account_type FROM users WHERE id = ? AND is_active = 1 LIMIT 1');
+    $stmt = $db->prepare(
+        'SELECT u.id, u.full_name, u.company_name,
+                COALESCE(NULLIF(u.avatar_url, \'\'), cp.logo_path) AS avatar_url,
+                u.account_type
+         FROM users u
+         LEFT JOIN company_profiles cp ON cp.user_id = u.id
+         WHERE u.id = ? AND u.is_active = 1 LIMIT 1'
+    );
     $stmt->execute([$userId]);
     $user = $stmt->fetch();
     return $user ?: null;
@@ -332,9 +339,11 @@ switch ($action) {
         try {
             $sql = "
                 SELECT c.id AS conversation_id, c.latest_message_at, c.latest_message_id,
-                       p.id AS partner_id, p.full_name, p.company_name, p.avatar_url, p.account_type,
-                                             m.body, m.created_at, m.sender_id,
-                                             TIMESTAMPDIFF(SECOND, m.created_at, NOW()) AS age_seconds,
+                       p.id AS partner_id, p.full_name, p.company_name,
+                       COALESCE(NULLIF(p.avatar_url, ''), cp.logo_path) AS avatar_url,
+                       p.account_type,
+                       m.body, m.created_at, m.sender_id,
+                       TIMESTAMPDIFF(SECOND, m.created_at, NOW()) AS age_seconds,
                        (
                          SELECT COUNT(*)
                          FROM messages mm
@@ -346,6 +355,7 @@ switch ($action) {
                     WHEN c.participant_a_id = ? THEN c.participant_b_id
                     ELSE c.participant_a_id
                 END
+                LEFT JOIN company_profiles cp ON cp.user_id = p.id
                 WHERE c.participant_a_id = ? OR c.participant_b_id = ?
                 ORDER BY c.latest_message_at DESC, c.id DESC
             ";
@@ -431,6 +441,7 @@ switch ($action) {
                     'body'      => (string) $row['body'],
                     'type'      => (string) $row['message_type'],
                     'time'      => date('g:i A', strtotime((string) $row['created_at'])),
+                    'utc_ts'    => (string) $row['created_at'],
                     'date'      => date('M j, Y', strtotime((string) $row['created_at'])),
                     'show_date' => $messageDate !== $lastDate,
                     'is_read'   => (int) $row['is_read'],
@@ -673,11 +684,17 @@ switch ($action) {
 
         try {
             $like = '%' . $query . '%';
-            $stmt = $db->prepare("SELECT id, full_name, company_name, avatar_url, account_type
-                FROM users
-                WHERE id != ? AND is_active = 1 AND (full_name LIKE ? OR company_name LIKE ?)
-                ORDER BY full_name ASC
-                LIMIT 15");
+            $stmt = $db->prepare(
+                "SELECT u.id, u.full_name, u.company_name,
+                        COALESCE(NULLIF(u.avatar_url, ''), cp.logo_path) AS avatar_url,
+                        u.account_type
+                 FROM users u
+                 LEFT JOIN company_profiles cp ON cp.user_id = u.id
+                 WHERE u.id != ? AND u.is_active = 1
+                   AND (u.full_name LIKE ? OR u.company_name LIKE ?)
+                 ORDER BY u.full_name ASC
+                 LIMIT 15"
+            );
             $stmt->execute([$uid, $like, $like]);
 
             $users = [];

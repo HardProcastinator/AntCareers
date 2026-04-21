@@ -215,7 +215,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       font-weight: 700;
       font-size: 19px;
       letter-spacing: 0.01em;
-      color: #F5F0EE;
+      color: var(--text-light);
       white-space: nowrap;
     }
     .logo-text span {
@@ -237,7 +237,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       display: flex; align-items: center; gap: 5px;
       white-space: nowrap; letter-spacing: 0.01em;
     }
-    .nav-link:hover { color: #F5F0EE; background: var(--soil-hover); }
+    .nav-link:hover { color: var(--text-light); background: var(--soil-hover); }
 
     /* Nav right */
     .nav-right {
@@ -422,7 +422,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     .hero-stats { display: flex; gap: 28px; margin-top: 28px; flex-wrap: wrap; }
     .hero-stat-num {
       font-family: var(--font-body); font-size: 26px; font-weight: 800;
-      color: #F5F0EE; line-height: 1;
+      color: var(--text-light); line-height: 1;
     }
     .hero-stat-num span { color: var(--red-bright); }
     .hero-stat-label { font-size: 11px; color: #927C7A; margin-top: 4px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -540,7 +540,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     }
     .sec-title {
       font-family: var(--font-display); font-size: 20px; font-weight: 700;
-      color: #F5F0EE; display: flex; align-items: center; gap: 10px;
+      color: var(--text-light); display: flex; align-items: center; gap: 10px;
       letter-spacing: 0.01em;
     }
     .sec-title i { color: var(--red-bright); font-size: 16px; }
@@ -590,7 +590,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       border: 1px solid var(--soil-line); display: flex; align-items: center;
       justify-content: center; font-size: 18px; margin-bottom: 14px; color: var(--red-bright);
     }
-    .fc-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #F5F0EE; margin-bottom: 4px; line-height: 1.3; }
+    .fc-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-light); margin-bottom: 4px; line-height: 1.3; }
     .fc-company { font-size: 12px; color: var(--red-pale); font-weight: 600; margin-bottom: 14px; }
     .fc-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
     .chip {
@@ -650,7 +650,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
       box-shadow: 0 4px 16px rgba(0,0,0,0.12);
     }
     .jr-top { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-    .jr-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #F5F0EE; }
+    .jr-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-light); }
     .jr-new {
       font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
       color: var(--red-pale); background: rgba(200,57,42,0.1); border: 1px solid rgba(200,57,42,0.2);
@@ -675,7 +675,7 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
     .jr-company { color: var(--red-pale); font-weight: 600; }
     .jr-chips { display: flex; gap: 5px; flex-wrap: wrap; }
     .job-row-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-    .jr-salary { font-family: var(--font-body); font-size: 14px; font-weight: 700; color: #F5F0EE; white-space: nowrap; letter-spacing: -0.01em; }
+    .jr-salary { font-family: var(--font-body); font-size: 14px; font-weight: 700; color: var(--text-light); white-space: nowrap; letter-spacing: -0.01em; }
     .jr-actions { display: flex; gap: 7px; align-items: center; }
     .jr-apply {
       padding: 7px 16px; border-radius: 6px;
