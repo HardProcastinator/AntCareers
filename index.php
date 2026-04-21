@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/job_titles.php';
 require_once __DIR__ . '/includes/countries.php';
@@ -1273,9 +1273,9 @@ $indexCompaniesJson = json_encode($indexCompanies, JSON_HEX_TAG | JSON_HEX_AMP);
         <div class="fs-section">
           <div class="fs-section-label">Salary</div>
           <div class="salary-row">
-            <input type="number" id="salaryMinFilter" class="fs-text-input" placeholder="Min salary" min="0">
+            <input type="number" id="salaryMinFilter" class="fs-text-input" placeholder="Min" min="0">
             <span class="sal-sep">–</span>
-            <input type="number" id="salaryMaxFilter" class="fs-text-input" placeholder="Max salary" min="0">
+            <input type="number" id="salaryMaxFilter" class="fs-text-input" placeholder="Max" min="0">
           </div>
           <div class="salary-error" id="salaryError">Max salary must be greater than min salary</div>
         </div>
