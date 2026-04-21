@@ -37,11 +37,11 @@ $platformStats = getPublicPlatformStats();
     html.dark-init .left-panel, body.dark .left-panel { background:#1C1818; }
     html.dark-init .left-panel::before, body.dark .left-panel::before { background:radial-gradient(circle,rgba(209,61,44,0.2) 0%,transparent 65%); }
     html.dark-init .left-panel::after, body.dark .left-panel::after { background:radial-gradient(circle,rgba(209,61,44,0.08) 0%,transparent 65%); }
-    html.dark-init .left-logo-text, body.dark .left-logo-text { color:#F5F0EE; }
+    html.dark-init .left-logo-text, body.dark .left-logo-text { color:var(--text-light); }
     html.dark-init .left-eyebrow, body.dark .left-eyebrow { color:var(--red-pale); }
-    html.dark-init .left-heading, body.dark .left-heading { color:#F5F0EE; }
+    html.dark-init .left-heading, body.dark .left-heading { color:var(--text-light); }
     html.dark-init .left-sub, body.dark .left-sub { color:#7A6868; }
-    html.dark-init .left-stat-num, body.dark .left-stat-num { color:#F5F0EE; }
+    html.dark-init .left-stat-num, body.dark .left-stat-num { color:var(--text-light); }
     html.dark-init .left-stat-label, body.dark .left-stat-label { color:#7A6868; }
     html.dark-init .left-footer, body.dark .left-footer { color:#4A3838; }
     html.dark-init .right-panel, body.dark .right-panel { background:var(--card); }

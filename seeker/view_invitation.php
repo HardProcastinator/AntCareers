@@ -146,7 +146,7 @@ $sentDate = $inv ? date('F j, Y', strtotime($inv['sent_at'])) : '';
     /* ── Error state ── */
     .error-card{background:var(--soil-card);border:1px solid rgba(220,53,69,.3);border-radius:14px;padding:48px 24px;text-align:center;color:var(--text-muted);}
     .error-card i{font-size:40px;color:#ff8080;margin-bottom:14px;display:block;}
-    .error-card h2{font-family:var(--font-display);font-size:20px;color:#F5F0EE;margin-bottom:8px;}
+    .error-card h2{font-family:var(--font-display);font-size:20px;color:var(--text-light);margin-bottom:8px;}
     body.light .error-card h2{color:#1A0A09;}
 
     /* ── Invitation Card (formal letter) ── */
@@ -159,7 +159,7 @@ $sentDate = $inv ? date('F j, Y', strtotime($inv['sent_at'])) : '';
     .inv-icon-wrap i{font-size:28px;color:#60A5FA;}
     .inv-card-header-info{flex:1;}
     .inv-card-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:4px 13px;border-radius:20px;background:linear-gradient(135deg,rgba(37,99,235,.22),rgba(37,99,235,.1));color:#93C5FD;border:1px solid rgba(37,99,235,.3);letter-spacing:.05em;margin-bottom:10px;text-transform:uppercase;}
-    .inv-card-title{font-family:var(--font-display);font-size:26px;font-weight:700;color:#F5F0EE;margin-bottom:6px;line-height:1.2;}
+    .inv-card-title{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--text-light);margin-bottom:6px;line-height:1.2;}
     body.light .inv-card-title{color:#1A0A09;}
     .inv-card-meta{font-size:13px;color:var(--text-muted);line-height:1.6;}
     .inv-card-meta strong{color:var(--text-mid);}
@@ -174,7 +174,7 @@ $sentDate = $inv ? date('F j, Y', strtotime($inv['sent_at'])) : '';
 
     /* Letter body */
     .inv-letter{padding:32px 34px;}
-    .inv-letter-greeting{font-size:17px;font-weight:600;color:#F5F0EE;margin-bottom:16px;}
+    .inv-letter-greeting{font-size:17px;font-weight:600;color:var(--text-light);margin-bottom:16px;}
     body.light .inv-letter-greeting{color:#1A0A09;}
     .inv-letter-body{font-size:14.5px;color:var(--text-mid);line-height:1.78;margin-bottom:20px;}
     body.light .inv-letter-body{color:#3A2020;}
@@ -191,7 +191,7 @@ $sentDate = $inv ? date('F j, Y', strtotime($inv['sent_at'])) : '';
     .inv-rec-wrap{display:flex;align-items:center;gap:13px;margin-top:13px;}
     .inv-rec-av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#D13D2C,#7A1515);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;border:2px solid rgba(209,61,44,.35);box-shadow:0 3px 10px rgba(209,61,44,.25);}
     .inv-rec-av img{width:100%;height:100%;object-fit:cover;}
-    .inv-rec-name{font-size:14px;font-weight:700;color:#F5F0EE;}
+    .inv-rec-name{font-size:14px;font-weight:700;color:var(--text-light);}
     body.light .inv-rec-name{color:#1A0A09;}
     .inv-rec-role{font-size:11.5px;color:var(--text-muted);margin-top:1px;}
 
@@ -215,7 +215,7 @@ $sentDate = $inv ? date('F j, Y', strtotime($inv['sent_at'])) : '';
     .company-logo{width:58px;height:58px;border-radius:12px;background:var(--soil-hover);border:1px solid var(--soil-line);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--red-bright);flex-shrink:0;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,.25);}
     .company-logo img{width:100%;height:100%;object-fit:cover;}
     .jd-title-info{flex:1;}
-    .jd-job-title{font-family:var(--font-display);font-size:23px;font-weight:700;color:#F5F0EE;margin-bottom:5px;}
+    .jd-job-title{font-family:var(--font-display);font-size:23px;font-weight:700;color:var(--text-light);margin-bottom:5px;}
     body.light .jd-job-title{color:#1A0A09;}
     .jd-company{font-size:14px;font-weight:600;color:var(--text-mid);margin-bottom:9px;}
     .jd-meta-row{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--text-muted);}

@@ -68,7 +68,7 @@ function sendJobMatchEmail(
 
       <!-- Body -->
       <tr><td style="padding:32px;">
-        <div style="font-size:22px;font-weight:700;color:#F5F0EE;margin-bottom:8px;">Hi {$jFN},</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text-light);margin-bottom:8px;">Hi {$jFN},</div>
         <div style="font-size:15px;color:#D0BCBA;line-height:1.65;margin-bottom:24px;">
           We found a new job posting that matches your profile on AntCareers. Check it out before it fills up!
         </div>
@@ -77,7 +77,7 @@ function sendJobMatchEmail(
         <table width="100%" cellpadding="0" cellspacing="0"
                style="background:#252020;border:1px solid #352E2E;border-radius:10px;margin-bottom:24px;">
           <tr><td style="padding:20px 24px;">
-            <div style="font-size:19px;font-weight:700;color:#F5F0EE;margin-bottom:4px;">{$jT}</div>
+            <div style="font-size:19px;font-weight:700;color:var(--text-light);margin-bottom:4px;">{$jT}</div>
             <div style="font-size:14px;color:#E85540;font-weight:600;margin-bottom:16px;">{$jC}</div>
             <table cellpadding="0" cellspacing="0">
               <tr>

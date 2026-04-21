@@ -187,7 +187,7 @@ foreach ($industryKeys as $industryValue) {
       font-size:13px; font-weight:600; color:#A09090; cursor:pointer; transition:all 0.2s;
       white-space:nowrap; letter-spacing:0.01em;
     }
-    .cat-toggle:hover { color:#F5F0EE; background:var(--soil-hover); }
+    .cat-toggle:hover { color:var(--text-light); background:var(--soil-hover); }
     .cat-toggle.active { color:var(--red-bright); background:rgba(209,61,44,0.08); border-color:rgba(209,61,44,0.25); }
     .cat-toggle .chevron { font-size:9px; transition:transform 0.22s ease; }
     .cat-toggle.active .chevron { transform:rotate(180deg); }
@@ -204,7 +204,7 @@ foreach ($industryKeys as $industryValue) {
     .dropdown-divider { height:1px; background:var(--soil-line); margin:4px 6px; }
     .dropdown-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:7px; font-size:13px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:all 0.15s; font-family:var(--font-body); }
     .dropdown-item .di-icon { width:30px; height:30px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--red-vivid); flex-shrink:0; transition:all 0.15s; }
-    .dropdown-item:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .dropdown-item:hover { background:var(--soil-hover); color:var(--text-light); }
     .dropdown-item:hover .di-icon { background:rgba(209,61,44,0.15); border-color:rgba(209,61,44,0.3); color:var(--red-bright); }
     .di-name { font-size:13px; font-weight:600; color:inherit; }
     .di-sub { font-size:11px; color:var(--text-muted); margin-top:1px; }
@@ -247,7 +247,7 @@ foreach ($industryKeys as $industryValue) {
 
     /* ── SEARCH HEADER ── */
     .search-header { padding:32px 0 24px; }
-    .search-greeting { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; margin-bottom:6px; }
+    .search-greeting { font-family:var(--font-display); font-size:28px; font-weight:700; color:var(--text-light); margin-bottom:6px; }
     .search-greeting span { color:var(--red-bright); font-style:italic; }
     .search-sub { font-size:14px; color:var(--text-muted); margin-bottom:20px; }
 
@@ -256,7 +256,7 @@ foreach ($industryKeys as $industryValue) {
     .search-box { flex:1; min-width:240px; display:flex; align-items:center; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; transition:0.25s; }
     .search-box:focus-within { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.12); }
     .search-box .si { padding:0 14px; color:var(--text-muted); font-size:14px; flex-shrink:0; }
-    .search-box input { flex:1; padding:13px 0; background:none; border:none; outline:none; font-family:var(--font-body); font-size:14px; color:#F5F0EE; }
+    .search-box input { flex:1; padding:13px 0; background:none; border:none; outline:none; font-family:var(--font-body); font-size:14px; color:var(--text-light); }
     .search-box input::placeholder { color:var(--text-muted); }
     .search-row .filter-select { width:auto; flex-shrink:0; padding:13px 16px; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; font-family:var(--font-body); font-size:13px; color:var(--text-mid); cursor:pointer; outline:none; transition:0.2s; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23927C7A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; background-size:10px 6px; padding-right:32px; }
     .search-row .filter-select:focus { border-color:var(--red-vivid); }
@@ -317,7 +317,7 @@ foreach ($industryKeys as $industryValue) {
 
     /* ── MAIN CONTENT ── */
     .sec-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
-    .sec-title { font-family:var(--font-display); font-size:20px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:10px; letter-spacing:0.01em; }
+    .sec-title { font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--text-light); display:flex; align-items:center; gap:10px; letter-spacing:0.01em; }
     .sec-title i { color:var(--red-bright); font-size:16px; }
     .sec-count { font-size:11px; font-weight:600; color:var(--text-muted); background:var(--soil-hover); padding:2px 9px; border-radius:4px; letter-spacing:0.04em; }
     .see-more { font-size:12px; font-weight:600; color:var(--red-pale); cursor:pointer; background:none; border:none; font-family:var(--font-body); display:flex; align-items:center; gap:4px; transition:0.15s; letter-spacing:0.02em; }
@@ -353,7 +353,7 @@ foreach ($industryKeys as $industryValue) {
       display:flex; align-items:center; justify-content:center;
       font-size:17px; color:var(--red-pale); flex-shrink:0;
     }
-    .fc-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:#F5F0EE; line-height:1.35; }
+    .fc-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-light); line-height:1.35; }
     .fc-company { font-size:12px; color:var(--red-pale); font-weight:600; margin-top:2px; }
     .fc-chips { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px; align-content:flex-start; min-height:0; }
     .chip {
@@ -365,7 +365,7 @@ foreach ($industryKeys as $industryValue) {
       display:flex; align-items:center; justify-content:space-between;
       padding-top:14px; border-top:1px solid var(--soil-line); gap:10px;
     }
-    .fc-salary { font-size:14px; font-weight:700; color:#F5F0EE; letter-spacing:-0.01em; white-space:nowrap; }
+    .fc-salary { font-size:14px; font-weight:700; color:var(--text-light); letter-spacing:-0.01em; white-space:nowrap; }
     .fc-action {
       padding:7px 16px; border-radius:7px; background:var(--red-vivid);
       border:none; color:#fff; font-size:12px; font-weight:700;
@@ -392,7 +392,7 @@ foreach ($industryKeys as $industryValue) {
       overflow:hidden;
     }
     .cc-logo img { width:100%; height:100%; object-fit:cover; }
-    .cc-name { font-size:13px; font-weight:700; color:#F5F0EE; line-height:1.3; }
+    .cc-name { font-size:13px; font-weight:700; color:var(--text-light); line-height:1.3; }
     .cc-roles { font-size:11px; color:var(--text-muted); margin-top:1px; display:flex; align-items:center; gap:4px; }
     .cc-roles i { font-size:9px; color:var(--red-pale); }
 
@@ -412,7 +412,7 @@ foreach ($industryKeys as $industryValue) {
     }
     .jr-left { flex:1; min-width:0; }
     .jr-top { display:flex; align-items:center; gap:7px; margin-bottom:4px; flex-wrap:wrap; }
-    .jr-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:#F5F0EE; }
+    .jr-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-light); }
     .jr-new {
       font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase;
       color:var(--red-pale); background:rgba(209,61,44,0.1); border:1px solid rgba(209,61,44,0.2);
@@ -445,7 +445,7 @@ foreach ($industryKeys as $industryValue) {
       display:flex; flex-direction:column; align-items:flex-end;
       gap:10px; flex-shrink:0; min-width:120px;
     }
-    .jr-salary { font-size:14px; font-weight:700; color:#F5F0EE; white-space:nowrap; letter-spacing:-0.01em; }
+    .jr-salary { font-size:14px; font-weight:700; color:var(--text-light); white-space:nowrap; letter-spacing:-0.01em; }
     .jr-actions { display:flex; gap:8px; align-items:center; }
     /* Save heart button */
     .jr-btn {
@@ -479,10 +479,10 @@ foreach ($industryKeys as $industryValue) {
     }
     .saved-panel.open { transform:translateX(0); }
     .saved-panel-head { padding:20px 20px 16px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-    .saved-panel-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:8px; }
+    .saved-panel-title { font-family:var(--font-display); font-size:17px; font-weight:700; color:var(--text-light); display:flex; align-items:center; gap:8px; }
     .saved-panel-title i { color:var(--red-bright); font-size:15px; }
     .saved-close { width:28px; height:28px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:0.15s; }
-    .saved-close:hover { color:#F5F0EE; }
+    .saved-close:hover { color:var(--text-light); }
     .saved-panel-body { flex:1; overflow-y:auto; padding:12px; }
     .saved-empty { text-align:center; padding:48px 20px; color:var(--text-muted); }
     .saved-empty i { font-size:32px; margin-bottom:12px; display:block; color:var(--soil-line); }
@@ -491,7 +491,7 @@ foreach ($industryKeys as $industryValue) {
     .saved-job-item:hover { border-color:rgba(209,61,44,0.4); }
     .sji-icon { width:36px; height:36px; border-radius:8px; background:var(--soil-card); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--red-vivid); flex-shrink:0; }
     .sji-info { flex:1; min-width:0; }
-    .sji-title { font-size:13px; font-weight:700; color:#F5F0EE; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .sji-title { font-size:13px; font-weight:700; color:var(--text-light); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .sji-company { font-size:11px; color:var(--red-pale); font-weight:500; margin-bottom:4px; }
     .sji-salary { font-size:12px; font-weight:600; color:var(--text-muted); }
     .sji-remove { width:24px; height:24px; border-radius:5px; background:none; border:none; color:var(--text-muted); font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.15s; flex-shrink:0; margin-top:2px; }
@@ -514,7 +514,7 @@ foreach ($industryKeys as $industryValue) {
       font-size:13px; display:flex; align-items:center; justify-content:center;
       cursor:pointer; transition:0.15s; z-index:2;
     }
-    .modal-close:hover { color:#F5F0EE; border-color:var(--red-mid); background:rgba(209,61,44,0.08); }
+    .modal-close:hover { color:var(--text-light); border-color:var(--red-mid); background:rgba(209,61,44,0.08); }
     /* Modal inner pieces */
     .modal-header { display:flex; align-items:center; gap:14px; margin-bottom:18px; padding-right:28px; }
     .modal-job-icon {

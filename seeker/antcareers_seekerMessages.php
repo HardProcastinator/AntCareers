@@ -37,7 +37,7 @@ $navActive = 'messages';
     .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
     .page-title{font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--text-light);}
     .page-sub{font-size:13px;color:var(--text-muted);margin-top:3px;}
-    .new-msg-btn{display:flex;align-items:center;justify-content:center;padding:0;background:var(--red-vivid);border:none;border-radius:8px;color:#F5F0EE;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.22s;width:36px;height:36px;min-width:36px;min-height:36px;flex-shrink:0;}
+    .new-msg-btn{display:flex;align-items:center;justify-content:center;padding:0;background:var(--red-vivid);border:none;border-radius:8px;color:var(--text-light);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.22s;width:36px;height:36px;min-width:36px;min-height:36px;flex-shrink:0;}
     .new-msg-btn:hover{background:var(--red-bright);transform:translateY(-1px);}
     body.light .new-msg-btn{color:#fff;background:var(--red-vivid);border:1px solid var(--red-vivid);}
     body.light .new-msg-btn:hover{background:var(--red-bright);border-color:var(--red-bright);}
@@ -62,7 +62,7 @@ $navActive = 'messages';
     .thread-item:last-child{border-bottom:none;}
     .thread-item:hover{background:var(--soil-hover);}
     .thread-item.active{background:rgba(209,61,44,0.07);border-left:2px solid var(--red-vivid);}
-    .thread-item.unread .thread-name{color:#F5F0EE;font-weight:700;}
+    .thread-item.unread .thread-name{color:var(--text-light);font-weight:700;}
     .thread-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
     .thread-avatar img{width:100%;height:100%;object-fit:cover;}
     .thread-body{flex:1;min-width:0;}
@@ -79,7 +79,7 @@ $navActive = 'messages';
     .chat-header-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
     .chat-header-avatar img{width:100%;height:100%;object-fit:cover;}
     .chat-header-info{flex:1;min-width:0;}
-    .chat-header-name{font-size:15px;font-weight:700;color:#F5F0EE;}
+    .chat-header-name{font-size:15px;font-weight:700;color:var(--text-light);}
     .chat-header-role{font-size:11px;color:var(--red-pale);font-weight:600;margin-top:1px;}
     .chat-header-actions{display:flex;gap:8px;}
     .chat-action-btn{width:32px;height:32px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:0.15s;}
@@ -456,12 +456,12 @@ function loadConversation(partnerId) {
                     if (m.from === 'me') {
                         html += `<div class="msg-row sent">
                             <div class="msg-row-avatar" style="background:linear-gradient(135deg,#D4943A,#8a5010)">${MY_AVATAR ? `<img src="${MY_AVATAR}" alt="">` : MY_INI}</div>
-                            <div class="bubble bubble-sent">${esc(m.body)}<div class="bubble-time">${m.time} <i class="fas fa-check-double" style="font-size:9px;"></i></div></div>
+                            <div class="bubble bubble-sent">${esc(m.body)}<div class="bubble-time">${fmtMsgTime(m.utc_ts || m.time)} <i class="fas fa-check-double" style="font-size:9px;"></i></div></div>
                         </div>`;
                     } else {
                         html += `<div class="msg-row">
                             <div class="msg-row-avatar" style="background:${color}">${avatarUrl ? `<img src="../${avatarUrl}" alt="">` : esc(ini)}</div>
-                            <div class="bubble bubble-received">${esc(m.body)}<div class="bubble-time">${m.time}</div></div>
+                            <div class="bubble bubble-received">${esc(m.body)}<div class="bubble-time">${fmtMsgTime(m.utc_ts || m.time)}</div></div>
                         </div>`;
                     }
                     return html;
@@ -605,6 +605,14 @@ function esc(str) {
     const div = document.createElement('div');
     div.textContent = str || '';
     return div.innerHTML;
+}
+function fmtMsgTime(ts) {
+    if (!ts) return '';
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(ts)) {
+        var d = new Date(ts.replace(' ', 'T') + 'Z');
+        if (!isNaN(d.getTime())) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+    return ts;
 }
 
 // ── Init ──

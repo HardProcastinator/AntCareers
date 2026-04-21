@@ -355,7 +355,7 @@ $jobsJson = json_encode($jobs ?: []);
     /* ── Page shell ── */
     .page-shell{max-width:1380px;margin:0 auto;padding:28px 24px 60px;position:relative;z-index:1;}
     .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
-    .page-title{font-family:var(--font-display);font-size:28px;font-weight:700;color:#F5F0EE;margin-bottom:4px;}
+    .page-title{font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--text-light);margin-bottom:4px;}
     .page-title span{color:var(--red-bright);font-style:italic;}
     .page-sub{font-size:14px;color:var(--text-muted);}
     body.light .page-title{color:#1A0A09;}
@@ -368,7 +368,7 @@ $jobsJson = json_encode($jobs ?: []);
     .stat-pill:hover,.stat-pill.active{border-color:rgba(209,61,44,.45);background:rgba(209,61,44,.07);}
     .sp-icon{font-size:13px;width:17px;text-align:center;}
     .sp-label{font-size:12px;font-weight:600;color:var(--text-muted);}
-    .sp-count{font-size:17px;font-weight:800;color:#F5F0EE;font-family:var(--font-display);}
+    .sp-count{font-size:17px;font-weight:800;color:var(--text-light);font-family:var(--font-display);}
     body.light .stat-pill{background:#fff;border-color:#E0CECA;}
     body.light .sp-count{color:#1A0A09;}
 
@@ -406,7 +406,7 @@ $jobsJson = json_encode($jobs ?: []);
     body.light .job-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08),0 0 0 1px rgba(209,61,44,.12);}
     .job-icon{width:42px;height:42px;border-radius:10px;background:rgba(209,61,44,.1);border:1px solid rgba(209,61,44,.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--red-bright);flex-shrink:0;}
     .job-body{flex:1;min-width:0;}
-    .job-title{font-family:var(--font-display);font-size:18px;font-weight:700;color:#F5F0EE;margin-bottom:6px;letter-spacing:-0.01em;}
+    .job-title{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text-light);margin-bottom:6px;letter-spacing:-0.01em;}
     body.light .job-title{color:#1A0A09;}
     .job-meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--text-muted);margin-bottom:9px;}
     .job-meta i{font-size:10px;color:var(--red-bright);}
@@ -436,7 +436,7 @@ $jobsJson = json_encode($jobs ?: []);
     .app-badge{display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(212,148,58,.06);border:1px solid rgba(212,148,58,.15);border-radius:10px;padding:10px 16px;min-width:72px;}
     body.light .app-badge{background:rgba(212,148,58,.06);border-color:rgba(212,148,58,.2);}
     .app-badge>i{font-size:14px;color:var(--amber);margin-bottom:2px;}
-    .app-count{font-family:var(--font-display);font-size:22px;font-weight:700;color:#F5F0EE;text-align:center;}
+    .app-count{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text-light);text-align:center;}
     .app-count-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
     body.light .app-count{color:#1A0A09;}
     .job-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
@@ -467,7 +467,7 @@ $jobsJson = json_encode($jobs ?: []);
 
     /* ── Buttons ── */
     .btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:.18s;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
-    .btn:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .btn:hover{background:var(--soil-hover);color:var(--text-light);}
     .btn.primary{background:var(--red-vivid);border-color:var(--red-vivid);color:#fff;}
     .btn.primary:hover{background:var(--red-bright);}
     .btn.grn{border-color:rgba(76,175,112,.4);color:#6ccf8a;}
@@ -489,15 +489,15 @@ $jobsJson = json_encode($jobs ?: []);
     .modal-bd.open{display:flex;}
     .modal-box{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:16px;padding:26px;width:100%;max-width:620px;position:relative;margin:auto;}
     body.light .modal-box{background:#fff;border-color:#E0CECA;}
-    .modal-title{font-family:var(--font-display);font-size:21px;font-weight:700;color:#F5F0EE;margin-bottom:20px;display:flex;align-items:center;gap:9px;}
+    .modal-title{font-family:var(--font-display);font-size:21px;font-weight:700;color:var(--text-light);margin-bottom:20px;display:flex;align-items:center;gap:9px;}
     body.light .modal-title{color:#1A0A09;}
     .modal-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:6px;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;}
-    .modal-close:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .modal-close:hover{background:var(--soil-hover);color:var(--text-light);}
     body.light .modal-close:hover{background:#F5EDEB;color:#7A1515;border-color:#D4B0AB;}
     .fg{margin-bottom:14px;}
     .fl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:flex;align-items:center;gap:4px;}
     .fl .req{color:var(--red-bright);font-size:13px;line-height:1;}
-    .fi{width:100%;padding:10px 14px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:#F5F0EE;font-family:var(--font-body);font-size:13px;outline:none;transition:all .2s;}
+    .fi{width:100%;padding:10px 14px;border-radius:8px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:all .2s;}
     .fi:hover{border-color:var(--text-muted);}
     .fi:focus{border-color:var(--red-vivid);box-shadow:0 0 0 3px rgba(209,61,44,.1);}
     body.light .fi{background:#F5EDEB;border-color:#D4B0AB;color:#1A0A09;}
@@ -518,7 +518,7 @@ $jobsJson = json_encode($jobs ?: []);
     .confirm-box{background:var(--soil-card);border:1px solid rgba(220,53,69,.3);border-radius:14px;padding:28px;width:100%;max-width:380px;text-align:center;margin:auto;}
     body.light .confirm-box{background:#fff;}
     .confirm-icon{font-size:38px;color:#ff8080;margin-bottom:12px;}
-    .confirm-title{font-family:var(--font-display);font-size:18px;color:#F5F0EE;margin-bottom:7px;}
+    .confirm-title{font-family:var(--font-display);font-size:18px;color:var(--text-light);margin-bottom:7px;}
     body.light .confirm-title{color:#1A0A09;}
     .confirm-sub{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
     .confirm-actions{display:flex;gap:10px;justify-content:center;}
@@ -556,7 +556,7 @@ $jobsJson = json_encode($jobs ?: []);
     .inv-modal-hicon{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,rgba(59,130,246,.3),rgba(29,78,216,.2));border:1px solid rgba(59,130,246,.35);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .inv-modal-hicon i{font-size:18px;color:#60A5FA;}
     body.light .inv-modal-hicon{background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(37,99,235,.05));}
-    .inv-modal-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:#F5F0EE;line-height:1.2;}
+    .inv-modal-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text-light);line-height:1.2;}
     body.light .inv-modal-title{color:#1A0A09;}
     .inv-modal-subtitle{font-size:12px;color:var(--text-muted);margin-top:3px;}
     .inv-panels{display:grid;grid-template-columns:1fr 1fr;gap:18px;flex:1;overflow:hidden;min-height:0;padding:22px 26px;}
@@ -570,7 +570,7 @@ $jobsJson = json_encode($jobs ?: []);
     /* Left panel */
     .inv-search-wrap{position:relative;flex-shrink:0;margin-bottom:10px;}
     .inv-search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:12px;pointer-events:none;}
-    .inv-search-wrap input{width:100%;padding:10px 14px 10px 34px;border-radius:9px;background:var(--soil-hover);border:1px solid var(--soil-line);color:#F5F0EE;font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
+    .inv-search-wrap input{width:100%;padding:10px 14px 10px 34px;border-radius:9px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-light);font-family:var(--font-body);font-size:13px;outline:none;transition:.2s;}
     .inv-search-wrap input:focus{border-color:#3B82F6;box-shadow:0 0 0 3px rgba(59,130,246,.12);}
     body.light .inv-search-wrap input{background:#F5EDEB;border-color:#D4B0AB;color:#1A0A09;}
     .inv-seeker-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding-right:3px;min-height:0;}
@@ -587,7 +587,7 @@ $jobsJson = json_encode($jobs ?: []);
     .inv-av{width:38px;height:38px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#D13D2C,#7A1515);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;overflow:hidden;}
     .inv-av img{width:100%;height:100%;object-fit:cover;}
     .inv-seeker-info{flex:1;min-width:0;}
-    .inv-seeker-name{font-size:13px;font-weight:600;color:#F5F0EE;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+    .inv-seeker-name{font-size:13px;font-weight:600;color:var(--text-light);display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
     body.light .inv-seeker-name{color:#1A0A09;}
     .inv-seeker-hl{font-size:11px;color:var(--text-muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .inv-seeker-loc{font-size:11px;color:var(--text-muted);}
@@ -612,7 +612,7 @@ $jobsJson = json_encode($jobs ?: []);
     .inv-preview-card::after{content:'\f0e0';font-family:'Font Awesome 6 Free';font-weight:900;position:absolute;bottom:-10px;right:10px;font-size:80px;color:rgba(209,61,44,.04);pointer-events:none;line-height:1;}
     body.light .inv-preview-card{background:#FFFBFA;border-color:#EBDAD8;border-top-color:var(--red-vivid);}
     body.light .inv-preview-card::after{color:rgba(209,61,44,.05);}
-    .inv-preview-greeting{font-size:15px;font-weight:700;color:#F5F0EE;margin-bottom:14px;font-family:var(--font-display);}
+    .inv-preview-greeting{font-size:15px;font-weight:700;color:var(--text-light);margin-bottom:14px;font-family:var(--font-display);}
     body.light .inv-preview-greeting{color:#1A0A09;}
     .inv-preview-card p{margin-bottom:10px;}
     .inv-apply-btn{display:inline-flex;align-items:center;gap:7px;margin:12px 0;padding:9px 20px;background:linear-gradient(135deg,var(--red-vivid),var(--red-deep));border-radius:8px;color:#fff;font-size:12px;font-weight:700;text-decoration:none;box-shadow:0 3px 12px rgba(209,61,44,.4);letter-spacing:.02em;}

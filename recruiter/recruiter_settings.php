@@ -195,7 +195,7 @@ if (isset($_GET['pw'])) {
     .section-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; overflow:hidden; }
     .section-head { padding:16px 20px; border-bottom:1px solid var(--soil-line); display:flex; align-items:center; gap:10px; }
     .section-head-icon { width:32px; height:32px; border-radius:8px; background:rgba(209,61,44,0.12); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--red-pale); flex-shrink:0; }
-    .section-title { font-size:14px; font-weight:700; color:#F5F0EE; }
+    .section-title { font-size:14px; font-weight:700; color:var(--text-light); }
     .section-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
     .section-body { padding:20px; }
 
@@ -204,11 +204,11 @@ if (isset($_GET['pw'])) {
     .info-row:first-child { padding-top:0; }
     .info-icon-wrap { width:38px; height:38px; border-radius:9px; background:var(--soil-hover); border:1px solid var(--soil-line); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--red-pale); flex-shrink:0; }
     .info-label { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:3px; }
-    .info-value { font-size:14px; font-weight:600; color:#F5F0EE; }
+    .info-value { font-size:14px; font-weight:600; color:var(--text-light); }
 
     .account-avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,var(--red-vivid),var(--red-deep)); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:800; color:#fff; box-shadow:0 0 0 2px var(--red-vivid),0 4px 16px rgba(209,61,44,0.35); flex-shrink:0; }
     .account-info-details { flex:1; min-width:0; }
-    .account-name { font-size:16px; font-weight:700; color:#F5F0EE; }
+    .account-name { font-size:16px; font-weight:700; color:var(--text-light); }
     .account-email { font-size:13px; color:var(--text-muted); margin-top:3px; }
     .account-badge { display:inline-flex; align-items:center; gap:5px; margin-top:6px; padding:3px 9px; border-radius:99px; background:rgba(76,175,112,0.12); border:1px solid rgba(76,175,112,0.25); font-size:10px; font-weight:700; color:var(--green); letter-spacing:0.05em; text-transform:uppercase; }
 
@@ -216,7 +216,7 @@ if (isset($_GET['pw'])) {
     .form-group:last-child { margin-bottom:0; }
     .form-label { display:block; font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; }
     .form-input-wrap { position:relative; }
-    .form-input { width:100%; padding:10px 14px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; font-family:var(--font-body); font-size:13px; color:#F5F0EE; transition:0.18s; outline:none; }
+    .form-input { width:100%; padding:10px 14px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; font-family:var(--font-body); font-size:13px; color:var(--text-light); transition:0.18s; outline:none; }
     .form-input:focus { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.12); }
     .form-input::placeholder { color:var(--text-muted); }
     .form-input-wrap .toggle-pw { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; padding:2px 4px; transition:0.15s; }
@@ -228,7 +228,7 @@ if (isset($_GET['pw'])) {
     .btn-primary:hover { background:var(--red-bright); transform:translateY(-1px); box-shadow:0 6px 18px rgba(209,61,44,0.45); }
     .btn-primary:active { transform:translateY(0); }
     .btn-secondary { padding:10px 18px; border-radius:8px; background:transparent; border:1px solid var(--soil-line); color:var(--text-mid); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; transition:0.2s; }
-    .btn-secondary:hover { background:var(--soil-hover); border-color:var(--red-vivid); color:#F5F0EE; }
+    .btn-secondary:hover { background:var(--soil-hover); border-color:var(--red-vivid); color:var(--text-light); }
     .btn-danger { padding:10px 22px; border-radius:8px; background:transparent; border:1px solid rgba(224,85,85,0.3); color:#E05555; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.2s; display:inline-flex; align-items:center; gap:8px; text-decoration:none; }
     .btn-danger:hover { background:rgba(224,85,85,0.1); border-color:#E05555; color:#FF7070; }
     .section-footer { padding:14px 20px; border-top:1px solid var(--soil-line); display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -249,7 +249,7 @@ if (isset($_GET['pw'])) {
     .pref-row:last-child { border-bottom:none; padding-bottom:0; }
     .pref-row:first-child { padding-top:0; }
     .pref-info { flex:1; min-width:0; }
-    .pref-label { font-size:13px; font-weight:600; color:#F5F0EE; }
+    .pref-label { font-size:13px; font-weight:600; color:var(--text-light); }
     .pref-desc { font-size:11px; color:var(--text-muted); margin-top:3px; }
     .toggle-switch { position:relative; width:44px; height:24px; flex-shrink:0; }
     .toggle-switch input { opacity:0; width:0; height:0; position:absolute; }
@@ -262,7 +262,7 @@ if (isset($_GET['pw'])) {
     .security-row:last-child { border-bottom:none; padding-bottom:0; }
     .security-row:first-child { padding-top:0; }
     .security-info { flex:1; min-width:0; }
-    .security-label { font-size:13px; font-weight:600; color:#F5F0EE; display:flex; align-items:center; gap:7px; }
+    .security-label { font-size:13px; font-weight:600; color:var(--text-light); display:flex; align-items:center; gap:7px; }
     .security-label i { color:var(--red-pale); font-size:12px; }
     .security-desc { font-size:11px; color:var(--text-muted); margin-top:3px; }
     .security-status { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:99px; font-size:10px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; }

@@ -304,11 +304,11 @@ foreach ($education as $_edu) {
     .logo{display:flex;align-items:center;gap:8px;text-decoration:none;margin-right:28px;flex-shrink:0;}
     .logo-icon{width:34px;height:34px;background:var(--red-vivid);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 0 18px rgba(209,61,44,0.35);}
     .logo-icon::before{content:'🐜';font-size:18px;filter:brightness(0) invert(1);}
-    .logo-text{font-family:var(--font-display);font-weight:700;font-size:19px;color:#F5F0EE;white-space:nowrap;}
+    .logo-text{font-family:var(--font-display);font-weight:700;font-size:19px;color:var(--text-light);white-space:nowrap;}
     .logo-text span{color:var(--red-bright);}
     .nav-links{display:flex;align-items:center;gap:2px;flex:1;min-width:0;}
     .nav-link{font-size:13px;font-weight:600;color:#A09090;text-decoration:none;padding:7px 11px;border-radius:6px;transition:all 0.2s;cursor:pointer;background:none;border:none;font-family:var(--font-body);display:flex;align-items:center;gap:5px;white-space:nowrap;}
-    .nav-link:hover,.nav-link.active{color:#F5F0EE;background:var(--soil-hover);}
+    .nav-link:hover,.nav-link.active{color:var(--text-light);background:var(--soil-hover);}
     .nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0;}
     .theme-btn{width:36px;height:36px;border-radius:7px;background:var(--soil-hover);border:1px solid var(--soil-line);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;font-size:14px;flex-shrink:0;}
     .theme-btn:hover{color:var(--red-bright);border-color:var(--red-vivid);}
@@ -319,17 +319,17 @@ foreach ($education as $_edu) {
     .profile-btn{display:flex;align-items:center;gap:9px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;padding:6px 12px 6px 8px;cursor:pointer;transition:0.2s;flex-shrink:0;}
     .profile-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#8a5010);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
     .profile-avatar img{width:100%;height:100%;object-fit:cover;}
-    .profile-name{font-size:13px;font-weight:600;color:#F5F0EE;}
+    .profile-name{font-size:13px;font-weight:600;color:var(--text-light);}
     .profile-role{font-size:10px;color:var(--amber);margin-top:1px;letter-spacing:0.02em;font-weight:600;}
     .profile-chevron{font-size:9px;color:var(--text-muted);margin-left:2px;}
     .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--soil-card);border:1px solid var(--soil-line);border-radius:10px;padding:6px;min-width:200px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:all 0.18s ease;z-index:300;box-shadow:0 20px 40px rgba(0,0,0,0.5);}
     .profile-dropdown.open{opacity:1;visibility:visible;transform:translateY(0);}
     .profile-dropdown-head{padding:12px 14px 10px;border-bottom:1px solid var(--soil-line);margin-bottom:4px;}
-    .pdh-name{font-size:14px;font-weight:700;color:#F5F0EE;}
+    .pdh-name{font-size:14px;font-weight:700;color:var(--text-light);}
     .pdh-sub{font-size:11px;color:var(--amber);margin-top:2px;font-weight:600;}
     .pd-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;font-size:13px;font-weight:500;color:var(--text-mid);cursor:pointer;transition:0.15s;font-family:var(--font-body);text-decoration:none;}
     .pd-item i{color:var(--text-muted);width:16px;text-align:center;font-size:12px;}
-    .pd-item:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .pd-item:hover{background:var(--soil-hover);color:var(--text-light);}
     .pd-item:hover i{color:var(--red-bright);}
     .pd-divider{height:1px;background:var(--soil-line);margin:4px 6px;}
     .pd-item.danger{color:#E05555;}
@@ -346,7 +346,7 @@ foreach ($education as $_edu) {
     .ph-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--red-vivid),var(--red-deep));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
     .ph-avatar img{width:100%;height:100%;object-fit:cover;}
     .ph-info{flex:1;min-width:0;}
-    .ph-name{font-family:var(--font-display);font-size:24px;font-weight:700;color:#F5F0EE;margin-bottom:4px;}
+    .ph-name{font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--text-light);margin-bottom:4px;}
     .ph-headline{font-size:14px;color:var(--red-pale);font-weight:600;margin-bottom:8px;}
     .ph-meta{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--text-muted);}
     .ph-meta span{display:flex;align-items:center;gap:5px;}
@@ -355,13 +355,13 @@ foreach ($education as $_edu) {
     .ph-meta a:hover{color:var(--red-pale);}
     .ph-actions{display:flex;gap:8px;flex-shrink:0;align-items:flex-start;flex-wrap:wrap;}
     .ph-btn{padding:8px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:0.18s;border:1px solid var(--soil-line);background:transparent;color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
-    .ph-btn:hover{background:var(--soil-hover);color:#F5F0EE;}
+    .ph-btn:hover{background:var(--soil-hover);color:var(--text-light);}
     .ph-btn.primary{background:var(--red-vivid);border-color:var(--red-vivid);color:#fff;}
     .ph-btn.primary:hover{background:var(--red-bright);}
 
     /* Sections */
     .section{background:var(--soil-card);border:1px solid var(--soil-line);border-radius:12px;padding:22px;margin-bottom:16px;}
-    .sec-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:#F5F0EE;margin-bottom:14px;display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--soil-line);}
+    .sec-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text-light);margin-bottom:14px;display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--soil-line);}
     .sec-title i{color:var(--red-bright);font-size:14px;}
 
     /* About */
@@ -388,7 +388,7 @@ foreach ($education as $_edu) {
     .exp-item{padding:14px 0;border-bottom:1px solid var(--soil-line);}
     .exp-item:last-child{border-bottom:none;}
     .exp-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px;}
-    .exp-title{font-size:14px;font-weight:700;color:#F5F0EE;}
+    .exp-title{font-size:14px;font-weight:700;color:var(--text-light);}
     .exp-company{font-size:13px;color:var(--red-pale);font-weight:600;}
     .exp-dates{font-size:11px;color:var(--text-muted);font-weight:600;white-space:nowrap;}
     .exp-desc{font-size:13px;color:var(--text-muted);line-height:1.5;margin-top:6px;white-space:pre-wrap;}
@@ -398,7 +398,7 @@ foreach ($education as $_edu) {
     /* Resume */
     .resume-card{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--soil-hover);border:1px solid var(--soil-line);border-radius:8px;}
     .resume-icon{width:42px;height:42px;border-radius:8px;background:rgba(209,61,44,.1);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--red-pale);flex-shrink:0;}
-    .resume-name{font-size:13px;font-weight:600;color:#F5F0EE;}
+    .resume-name{font-size:13px;font-weight:600;color:var(--text-light);}
     .resume-dl{margin-left:auto;padding:7px 14px;border-radius:6px;background:var(--red-vivid);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
     .resume-dl:hover{background:var(--red-bright);}
 
@@ -413,7 +413,7 @@ foreach ($education as $_edu) {
     /* Apps list */
     .app-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--soil-line);gap:10px;}
     .app-row:last-child{border-bottom:none;}
-    .app-row-title{font-size:13px;font-weight:600;color:#F5F0EE;}
+    .app-row-title{font-size:13px;font-weight:600;color:var(--text-light);}
     .app-row-date{font-size:11px;color:var(--text-muted);}
 
     /* Two-col layout */

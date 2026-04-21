@@ -105,12 +105,12 @@ $cpScore = min($cpScore, 100);
     .logo { display:flex; align-items:center; gap:8px; text-decoration:none; margin-right:28px; flex-shrink:0; }
     .logo-icon { width:34px; height:34px; background:var(--red-vivid); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; box-shadow:0 0 18px rgba(209,61,44,0.35); }
     .logo-icon::before { content:'🐜'; font-size:18px; filter:brightness(0) invert(1); }
-    .logo-text { font-family:var(--font-display); font-weight:700; font-size:19px; color:#F5F0EE; white-space:nowrap; }
+    .logo-text { font-family:var(--font-display); font-weight:700; font-size:19px; color:var(--text-light); white-space:nowrap; }
     .logo-text span { color:var(--red-bright); }
     .nav-links { display:flex; align-items:center; gap:2px; flex:1; min-width:0; }
     .nav-link { font-size:13px; font-weight:600; color:#A09090; text-decoration:none; padding:7px 11px; border-radius:6px; transition:all 0.2s; cursor:pointer; background:none; border:none; font-family:var(--font-body); display:flex; align-items:center; gap:5px; white-space:nowrap; letter-spacing:0.01em; }
-    .nav-link:hover { color:#F5F0EE; background:var(--soil-hover); }
-    .nav-link.active { color:#F5F0EE; background:var(--soil-hover); }
+    .nav-link:hover { color:var(--text-light); background:var(--soil-hover); }
+    .nav-link.active { color:var(--text-light); background:var(--soil-hover); }
     .nav-right { display:flex; align-items:center; gap:10px; margin-left:auto; flex-shrink:0; }
     .theme-btn{ width:36px;height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; flex-shrink:0; }
     .theme-btn:hover { color:var(--red-bright); border-color:var(--red-vivid); }
@@ -124,19 +124,19 @@ $cpScore = min($cpScore, 100);
     .profile-btn { display:flex; align-items:center; gap:9px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:6px 12px 6px 8px; cursor:pointer; transition:0.2s; flex-shrink:0; }
     .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, var(--amber), #8a5010); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
     .profile-avatar img { width:100%; height:100%; object-fit:cover; }
-    .profile-name { font-size:13px; font-weight:600; color:#F5F0EE; }
+    .profile-name { font-size:13px; font-weight:600; color:var(--text-light); }
     .profile-role { font-size:10px; color:var(--amber); margin-top:1px; letter-spacing:0.02em; font-weight:600; }
     .profile-chevron { font-size:9px; color:var(--text-muted); margin-left:2px; }
     .profile-dropdown { position:absolute; top:calc(100% + 8px); right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:6px; min-width:200px; opacity:0; visibility:hidden; transform:translateY(-6px); transition:all 0.18s ease; z-index:300; box-shadow:0 20px 40px rgba(0,0,0,0.5); }
     .profile-dropdown.open { opacity:1; visibility:visible; transform:translateY(0); }
     .profile-dropdown-head { padding:12px 14px 10px; border-bottom:1px solid var(--soil-line); margin-bottom:4px; }
-    .pdh-name { font-size:14px; font-weight:700; color:#F5F0EE; }
+    .pdh-name { font-size:14px; font-weight:700; color:var(--text-light); }
     .pdh-sub { font-size:11px; color:var(--amber); margin-top:2px; font-weight:600; }
     .pd-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:6px; font-size:13px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); text-decoration:none; }
     .pd-item i { color:var(--text-muted); width:16px; text-align:center; font-size:12px; }
-    .pd-item:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .pd-item:hover { background:var(--soil-hover); color:var(--text-light); }
     .pd-item:hover i { color:var(--red-bright); }
-    .pd-item.active-page { color:#F5F0EE; background:var(--soil-hover); }
+    .pd-item.active-page { color:var(--text-light); background:var(--soil-hover); }
     .pd-item.active-page i { color:var(--red-bright); }
     .pd-divider { height:1px; background:var(--soil-line); margin:4px 6px; }
     .pd-item.danger { color:#E05555; }
@@ -147,7 +147,7 @@ $cpScore = min($cpScore, 100);
     .mobile-menu.open { display:flex; }
     .mobile-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:7px; font-size:14px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); text-decoration:none; }
     .mobile-link i { color:var(--red-mid); width:16px; text-align:center; }
-    .mobile-link:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .mobile-link:hover { background:var(--soil-hover); color:var(--text-light); }
     .mobile-divider { height:1px; background:var(--soil-line); margin:6px 0; }
 
     /* PAGE */
@@ -160,33 +160,33 @@ $cpScore = min($cpScore, 100);
     .breadcrumb i { font-size:9px; }
 
     /* Page header */
-    .page-title { font-family:var(--font-display); font-size:26px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
+    .page-title { font-family:var(--font-display); font-size:26px; font-weight:700; color:var(--text-light); margin-bottom:4px; }
     .page-sub { font-size:13px; color:var(--text-muted); margin-bottom:32px; }
 
     /* Cover + logo hero */
     .cover-section { position:relative; border-radius:14px; overflow:hidden; margin-bottom:28px; background:var(--soil-card); border:1px solid var(--soil-line); }
     .cover-img { height:180px; background:linear-gradient(135deg, #3A0F0F 0%, #1C0808 40%, #2A0A1A 100%); position:relative; overflow:hidden; }
     .cover-img::after { content:''; position:absolute; inset:0; background:repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(209,61,44,0.04) 20px, rgba(209,61,44,0.04) 21px); }
-    .cover-change-btn { position:absolute; bottom:12px; right:12px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.15); color:#F5F0EE; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font-body); transition:0.2s; z-index:2; display:flex; align-items:center; gap:6px; }
+    .cover-change-btn { position:absolute; bottom:12px; right:12px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.15); color:var(--text-light); padding:6px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font-body); transition:0.2s; z-index:2; display:flex; align-items:center; gap:6px; }
     .cover-change-btn:hover { background:rgba(209,61,44,0.4); }
     .cover-bottom { display:flex; align-items:flex-end; justify-content:space-between; padding:0 24px 20px; gap:16px; flex-wrap:wrap; }
     .company-logo-wrap { margin-top:-40px; position:relative; }
     .company-logo { width:88px; height:88px; border-radius:14px; background:var(--soil-hover); border:3px solid var(--soil-dark); display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:800; color:var(--red-bright); font-family:var(--font-display); position:relative; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.4); }
     .logo-upload-btn { position:absolute; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; font-size:20px; cursor:pointer; color:#fff; border-radius:11px; }
     .company-logo-wrap:hover .logo-upload-btn { display:flex; }
-    .cover-company-name { font-size:20px; font-weight:700; color:#F5F0EE; font-family:var(--font-display); }
+    .cover-company-name { font-size:20px; font-weight:700; color:var(--text-light); font-family:var(--font-display); }
     .cover-company-sub { font-size:12px; color:var(--amber); font-weight:600; margin-top:2px; }
     .cover-actions { display:flex; gap:8px; align-items:center; padding-bottom:4px; }
 
     /* Form cards */
     .form-card { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:14px; padding:28px; margin-bottom:20px; }
-    .fc-title { font-size:15px; font-weight:700; color:#F5F0EE; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+    .fc-title { font-size:15px; font-weight:700; color:var(--text-light); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
     .fc-title i { color:var(--red-bright); font-size:14px; }
     .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
     .form-group { display:flex; flex-direction:column; gap:6px; }
     .form-group.full { grid-column:1/-1; }
     .form-label { font-size:12px; font-weight:600; color:var(--text-muted); letter-spacing:0.03em; text-transform:uppercase; }
-    .form-input { background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:10px 14px; font-size:14px; color:#F5F0EE; font-family:var(--font-body); transition:0.2s; outline:none; }
+    .form-input { background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:10px 14px; font-size:14px; color:var(--text-light); font-family:var(--font-body); transition:0.2s; outline:none; }
     .form-input:focus { border-color:var(--red-mid); box-shadow:0 0 0 3px rgba(209,61,44,0.12); }
     .form-input::placeholder { color:var(--text-muted); }
     textarea.form-input { resize:vertical; min-height:100px; line-height:1.6; }
@@ -219,7 +219,7 @@ $cpScore = min($cpScore, 100);
     .btn-save { padding:10px 28px; border-radius:8px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:14px; font-weight:700; cursor:pointer; transition:0.2s; display:flex; align-items:center; gap:8px; }
     .btn-save:hover { background:var(--red-bright); transform:translateY(-1px); box-shadow:0 4px 14px rgba(209,61,44,0.4); }
     .btn-cancel { padding:10px 20px; border-radius:8px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:14px; font-weight:600; cursor:pointer; transition:0.2s; }
-    .btn-cancel:hover { border-color:var(--text-muted); color:#F5F0EE; }
+    .btn-cancel:hover { border-color:var(--text-muted); color:var(--text-light); }
 
     /* Footer */
     .footer { position:relative; z-index:2; border-top:1px solid var(--soil-line); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:10px; }
@@ -399,11 +399,10 @@ $cpScore = min($cpScore, 100);
         <label class="form-label">Company Size</label>
         <select class="form-input" id="companySize">
           <?php
-          $sizes = ['1–10 employees','11–50 employees','51–200 employees','201–500 employees','501–1,000 employees','1,001–5,000 employees','5,000+ employees'];
-          $savedSize = $profileData['company_size'] ?? '11–50 employees';
-          foreach ($sizes as $sz) {
-              $sel = ($sz === $savedSize) ? ' selected' : '';
-              echo "<option{$sel}>" . htmlspecialchars($sz, ENT_QUOTES, 'UTF-8') . "</option>";
+          $savedSize = $profileData['company_size'] ?? '11-50';
+          foreach (COMPANY_SIZES as $val => $label) {
+              $sel = ($val === $savedSize) ? ' selected' : '';
+              echo "<option value=\"" . htmlspecialchars($val, ENT_QUOTES, 'UTF-8') . "\"{$sel}>" . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "</option>";
           }
           ?>
         </select>
@@ -637,8 +636,14 @@ $cpScore = min($cpScore, 100);
       .then(r => r.json())
       .then(data => {
         if (data.ok) {
+          const cacheBust = data.path + '?' + Date.now();
           document.getElementById('companyLogoEl').innerHTML =
-            '<img src="' + data.path + '?' + Date.now() + '" style="width:100%;height:100%;object-fit:cover;border-radius:11px;" alt="Logo">';
+            '<img src="' + cacheBust + '" style="width:100%;height:100%;object-fit:cover;border-radius:11px;" alt="Logo">';
+          // Also update navbar avatar immediately (session was refreshed server-side)
+          const navAvatar = document.getElementById('navProfileAvatar');
+          if (navAvatar) {
+            navAvatar.innerHTML = '<img src="' + cacheBust + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="">';
+          }
           showToast('Logo updated!', 'fa-check-circle');
         } else {
           showToast(data.error || 'Upload failed', 'fa-exclamation-circle');

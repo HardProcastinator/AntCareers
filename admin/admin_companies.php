@@ -93,12 +93,12 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .logo { display:flex; align-items:center; gap:8px; text-decoration:none; margin-right:28px; flex-shrink:0; }
     .logo-icon { width:34px; height:34px; background:var(--red-vivid); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; box-shadow:0 0 18px rgba(209,61,44,0.35); }
     .logo-icon::before { content:'🐜'; font-size:18px; filter:brightness(0) invert(1); }
-    .logo-text { font-family:var(--font-display); font-weight:700; font-size:19px; color:#F5F0EE; white-space:nowrap; }
+    .logo-text { font-family:var(--font-display); font-weight:700; font-size:19px; color:var(--text-light); white-space:nowrap; }
     .logo-text span { color:var(--red-bright); }
     .nav-links { display:flex; align-items:center; gap:2px; flex:1; min-width:0; }
     .nav-link { font-size:13px; font-weight:600; color:#A09090; text-decoration:none; padding:7px 11px; border-radius:6px; transition:all 0.2s; cursor:pointer; background:none; border:none; font-family:var(--font-body); display:flex; align-items:center; gap:5px; white-space:nowrap; letter-spacing:0.01em; }
-    .nav-link:hover { color:#F5F0EE; background:var(--soil-hover); }
-    .nav-link.active { color:#F5F0EE; background:var(--soil-hover); }
+    .nav-link:hover { color:var(--text-light); background:var(--soil-hover); }
+    .nav-link.active { color:var(--text-light); background:var(--soil-hover); }
     .nav-right { display:flex; align-items:center; gap:10px; margin-left:auto; flex-shrink:0; }
     .theme-btn{ width:36px;height:36px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:14px; flex-shrink:0; }
     .theme-btn:hover { color:var(--red-bright); border-color:var(--red-vivid); }
@@ -110,17 +110,17 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .profile-btn { display:flex; align-items:center; gap:9px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; padding:6px 12px 6px 8px; cursor:pointer; transition:0.2s; flex-shrink:0; }
     .profile-btn:hover { background:var(--soil-card); }
     .profile-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--red-deep),var(--red-vivid)); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
-    .profile-name { font-size:13px; font-weight:600; color:#F5F0EE; }
+    .profile-name { font-size:13px; font-weight:600; color:var(--text-light); }
     .profile-role { font-size:10px; color:var(--red-pale); margin-top:1px; letter-spacing:0.02em; font-weight:600; }
     .profile-chevron { font-size:9px; color:var(--text-muted); margin-left:2px; }
     .profile-dropdown { position:absolute; top:calc(100% + 8px); right:0; background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; padding:6px; min-width:200px; opacity:0; visibility:hidden; transform:translateY(-6px); transition:all 0.18s ease; z-index:300; box-shadow:0 20px 40px rgba(0,0,0,0.5); }
     .profile-dropdown.open { opacity:1; visibility:visible; transform:translateY(0); }
     .profile-dropdown-head { padding:12px 14px 10px; border-bottom:1px solid var(--soil-line); margin-bottom:4px; }
-    .pdh-name { font-size:14px; font-weight:700; color:#F5F0EE; }
+    .pdh-name { font-size:14px; font-weight:700; color:var(--text-light); }
     .pdh-sub { font-size:11px; color:var(--red-pale); margin-top:2px; font-weight:600; }
     .pd-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:6px; font-size:13px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; text-decoration:none; }
     .pd-item i { color:var(--text-muted); width:16px; text-align:center; font-size:12px; }
-    .pd-item:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .pd-item:hover { background:var(--soil-hover); color:var(--text-light); }
     .pd-item:hover i { color:var(--red-bright); }
     .pd-divider { height:1px; background:var(--soil-line); margin:4px 6px; }
     .pd-item.danger { color:#E05555; }
@@ -129,14 +129,14 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
 
     .page-shell { max-width:1380px; margin:0 auto; padding:0 24px 80px; position:relative; z-index:1; }
     .page-header { padding:32px 0 24px; }
-    .page-title { font-family:var(--font-display); font-size:28px; font-weight:700; color:#F5F0EE; margin-bottom:6px; }
+    .page-title { font-family:var(--font-display); font-size:28px; font-weight:700; color:var(--text-light); margin-bottom:6px; }
     .page-title span { color:var(--red-bright); font-style:italic; }
     .page-sub { font-size:14px; color:var(--text-muted); }
 
     .content-layout { display:block; }
 
     .sec-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
-    .sec-title { font-family:var(--font-display); font-size:20px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:10px; }
+    .sec-title { font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--text-light); display:flex; align-items:center; gap:10px; }
     .sec-title i { color:var(--red-bright); font-size:16px; }
 
     /* Filter bar */
@@ -146,14 +146,14 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .filter-label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; }
     .pill-group { display:flex; gap:4px; flex-wrap:wrap; }
     .pill-opt { padding:5px 12px; border-radius:100px; border:1px solid var(--soil-line); background:var(--soil-hover); color:var(--text-muted); font-size:12px; font-weight:600; cursor:pointer; transition:0.18s; white-space:nowrap; display:flex; align-items:center; gap:6px; }
-    .pill-opt:hover { color:#F5F0EE; border-color:rgba(209,61,44,0.4); }
+    .pill-opt:hover { color:var(--text-light); border-color:rgba(209,61,44,0.4); }
     .pill-opt.active { background:rgba(209,61,44,0.12); border-color:rgba(209,61,44,0.4); color:var(--red-pale); }
     .tab-count { font-size:10px; font-weight:700; padding:1px 6px; border-radius:8px; background:rgba(209,61,44,0.18); color:var(--red-pale); }
     .tab-count.amber { background:rgba(212,148,58,0.18); color:var(--amber); }
     .tab-count.green { background:rgba(76,175,112,0.12); color:#6ccf8a; }
     .tab-section { display:none; }
     .tab-section.active { display:block; }
-    .search-input { padding:8px 13px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:7px; color:#F5F0EE; font-family:var(--font-body); font-size:13px; outline:none; transition:0.2s; min-width:220px; }
+    .search-input { padding:8px 13px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:7px; color:var(--text-light); font-family:var(--font-body); font-size:13px; outline:none; transition:0.2s; min-width:220px; }
     .search-input:focus { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.12); }
     .search-input::placeholder { color:var(--text-muted); }
 
@@ -163,7 +163,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .company-card:hover { border-color:rgba(209,61,44,0.4); background:var(--soil-hover); }
     .cc-top { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:10px; }
     .cc-info { flex:1; min-width:0; }
-    .cc-name { font-family:var(--font-display); font-size:16px; font-weight:700; color:#F5F0EE; margin-bottom:3px; }
+    .cc-name { font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--text-light); margin-bottom:3px; }
     .cc-reg { font-size:12px; color:var(--text-muted); margin-bottom:6px; }
     .cc-meta { display:flex; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--text-muted); margin-bottom:8px; }
     .cc-meta span { display:flex; align-items:center; gap:4px; }
@@ -187,7 +187,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .data-table tr:last-child td { border-bottom:none; }
     .data-table tr:hover td { background:var(--soil-hover); }
     .table-wrap { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:10px; overflow:hidden; }
-    .td-name { font-weight:700; color:#F5F0EE; font-size:13px; }
+    .td-name { font-weight:700; color:var(--text-light); font-size:13px; }
     .td-reason { font-size:11px; color:var(--text-muted); font-style:italic; max-width:260px; }
 
     .empty-state { text-align:center; padding:56px 20px; color:var(--text-muted); }
@@ -198,15 +198,15 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .modal-box { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:32px; max-width:480px; width:92%; position:relative; animation:modalIn 0.2s ease; box-shadow:0 40px 80px rgba(0,0,0,0.6); }
     @keyframes modalIn { from{opacity:0;transform:scale(0.97) translateY(8px)} to{opacity:1;transform:scale(1)} }
     .modal-close { position:absolute; top:18px; right:18px; width:30px; height:30px; border-radius:6px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.15s; }
-    .modal-close:hover { color:#F5F0EE; border-color:var(--red-mid); }
-    .modal-title { font-family:var(--font-display); font-size:18px; font-weight:700; color:#F5F0EE; margin-bottom:6px; }
+    .modal-close:hover { color:var(--text-light); border-color:var(--red-mid); }
+    .modal-title { font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--text-light); margin-bottom:6px; }
     .modal-sub { font-size:13px; color:var(--text-muted); margin-bottom:18px; }
     .modal-label { font-size:12px; font-weight:700; color:var(--text-mid); margin-bottom:6px; letter-spacing:0.03em; }
-    .modal-textarea { width:100%; padding:12px 14px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; color:#F5F0EE; font-family:var(--font-body); font-size:13px; resize:vertical; min-height:96px; outline:none; transition:0.2s; }
+    .modal-textarea { width:100%; padding:12px 14px; background:var(--soil-hover); border:1px solid var(--soil-line); border-radius:8px; color:var(--text-light); font-family:var(--font-body); font-size:13px; resize:vertical; min-height:96px; outline:none; transition:0.2s; }
     .modal-textarea:focus { border-color:var(--red-vivid); box-shadow:0 0 0 3px rgba(209,61,44,0.12); }
     .modal-actions { display:flex; gap:10px; margin-top:18px; justify-content:flex-end; }
     .btn-cancel { padding:9px 18px; border-radius:7px; background:var(--soil-hover); border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; transition:0.18s; }
-    .btn-cancel:hover { color:#F5F0EE; }
+    .btn-cancel:hover { color:var(--text-light); }
     .btn-confirm-reject { padding:9px 18px; border-radius:7px; background:var(--red-vivid); border:none; color:#fff; font-family:var(--font-body); font-size:13px; font-weight:700; cursor:pointer; transition:0.18s; }
     .btn-confirm-reject:hover { background:var(--red-bright); }
 
@@ -252,7 +252,7 @@ try { $totalRecruiters = (int)$db->query("SELECT COUNT(*) FROM users WHERE LOWER
     .mobile-menu.open { display:flex; }
     .mobile-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:7px; font-size:14px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:0.15s; font-family:var(--font-body); text-decoration:none; }
     .mobile-link i { color:var(--red-mid); width:16px; text-align:center; }
-    .mobile-link:hover,.mobile-link.active { background:var(--soil-hover); color:#F5F0EE; }
+    .mobile-link:hover,.mobile-link.active { background:var(--soil-hover); color:var(--text-light); }
     .mobile-divider { height:1px; background:var(--soil-line); margin:6px 0; }
     body.light .mobile-menu { background:rgba(249,245,244,0.97); border-color:#E0CECA; }
     body.light .mobile-link { color:#4A2828; }

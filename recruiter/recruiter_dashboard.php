@@ -208,7 +208,7 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
 
     /* ── GREETING HEADER ── */
     .search-header { padding:24px 0 18px; }
-    .search-greeting { font-family:var(--font-display); font-size:26px; font-weight:700; color:#F5F0EE; margin-bottom:4px; }
+    .search-greeting { font-family:var(--font-display); font-size:26px; font-weight:700; color:var(--text-light); margin-bottom:4px; }
     .search-greeting em { color:var(--red-bright); font-style:italic; }
     .search-sub { font-size:13px; color:var(--text-muted); }
 
@@ -217,7 +217,7 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
 
     /* ── SECTION HEADERS ── */
     .sec-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
-    .sec-title { font-family:var(--font-display); font-size:18px; font-weight:700; color:#F5F0EE; display:flex; align-items:center; gap:8px; }
+    .sec-title { font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--text-light); display:flex; align-items:center; gap:8px; }
     .sec-title i { color:var(--red-bright); font-size:14px; }
     .sec-count { font-size:11px; font-weight:600; color:var(--text-muted); background:var(--soil-hover); padding:2px 9px; border-radius:4px; letter-spacing:0.04em; }
     .see-more { font-size:12px; font-weight:600; color:var(--red-pale); cursor:pointer; background:none; border:none; font-family:var(--font-body); display:flex; align-items:center; gap:4px; transition:0.15s; letter-spacing:0.02em; text-decoration:none; }
@@ -234,7 +234,7 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
     .sc-icon.b { background:rgba(74,144,217,.1); color:#7ab8f0; }
     .sc-icon.g { background:rgba(76,175,112,.1); color:#6ccf8a; }
     .sc-icon.p { background:rgba(156,39,176,.1); color:#cf8ae0; }
-    .sc-num { font-family:var(--font-display); font-size:32px; font-weight:700; color:#F5F0EE; line-height:1; }
+    .sc-num { font-family:var(--font-display); font-size:32px; font-weight:700; color:var(--text-light); line-height:1; }
     .sc-label { font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
     .sc-btn { padding:8px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-family:var(--font-body); font-size:12px; font-weight:700; cursor:pointer; transition:0.18s; width:100%; display:block; text-align:center; text-decoration:none; }
     .sc-btn:hover { background:var(--soil-hover); border-color:var(--red-vivid); color:var(--red-pale); }
@@ -244,7 +244,7 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
     .job-row { background:var(--soil-card); border:1px solid var(--soil-line); border-radius:12px; padding:22px 24px; transition:all 0.18s; display:grid; grid-template-columns:1fr auto; gap:16px; align-items:center; position:relative; }
     .job-row:hover { border-color:rgba(209,61,44,0.5); background:var(--soil-hover); transform:translateX(2px); }
     .jr-top { display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap; }
-    .jr-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:#F5F0EE; }
+    .jr-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-light); }
     .jr-new { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--red-pale); background:rgba(209,61,44,0.1); border:1px solid rgba(209,61,44,0.2); padding:2px 7px; border-radius:3px; }
     .jr-new.green { color:#6ccf8a; background:rgba(76,175,112,.1); border-color:rgba(76,175,112,.2); }
     .jr-new.amber { color:var(--amber); background:rgba(212,148,58,.1); border-color:rgba(212,148,58,.2); }
@@ -260,10 +260,10 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
     .chip.red { background:rgba(209,61,44,.08); color:var(--red-pale); border-color:rgba(209,61,44,.15); }
     .chip.blue { background:rgba(74,144,217,.08); color:#7ab8f0; border-color:rgba(74,144,217,.18); }
     .job-row-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
-    .jr-salary { font-family:var(--font-body); font-size:14px; font-weight:700; color:#F5F0EE; white-space:nowrap; }
+    .jr-salary { font-family:var(--font-body); font-size:14px; font-weight:700; color:var(--text-light); white-space:nowrap; }
     .jr-actions { display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
     .jr-btn { padding:5px 11px; border-radius:6px; background:transparent; border:1px solid var(--soil-line); color:var(--text-muted); font-size:11px; font-weight:700; cursor:pointer; font-family:var(--font-body); transition:0.18s; white-space:nowrap; text-decoration:none; }
-    .jr-btn:hover { background:var(--soil-hover); color:#F5F0EE; }
+    .jr-btn:hover { background:var(--soil-hover); color:var(--text-light); }
     .jr-btn.r:hover { border-color:var(--red-vivid); color:var(--red-pale); }
     .jr-btn.g:hover { border-color:rgba(76,175,112,.5); color:#6ccf8a; }
     .jr-btn.b:hover { border-color:rgba(74,144,217,.5); color:#7ab8f0; }
@@ -277,7 +277,7 @@ $dashInterviewsJson    = json_encode($dashInterviews ?: []);
     .featured-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--red-vivid),var(--red-bright)); }
     .featured-card:hover { border-color:rgba(209,61,44,0.55); transform:translateY(-3px); box-shadow:0 16px 40px rgba(0,0,0,0.4); }
     .fc-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--amber); background:var(--amber-dim); border:1px solid rgba(212,148,58,0.22); padding:2px 7px; border-radius:3px; margin-bottom:10px; }
-    .fc-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:#F5F0EE; margin-bottom:4px; line-height:1.3; }
+    .fc-title { font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-light); margin-bottom:4px; line-height:1.3; }
     .fc-company { font-size:12px; color:var(--red-pale); font-weight:600; margin-bottom:14px; }
     .fc-chips { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
     .fc-footer { display:flex; align-items:center; justify-content:space-between; padding-top:10px; border-top:1px solid var(--soil-line); }

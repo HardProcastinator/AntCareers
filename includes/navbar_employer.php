@@ -93,7 +93,7 @@ function navHref(string $page): string {
 
       <div class="profile-wrap" id="profileWrap">
         <button class="profile-btn" id="profileToggle">
-          <div class="profile-avatar"><?php if (!empty($avatarUrl)): ?><img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%"><?php else: ?><?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></div>
+          <div class="profile-avatar" id="navProfileAvatar"><?php if (!empty($avatarUrl)): ?><img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%"><?php else: ?><?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></div>
           <div>
             <div class="profile-name"><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></div>
 <?php
@@ -163,10 +163,10 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   .notif-panel-overlay{display:none;position:fixed;inset:0;z-index:499;background:rgba(0,0,0,0.35);backdrop-filter:blur(2px)}
   .notif-panel-overlay.visible{display:block}
   .notif-panel-head{padding:20px 20px 16px;border-bottom:1px solid var(--soil-line,#3A2A28);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-  .notif-panel-title{font-family:var(--font-display,sans-serif);font-size:17px;font-weight:700;color:#F5F0EE;display:flex;align-items:center;gap:8px}
+  .notif-panel-title{font-family:var(--font-display,sans-serif);font-size:17px;font-weight:700;color:var(--text-light);display:flex;align-items:center;gap:8px}
   .notif-panel-title i{color:var(--red-bright,#E04A3A)}
   .notif-close{width:28px;height:28px;border-radius:6px;background:var(--soil-hover,#2A1E1C);border:1px solid var(--soil-line,#3A2A28);color:var(--text-muted,#8A7572);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:.15s}
-  .notif-close:hover{color:#F5F0EE}
+  .notif-close:hover{color:var(--text-light)}
   .notif-panel-body{flex:1;overflow-y:auto;padding:12px 16px}
   .notif-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--soil-line,#3A2A28);cursor:pointer}
   .notif-item:last-child{border-bottom:none}
@@ -210,8 +210,8 @@ if (isset($_SESSION['account_type']) && strtolower($_SESSION['account_type']) ==
   .mobile-menu.open{display:flex;}
   .mobile-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:7px;font-size:14px;font-weight:500;color:var(--text-mid);cursor:pointer;transition:0.15s;font-family:var(--font-body);text-decoration:none;}
   .mobile-link i{color:var(--red-mid);width:16px;text-align:center;}
-  .mobile-link:hover{background:var(--soil-hover);color:#F5F0EE;}
-  .mobile-link.active{color:#F5F0EE;background:var(--soil-hover);}
+  .mobile-link:hover{background:var(--soil-hover);color:var(--text-light);}
+  .mobile-link.active{color:var(--text-light);background:var(--soil-hover);}
   .mobile-divider{height:1px;background:var(--soil-line);margin:6px 0;}
   body.light .mobile-menu { background:rgba(249,245,244,0.97); border-color:#E0CECA; }
   body.light .mobile-link { color:#4A2828; }

@@ -84,6 +84,9 @@ if ($action === 'upload_logo') {
     $upd = $db->prepare("UPDATE company_profiles SET logo_path = :p, updated_at = NOW() WHERE user_id = :uid");
     $upd->execute([':p' => $relPath, ':uid' => $userId]);
 
+    // Refresh session so the navbar avatar updates on next page without re-login
+    $_SESSION['avatar_url'] = $relPath;
+
     echo json_encode(['ok' => true, 'path' => '../' . $relPath]);
     exit;
 }
