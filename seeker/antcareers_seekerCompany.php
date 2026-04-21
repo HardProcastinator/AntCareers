@@ -54,7 +54,7 @@ try {
             'emoji'     => '🏢',
             'color'     => 'linear-gradient(135deg,var(--red-vivid),var(--red-deep))',
             'logo'      => ($r['logo_path'] ?? '') ? '../' . $r['logo_path'] : '',
-            'cover'     => ($r['cover_path'] ?? '') ? '../' . $r['cover_path'] : '',,
+            'cover'     => ($r['cover_path'] ?? '') ? '../' . $r['cover_path'] : '',
             'jobs'      => (int)$r['open_roles'],
             'verified'  => (bool)$r['is_verified'],
             'following' => false,

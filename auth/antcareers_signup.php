@@ -76,8 +76,8 @@ $platformStats = getPublicPlatformStats();
     .left-panel::after { content:''; position:absolute; bottom:-80px; right:-80px; width:400px; height:400px; background:radial-gradient(circle,rgba(209,61,44,0.06) 0%,transparent 65%); pointer-events:none; }
     .left-art { position:absolute; inset:0; opacity:0.06; pointer-events:none; }
     .left-logo { display:flex; align-items:center; gap:10px; text-decoration:none; position:relative; z-index:2; }
-    .left-logo-icon { width:34px; height:34px; background:var(--red-vivid) url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='white'><path d='M6.5 1.5L5 0M7.5 1.5L9 0' stroke='white' stroke-width='.8' fill='none'/><circle cx='7' cy='2.5' r='1.5'/><ellipse cx='7' cy='6.5' rx='1.5' ry='2'/><ellipse cx='7' cy='12' rx='2.5' ry='2'/><path d='M6 5.5L2.5 4M6 7L2 7M6 8.5L2.5 9.5' stroke='white' stroke-width='.8' fill='none'/><path d='M8 5.5L11.5 4M8 7L12 7M8 8.5L11.5 9.5' stroke='white' stroke-width='.8' fill='none'/></svg>") center/18px no-repeat; border-radius:8px; }
-    .left-logo-icon::before { display:none; }
+    .left-logo-icon { width:34px; height:34px; background:var(--red-vivid); border-radius:8px; display:flex; align-items:center; justify-content:center; }
+    .left-logo-icon::before { content:'🐜'; font-size:18px; filter:brightness(0) invert(1); }
     .left-logo-text { font-family:var(--font-display); font-weight:700; font-size:19px; color:#1A0A09; }
     .left-logo-text span { color:var(--red-bright); }
     .left-content { position:relative; z-index:2; flex:1; display:flex; flex-direction:column; justify-content:center; }
